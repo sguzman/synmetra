@@ -370,7 +370,10 @@ mod tests {
         let mut options = controls();
         options.max_rows = Some(0);
         assert_eq!(options.validate(), Err(ApiError::InvalidRequest));
-        assert_eq!(options.request_limit(Some(0)), Err(ApiError::InvalidRequest));
+        assert_eq!(
+            options.request_limit(Some(0)),
+            Err(ApiError::InvalidRequest)
+        );
         options.max_rows = Some(1);
         options.cursor_supplied = true;
         assert_eq!(options.validate(), Err(ApiError::InvalidRequest));
