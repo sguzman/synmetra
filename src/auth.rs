@@ -129,6 +129,36 @@ fn read_credentials() -> Result<Option<Stored>, String> {
     read_credentials_at(&credentials_path()?)
 }
 
+fn clear_credentials_at(path: &Path) -> Result<bool, String> {
+    let dir = path.parent().ok_or("No credential directory")?;
+    match fs::symlink_metadata(dir) {
+        Ok(meta) => {
+            if !meta.is_dir() || meta.file_type().is_symlink() {
+                return Err("Refusing logout through a symlinked auth directory".into());
+            }
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt;
+                if meta.permissions().mode() & 0o077 != 0 {
+                    return Err("Refusing logout through an insecure auth directory".into());
+                }
+            }
+        }
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(false),
+        Err(_) => return Err("Cannot inspect credential directory".into()),
+    }
+
+    match fs::symlink_metadata(path) {
+        Ok(_) => {
+            private_file(path)?;
+            fs::remove_file(path).map_err(|_| "Could not remove Synmetra credentials")?;
+            Ok(true)
+        }
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(false),
+        Err(_) => Err("Could not inspect Synmetra credential file".into()),
+    }
+}
+
 fn persist_credentials_at(path: &Path, stored: &Stored) -> Result<(), String> {
     use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
     let dir = path.parent().ok_or("No credential directory")?;
@@ -549,11 +579,7 @@ pub async fn command(args: &[String]) -> Result<(), String> {
             Ok(())
         }
         [mode] if mode == "logout" => {
-            let path = credentials_path()?;
-            if fs::symlink_metadata(&path).is_ok() {
-                private_file(&path)?;
-                fs::remove_file(path).map_err(|_| "Could not remove Synmetra credentials")?;
-            }
+            clear_credentials_at(&credentials_path()?)?;
             println!("Synmetra local credentials cleared. Revoke access in your Google account if desired.");
             Ok(())
         }
@@ -681,6 +707,52 @@ mod tests {
         symlink(&dir, &symlink_dir).unwrap();
         assert!(read_credentials_at(&symlink_dir.join("credentials.json")).is_err());
         assert!(persist_credentials_at(&symlink_dir.join("credentials.json"), &stored).is_err());
+        fs::remove_dir_all(base).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn logout_removes_only_private_synmetra_credentials_without_touching_neighbors() {
+        use std::os::unix::fs::{symlink, PermissionsExt};
+
+        let base = std::env::temp_dir().join(format!(
+            "synmetra-logout-test-{}-{}",
+            std::process::id(),
+            nonce()
+        ));
+        let path = base.join("synmetra").join("credentials.json");
+        let neighbor = base.join("other-google-app.json");
+        fs::create_dir_all(&base).unwrap();
+        fs::write(&neighbor, "unrelated application data").unwrap();
+        let stored = Stored {
+            client_id: "sample.apps.googleusercontent.com".into(),
+            client_secret: "synthetic-client".into(),
+            refresh_token: "synthetic-refresh".into(),
+            access_token: "synthetic-access".into(),
+            expires_at: 42,
+            granted_scope: SCOPE.into(),
+        };
+        persist_credentials_at(&path, &stored).unwrap();
+        assert_eq!(clear_credentials_at(&path), Ok(true));
+        assert_eq!(clear_credentials_at(&path), Ok(false));
+        assert!(!path.exists());
+        assert_eq!(fs::read_to_string(&neighbor).unwrap(), "unrelated application data");
+
+        symlink(&neighbor, &path).unwrap();
+        assert!(clear_credentials_at(&path).is_err());
+        assert_eq!(fs::read_to_string(&neighbor).unwrap(), "unrelated application data");
+        fs::remove_file(&path).unwrap();
+
+        persist_credentials_at(&path, &stored).unwrap();
+        fs::set_permissions(&path, fs::Permissions::from_mode(0o644)).unwrap();
+        assert!(clear_credentials_at(&path).is_err());
+        assert!(path.exists());
+        fs::remove_file(&path).unwrap();
+
+        let alias_dir = base.join("linked-synmetra");
+        symlink(path.parent().unwrap(), &alias_dir).unwrap();
+        assert!(clear_credentials_at(&alias_dir.join("credentials.json")).is_err());
+        assert!(neighbor.exists());
         fs::remove_dir_all(base).unwrap();
     }
 
