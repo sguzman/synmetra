@@ -2974,16 +2974,18 @@
               "id": "T154",
               "emoji": "🪪",
               "name": "Generate exact 36-name tool inventory from server",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "No missing or unexpected tool names in union gate",
               "checks": [
                 {
                   "text": "Deliver generate exact 36-name tool inventory from server as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs full_capability_profile_matches_exact_pinned_36_tool_union compares Rust MCP router registry to docs/tool-inventory.json, both additive write opt-in and scratchpad enabled; feature-enabled cargo test passed GitHub Actions 40221573543 duckdb job. Tool existence is NOT functional parity."
                 },
                 {
                   "text": "No missing or unexpected tool names in union gate",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs full_capability_profile_matches_exact_pinned_36_tool_union compares Rust MCP router registry to docs/tool-inventory.json, both additive write opt-in and scratchpad enabled; feature-enabled cargo test passed GitHub Actions 40221573543 duckdb job. Tool existence is NOT functional parity."
                 }
               ]
             },
@@ -3008,12 +3010,13 @@
               "id": "T156",
               "emoji": "🧳",
               "name": "Implement Contract V1 ok/data/meta responses",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "All Rust parity tools produce validated success envelope",
               "checks": [
                 {
                   "text": "Deliver implement contract v1 ok/data/meta responses as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs `result` success envelope supplies ok/data/meta plus elapsed_ms_measured=false; tests mcp_text_envelopes_have_stable_error_categories_and_explicit_unmeasured_timing passed feature-enabled cargo test on GitHub Actions 40221573543 duckdb job. Response is text, not yet upstream structured MCP parity."
                 },
                 {
                   "text": "All Rust parity tools produce validated success envelope",
@@ -3025,12 +3028,13 @@
               "id": "T157",
               "emoji": "⚠️",
               "name": "Implement Contract V1 ok/error/meta responses",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Errors have stable status code reason and context fields",
               "checks": [
                 {
                   "text": "Deliver implement contract v1 ok/error/meta responses as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs stable code, category, reason, message and optional HTTP status on errors; local_result provides local category; error envelope unit tests passed feature-enabled cargo test GitHub Actions 40221573543 duckdb job. All-tool taxonomy, structured MCP fields, and true elapsed times remain incomplete."
                 },
                 {
                   "text": "Errors have stable status code reason and context fields",

@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `███░░░░░░░ 26.2%` · **+24.89 percentage points from initial empty repo; +0.22 pp in numeric resource-name parity verification** · 21/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `███░░░░░░░ 27.1%` · **+27.09 percentage points from initial empty repo; +0.88 pp for verified 36-name runtime inventory and partial Contract V1 envelopes** · 27/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -441,7 +441,7 @@
   - ✅ **Gate:** Dependency license architecture and portability reviewed
 
 
-## 🧬 M7 — Tool contract interoperability and parity audits — `░░░░░░░░░░ 0.0%`
+## 🧬 M7 — Tool contract interoperability and parity audits — `█░░░░░░░░░ 11.8%`
 
 **Scope:** MVP. **Acceptance gate:** All 36 tool schemas and response mappings are independently snapshot-tested against both pinned upstreams.
 
@@ -456,17 +456,17 @@
 - 🗝️ **T153 — Implement ga4_auth_login_command** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Native CLI guidance and MCP schema parity for ga4_auth_login_command
 
-### 📜 P20 — Schema and error contract — `░░░░░░░░░░ 0.0%`
+### 📜 P20 — Schema and error contract — `██░░░░░░░░ 22.2%`
 
 **Feature:** Contracts and schemas.
 
-- 🪪 **T154 — Generate exact 36-name tool inventory from server** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** No missing or unexpected tool names in union gate
+- 🪪 **T154 — Generate exact 36-name tool inventory from server** — `██████████ 100.0%`
+  - ✅ **Gate:** No missing or unexpected tool names in union gate · **Evidence:** src/main.rs full_capability_profile_matches_exact_pinned_36_tool_union compares Rust MCP router registry to docs/tool-inventory.json, both additive write opt-in and scratchpad enabled; feature-enabled cargo test passed GitHub Actions 40221573543 duckdb job. Tool existence is NOT functional parity.
 - 📑 **T155 — Compare required fields defaults descriptions and schemas** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Diff against both upstream pinned snapshots reviewed
-- 🧳 **T156 — Implement Contract V1 ok/data/meta responses** — `░░░░░░░░░░ 0.0%`
+- 🧳 **T156 — Implement Contract V1 ok/data/meta responses** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** All Rust parity tools produce validated success envelope
-- ⚠️ **T157 — Implement Contract V1 ok/error/meta responses** — `░░░░░░░░░░ 0.0%`
+- ⚠️ **T157 — Implement Contract V1 ok/error/meta responses** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Errors have stable status code reason and context fields
 - ⚖️ **T158 — Preserve official response semantics where conflicting** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Document compatibility choice and adapters
