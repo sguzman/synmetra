@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `████░░░░░░ 42.7%` · **+42.73 percentage points from initial empty repo; +0.22 pp from verified loopback-only MCP binding** · 80/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `████░░░░░░ 43.2%` · **+43.17 percentage points from initial empty repo; +0.44 pp from CI-verified authenticated metadata and health endpoints** · 81/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -60,7 +60,7 @@
   - ✅ **Gate:** Document semver and provenance gates
 
 
-## 🔌 M1 — MCP protocol and transport fidelity — `████░░░░░░ 41.3%`
+## 🔌 M1 — MCP protocol and transport fidelity — `█████░░░░░ 45.6%`
 
 **Scope:** MVP. **Acceptance gate:** Spec-conforming native MCP discovery and calls over stdio plus bounded Streamable HTTP; all transport safety tests pass.
 
@@ -83,7 +83,7 @@
 - ⌨️ **T024 — Integrate Codex stdio configuration smoke** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Codex recognizes locally built synmetra binary
 
-### 🌐 P03 — Streamable HTTP protocol — `████░░░░░░ 44.4%`
+### 🌐 P03 — Streamable HTTP protocol — `██████░░░░ 55.6%`
 
 **Feature:** MCP Streamable HTTP.
 
@@ -95,8 +95,8 @@
   - ✅ **Gate:** Host header and Origin tests block inappropriate requests · **Evidence:** Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.; Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.
 - 🔐 **T028 — Add inbound bearer authorization policy** — `██████████ 100.0%`
   - ✅ **Gate:** Unauthenticated requests cannot enumerate tools on protected endpoints · **Evidence:** Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.; Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.
-- 🧭 **T029 — Serve protected MCP metadata and health endpoints** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Health is not publicly exposed under inbound auth
+- 🧭 **T029 — Serve protected MCP metadata and health endpoints** — `██████████ 100.0%`
+  - ✅ **Gate:** Health is not publicly exposed under inbound auth · **Evidence:** src/http.rs adds /health and /metadata GET routes to the optional authenticated loopback MCP router. Health returns only an uptime-style status; metadata lists static server transport and auth policy without Google account or credential information. Both routes use require_local_auth, shared with /mcp.; src/http.rs metadata_and_health_are_authenticated_and_never_contain_credentials uses a real local HTTP listener to verify missing/wrong bearer and malicious Origin return 401, correct bearer returns JSON without tokens or private account/tool data. GitHub Actions 40246616329 core tests, fmt and Clippy plus native DuckDB job passed. No public or unauthenticated health surface is enabled.
 - 📡 **T030 — Support authenticated sessions and request routing** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Sessions terminate and cannot cross principal boundaries
 - 🧊 **T031 — Enforce payload and connection resource limits** — `░░░░░░░░░░ 0.0%`

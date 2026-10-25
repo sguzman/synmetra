@@ -588,16 +588,18 @@
               "id": "T029",
               "emoji": "🧭",
               "name": "Serve protected MCP metadata and health endpoints",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "Health is not publicly exposed under inbound auth",
               "checks": [
                 {
                   "text": "Deliver serve protected mcp metadata and health endpoints as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/http.rs adds /health and /metadata GET routes to the optional authenticated loopback MCP router. Health returns only an uptime-style status; metadata lists static server transport and auth policy without Google account or credential information. Both routes use require_local_auth, shared with /mcp."
                 },
                 {
                   "text": "Health is not publicly exposed under inbound auth",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/http.rs metadata_and_health_are_authenticated_and_never_contain_credentials uses a real local HTTP listener to verify missing/wrong bearer and malicious Origin return 401, correct bearer returns JSON without tokens or private account/tool data. GitHub Actions 40246616329 core tests, fmt and Clippy plus native DuckDB job passed. No public or unauthenticated health surface is enabled."
                 }
               ]
             },
