@@ -1,13 +1,13 @@
 # 📐 SednaLabs MCP parameter parity audit
 
-**Baseline:** pinned SednaLabs GA4 MCP commit `039fd4620064fc4b76dc6bca641945aba52c14bc`; [verbatim schema fixture](../spec/upstream/sednalabs-tool-schema.v1.json). Current source: `src/main.rs` at revision `3c3e993435956267fe0576324a0f26198749d1bd`. This is a **static source-inspection audit**, not generated runtime MCP schema equality or successful Google API behavior.
+**Reference:** pinned SednaLabs GA4 MCP commit `039fd4620064fc4b76dc6bca641945aba52c14bc`, [verbatim JSON schema](../spec/upstream/sednalabs-tool-schema.v1.json). Native source inspected: `src/main.rs` at `12fc60a4ae6b5b498ca9c9eb02a8a84a7f6f2dd5`.
 
-**Counts:** 35 upstream tool names; 27 currently have a named Rust handler; 8 have no Rust handler. Among named handlers, 9 have at least one missing **required** parameter, and many additional optional controls and output semantics remain unimplemented. Google's extra annotation-write tool is excluded from this SednaLabs-only matrix.
+**Static counts:** 35 upstream tools; 29 have a native handler and 6 are not yet implemented. Among the 29 handlers, 2 still lack one or more upstream **required parameter names**. This improves on the previous static audit (nine such gaps) after typing conversion, funnel, pivot, batch and compatibility requests and correcting lifecycle signatures. **This is not runtime signature/behavior parity.** Optional controls, input types/defaults and output projections still differ, and most tools lack live Google acceptance.
 
-| Upstream tool | Status | Native input type | Missing required upstream fields | Missing optional count |
+| Upstream tool | Native status | Rust argument type | Missing required fields | Missing optional count |
 |---|---|---|---|---:|
-| `batch_run_reports` | ⚠️ Provisional | `RawPropertyRequestArgs` | `requests` | 0 |
-| `check_report_compatibility` | ⚠️ Provisional | `RawPropertyRequestArgs` | `dimensions`, `metrics` | 0 |
+| `batch_run_reports` | ⚠️ Provisional | `BatchArgs` | — | 0 |
+| `check_report_compatibility` | ⚠️ Provisional | `CompatibilityArgs` | — | 0 |
 | `ga4_auth_login_command` | ⚠️ Provisional | `NoArgs` | — | 6 |
 | `ga4_auth_status` | ⚠️ Provisional | `NoArgs` | — | 1 |
 | `ga4_get_started` | ⚠️ Provisional | `NoArgs` | — | 0 |
@@ -20,34 +20,34 @@
 | `list_property_annotations` | ⚠️ Provisional | `PropertyArgs` | — | 2 |
 | `preview_report_request` | ⚠️ Provisional | `ReportArgs` | — | 6 |
 | `run_account_access_report` | ⚠️ Provisional | `RawAccountRequestArgs` | `date_ranges`, `dimensions`, `metrics` | 11 |
-| `run_conversions_report` | ⚠️ Provisional | `RawPropertyRequestArgs` | `date_ranges`, `dimensions`, `metrics`, `conversion_spec` | 12 |
-| `run_funnel_report` | ⚠️ Provisional | `RawPropertyRequestArgs` | `funnel_steps` | 13 |
-| `run_pivot_report` | ⚠️ Provisional | `RawPropertyRequestArgs` | `date_ranges`, `dimensions`, `metrics`, `pivots` | 11 |
+| `run_conversions_report` | ⚠️ Provisional | `ConversionArgs` | — | 5 |
+| `run_funnel_report` | ⚠️ Provisional | `FunnelArgs` | — | 8 |
+| `run_pivot_report` | ⚠️ Provisional | `PivotArgs` | — | 5 |
 | `run_property_access_report` | ⚠️ Provisional | `RawPropertyRequestArgs` | `date_ranges`, `dimensions`, `metrics` | 11 |
 | `run_realtime_report` | ⚠️ Provisional | `RealtimeArgs` | — | 8 |
 | `run_report` | ⚠️ Provisional | `ReportArgs` | — | 6 |
 | `scratchpad_close_session` | ⚠️ Provisional | `ScratchSessionArgs` | — | 0 |
-| `scratchpad_describe_table` | ❌ Missing | `NOT IMPLEMENTED` | `session_id`, `table_name` | 5 |
-| `scratchpad_drop_table` | ⚠️ Provisional | `ScratchTableArgs` | `table_name` | 1 |
+| `scratchpad_describe_table` | ⚠️ Provisional | `ScratchReadTableArgs` | — | 5 |
+| `scratchpad_drop_table` | ⚠️ Provisional | `ScratchTableArgs` | — | 0 |
 | `scratchpad_export_evidence_bundle` | ❌ Missing | `NOT IMPLEMENTED` | `session_id` | 2 |
 | `scratchpad_get_runtime_limits` | ⚠️ Provisional | `NoArgs` | — | 0 |
 | `scratchpad_ingest_realtime_report` | ❌ Missing | `NOT IMPLEMENTED` | `session_id`, `table_name`, `property_id`, `dimensions`, `metrics` | 12 |
 | `scratchpad_ingest_report` | ❌ Missing | `NOT IMPLEMENTED` | `session_id`, `table_name`, `property_id`, `date_ranges`, `dimensions`, `metrics` | 13 |
 | `scratchpad_landing_param_shift_report` | ❌ Missing | `NOT IMPLEMENTED` | `session_id`, `table_name`, `release_date` | 13 |
-| `scratchpad_list_sessions` | ⚠️ Provisional | `NoArgs` | — | 1 |
-| `scratchpad_list_tables` | ⚠️ Provisional | `ScratchSessionArgs` | — | 1 |
-| `scratchpad_open_session` | ⚠️ Provisional | `NoArgs` | `session_id` | 0 |
+| `scratchpad_list_sessions` | ⚠️ Provisional | `ScratchListArgs` | — | 0 |
+| `scratchpad_list_tables` | ⚠️ Provisional | `ScratchListTablesArgs` | — | 0 |
+| `scratchpad_open_session` | ⚠️ Provisional | `ScratchOpenArgs` | — | 0 |
 | `scratchpad_query` | ❌ Missing | `NOT IMPLEMENTED` | `session_id`, `sql` | 5 |
 | `scratchpad_release_regression_report` | ❌ Missing | `NOT IMPLEMENTED` | `session_id`, `table_name`, `release_date`, `anchor_event`, `comparison_event` | 11 |
-| `scratchpad_set_runtime_limits` | ⚠️ Provisional | `ScratchLimitArgs` | — | 1 |
-| `scratchpad_summarize_table` | ❌ Missing | `NOT IMPLEMENTED` | `session_id`, `table_name` | 5 |
+| `scratchpad_set_runtime_limits` | ⚠️ Provisional | `ScratchLimitArgs` | — | 0 |
+| `scratchpad_summarize_table` | ⚠️ Provisional | `ScratchReadTableArgs` | — | 5 |
 
-## 🎯 Priority repairs
+## 🧪 Remaining acceptance work
 
-1. **Core read reports:** `run_report`, `run_realtime_report` and `preview_report_request` need the full upstream pagination/output controls, not only the subset currently declared. Preserve date and dimension semantics.
-2. **Alpha/report categories:** `run_conversions_report`, `run_funnel_report`, `run_pivot_report`, `batch_run_reports`, `check_report_compatibility`, and access reports currently accept generic `request` blobs or reduced fields. Add explicit validated upstream arguments and maintain the provider JSON escape hatch only if safe.
-3. **Scratchpad:** complete seven lifecycle signatures before marking them parity-complete; notably `scratchpad_open_session` requires a `session_id` in the pinned reference, and `scratchpad_drop_table` expects `table_name`, while the provisional Rust API differs. Remaining eight analytic tools still need implementation.
-4. **Authentication and collection pagination:** expose safe optional native setup inputs and page controls from the snapshot, while honoring scopes and quota bounds.
-5. **Output contract:** audit SednaLabs Contract V1 `ok/data/meta` and `ok/error/meta` envelopes and response projections. Rust source field presence alone cannot establish output equivalence.
+- Replace raw `request` wrappers on the two access-report tools with explicit fields; correctly handle property/account privileges and provider request validation.
+- Complete missing optional request controls, especially pagination, `output_mode`, `summary_only`, `max_cell_chars`, quota flags, metadata and source-side bounded filters.
+- Implement the six remaining DuckDB tools (report/realtime ingestion, restricted SQL query, release comparison, landing-parameter shift, evidence exports) and finish analysis tool output contracts.
+- Compare actual Rust `tools/list` JSON schemas with both pinned upstream references, not only source-declared parameter field names, then run synthetic fixtures for all 36 union tools.
+- Require allowed-scope live Google API acceptance before claiming any of the 36 tools fully parity-complete.
 
-**Audit method:** handler names parsed from Rust `#[tool]` method declarations and field names inspected from known request structs, compared with required/optional names in the pinned upstream `inputSchema`. This intentionally does not assert that a same-named field has compatible type/defaults, that runtime validation is equivalent, or that a route passes live GA4 integration tests. Future work should replace this static audit with generated MCP tools/list contract diffs and per-tool fixture execution.
+**Method:** This document is derived from the pinned upstream inputSchema `properties`/`required` fields and review of named native Rust request structs. A field listed as present does not establish equivalent type, default, validation, quota handling, or output behavior. A provisional tool might still reject legitimate upstream inputs. The accompanying [machine-readable JSON](../spec/contract-gaps.json) records the exact comparison for follow-on tests.

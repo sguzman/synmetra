@@ -1,16 +1,17 @@
 {
-  "schema": 1,
+  "schema": 2,
   "reference": "sednalabs/ga4-mcp@039fd4620064fc4b76dc6bca641945aba52c14bc",
-  "checked_against": "3c3e993435956267fe0576324a0f26198749d1bd",
-  "method": "Static Rust handler signature/known request struct inspection; not a runtime-equivalence assertion.",
+  "native_revision": "12fc60a4ae6b5b498ca9c9eb02a8a84a7f6f2dd5",
+  "method": "Static input field-name comparison, not actual MCP JSON Schema or behavior equivalence",
   "tool_count": 35,
-  "defined_handlers": 27,
-  "missing_handlers": 8,
-  "known_required_field_gaps": 9,
+  "defined_handlers": 29,
+  "missing_handlers": 6,
+  "known_required_field_gaps": 2,
   "tools": [
     {
       "tool": "batch_run_reports",
-      "handler": "RawPropertyRequestArgs",
+      "handler": "BatchArgs",
+      "missing": false,
       "reference_required": [
         "property_id",
         "requests"
@@ -18,17 +19,15 @@
       "reference_optional": [],
       "native_declared_fields": [
         "property_id",
-        "request"
-      ],
-      "missing_required": [
         "requests"
       ],
-      "missing_optional": [],
-      "missing": false
+      "missing_required": [],
+      "missing_optional": []
     },
     {
       "tool": "check_report_compatibility",
-      "handler": "RawPropertyRequestArgs",
+      "handler": "CompatibilityArgs",
+      "missing": false,
       "reference_required": [
         "property_id",
         "dimensions",
@@ -37,18 +36,16 @@
       "reference_optional": [],
       "native_declared_fields": [
         "property_id",
-        "request"
-      ],
-      "missing_required": [
         "dimensions",
         "metrics"
       ],
-      "missing_optional": [],
-      "missing": false
+      "missing_required": [],
+      "missing_optional": []
     },
     {
       "tool": "ga4_auth_login_command",
       "handler": "NoArgs",
+      "missing": false,
       "reference_required": [],
       "reference_optional": [
         "account",
@@ -67,12 +64,12 @@
         "headless",
         "quota_project",
         "shared_adc"
-      ],
-      "missing": false
+      ]
     },
     {
       "tool": "ga4_auth_status",
       "handler": "NoArgs",
+      "missing": false,
       "reference_required": [],
       "reference_optional": [
         "verify_token"
@@ -81,22 +78,22 @@
       "missing_required": [],
       "missing_optional": [
         "verify_token"
-      ],
-      "missing": false
+      ]
     },
     {
       "tool": "ga4_get_started",
       "handler": "NoArgs",
+      "missing": false,
       "reference_required": [],
       "reference_optional": [],
       "native_declared_fields": [],
       "missing_required": [],
-      "missing_optional": [],
-      "missing": false
+      "missing_optional": []
     },
     {
       "tool": "get_account_data_sharing_settings",
       "handler": "AccountArgs",
+      "missing": false,
       "reference_required": [
         "account_id"
       ],
@@ -105,12 +102,12 @@
         "account_id"
       ],
       "missing_required": [],
-      "missing_optional": [],
-      "missing": false
+      "missing_optional": []
     },
     {
       "tool": "get_account_summaries",
       "handler": "NoArgs",
+      "missing": false,
       "reference_required": [],
       "reference_optional": [
         "max_pages",
@@ -121,12 +118,12 @@
       "missing_optional": [
         "max_pages",
         "page_size"
-      ],
-      "missing": false
+      ]
     },
     {
       "tool": "get_custom_dimensions_and_metrics",
       "handler": "PropertyArgs",
+      "missing": false,
       "reference_required": [
         "property_id"
       ],
@@ -135,12 +132,12 @@
         "property_id"
       ],
       "missing_required": [],
-      "missing_optional": [],
-      "missing": false
+      "missing_optional": []
     },
     {
       "tool": "get_property_data_retention_settings",
       "handler": "PropertyArgs",
+      "missing": false,
       "reference_required": [
         "property_id"
       ],
@@ -149,12 +146,12 @@
         "property_id"
       ],
       "missing_required": [],
-      "missing_optional": [],
-      "missing": false
+      "missing_optional": []
     },
     {
       "tool": "get_property_details",
       "handler": "PropertyArgs",
+      "missing": false,
       "reference_required": [
         "property_id"
       ],
@@ -163,12 +160,12 @@
         "property_id"
       ],
       "missing_required": [],
-      "missing_optional": [],
-      "missing": false
+      "missing_optional": []
     },
     {
       "tool": "list_google_ads_links",
       "handler": "PropertyArgs",
+      "missing": false,
       "reference_required": [
         "property_id"
       ],
@@ -183,12 +180,12 @@
       "missing_optional": [
         "max_pages",
         "page_size"
-      ],
-      "missing": false
+      ]
     },
     {
       "tool": "list_property_annotations",
       "handler": "PropertyArgs",
+      "missing": false,
       "reference_required": [
         "property_id"
       ],
@@ -203,12 +200,12 @@
       "missing_optional": [
         "max_pages",
         "page_size"
-      ],
-      "missing": false
+      ]
     },
     {
       "tool": "preview_report_request",
       "handler": "ReportArgs",
+      "missing": false,
       "reference_required": [
         "property_id",
         "date_ranges",
@@ -250,12 +247,12 @@
         "output_mode",
         "return_property_quota",
         "summary_only"
-      ],
-      "missing": false
+      ]
     },
     {
       "tool": "run_account_access_report",
       "handler": "RawAccountRequestArgs",
+      "missing": false,
       "reference_required": [
         "account_id",
         "date_ranges",
@@ -296,12 +293,12 @@
         "output_mode",
         "summary_only",
         "time_zone"
-      ],
-      "missing": false
+      ]
     },
     {
       "tool": "run_conversions_report",
-      "handler": "RawPropertyRequestArgs",
+      "handler": "ConversionArgs",
+      "missing": false,
       "reference_required": [
         "property_id",
         "date_ranges",
@@ -325,33 +322,31 @@
       ],
       "native_declared_fields": [
         "property_id",
-        "request"
-      ],
-      "missing_required": [
         "date_ranges",
         "dimensions",
         "metrics",
-        "conversion_spec"
-      ],
-      "missing_optional": [
-        "currency_code",
-        "cursor",
+        "conversion_spec",
         "dimension_filter",
+        "metric_filter",
+        "order_bys",
         "limit",
+        "offset",
+        "currency_code",
+        "return_property_quota"
+      ],
+      "missing_required": [],
+      "missing_optional": [
+        "cursor",
         "max_cell_chars",
         "max_rows",
-        "metric_filter",
-        "offset",
-        "order_bys",
         "output_mode",
-        "return_property_quota",
         "summary_only"
-      ],
-      "missing": false
+      ]
     },
     {
       "tool": "run_funnel_report",
-      "handler": "RawPropertyRequestArgs",
+      "handler": "FunnelArgs",
+      "missing": false,
       "reference_required": [
         "property_id",
         "funnel_steps"
@@ -373,31 +368,29 @@
       ],
       "native_declared_fields": [
         "property_id",
-        "request"
-      ],
-      "missing_required": [
-        "funnel_steps"
-      ],
-      "missing_optional": [
+        "funnel_steps",
         "date_ranges",
-        "dimension_filter",
         "funnel_breakdown",
         "funnel_next_action",
+        "segments",
+        "return_property_quota"
+      ],
+      "missing_required": [],
+      "missing_optional": [
+        "dimension_filter",
         "funnel_visualization_type",
         "is_open_funnel",
         "limit",
         "max_cell_chars",
         "max_rows",
         "output_mode",
-        "return_property_quota",
-        "segments",
         "summary_only"
-      ],
-      "missing": false
+      ]
     },
     {
       "tool": "run_pivot_report",
-      "handler": "RawPropertyRequestArgs",
+      "handler": "PivotArgs",
+      "missing": false,
       "reference_required": [
         "property_id",
         "date_ranges",
@@ -420,32 +413,30 @@
       ],
       "native_declared_fields": [
         "property_id",
-        "request"
-      ],
-      "missing_required": [
         "date_ranges",
         "dimensions",
         "metrics",
-        "pivots"
-      ],
-      "missing_optional": [
-        "currency_code",
-        "cursor",
+        "pivots",
         "dimension_filter",
-        "keep_empty_rows",
-        "max_cell_chars",
-        "max_rows",
         "metric_filter",
         "order_bys",
-        "output_mode",
-        "return_property_quota",
-        "summary_only"
+        "currency_code",
+        "keep_empty_rows",
+        "return_property_quota"
       ],
-      "missing": false
+      "missing_required": [],
+      "missing_optional": [
+        "cursor",
+        "max_cell_chars",
+        "max_rows",
+        "output_mode",
+        "summary_only"
+      ]
     },
     {
       "tool": "run_property_access_report",
       "handler": "RawPropertyRequestArgs",
+      "missing": false,
       "reference_required": [
         "property_id",
         "date_ranges",
@@ -486,12 +477,12 @@
         "output_mode",
         "summary_only",
         "time_zone"
-      ],
-      "missing": false
+      ]
     },
     {
       "tool": "run_realtime_report",
       "handler": "RealtimeArgs",
+      "missing": false,
       "reference_required": [
         "property_id",
         "dimensions",
@@ -528,12 +519,12 @@
         "output_mode",
         "return_property_quota",
         "summary_only"
-      ],
-      "missing": false
+      ]
     },
     {
       "tool": "run_report",
       "handler": "ReportArgs",
+      "missing": false,
       "reference_required": [
         "property_id",
         "date_ranges",
@@ -575,12 +566,12 @@
         "output_mode",
         "return_property_quota",
         "summary_only"
-      ],
-      "missing": false
+      ]
     },
     {
       "tool": "scratchpad_close_session",
       "handler": "ScratchSessionArgs",
+      "missing": false,
       "reference_required": [
         "session_id"
       ],
@@ -589,12 +580,12 @@
         "session_id"
       ],
       "missing_required": [],
-      "missing_optional": [],
-      "missing": false
+      "missing_optional": []
     },
     {
       "tool": "scratchpad_describe_table",
-      "handler": "NOT IMPLEMENTED",
+      "handler": "ScratchReadTableArgs",
+      "missing": false,
       "reference_required": [
         "session_id",
         "table_name"
@@ -606,23 +597,23 @@
         "output_mode",
         "summary_only"
       ],
-      "native_declared_fields": [],
-      "missing_required": [
+      "native_declared_fields": [
         "session_id",
         "table_name"
       ],
+      "missing_required": [],
       "missing_optional": [
         "cursor",
         "max_cell_chars",
         "max_rows",
         "output_mode",
         "summary_only"
-      ],
-      "missing": true
+      ]
     },
     {
       "tool": "scratchpad_drop_table",
       "handler": "ScratchTableArgs",
+      "missing": false,
       "reference_required": [
         "session_id",
         "table_name"
@@ -632,19 +623,16 @@
       ],
       "native_declared_fields": [
         "session_id",
-        "table"
-      ],
-      "missing_required": [
-        "table_name"
-      ],
-      "missing_optional": [
+        "table_name",
         "if_exists"
       ],
-      "missing": false
+      "missing_required": [],
+      "missing_optional": []
     },
     {
       "tool": "scratchpad_export_evidence_bundle",
       "handler": "NOT IMPLEMENTED",
+      "missing": true,
       "reference_required": [
         "session_id"
       ],
@@ -659,22 +647,22 @@
       "missing_optional": [
         "sample_rows_per_table",
         "table_names"
-      ],
-      "missing": true
+      ]
     },
     {
       "tool": "scratchpad_get_runtime_limits",
       "handler": "NoArgs",
+      "missing": false,
       "reference_required": [],
       "reference_optional": [],
       "native_declared_fields": [],
       "missing_required": [],
-      "missing_optional": [],
-      "missing": false
+      "missing_optional": []
     },
     {
       "tool": "scratchpad_ingest_realtime_report",
       "handler": "NOT IMPLEMENTED",
+      "missing": true,
       "reference_required": [
         "session_id",
         "table_name",
@@ -717,12 +705,12 @@
         "output_mode",
         "return_property_quota",
         "summary_only"
-      ],
-      "missing": true
+      ]
     },
     {
       "tool": "scratchpad_ingest_report",
       "handler": "NOT IMPLEMENTED",
+      "missing": true,
       "reference_required": [
         "session_id",
         "table_name",
@@ -769,12 +757,12 @@
         "output_mode",
         "return_property_quota",
         "summary_only"
-      ],
-      "missing": true
+      ]
     },
     {
       "tool": "scratchpad_landing_param_shift_report",
       "handler": "NOT IMPLEMENTED",
+      "missing": true,
       "reference_required": [
         "session_id",
         "table_name",
@@ -815,26 +803,26 @@
         "summary_only",
         "top_n",
         "transition_days"
-      ],
-      "missing": true
+      ]
     },
     {
       "tool": "scratchpad_list_sessions",
-      "handler": "NoArgs",
+      "handler": "ScratchListArgs",
+      "missing": false,
       "reference_required": [],
       "reference_optional": [
         "limit"
       ],
-      "native_declared_fields": [],
-      "missing_required": [],
-      "missing_optional": [
+      "native_declared_fields": [
         "limit"
       ],
-      "missing": false
+      "missing_required": [],
+      "missing_optional": []
     },
     {
       "tool": "scratchpad_list_tables",
-      "handler": "ScratchSessionArgs",
+      "handler": "ScratchListTablesArgs",
+      "missing": false,
       "reference_required": [
         "session_id"
       ],
@@ -842,31 +830,30 @@
         "limit"
       ],
       "native_declared_fields": [
-        "session_id"
-      ],
-      "missing_required": [],
-      "missing_optional": [
+        "session_id",
         "limit"
       ],
-      "missing": false
+      "missing_required": [],
+      "missing_optional": []
     },
     {
       "tool": "scratchpad_open_session",
-      "handler": "NoArgs",
+      "handler": "ScratchOpenArgs",
+      "missing": false,
       "reference_required": [
         "session_id"
       ],
       "reference_optional": [],
-      "native_declared_fields": [],
-      "missing_required": [
+      "native_declared_fields": [
         "session_id"
       ],
-      "missing_optional": [],
-      "missing": false
+      "missing_required": [],
+      "missing_optional": []
     },
     {
       "tool": "scratchpad_query",
       "handler": "NOT IMPLEMENTED",
+      "missing": true,
       "reference_required": [
         "session_id",
         "sql"
@@ -889,12 +876,12 @@
         "max_rows",
         "output_mode",
         "summary_only"
-      ],
-      "missing": true
+      ]
     },
     {
       "tool": "scratchpad_release_regression_report",
       "handler": "NOT IMPLEMENTED",
+      "missing": true,
       "reference_required": [
         "session_id",
         "table_name",
@@ -935,29 +922,28 @@
         "pre_days",
         "summary_only",
         "transition_days"
-      ],
-      "missing": true
+      ]
     },
     {
       "tool": "scratchpad_set_runtime_limits",
       "handler": "ScratchLimitArgs",
+      "missing": false,
       "reference_required": [],
       "reference_optional": [
         "max_sessions",
         "max_tables_per_session"
       ],
       "native_declared_fields": [
-        "max_sessions"
-      ],
-      "missing_required": [],
-      "missing_optional": [
+        "max_sessions",
         "max_tables_per_session"
       ],
-      "missing": false
+      "missing_required": [],
+      "missing_optional": []
     },
     {
       "tool": "scratchpad_summarize_table",
-      "handler": "NOT IMPLEMENTED",
+      "handler": "ScratchReadTableArgs",
+      "missing": false,
       "reference_required": [
         "session_id",
         "table_name"
@@ -969,19 +955,18 @@
         "output_mode",
         "summary_only"
       ],
-      "native_declared_fields": [],
-      "missing_required": [
+      "native_declared_fields": [
         "session_id",
         "table_name"
       ],
+      "missing_required": [],
       "missing_optional": [
         "cursor",
         "max_cell_chars",
         "max_rows",
         "output_mode",
         "summary_only"
-      ],
-      "missing": true
+      ]
     }
   ]
 }
