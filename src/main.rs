@@ -606,11 +606,21 @@ struct PropertyAccessArgs {
     #[serde(default)]
     order_bys: Option<Vec<Value>>,
     #[serde(default)]
-    limit: Option<u32>,
+    limit: Option<u64>,
     #[serde(default)]
     offset: Option<u64>,
     #[serde(default)]
     time_zone: Option<String>,
+    #[serde(default)]
+    max_rows: Option<usize>,
+    #[serde(default)]
+    max_cell_chars: Option<usize>,
+    #[serde(default)]
+    summary_only: bool,
+    #[serde(default)]
+    output_mode: Option<tabular::OutputMode>,
+    #[serde(default)]
+    cursor: Option<String>,
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
@@ -629,11 +639,21 @@ struct AccountAccessArgs {
     #[serde(default)]
     order_bys: Option<Vec<Value>>,
     #[serde(default)]
-    limit: Option<u32>,
+    limit: Option<u64>,
     #[serde(default)]
     offset: Option<u64>,
     #[serde(default)]
     time_zone: Option<String>,
+    #[serde(default)]
+    max_rows: Option<usize>,
+    #[serde(default)]
+    max_cell_chars: Option<usize>,
+    #[serde(default)]
+    summary_only: bool,
+    #[serde(default)]
+    output_mode: Option<tabular::OutputMode>,
+    #[serde(default)]
+    cursor: Option<String>,
 }
 
 fn default_return_property_quota() -> bool {
@@ -1300,6 +1320,17 @@ impl Synmetra {
         &self,
         Parameters(args): Parameters<PropertyAccessArgs>,
     ) -> CallToolResult {
+        let controls = tabular::Controls {
+            output_mode: args.output_mode,
+            summary_only: args.summary_only,
+            max_rows: args.max_rows,
+            max_cell_chars: args.max_cell_chars,
+            cursor_supplied: args.cursor.is_some(),
+        };
+        let limit = match controls.request_limit(args.limit) {
+            Ok(limit) => limit,
+            Err(error) => return result(Err(error)),
+        };
         let request = google::access_report_request(google::AccessReportSpec {
             date_ranges: args.date_ranges,
             dimensions: args.dimensions,
@@ -1307,14 +1338,35 @@ impl Synmetra {
             dimension_filter: args.dimension_filter,
             metric_filter: args.metric_filter,
             order_bys: args.order_bys,
-            limit: args.limit,
+            limit,
             offset: args.offset,
             time_zone: args.time_zone,
         });
-        result(match request {
-            Ok(body) => self.api.access_report(&args.property_id, body, false).await,
-            Err(error) => Err(error),
-        })
+        let (response, pagination) = match request {
+            Ok(mut body) => {
+                let page = if controls.active() {
+                    match tabular::prepare_access(
+                        &mut body,
+                        &args.property_id,
+                        false,
+                        args.cursor.as_deref(),
+                        args.offset,
+                    ) {
+                        Ok(page) => Some(page),
+                        Err(error) => return result(Err(error)),
+                    }
+                } else {
+                    None
+                };
+                (self.api.access_report(&args.property_id, body, false).await, page)
+            }
+            Err(error) => (Err(error), None),
+        };
+        if controls.active() {
+            result_with_tabular_projection(response, controls, false, pagination.as_ref())
+        } else {
+            result(response)
+        }
     }
 
     #[tool(
@@ -1330,6 +1382,17 @@ impl Synmetra {
         &self,
         Parameters(args): Parameters<AccountAccessArgs>,
     ) -> CallToolResult {
+        let controls = tabular::Controls {
+            output_mode: args.output_mode,
+            summary_only: args.summary_only,
+            max_rows: args.max_rows,
+            max_cell_chars: args.max_cell_chars,
+            cursor_supplied: args.cursor.is_some(),
+        };
+        let limit = match controls.request_limit(args.limit) {
+            Ok(limit) => limit,
+            Err(error) => return result(Err(error)),
+        };
         let request = google::access_report_request(google::AccessReportSpec {
             date_ranges: args.date_ranges,
             dimensions: args.dimensions,
@@ -1337,14 +1400,35 @@ impl Synmetra {
             dimension_filter: args.dimension_filter,
             metric_filter: args.metric_filter,
             order_bys: args.order_bys,
-            limit: args.limit,
+            limit,
             offset: args.offset,
             time_zone: args.time_zone,
         });
-        result(match request {
-            Ok(body) => self.api.access_report(&args.account_id, body, true).await,
-            Err(error) => Err(error),
-        })
+        let (response, pagination) = match request {
+            Ok(mut body) => {
+                let page = if controls.active() {
+                    match tabular::prepare_access(
+                        &mut body,
+                        &args.account_id,
+                        true,
+                        args.cursor.as_deref(),
+                        args.offset,
+                    ) {
+                        Ok(page) => Some(page),
+                        Err(error) => return result(Err(error)),
+                    }
+                } else {
+                    None
+                };
+                (self.api.access_report(&args.account_id, body, true).await, page)
+            }
+            Err(error) => (Err(error), None),
+        };
+        if controls.active() {
+            result_with_tabular_projection(response, controls, false, pagination.as_ref())
+        } else {
+            result(response)
+        }
     }
 
     #[tool(
