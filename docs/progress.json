@@ -2933,7 +2933,7 @@
               "id": "T152",
               "emoji": "🩺",
               "name": "Implement ga4_auth_status",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Native CLI guidance and MCP schema parity for ga4_auth_status",
               "checks": [
                 {
@@ -2943,7 +2943,8 @@
                 },
                 {
                   "text": "Native CLI guidance and MCP schema parity for ga4_auth_status",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs enforces ga4_auth_status verify_token type/default/description/optional required status against pinned SednaLabs inputSchema and tests opt-out plus explicitly authorized mock Google account-summary verification without exposing credential/account details; src/auth.rs native auth status guidance. GitHub Actions 40224853636 core job passed Rust tests, formatting, Clippy and ledger. This task does not certify entire upstream response parity or live Google acceptance."
                 }
               ]
             },
