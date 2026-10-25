@@ -2027,16 +2027,18 @@
               "id": "T104",
               "emoji": "🛒",
               "name": "Support conversion and attribution reporting v1alpha",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "Eligible and ineligible properties/errors tested",
               "checks": [
                 {
                   "text": "Deliver support conversion and attribution reporting v1alpha as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs conversion_spec normalizes and bounds supported v1alpha attribution models and conversion metrics; src/main.rs run_conversions_report calls the Google v1alpha runReport endpoint with conversionSpec and optional bounded tabular projection/cursor. Test conversion_report_opt_in_projection_uses_alpha_endpoint_and_bounded_response asserts a synthetic eligible response and exact endpoint. GitHub Actions 40240559437 core CI passed; native DuckDB job was still in progress at acceptance time."
                 },
                 {
                   "text": "Eligible and ineligible properties/errors tested",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs conversion_eligibility_and_permission_errors_remain_typed_and_private tests simulated provider-specific 400 eligibility and 403 permission denials, preserving status and upstream category while redacting token and private error body; conversion_report_denial_and_invalid_spec_fail_without_sensitive_output checks validation failure before network and access denial. Mock eligible v1alpha 200 response tested separately. GitHub Actions 40240559437 core Rust tests, rustfmt and Clippy passed. No live Google eligibility or account authorization claim; separate M8 live tests remain open."
                 }
               ]
             },

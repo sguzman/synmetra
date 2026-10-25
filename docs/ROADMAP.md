@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `████░░░░░░ 39.2%` · **+39.21 percentage points from initial empty repo; +0.88 pp from CI-verified read-only retries and quota/permission handling** · 65/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `████░░░░░░ 39.6%` · **+39.65 percentage points from initial empty repo; +0.44 pp from CI-tested v1alpha conversion eligibility and denial fixtures** · 66/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -245,7 +245,7 @@
   - ✅ **Gate:** No stale cross-principal cache confusion
 
 
-## 📊 M4 — Reporting, preflight and Data API parity — `█████████░ 88.3%`
+## 📊 M4 — Reporting, preflight and Data API parity — `█████████░ 91.7%`
 
 **Scope:** MVP. **Acceptance gate:** All report tools return correct GA4 semantics, including documented alpha, pagination and response projections.
 
@@ -289,7 +289,7 @@
 - 📝 **T097 — Normalize input values without silent coercion** — `██████████ 100.0%`
   - ✅ **Gate:** Lossless valid requests and typed invalid results · **Evidence:** src/google.rs: canonical normalization of dates and typed invalid-request rejection before Google API calls; synthetic unit tests passed GitHub Actions core 40212316165. Full filter and pivot coercion and live API parity remain open.; src/google.rs normalized_report_body_preserves_valid_inputs_and_rejects_ambiguous_values round-trips relative and leap-day dates, nested dimension filters, exact signed-64 metric values, ordering, dimensions and decimal string limits without silent coercion; invalid overflow, non-finite numbers, nonnumeric filter inputs and ambiguous date aliases yield typed INVALID_REQUEST. numeric_metric_filter_preserves_i64_edges_and_rejects_overflow adds signed boundary coverage. GitHub Actions 40237203370 passed core Rust tests, fmt, strict Clippy and native DuckDB. This does not certify Google's semantic validity for arbitrary field names.
 
-### 📐 P12 — Data request fidelity and limits — `█████████░ 93.3%`
+### 📐 P12 — Data request fidelity and limits — `██████████ 100.0%`
 
 **Feature:** Reporting correctness.
 
@@ -305,8 +305,8 @@
   - ✅ **Gate:** Five-report constraint and distinct report results preserved · **Evidence:** src/google.rs data_operation rejects batches with 0 or >5 requests; Actions 40202015488 passed guards; src/main.rs BatchReportItemArgs typed snake_case-to-Google normalization and batch_reports_normalize_separate_requests_and_preserve_distinct_results mock HTTP test preserve distinct first/second reports without cross-contamination; batch_report_five_item_boundary_is_enforced_before_google_credentials proves empty and six requests fail with INVALID_REQUEST while exactly five proceed to missing credentials; google.rs rejects_invalid_batch_without_http_request guards counts. GitHub Actions 40228564460 core tests, formatting and Clippy passed. Full SednaLabs batch output controls and live Google parity remain open on T088/T155 follow-up.
 - 🧪 **T103 — Support funnel steps segments trended and breakdown** — `██████████ 100.0%`
   - ✅ **Gate:** Complex v1alpha funnel shapes round-trip · **Evidence:** src/google.rs funnel_request and funnel_request_options normalize v1alpha event or filter expression steps, prior-step sequencing/duration, up to four segments, breakdown and next-action controls, open/trended visualization, quota flag and bounded dimension filtering; src/main.rs run_funnel_report calls the v1alpha Google endpoint. Complex funnel fixture and API mock tests run in GitHub Actions 40239266063 with both core and DuckDB jobs passing.; src/google.rs complex_funnel_steps_segments_breakdown_and_trended_options_round_trip, funnel_steps_preserve_sequencing_durations_and_bounded_breakdown_limits, and funnel_nullable_optionals_and_unknown_fields_have_explicit_semantics verify multi-step v1alpha JSON round-trip, null handling, aliases, invalid first-step sequencing, malformed durations, and conflicting or unknown fields. GitHub Actions 40239266063 passed. This gate does not certify live property eligibility or all SednaLabs response semantics.
-- 🛒 **T104 — Support conversion and attribution reporting v1alpha** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Eligible and ineligible properties/errors tested
+- 🛒 **T104 — Support conversion and attribution reporting v1alpha** — `██████████ 100.0%`
+  - ✅ **Gate:** Eligible and ineligible properties/errors tested · **Evidence:** src/google.rs conversion_spec normalizes and bounds supported v1alpha attribution models and conversion metrics; src/main.rs run_conversions_report calls the Google v1alpha runReport endpoint with conversionSpec and optional bounded tabular projection/cursor. Test conversion_report_opt_in_projection_uses_alpha_endpoint_and_bounded_response asserts a synthetic eligible response and exact endpoint. GitHub Actions 40240559437 core CI passed; native DuckDB job was still in progress at acceptance time.; src/main.rs conversion_eligibility_and_permission_errors_remain_typed_and_private tests simulated provider-specific 400 eligibility and 403 permission denials, preserving status and upstream category while redacting token and private error body; conversion_report_denial_and_invalid_spec_fail_without_sensitive_output checks validation failure before network and access denial. Mock eligible v1alpha 200 response tested separately. GitHub Actions 40240559437 core Rust tests, rustfmt and Clippy passed. No live Google eligibility or account authorization claim; separate M8 live tests remain open.
 - 💵 **T105 — Preserve currency timezone and numeric precision** — `██████████ 100.0%`
   - ✅ **Gate:** Typed metrics and currency metadata retained · **Evidence:** src/main.rs forwards caller-supplied currency_code as Google currencyCode in native standard, conversion and pivot requests, and forwards time_zone to Admin access report requests; src/google.rs access_report_request validates IANA-style zone syntax and report_currency_request_remains_exact_and_numeric_filter_is_not_rounded checks currency request mapping. src/tabular.rs retains provider metadata including currencyCode/timeZone and exact TYPE_CURRENCY column header type. CI 40237637016 passed core+native DuckDB.; src/tabular.rs numeric_metric_precision_and_currency_metadata_survive_text_clipping reproduces loss of precision with long decimal metric strings under max_cell_chars, then verifies metric values are now kept byte-for-byte while Unicode dimension labels are clipped and meta.ga4.metadata retains currencyCode MXN and timeZone America/Mexico_City; meta.columns[*].ga4_type preserves TYPE_CURRENCY. src/google.rs access_reports_use_admin_field_names_and_reject_invalid_ranges tests forwarded timeZone. GitHub Actions 40237637016 passed fmt, Rust tests, strict Clippy, progress validation and DuckDB. No licensed live GA property validation is inferred.
 - 📊 **T106 — Support output modes rows tuples scalar compact** — `██████████ 100.0%`
