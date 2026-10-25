@@ -33,7 +33,7 @@ jobs:
 
   duckdb:
     concurrency:
-      group: synmetra-${{ github.workflow }}-${{ github.ref }}-code
+      group: synmetra-duckdb-${{ github.sha }}
       cancel-in-progress: false
     runs-on: ubuntu-latest
     timeout-minutes: 70

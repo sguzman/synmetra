@@ -450,6 +450,38 @@ mod tests {
     use super::*;
 
     #[test]
+    fn evidence_export_handles_quoted_columns_nulls_and_bounded_text_cells() {
+        let state = ScratchState::new();
+        state.open("private_test").unwrap();
+        {
+            let mut inner = state.guard().unwrap();
+            let db = &inner.sessions.get_mut("private_test").unwrap().db;
+            db.execute_batch(
+                "CREATE TABLE quoted (\"odd\"\"label\" VARCHAR, qty INTEGER, note VARCHAR);
+                 INSERT INTO quoted VALUES ('value', 7, NULL);
+                 CREATE TABLE too_long (value VARCHAR);
+                 INSERT INTO too_long VALUES (repeat('x', 3000));",
+            )
+            .unwrap();
+        }
+        let evidence = state
+            .export_evidence_bundle("private_test", Some(vec!["quoted".into()]), Some(1))
+            .unwrap();
+        let sample = &evidence["tables"][0]["sample_rows"][0];
+        assert_eq!(sample["odd\"label"], "value");
+        assert_eq!(sample["qty"], "7");
+        assert!(sample["note"].is_null());
+        assert_eq!(evidence["sample_cell_encoding"], "bounded_text");
+        assert!(state
+            .export_evidence_bundle("private_test", Some(vec!["too_long".into()]), Some(1))
+            .is_err());
+        let empty = state
+            .export_evidence_bundle("private_test", Some(vec!["quoted".into()]), Some(0))
+            .unwrap();
+        assert_eq!(empty["tables"][0]["sample_rows"].as_array().unwrap().len(), 0);
+    }
+
+    #[test]
     fn named_session_refresh_and_lifecycle() {
         let state = ScratchState::new();
         assert!(state.open("../unsafe").is_err());
