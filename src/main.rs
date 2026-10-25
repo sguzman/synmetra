@@ -614,6 +614,46 @@ impl Synmetra {
     }
 }
 
+
+#[cfg(feature = "scratchpad")]
+#[tool_router(router = scratch_tool_router)]
+impl Synmetra {
+    #[tool(description = "Open a private in-memory DuckDB session.", annotations(read_only_hint = false, destructive_hint = false, idempotent_hint = false, open_world_hint = false))]
+    fn scratchpad_open_session(&self) -> CallToolResult {
+        local_result(self.scratchpad.as_ref().expect("scratchpad capability required").open())
+    }
+
+    #[tool(description = "Close a private DuckDB session and destroy its tables.", annotations(read_only_hint = false, destructive_hint = true, idempotent_hint = false, open_world_hint = false))]
+    fn scratchpad_close_session(&self, Parameters(args): Parameters<ScratchSessionArgs>) -> CallToolResult {
+        local_result(self.scratchpad.as_ref().expect("scratchpad capability required").close(&args.session_id))
+    }
+
+    #[tool(description = "List currently active local scratchpad sessions.", annotations(read_only_hint = true, destructive_hint = false, idempotent_hint = true, open_world_hint = false))]
+    fn scratchpad_list_sessions(&self) -> CallToolResult {
+        local_result(self.scratchpad.as_ref().expect("scratchpad capability required").sessions())
+    }
+
+    #[tool(description = "Read hard-bounded scratchpad limits.", annotations(read_only_hint = true, destructive_hint = false, idempotent_hint = true, open_world_hint = false))]
+    fn scratchpad_get_runtime_limits(&self) -> CallToolResult {
+        local_result(self.scratchpad.as_ref().expect("scratchpad capability required").limits())
+    }
+
+    #[tool(description = "Set the bounded local session quota.", annotations(read_only_hint = false, destructive_hint = false, idempotent_hint = true, open_world_hint = false))]
+    fn scratchpad_set_runtime_limits(&self, Parameters(args): Parameters<ScratchLimitArgs>) -> CallToolResult {
+        local_result(self.scratchpad.as_ref().expect("scratchpad capability required").set_limits(args.max_sessions))
+    }
+
+    #[tool(description = "List DuckDB tables in one private session.", annotations(read_only_hint = true, destructive_hint = false, idempotent_hint = true, open_world_hint = false))]
+    fn scratchpad_list_tables(&self, Parameters(args): Parameters<ScratchSessionArgs>) -> CallToolResult {
+        local_result(self.scratchpad.as_ref().expect("scratchpad capability required").tables(&args.session_id))
+    }
+
+    #[tool(description = "Drop one validated local DuckDB table.", annotations(read_only_hint = false, destructive_hint = true, idempotent_hint = true, open_world_hint = false))]
+    fn scratchpad_drop_table(&self, Parameters(args): Parameters<ScratchTableArgs>) -> CallToolResult {
+        local_result(self.scratchpad.as_ref().expect("scratchpad capability required").drop_table(&args.session_id, &args.table))
+    }
+}
+
 #[tool_handler(
     router = self.router,
     name = "synmetra",
@@ -822,6 +862,17 @@ mod tests {
         };
         let result = server.preview_report_request(Parameters(bad)).await;
         assert_eq!(result.is_error, Some(true));
+    }
+
+    #[cfg(feature = "scratchpad")]
+    #[test]
+    fn scratchpad_tools_are_hidden_without_explicit_capability() {
+        let base = Synmetra::new(GoogleClient::new(None), false);
+        assert_eq!(base.router.list_all().len(), 20);
+        let enabled = base.enable_scratchpad();
+        assert_eq!(enabled.router.list_all().len(), 27);
+        assert!(enabled.router.has_route("scratchpad_drop_table"));
+        assert!(!enabled.router.has_route("create_property_annotation"));
     }
 
     #[test]
