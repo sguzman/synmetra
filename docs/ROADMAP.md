@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `████░░░░░░ 43.6%` · **+43.61 percentage points from initial empty repo; +0.44 pp from bounded HTTP payload, concurrency and slow-body acceptance** · 82/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `████░░░░░░ 44.0%` · **+44.05 percentage points from initial empty repo; +0.44 pp from verified separation of MCP protocol and GA tool errors** · 83/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -60,7 +60,7 @@
   - ✅ **Gate:** Document semver and provenance gates
 
 
-## 🔌 M1 — MCP protocol and transport fidelity — `█████░░░░░ 50.0%`
+## 🔌 M1 — MCP protocol and transport fidelity — `█████░░░░░ 54.4%`
 
 **Scope:** MVP. **Acceptance gate:** Spec-conforming native MCP discovery and calls over stdio plus bounded Streamable HTTP; all transport safety tests pass.
 
@@ -106,7 +106,7 @@
 - 🧫 **T033 — Test MCP HTTP inspector interoperability** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** End-to-end tool invocation under loopback and protected remote modes
 
-### 🧾 P04 — MCP schema semantics — `███░░░░░░░ 28.6%`
+### 🧾 P04 — MCP schema semantics — `████░░░░░░ 42.9%`
 
 **Feature:** MCP contract.
 
@@ -118,8 +118,8 @@
   - ✅ **Gate:** Default read-only excludes writes and scratchpad effects
 - ♻️ **T037 — Honor deterministic pagination and tool list consistency** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Discovery pagination and list change tests pass
-- ⚠️ **T038 — Normalize MCP protocol errors separately from GA failures** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Invalid tools are distinct from Google API errors
+- ⚠️ **T038 — Normalize MCP protocol errors separately from GA failures** — `██████████ 100.0%`
+  - ✅ **Gate:** Invalid tools are distinct from Google API errors · **Evidence:** src/http.rs json_rpc_protocol_errors_remain_separate_from_ga_validation_results runs a real authenticated MCP initialize, notifications/initialized, unknown JSON-RPC method and valid tools/call with invalid Google property. rmcp returns protocol method-not-found as JSON-RPC error -32601 while Synmetra returns a structured MCP tool result for GA argument validation. No provider call or Google credentials are required.; Synthetic loopback MCP HTTP test verifies unknown method returns top-level error.code=-32601 without result, but invalid run_report returns HTTP 200 JSON-RPC result with isError=true and structuredContent.error.category=validation and no top-level protocol error. Tests also enforce bearer token omission. GitHub Actions 40247087766 passed core tests, rustfmt, strict Clippy and native DuckDB.
 - 🧵 **T039 — Propagate request cancellation across auth and HTTP** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Interrupted calls free resources
 - 🧪 **T040 — Run cross-client MCP conformance suite** — `░░░░░░░░░░ 0.0%`

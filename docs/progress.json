@@ -758,16 +758,18 @@
               "id": "T038",
               "emoji": "⚠️",
               "name": "Normalize MCP protocol errors separately from GA failures",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "Invalid tools are distinct from Google API errors",
               "checks": [
                 {
                   "text": "Deliver normalize mcp protocol errors separately from ga failures as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/http.rs json_rpc_protocol_errors_remain_separate_from_ga_validation_results runs a real authenticated MCP initialize, notifications/initialized, unknown JSON-RPC method and valid tools/call with invalid Google property. rmcp returns protocol method-not-found as JSON-RPC error -32601 while Synmetra returns a structured MCP tool result for GA argument validation. No provider call or Google credentials are required."
                 },
                 {
                   "text": "Invalid tools are distinct from Google API errors",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "Synthetic loopback MCP HTTP test verifies unknown method returns top-level error.code=-32601 without result, but invalid run_report returns HTTP 200 JSON-RPC result with isError=true and structuredContent.error.category=validation and no top-level protocol error. Tests also enforce bearer token omission. GitHub Actions 40247087766 passed core tests, rustfmt, strict Clippy and native DuckDB."
                 }
               ]
             },
