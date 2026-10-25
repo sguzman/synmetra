@@ -1691,7 +1691,7 @@
               "id": "T087",
               "emoji": "🧩",
               "name": "Implement run_pivot_report",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "MCP schema, Google request, golden output and error cases for run_pivot_report",
               "checks": [
                 {
@@ -1701,7 +1701,8 @@
                 },
                 {
                   "text": "MCP schema, Google request, golden output and error cases for run_pivot_report",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs pivot_input_fields_and_required_sets_match_pinned_contract compares all pinned input fields, required set and quota default to the native MCP router; pivot_report_projection_keeps_pivot_header_metadata_without_fake_cursor uses synthetic Google v1beta pivot HTTP response to verify request routing, opt-in rows, true totals, original pivotHeaders under meta.ga4, and nonfabricated next_cursor; core_preflight_and_batch_reject_invalid_input_before_google_calls tests missing pivots; pivot_report_provider_denial_excludes_http_body_and_bearer verifies stable redacted Google HTTP 403. GitHub Actions 40235171004 core passed tests, fmt and strict Clippy. Real Google acceptance, pivot-axis pagination and all-upstream response parity remain open."
                 }
               ]
             },
