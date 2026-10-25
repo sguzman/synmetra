@@ -2313,7 +2313,9 @@ mod tests {
             assert!(
                 schema.get("anyOf").is_some()
                     || schema.get("oneOf").is_some()
-                    || schema["type"].as_array().is_some_and(|types| types.len() >= 2),
+                    || schema["type"]
+                        .as_array()
+                        .is_some_and(|types| types.len() >= 2),
                 "{tool_name} must advertise numeric or text IDs"
             );
         }
