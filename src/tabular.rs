@@ -94,6 +94,32 @@ pub fn prepare_historical(
     explicit_offset: Option<u64>,
 ) -> Result<Pagination, ApiError> {
     let property = crate::google::property_name(property_id)?;
+    prepare_resource(request, &property, cursor, explicit_offset)
+}
+
+/// Account and property data-access reports use the same bounded cursor format
+/// with disjoint canonical resource prefixes in the query fingerprint.
+pub fn prepare_access(
+    request: &mut Value,
+    entity_id: &str,
+    account: bool,
+    cursor: Option<&str>,
+    explicit_offset: Option<u64>,
+) -> Result<Pagination, ApiError> {
+    let entity = if account {
+        crate::google::account_name(entity_id)?
+    } else {
+        crate::google::property_name(entity_id)?
+    };
+    prepare_resource(request, &entity, cursor, explicit_offset)
+}
+
+fn prepare_resource(
+    request: &mut Value,
+    property: &str,
+    cursor: Option<&str>,
+    explicit_offset: Option<u64>,
+) -> Result<Pagination, ApiError> {
     let object = request.as_object_mut().ok_or(ApiError::InvalidRequest)?;
     let mut query = object.clone();
     query.remove("offset");
@@ -143,8 +169,14 @@ fn columns(response: &Value, header: &str, fallback: &str) -> Result<Vec<Value>,
             if !item.is_object() {
                 return Err(ApiError::InvalidResponse);
             }
+            let access_field = if header == "dimensionHeaders" {
+                "dimensionName"
+            } else {
+                "metricName"
+            };
             let name = item
                 .get("name")
+                .or_else(|| item.get(access_field))
                 .and_then(Value::as_str)
                 .filter(|name| !name.is_empty())
                 .map(ToOwned::to_owned)
@@ -434,6 +466,37 @@ mod tests {
             "rows":[{"dimensionValues":[{"value":"US"}],"metricValues":[{"value":"12"}]}]
         });
         assert!(project(&duplicate, controls(), false, None).is_err());
+    }
+
+    #[test]
+    fn admin_access_headers_and_resource_boundaries_have_distinct_cursors() {
+        let response = json!({
+            "dimensionHeaders":[{"dimensionName":"userEmail"}],
+            "metricHeaders":[{"metricName":"accessCount"}],
+            "rows":[{"dimensionValues":[{"value":"private@example.test"}],
+                     "metricValues":[{"value":"5"}]}],
+            "rowCount":2
+        });
+        let mut request = json!({
+            "dateRanges":[{"startDate":"yesterday","endDate":"today"}],
+            "dimensions":[{"dimensionName":"userEmail"}],
+            "metrics":[{"metricName":"accessCount"}],
+            "limit":"1"
+        });
+        let account = prepare_access(&mut request, "41", true, None, None).unwrap();
+        let projected = project(&response, controls(), false, Some(&account)).unwrap();
+        assert_eq!(projected.data[0]["userEmail"], "private@example.test");
+        assert_eq!(projected.data[0]["accessCount"], "5");
+        assert!(projected.meta["next_cursor"].as_str().is_some());
+        let cursor = projected.meta["next_cursor"].as_str().unwrap();
+
+        let mut same = request.clone();
+        let second = prepare_access(&mut same, "accounts/41", true, Some(cursor), None).unwrap();
+        assert_eq!(second.offset, 1);
+        let mut different_resource = request.clone();
+        assert!(prepare_access(&mut different_resource, "41", false, Some(cursor), None).is_err());
+        let mut different_account = request;
+        assert!(prepare_access(&mut different_account, "42", true, Some(cursor), None).is_err());
     }
 
     #[test]
