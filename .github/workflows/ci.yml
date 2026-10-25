@@ -78,6 +78,45 @@ jobs:
             echo "Unexpected credential material in MCP stdout" >&2
             exit 1
           fi
+      - name: Verify native auth doctor and credential-safe CLI failures
+        shell: bash
+        run: |
+          config_root="$(mktemp -d "$RUNNER_TEMP/synmetra-auth-smoke.XXXXXX")"
+          trap 'rm -rf "$config_root"' EXIT
+          XDG_CONFIG_HOME="$config_root" target/debug/synmetra auth doctor \
+            > "$RUNNER_TEMP/synmetra-doctor-setup.txt"
+          grep -Fq 'To configure native OAuth:' "$RUNNER_TEMP/synmetra-doctor-setup.txt"
+          grep -Fq 'Google Analytics Admin and Data APIs must be enabled' "$RUNNER_TEMP/synmetra-doctor-setup.txt"
+
+          canary='synmetra-doctor-ci-private-canary-903'
+          SYNMETRA_GOOGLE_ACCESS_TOKEN="$canary" XDG_CONFIG_HOME="$config_root" \
+            target/debug/synmetra auth doctor \
+            > "$RUNNER_TEMP/synmetra-doctor-token.txt"
+          grep -Fq '"override_token_present": true' "$RUNNER_TEMP/synmetra-doctor-token.txt"
+          if grep -Fq "$canary" "$RUNNER_TEMP/synmetra-doctor-token.txt"; then
+            echo 'Doctor exposed the synthetic access token' >&2
+            exit 1
+          fi
+
+          XDG_CONFIG_HOME="$config_root" target/debug/synmetra auth status \
+            > "$RUNNER_TEMP/synmetra-auth-status.txt"
+          grep -Fq 'no saved OAuth credentials' "$RUNNER_TEMP/synmetra-auth-status.txt"
+          XDG_CONFIG_HOME="$config_root" target/debug/synmetra auth command \
+            > "$RUNNER_TEMP/synmetra-auth-command.txt"
+          grep -Fq 'synmetra auth login --client-id-file' "$RUNNER_TEMP/synmetra-auth-command.txt"
+
+          if XDG_CONFIG_HOME="$config_root" target/debug/synmetra auth login --headless \
+            > "$RUNNER_TEMP/synmetra-auth-bad.stdout" \
+            2> "$RUNNER_TEMP/synmetra-auth-bad.stderr"; then
+            echo 'Login without OAuth client unexpectedly succeeded' >&2
+            exit 1
+          fi
+          grep -Fq 'OAuth login requires --client-id-file' "$RUNNER_TEMP/synmetra-auth-bad.stderr"
+          test ! -s "$RUNNER_TEMP/synmetra-auth-bad.stdout"
+          XDG_CONFIG_HOME="$config_root" target/debug/synmetra auth logout \
+            > "$RUNNER_TEMP/synmetra-logout.txt"
+          grep -Fq 'Revoke access in your Google account' "$RUNNER_TEMP/synmetra-logout.txt"
+
       - name: Verify progress ledger and pinned contracts
         run: cargo run --locked --bin synmetra-progress
       - name: Verify README and roadmap bars regenerate reproducibly
