@@ -690,7 +690,35 @@ pub fn funnel_request(
             validate_bounded_filter(value)?;
             value.clone()
         };
-        mapped.push(json!({"name":name,"filterExpression":expression}));
+        let mut serialized = json!({"name":name,"filterExpression":expression});
+        if let Some(follows) = object
+            .get("is_directly_followed_by")
+            .or_else(|| object.get("isDirectlyFollowedBy"))
+        {
+            serialized["isDirectlyFollowedBy"] =
+                json!(follows.as_bool().ok_or(ApiError::InvalidRequest)?);
+        }
+        if let Some(duration) = object
+            .get("within_duration_from_prior_step")
+            .or_else(|| object.get("withinDurationFromPriorStep"))
+        {
+            let duration = duration.as_str().ok_or(ApiError::InvalidRequest)?;
+            let numeric = duration.strip_suffix('s').ok_or(ApiError::InvalidRequest)?;
+            let parts = numeric.split('.').collect::<Vec<_>>();
+            if parts.is_empty()
+                || parts.len() > 2
+                || parts[0].is_empty()
+                || parts[0].parse::<u64>().is_err()
+                || (parts.len() == 2
+                    && (parts[1].is_empty()
+                        || parts[1].len() > 9
+                        || !parts[1].bytes().all(|byte| byte.is_ascii_digit())))
+            {
+                return Err(ApiError::InvalidRequest);
+            }
+            serialized["withinDurationFromPriorStep"] = json!(duration);
+        }
+        mapped.push(serialized);
     }
     let dates = match dates {
         Some(dates) => normalize_date_ranges(dates)?,
@@ -710,7 +738,15 @@ pub fn funnel_request(
         if field.trim().is_empty() {
             return Err(ApiError::InvalidRequest);
         }
-        request["funnelBreakdown"] = json!({"breakdownDimension":{"name":field}});
+        let mut spec = json!({"breakdownDimension":{"name":field}});
+        if let Some(limit) = breakdown.get("limit") {
+            let limit = limit.as_u64().ok_or(ApiError::InvalidRequest)?;
+            if limit == 0 || limit > 15 {
+                return Err(ApiError::InvalidRequest);
+            }
+            spec["limit"] = json!(limit.to_string());
+        }
+        request["funnelBreakdown"] = spec;
     }
     if let Some(next_action) = next_action {
         let field = next_action
@@ -724,7 +760,7 @@ pub fn funnel_request(
         let mut action = json!({"nextActionDimension":{"name":field}});
         if let Some(limit) = next_action.get("limit") {
             let amount = limit.as_u64().ok_or(ApiError::InvalidRequest)?;
-            if amount == 0 || amount > 1000 {
+            if amount == 0 || amount > 5 {
                 return Err(ApiError::InvalidRequest);
             }
             action["limit"] = json!(amount.to_string());
@@ -1554,6 +1590,65 @@ mod tests {
                 validate_google_report_response(&invalid),
                 Err(ApiError::InvalidResponse)
             );
+        }
+    }
+
+    #[test]
+    fn funnel_steps_preserve_sequencing_durations_and_bounded_breakdown_limits() {
+        let body = funnel_request(
+            vec![json!({
+                "name":"Purchased",
+                "event":"purchase",
+                "is_directly_followed_by":true,
+                "within_duration_from_prior_step":"3600.5s"
+            })],
+            None,
+            Some(json!({"breakdown_dimension":"deviceCategory","limit":15})),
+            Some(json!({"next_action_dimension":"eventName","limit":5})),
+            None,
+            false,
+        )
+        .unwrap();
+        assert_eq!(body["funnel"]["steps"][0]["isDirectlyFollowedBy"], true);
+        assert_eq!(
+            body["funnel"]["steps"][0]["withinDurationFromPriorStep"],
+            "3600.5s"
+        );
+        assert_eq!(body["funnelBreakdown"]["limit"], "15");
+        assert_eq!(body["funnelNextAction"]["limit"], "5");
+
+        for invalid in ["-2s", "3600", "1.1234567890s", "not-a-duration"] {
+            assert!(funnel_request(
+                vec![json!({"event":"purchase","within_duration_from_prior_step":invalid})],
+                None,
+                None,
+                None,
+                None,
+                false
+            )
+            .is_err());
+        }
+        for invalid in [0, 6, 1000] {
+            assert!(funnel_request(
+                vec![json!({"event":"purchase"})],
+                None,
+                None,
+                Some(json!({"next_action_dimension":"eventName","limit":invalid})),
+                None,
+                false
+            )
+            .is_err());
+        }
+        for invalid in [0, 16] {
+            assert!(funnel_request(
+                vec![json!({"event":"purchase"})],
+                None,
+                Some(json!({"breakdown_dimension":"country","limit":invalid})),
+                None,
+                None,
+                false
+            )
+            .is_err());
         }
     }
 
