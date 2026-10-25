@@ -2,6 +2,8 @@
 mod auth;
 mod google;
 mod http;
+#[cfg(feature = "scratchpad")]
+mod scratchpad;
 
 use google::{annotation_payload, report_request, ApiError, GoogleClient};
 use rmcp::handler::server::router::tool::ToolRouter;
@@ -21,6 +23,8 @@ struct Synmetra {
     api: GoogleClient,
     router: ToolRouter<Self>,
     writes_allowed: bool,
+    #[cfg(feature = "scratchpad")]
+    scratchpad: Option<scratchpad::ScratchState>,
 }
 
 impl Synmetra {
@@ -29,11 +33,61 @@ impl Synmetra {
         if !writes_allowed {
             router.disable_route("create_property_annotation");
         }
+        #[cfg(feature = "scratchpad")]
+        {
+            let mut other = Self::scratch_tool_router();
+            for tool in SCRATCHPAD_TOOL_NAMES {
+                other.disable_route(tool);
+            }
+            router.merge(other);
+        }
         Self {
             api,
             router,
             writes_allowed,
+            #[cfg(feature = "scratchpad")]
+            scratchpad: None,
         }
+    }
+
+    #[cfg(feature = "scratchpad")]
+    fn enable_scratchpad(mut self) -> Self {
+        self.scratchpad = Some(scratchpad::ScratchState::new());
+        for tool in SCRATCHPAD_TOOL_NAMES {
+            self.router.enable_route(tool);
+        }
+        self
+    }
+}
+
+#[cfg(feature = "scratchpad")]
+const SCRATCHPAD_TOOL_NAMES: [&str; 7] = [
+    "scratchpad_open_session", "scratchpad_close_session",
+    "scratchpad_list_sessions", "scratchpad_get_runtime_limits",
+    "scratchpad_set_runtime_limits", "scratchpad_list_tables",
+    "scratchpad_drop_table",
+];
+
+
+#[cfg(feature = "scratchpad")]
+#[derive(Debug, Deserialize, JsonSchema)]
+struct ScratchSessionArgs { session_id: String }
+
+#[cfg(feature = "scratchpad")]
+#[derive(Debug, Deserialize, JsonSchema)]
+struct ScratchTableArgs { session_id: String, table: String }
+
+#[cfg(feature = "scratchpad")]
+#[derive(Debug, Deserialize, JsonSchema)]
+struct ScratchLimitArgs { max_sessions: usize }
+
+#[cfg(feature = "scratchpad")]
+fn local_result(value: Result<Value, String>) -> CallToolResult {
+    match value {
+        Ok(data) => result(Ok(data)),
+        Err(reason) => CallToolResult::error(vec![ContentBlock::text(
+            json!({"ok":false,"error":{"reason":reason}}).to_string(),
+        )]),
     }
 }
 
@@ -587,24 +641,34 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
     let mut loopback = false;
     let mut allow_write = false;
+    let mut scratchpad_requested = false;
     for flag in flags {
         match flag.as_str() {
             "--http-loopback" => loopback = true,
             "--allow-write" => allow_write = true,
+            "--scratchpad" => scratchpad_requested = true,
             _ => {
-                eprintln!("Usage: synmetra serve [--http-loopback] [--allow-write]");
+                eprintln!("Usage: synmetra serve [--http-loopback] [--allow-write] [--scratchpad]");
                 std::process::exit(2);
             }
         }
     }
     if args.len() > 1 && args[1] != "serve" {
-        eprintln!("Usage: synmetra [serve [--http-loopback] [--allow-write]|--version|auth login --client-id-file PATH|auth status|auth logout]\nStarts an experimental read-only MCP stdio server.\nUse synmetra auth login for native read-only OAuth, or SYNMETRA_GOOGLE_ACCESS_TOKEN for a short-lived token.");
+        eprintln!("Usage: synmetra [serve [--http-loopback] [--allow-write] [--scratchpad]|--version|auth login --client-id-file PATH|auth status|auth logout]\nStarts an experimental read-only MCP stdio server.\nUse synmetra auth login for native read-only OAuth, or SYNMETRA_GOOGLE_ACCESS_TOKEN for a short-lived token.");
         std::process::exit(2);
     }
     let server = Synmetra::new(
         GoogleClient::new(std::env::var("SYNMETRA_GOOGLE_ACCESS_TOKEN").ok()),
         allow_write,
     );
+    let server = if scratchpad_requested {
+        #[cfg(feature = "scratchpad")]
+        { server.enable_scratchpad() }
+        #[cfg(not(feature = "scratchpad"))]
+        { return Err("Synmetra binary lacks optional scratchpad feature".into()); }
+    } else {
+        server
+    };
     if loopback {
         return http::serve_loopback(server).await;
     }
