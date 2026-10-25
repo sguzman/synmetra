@@ -3,6 +3,7 @@ name: Rust native MCP and evidence integrity
 on:
   push:
     branches: [main]
+    tags: ["v*"]
   pull_request:
 
 permissions:
@@ -51,8 +52,11 @@ jobs:
         run: cargo test --all-targets --locked --features scratchpad
       - name: Strict Clippy for default Rust MCP
         run: cargo clippy --all-targets --locked -- -D warnings
-      - name: Strict Clippy with DuckDB feature
-        if: steps.native.outputs.changed == 'true'
+      # Feature tests run on every native change. Bundled C++ plus a second
+      # Clippy build exceeds routine runner budgets, so strict feature lint is
+      # a mandatory release-tag gate in addition to default-feature Clippy.
+      - name: Strict Clippy with DuckDB feature (release gate)
+        if: startsWith(github.ref, 'refs/tags/v')
         run: cargo clippy --all-targets --locked --features scratchpad -- -D warnings
       - name: Verify task evidence and pinned MCP union
         run: cargo run --locked --bin synmetra-progress
