@@ -453,7 +453,10 @@ struct BatchReportItemArgs {
 
 impl BatchReportItemArgs {
     fn to_google_request(&self) -> Result<Value, ApiError> {
-        if self.limit.is_some_and(|limit| limit == 0 || limit > 250_000) {
+        if self
+            .limit
+            .is_some_and(|limit| limit == 0 || limit > 250_000)
+        {
             return Err(ApiError::InvalidRequest);
         }
         report_request(
@@ -2157,7 +2160,9 @@ mod tests {
             let read = stream.read(&mut buffer).await.unwrap();
             let request = String::from_utf8_lossy(&buffer[..read]);
             assert!(request.starts_with("POST /v1beta/properties/42:batchRunReports "));
-            assert!(request.contains(r#""dateRanges":[{"endDate":"today","startDate":"yesterday"}]"#));
+            assert!(
+                request.contains(r#""dateRanges":[{"endDate":"today","startDate":"yesterday"}]"#)
+            );
             assert!(request.contains(r#""returnPropertyQuota":true"#));
             assert!(request.contains(r#""name":"activeUsers""#));
             assert!(request.contains(r#""name":"screenPageViews""#));
@@ -2198,8 +2203,14 @@ mod tests {
         responder.await.unwrap();
         assert_eq!(response.is_error, Some(false));
         let body = response.structured_content.unwrap();
-        assert_eq!(body["data"]["reports"][0]["rows"][0]["metricValues"][0]["value"], "17");
-        assert_eq!(body["data"]["reports"][1]["rows"][0]["metricValues"][0]["value"], "23");
+        assert_eq!(
+            body["data"]["reports"][0]["rows"][0]["metricValues"][0]["value"],
+            "17"
+        );
+        assert_eq!(
+            body["data"]["reports"][1]["rows"][0]["metricValues"][0]["value"],
+            "23"
+        );
         assert!(!body.to_string().contains("private-batch-fixture-token"));
     }
 
@@ -2222,7 +2233,7 @@ mod tests {
                 "date_ranges":[{"start_date":"yesterday","end_date":"today"}],
                 "dimensions":[],
                 "metrics":[]
-            })
+            }),
         ] {
             let item = serde_json::from_value::<BatchReportItemArgs>(invalid);
             if let Ok(parsed) = item {
