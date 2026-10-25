@@ -57,3 +57,5 @@ Build and launch the MCP stdio server with `cargo run --bin synmetra -- serve`. 
 **Latest native scratchpad:** Twelve provisional local DuckDB MCP tools are available only with `--features scratchpad` and `serve --scratchpad`, including historical and realtime GA4 ingestion. Sessions are memory-only and inaccessible through Synmetra's HTTP transport. See [scratchpad policy](docs/SCRATCHPAD.md). No live Google authorization has been tested.
 
 **Tool-name implementation coverage:** 35/35 of the pinned SednaLabs tools now have native Rust handlers. Fifteen DuckDB tools require the optional feature and explicit scratchpad capability. All 36 union tools still require full input/output behavioral acceptance; none is certified 100% upstream parity complete.
+
+For implementation-versus-parity semantics, see the [MCP Contract V1 compatibility policy](docs/CONTRACT.md). It documents dual text/structured results, explicit elapsed-time uncertainty, and intentionally disabled write/scratchpad capabilities.

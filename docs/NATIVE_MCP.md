@@ -43,3 +43,5 @@ Account summaries and Google Ads links follow Google Admin API `nextPageToken` a
 ### 📑 Bounded Admin pagination options
 
 `get_account_summaries`, `list_google_ads_links`, and `list_property_annotations` now expose the pinned upstream optional `page_size` and `max_pages` controls. The implementation bounds page size to 1–200, page count to 1–100, total items to 10,000 and aggregate response to 16 MiB, and rejects reused/oversized pagination tokens. Explicitly stopping at a user-specified page count returns `truncated: true` and a `nextPageToken` rather than claiming the collection is complete. Synthetic HTTP tests validate the transmitted `pageSize` and bounded partial-result contract; authorized live account testing is still required.
+
+See the [Contract V1 compatibility policy](CONTRACT.md) for the current dual structured/text envelope, stable error codes, and outstanding response-parity gates.
