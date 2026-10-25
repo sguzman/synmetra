@@ -2357,7 +2357,21 @@ mod tests {
             .find(|tool| tool.name == "ga4_auth_status")
             .expect("registered auth status tool");
         let schema = serde_json::to_value(&tool.input_schema).unwrap();
-        assert_eq!(schema["properties"]["verify_token"]["type"], "boolean");
+        let pinned: Value = serde_json::from_str(include_str!(
+            "../spec/upstream/sednalabs-tool-schema.v1.json"
+        ))
+        .unwrap();
+        let reference = pinned["tools"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|item| item["name"] == "ga4_auth_status")
+            .unwrap();
+        let expected = &reference["inputSchema"]["properties"]["verify_token"];
+        let actual = &schema["properties"]["verify_token"];
+        assert_eq!(actual["type"], expected["type"]);
+        assert_eq!(actual["default"], expected["default"]);
+        assert_eq!(actual["description"], expected["description"]);
         assert!(!schema["required"]
             .as_array()
             .is_some_and(|required| required.iter().any(|v| v == "verify_token")));
