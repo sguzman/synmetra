@@ -28,6 +28,19 @@ jobs:
         run: cargo test --all-targets --locked
       - name: Strict Clippy on default features
         run: cargo clippy --all-targets --locked -- -D warnings
+      - name: Verify native rustls and no Python/OpenSSL runtime boundary
+        shell: bash
+        run: |
+          cargo tree --locked --edges normal,build --prefix none > "$RUNNER_TEMP/synmetra-dependencies.txt"
+          if grep -Eiq '^(openssl|openssl-sys|native-tls|tokio-native-tls|pyo3|pyo3-ffi|python3-sys)( |$)' "$RUNNER_TEMP/synmetra-dependencies.txt"; then
+            echo "Unexpected TLS or Python dependency in native Rust graph" >&2
+            exit 1
+          fi
+          cargo build --locked --bin synmetra
+          if ldd target/debug/synmetra | grep -Eiq 'lib(ssl|crypto|python)'; then
+            echo "Unexpected OpenSSL or Python dynamic runtime linkage" >&2
+            exit 1
+          fi
       - name: Verify progress ledger and pinned contracts
         run: cargo run --locked --bin synmetra-progress
 
