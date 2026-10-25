@@ -252,6 +252,27 @@ mod tests {
         assert!(!names.contains("create_property_annotation"));
     }
 
+    #[tokio::test]
+    async fn in_memory_mcp_client_negotiates_and_calls_read_only_tools() {
+        use rmcp::model::CallToolRequestParams;
+        let (server_stream, client_stream) = tokio::io::duplex(65536);
+        let worker = tokio::spawn(async move {
+            let server = Synmetra { api: GoogleClient::new(None) };
+            server.serve(server_stream).await.unwrap().waiting().await.unwrap();
+        });
+        let client = ().serve(client_stream).await.unwrap();
+        let tools = client.list_all_tools().await.unwrap();
+        assert_eq!(tools.len(), 14);
+        assert!(tools.iter().all(|tool| tool.name != "create_property_annotation"));
+        let call = client.call_tool(CallToolRequestParams::new("get_account_summaries")).await.unwrap();
+        assert_eq!(call.is_error, Some(true));
+        let message = &call.content[0].as_text().unwrap().text;
+        assert!(message.contains("No Google access token"));
+        assert!(!message.contains("test-token"));
+        client.cancel().await.unwrap();
+        worker.await.unwrap();
+    }
+
     #[test]
     fn tool_errors_are_mcp_tool_errors() {
         let result = super::result(Err(ApiError::InvalidIdentifier));
