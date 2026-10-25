@@ -1924,9 +1924,8 @@ mod tests {
                 let mut buffer = [0_u8; 4096];
                 let length = socket.read(&mut buffer).await.unwrap();
                 let request = String::from_utf8_lossy(&buffer[..length]).into_owned();
-                assert!(request.starts_with(
-                    "POST /v1alpha/properties/42/reportingDataAnnotations HTTP/1.1"
-                ));
+                assert!(request
+                    .starts_with("POST /v1alpha/properties/42/reportingDataAnnotations HTTP/1.1"));
                 let body = r#"{"error":{"message":"private upstream detail"}}"#;
                 let response = format!(
                     "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nRetry-After: 1\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
@@ -1941,22 +1940,19 @@ mod tests {
                 &endpoint,
                 &endpoint,
             );
-            let body = annotation_payload(
-                "Release",
-                "2026-10-25",
-                None,
-                None,
-                "BLUE",
-            )
-            .unwrap();
+            let body = annotation_payload("Release", "2026-10-25", None, None, "BLUE").unwrap();
             assert_eq!(
                 client.create_annotation("42", body).await,
                 Err(ApiError::Http(code))
             );
             let request = responder.await.unwrap();
             assert!(!format!("{:?}", ApiError::Http(code)).contains("private"));
-            assert!(request.contains("authorization: Bearer private-annotation-token")
-                || request.to_ascii_lowercase().contains("authorization: bearer private-annotation-token"));
+            assert!(
+                request.contains("authorization: Bearer private-annotation-token")
+                    || request
+                        .to_ascii_lowercase()
+                        .contains("authorization: bearer private-annotation-token")
+            );
         }
     }
 
