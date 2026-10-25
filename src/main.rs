@@ -152,6 +152,29 @@ struct AccountArgs {
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
+struct ConversionArgs {
+    property_id: String,
+    date_ranges: Vec<Value>,
+    dimensions: Vec<String>,
+    metrics: Vec<String>,
+    conversion_spec: Value,
+    #[serde(default)]
+    dimension_filter: Option<Value>,
+    #[serde(default)]
+    metric_filter: Option<Value>,
+    #[serde(default)]
+    order_bys: Option<Vec<Value>>,
+    #[serde(default)]
+    limit: Option<u32>,
+    #[serde(default)]
+    offset: Option<u64>,
+    #[serde(default)]
+    currency_code: Option<String>,
+    #[serde(default)]
+    return_property_quota: bool,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
 struct RawPropertyRequestArgs {
     /// Positive GA4 property number or canonical properties/<id>.
     property_id: String,
@@ -424,13 +447,32 @@ impl Synmetra {
     )]
     async fn run_conversions_report(
         &self,
-        Parameters(args): Parameters<RawPropertyRequestArgs>,
+        Parameters(args): Parameters<ConversionArgs>,
     ) -> CallToolResult {
-        result(
-            self.api
-                .alpha_report(&args.property_id, args.request, false)
-                .await,
-        )
+        let body = google::conversion_spec(
+            &args.conversion_spec, &args.dimensions, &args.metrics
+        ).and_then(|spec| {
+            if args.limit.is_some_and(|v| v == 0 || v > 250_000) {
+                return Err(ApiError::InvalidRequest);
+            }
+            report_request(
+                Some(args.date_ranges), args.dimensions, args.metrics,
+                vec![
+                    ("conversionSpec", Some(spec)),
+                    ("dimensionFilter", args.dimension_filter),
+                    ("metricFilter", args.metric_filter),
+                    ("orderBys", args.order_bys.map(|v| json!(v))),
+                    ("limit", args.limit.map(|v| json!(v.to_string()))),
+                    ("offset", args.offset.map(|v| json!(v.to_string()))),
+                    ("currencyCode", args.currency_code.map(|v| json!(v))),
+                    ("returnPropertyQuota", Some(json!(args.return_property_quota))),
+                ],
+            )
+        });
+        result(match body {
+            Ok(body) => self.api.alpha_report(&args.property_id, body, false).await,
+            Err(error) => Err(error),
+        })
     }
 
     #[tool(

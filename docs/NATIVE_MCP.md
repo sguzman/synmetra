@@ -23,3 +23,5 @@ The new v1alpha conversion and funnel handlers are intentionally **eligibility-s
 Three new read-only setup helpers provide commands and safe credential status without returning tokens, client identifiers, or private paths.
 
 The optional loopback Streamable HTTP transport has an authenticated MCP initialization integration test (GitHub Actions run 40204566566). It does not support public remote multiuser access or TLS. See [HTTP policy](HTTP.md).
+
+The provisional `run_conversions_report` handler now takes the official required fields directly (property ID, date ranges, dimension/metric names and conversion specification). It validates supported v1alpha conversion dimensions/metrics, action identifiers, attributions and the 50-action limit before forming a Google request. SednaLabs' pagination/output projection controls, full response schema and live eligibility still require separate parity acceptance.

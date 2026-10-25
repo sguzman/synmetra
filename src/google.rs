@@ -396,6 +396,57 @@ impl GoogleClient {
     }
 }
 
+
+/// Normalize and validate Google's v1alpha conversion report specification.
+/// Schema differs from historical GA4 Core Data reports.
+pub fn conversion_spec(
+    spec: &Value, dimensions: &[String], metrics: &[String],
+) -> Result<Value, ApiError> {
+    const DIMS: &[&str] = &[
+        "campaignName","continent","country","defaultChannelGroup",
+        "deviceCategory","medium","platform","primaryChannelGroup","source",
+        "sourceMedium","sourcePlatform","subcontinent",
+    ];
+    const METRICS: &[&str] = &[
+        "advertiserAdClicks","advertiserAdCost",
+        "advertiserAdCostPerAllConversionsByConversionDate",
+        "advertiserAdCostPerAllConversionsByInteractionDate",
+        "advertiserAdCostPerClick","advertiserAdImpressions",
+        "allConversionsByConversionDate","allConversionsByInteractionDate",
+        "returnOnAdSpendByConversionDate","returnOnAdSpendByInteractionDate",
+        "totalRevenueByConversionDate","totalRevenueByInteractionDate",
+    ];
+    if !spec.is_object()
+        || dimensions.iter().any(|s| !DIMS.contains(&s.as_str()))
+        || metrics.is_empty()
+        || metrics.iter().any(|s| !METRICS.contains(&s.as_str()))
+    {
+        return Err(ApiError::InvalidRequest);
+    }
+    let actions = spec.get("conversion_actions").or_else(|| spec.get("conversionActions"));
+    let actions = match actions {
+        Some(value) => value.as_array().ok_or(ApiError::InvalidRequest)?.clone(),
+        None => Vec::new(),
+    };
+    if actions.len() > 50 || actions.iter().any(|action| {
+        action.as_str().is_none_or(|s| {
+            let Some(id) = s.strip_prefix("conversionActions/") else { return true };
+            id.is_empty() || id.bytes().any(|c| !c.is_ascii_digit())
+        })
+    }) {
+        return Err(ApiError::InvalidRequest);
+    }
+    let model = spec.get("attribution_model").or_else(|| spec.get("attributionModel"));
+    if model.is_some_and(|v| !["DATA_DRIVEN","LAST_CLICK"].contains(&v.as_str().unwrap_or(""))) {
+        return Err(ApiError::InvalidRequest);
+    }
+    let mut result = json!({"conversionActions":actions});
+    if let Some(model) = model {
+        result["attributionModel"] = model.clone();
+    }
+    Ok(result)
+}
+
 /// Google REST APIs accept array entries as objects, not raw field names.
 pub fn report_request(
     dates: Option<Vec<Value>>,
@@ -453,6 +504,23 @@ mod tests {
         io::{AsyncReadExt, AsyncWriteExt},
         net::TcpListener,
     };
+
+    #[test]
+    fn conversion_specs_enforce_alpha_metric_dimension_and_action_limits() {
+        let dim = vec!["country".to_owned()];
+        let metric = vec!["allConversionsByInteractionDate".to_owned()];
+        let converted = conversion_spec(
+            &json!({"conversion_actions":["conversionActions/42"],"attribution_model":"LAST_CLICK"}),
+            &dim, &metric,
+        ).unwrap();
+        assert_eq!(converted["conversionActions"][0], "conversionActions/42");
+        assert_eq!(converted["attributionModel"], "LAST_CLICK");
+        assert!(conversion_spec(&json!({}), &["invalid".into()], &metric).is_err());
+        assert!(conversion_spec(&json!({}), &dim, &["activeUsers".into()]).is_err());
+        assert!(conversion_spec(&json!({"conversion_actions":["../unsafe"]}), &dim, &metric).is_err());
+        assert!(conversion_spec(&json!({"conversion_actions":vec!["conversionActions/5";51]}), &dim, &metric).is_err());
+        assert!(conversion_spec(&json!({"attribution_model":"NOT_A_MODEL"}), &dim, &metric).is_err());
+    }
 
     #[test]
     fn annotation_validates_dates_colors_and_lengths() {
