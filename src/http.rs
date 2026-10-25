@@ -150,7 +150,11 @@ mod tests {
         let task = tokio::spawn(async move {
             axum::serve(
                 listener,
-                app(server, "test-only-token-that-is-long-enough-123".to_owned(), port),
+                app(
+                    server,
+                    "test-only-token-that-is-long-enough-123".to_owned(),
+                    port,
+                ),
             )
             .await
             .unwrap();
@@ -158,7 +162,10 @@ mod tests {
         let endpoint = format!("http://127.0.0.1:{port}/mcp");
         let response = reqwest::Client::new()
             .post(endpoint)
-            .header(header::AUTHORIZATION, "Bearer test-only-token-that-is-long-enough-123")
+            .header(
+                header::AUTHORIZATION,
+                "Bearer test-only-token-that-is-long-enough-123",
+            )
             .header(header::ORIGIN, format!("http://127.0.0.1:{port}"))
             .header(header::ACCEPT, "application/json, text/event-stream")
             .header(header::CONTENT_TYPE, "application/json")
