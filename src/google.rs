@@ -695,13 +695,19 @@ pub fn funnel_request(
             .get("is_directly_followed_by")
             .or_else(|| object.get("isDirectlyFollowedBy"))
         {
-            serialized["isDirectlyFollowedBy"] =
-                json!(follows.as_bool().ok_or(ApiError::InvalidRequest)?);
+            let followed = follows.as_bool().ok_or(ApiError::InvalidRequest)?;
+            if index == 0 && followed {
+                return Err(ApiError::InvalidRequest);
+            }
+            serialized["isDirectlyFollowedBy"] = json!(followed);
         }
         if let Some(duration) = object
             .get("within_duration_from_prior_step")
             .or_else(|| object.get("withinDurationFromPriorStep"))
         {
+            if index == 0 {
+                return Err(ApiError::InvalidRequest);
+            }
             let duration = duration.as_str().ok_or(ApiError::InvalidRequest)?;
             let numeric = duration.strip_suffix('s').ok_or(ApiError::InvalidRequest)?;
             let parts = numeric.split('.').collect::<Vec<_>>();
@@ -1331,6 +1337,100 @@ mod tests {
         ] {
             assert!(funnel_request(bad, None, None, None, None, false).is_err());
         }
+    }
+
+    #[test]
+    fn complex_funnel_steps_segments_breakdown_and_trended_options_round_trip() {
+        let segments = vec![
+            json!({"name":"Purchasers","userSegment":{"userInclusionCriteria":{}}}),
+            json!({"name":"All sessions","sessionSegment":{"sessionInclusionCriteria":{}}}),
+        ];
+        let body = funnel_request(
+            vec![
+                json!({"name":"Browse","event":"page_view"}),
+                json!({
+                    "name":"Add to cart",
+                    "filter_expression":{"funnelEventFilter":{"eventName":"add_to_cart"}},
+                    "is_directly_followed_by":true,
+                    "within_duration_from_prior_step":"3600.5s"
+                }),
+                json!({
+                    "name":"Purchase",
+                    "event":"purchase",
+                    "within_duration_from_prior_step":"86400s"
+                }),
+            ],
+            Some(vec![json!({"start_date":"30daysAgo","end_date":"today"})]),
+            Some(json!({"breakdown_dimension":"deviceCategory","limit":15})),
+            Some(json!({"next_action_dimension":"eventName","limit":5})),
+            Some(segments.clone()),
+            true,
+        )
+        .unwrap();
+        let final_request = funnel_request_options(
+            body,
+            true,
+            Some("TRENDED_FUNNEL"),
+            Some(150),
+            Some(json!("country==MX")),
+        )
+        .unwrap();
+        assert_eq!(final_request["funnel"]["steps"].as_array().unwrap().len(), 3);
+        assert_eq!(
+            final_request["funnel"]["steps"][1]["filterExpression"]["funnelEventFilter"]["eventName"],
+            "add_to_cart"
+        );
+        assert_eq!(final_request["funnel"]["steps"][1]["isDirectlyFollowedBy"], true);
+        assert_eq!(
+            final_request["funnel"]["steps"][1]["withinDurationFromPriorStep"],
+            "3600.5s"
+        );
+        assert_eq!(final_request["funnel"]["steps"][2]["withinDurationFromPriorStep"], "86400s");
+        assert_eq!(final_request["funnel"]["isOpenFunnel"], true);
+        assert_eq!(final_request["funnelVisualizationType"], "TRENDED_FUNNEL");
+        assert_eq!(final_request["funnelBreakdown"]["limit"], "15");
+        assert_eq!(final_request["funnelNextAction"]["limit"], "5");
+        assert_eq!(final_request["segments"], json!(segments));
+        assert_eq!(final_request["returnPropertyQuota"], true);
+        assert_eq!(final_request["limit"], "150");
+        assert_eq!(final_request["dimensionFilter"]["filter"]["fieldName"], "country");
+
+        for bad in [
+            json!({"event":"page_view","is_directly_followed_by":true}),
+            json!({"event":"page_view","within_duration_from_prior_step":"60s"}),
+        ] {
+            assert_eq!(
+                funnel_request(vec![bad], None, None, None, None, false),
+                Err(ApiError::InvalidRequest)
+            );
+        }
+        assert!(funnel_request(
+            vec![json!({"event":"page_view"})],
+            None,
+            Some(json!({"breakdown_dimension":"deviceCategory","limit":16})),
+            None,
+            None,
+            false,
+        )
+        .is_err());
+        assert!(funnel_request(
+            vec![json!({"event":"page_view"})],
+            None,
+            None,
+            Some(json!({"next_action_dimension":"eventName","limit":6})),
+            None,
+            false,
+        )
+        .is_err());
+        assert!(funnel_request(
+            vec![json!({"event":"page_view"})],
+            None,
+            None,
+            None,
+            Some(vec![json!({"name":"segment"}); 5]),
+            false,
+        )
+        .is_err());
     }
 
     #[test]
