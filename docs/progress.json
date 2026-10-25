@@ -1971,7 +1971,7 @@
               "id": "T102",
               "emoji": "📦",
               "name": "Enforce batch report maximums and isolation",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Five-report constraint and distinct report results preserved",
               "checks": [
                 {
@@ -1981,7 +1981,8 @@
                 },
                 {
                   "text": "Five-report constraint and distinct report results preserved",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs BatchReportItemArgs typed snake_case-to-Google normalization and batch_reports_normalize_separate_requests_and_preserve_distinct_results mock HTTP test preserve distinct first/second reports without cross-contamination; batch_report_five_item_boundary_is_enforced_before_google_credentials proves empty and six requests fail with INVALID_REQUEST while exactly five proceed to missing credentials; google.rs rejects_invalid_batch_without_http_request guards counts. GitHub Actions 40228564460 core tests, formatting and Clippy passed. Full SednaLabs batch output controls and live Google parity remain open on T088/T155 follow-up."
                 }
               ]
             },

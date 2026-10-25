@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `███░░░░░░░ 31.5%` · **+31.50 percentage points from initial empty repo; +0.22 pp from adversarial request-size and filter preflight acceptance** · 40/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `███░░░░░░░ 31.7%` · **+31.72 percentage points from initial empty repo; +0.22 pp from verified five-item batch limit and isolated report results** · 41/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -245,7 +245,7 @@
   - ✅ **Gate:** No stale cross-principal cache confusion
 
 
-## 📊 M4 — Reporting, preflight and Data API parity — `███░░░░░░░ 33.3%`
+## 📊 M4 — Reporting, preflight and Data API parity — `████░░░░░░ 35.0%`
 
 **Scope:** MVP. **Acceptance gate:** All report tools return correct GA4 semantics, including documented alpha, pagination and response projections.
 
@@ -289,7 +289,7 @@
 - 📝 **T097 — Normalize input values without silent coercion** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Lossless valid requests and typed invalid results
 
-### 📐 P12 — Data request fidelity and limits — `██░░░░░░░░ 20.0%`
+### 📐 P12 — Data request fidelity and limits — `██░░░░░░░░ 23.3%`
 
 **Feature:** Reporting correctness.
 
@@ -301,8 +301,8 @@
   - ✅ **Gate:** No fake continuation token when GA realtime lacks offset · **Evidence:** src/main.rs RealtimeArgs supports ordering and official offset input; realtime_report_request rejects nonzero offset with a stable UNSUPPORTED_REALTIME_OFFSET before contacting Google because the current Google Data API v1beta RunRealtimeReportRequest has no offset field. Test realtime_nonzero_offset_has_stable_preflight_error passed GitHub Actions 40227043192 core Rust checks.; src/main.rs realtime_mcp_retains_provider_quota_without_fabricating_a_next_cursor uses local synthetic Google HTTP response of rowCount=154 and limit=1; tests verify both data and meta have no fabricated next_cursor while retaining original rowCount. GitHub Actions 40227043192 core job passed. This task is narrow: general historical report cursors and live GA parity remain separate.
 - 🗂️ **T101 — Support pivot report ordering and groups** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Nested pivots and row groups validated by fixtures
-- 📦 **T102 — Enforce batch report maximums and isolation** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Five-report constraint and distinct report results preserved
+- 📦 **T102 — Enforce batch report maximums and isolation** — `██████████ 100.0%`
+  - ✅ **Gate:** Five-report constraint and distinct report results preserved · **Evidence:** src/google.rs data_operation rejects batches with 0 or >5 requests; Actions 40202015488 passed guards; src/main.rs BatchReportItemArgs typed snake_case-to-Google normalization and batch_reports_normalize_separate_requests_and_preserve_distinct_results mock HTTP test preserve distinct first/second reports without cross-contamination; batch_report_five_item_boundary_is_enforced_before_google_credentials proves empty and six requests fail with INVALID_REQUEST while exactly five proceed to missing credentials; google.rs rejects_invalid_batch_without_http_request guards counts. GitHub Actions 40228564460 core tests, formatting and Clippy passed. Full SednaLabs batch output controls and live Google parity remain open on T088/T155 follow-up.
 - 🧪 **T103 — Support funnel steps segments trended and breakdown** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Complex v1alpha funnel shapes round-trip
 - 🛒 **T104 — Support conversion and attribution reporting v1alpha** — `░░░░░░░░░░ 0.0%`
