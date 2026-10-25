@@ -398,7 +398,13 @@ impl GoogleClient {
         request: Value,
         method: &str,
     ) -> Result<Value, ApiError> {
-        let property = property_name(property)?;
+        let property = if method == "checkCompatibility"
+            && (property == "0" || property == "properties/0")
+        {
+            "properties/0".to_owned()
+        } else {
+            property_name(property)?
+        };
         Self::validate_body(&request)?;
         if ![
             "runReport",
@@ -942,6 +948,29 @@ pub fn validate_bounded_filter(filter: &Value) -> Result<(), ApiError> {
     Ok(())
 }
 
+/// Prepare a compatibility-only probe without inventing a report request. Google
+/// accepts property 0 to check universally available dimensions and metrics.
+pub fn compatibility_request(
+    dimensions: Vec<String>,
+    metrics: Vec<String>,
+) -> Result<Value, ApiError> {
+    if dimensions.len() > 9
+        || metrics.len() > 10
+        || dimensions
+            .iter()
+            .chain(metrics.iter())
+            .any(|name| name.is_empty() || name.len() > 128 || name.chars().any(char::is_control))
+    {
+        return Err(ApiError::InvalidRequest);
+    }
+    let body = json!({
+        "dimensions": dimensions.into_iter().map(|name| json!({"name":name})).collect::<Vec<_>>(),
+        "metrics": metrics.into_iter().map(|name| json!({"name":name})).collect::<Vec<_>>()
+    });
+    GoogleClient::validate_body(&body)?;
+    Ok(body)
+}
+
 /// Google REST APIs accept array entries as objects, not raw field names.
 pub fn report_request(
     dates: Option<Vec<Value>>,
@@ -1403,6 +1432,27 @@ mod tests {
         assert_eq!(account_name("123").unwrap(), "accounts/123");
         assert_eq!(account_name("accounts/123").unwrap(), "accounts/123");
         assert!(account_name("properties/5").is_err());
+    }
+
+    #[test]
+    fn compatibility_requests_allow_inventory_or_metric_only_without_report_dates() {
+        let inventory = compatibility_request(vec![], vec![]).unwrap();
+        assert_eq!(inventory, json!({"dimensions":[],"metrics":[]}));
+        assert!(inventory.get("dateRanges").is_none());
+
+        let dimensions = compatibility_request(vec!["country".into()], vec![]).unwrap();
+        assert_eq!(dimensions["dimensions"][0]["name"], "country");
+        let metric = compatibility_request(vec![], vec!["activeUsers".into()]).unwrap();
+        assert_eq!(metric["metrics"][0]["name"], "activeUsers");
+
+        assert_eq!(
+            compatibility_request(vec!["bad\nname".into()], vec![]),
+            Err(ApiError::InvalidRequest)
+        );
+        assert_eq!(
+            compatibility_request(vec![], vec!["activeUsers".into(); 11]),
+            Err(ApiError::InvalidRequest)
+        );
     }
 
     #[test]

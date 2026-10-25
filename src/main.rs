@@ -1167,7 +1167,7 @@ impl Synmetra {
         &self,
         Parameters(args): Parameters<CompatibilityArgs>,
     ) -> CallToolResult {
-        let request = report_request(None, args.dimensions, args.metrics, Vec::new());
+        let request = google::compatibility_request(args.dimensions, args.metrics);
         result(match request {
             Ok(body) => {
                 self.api
@@ -2421,6 +2421,63 @@ mod tests {
         assert_eq!(body["orderBys"][0]["dimension"]["dimensionName"], "country");
         assert_eq!(body["returnPropertyQuota"], true);
         assert!(body.get("offset").is_none());
+    }
+
+    #[tokio::test]
+    async fn compatibility_probe_uses_property_zero_without_a_report_call() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        use tokio::net::TcpListener;
+
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let endpoint = format!("http://{}", listener.local_addr().unwrap());
+        let responder = tokio::spawn(async move {
+            let (mut stream, _) = listener.accept().await.unwrap();
+            let mut buffer = [0_u8; 4096];
+            let n = stream.read(&mut buffer).await.unwrap();
+            let request = String::from_utf8_lossy(&buffer[..n]);
+            assert!(request.starts_with("POST /v1beta/properties/0:checkCompatibility "));
+            assert!(!request.contains(":runReport"));
+            assert!(request.contains(r#""dimensions":[]"#));
+            assert!(request.contains(r#""metrics":[]"#));
+            let body = json!({
+                "dimensionCompatibilities":[{"dimensionMetadata":{"apiName":"country"},"compatibility":"COMPATIBLE"}],
+                "metricCompatibilities":[{"metricMetadata":{"apiName":"activeUsers"},"compatibility":"COMPATIBLE"}]
+            })
+            .to_string();
+            let reply = format!(
+                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                body.len(),
+                body
+            );
+            stream.write_all(reply.as_bytes()).await.unwrap();
+        });
+        let server = Synmetra::new(
+            GoogleClient::with_endpoints(Some("secret-fixture-token".into()), &endpoint, &endpoint),
+            false,
+        );
+        let args: CompatibilityArgs = serde_json::from_value(json!({
+            "property_id":0,
+            "dimensions":[],
+            "metrics":[]
+        }))
+        .unwrap();
+        let response = server.check_report_compatibility(Parameters(args)).await;
+        responder.await.unwrap();
+        assert_eq!(response.is_error, Some(false));
+        let payload = response.structured_content.unwrap();
+        assert_eq!(payload["data"]["dimensionCompatibilities"][0]["compatibility"], "COMPATIBLE");
+        assert_eq!(payload["data"]["metricCompatibilities"][0]["compatibility"], "COMPATIBLE");
+        assert!(!payload.to_string().contains("secret-fixture-token"));
+
+        let invalid = Synmetra::new(GoogleClient::new(None), false)
+            .check_report_compatibility(Parameters(CompatibilityArgs {
+                property_id: "0".into(),
+                dimensions: vec!["bad\nname".into()],
+                metrics: vec![],
+            }))
+            .await;
+        assert_eq!(invalid.is_error, Some(true));
+        assert_eq!(invalid.structured_content.unwrap()["error"]["code"], "INVALID_REQUEST");
     }
 
     #[tokio::test]
