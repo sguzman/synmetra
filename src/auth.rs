@@ -736,11 +736,17 @@ mod tests {
         assert_eq!(clear_credentials_at(&path), Ok(true));
         assert_eq!(clear_credentials_at(&path), Ok(false));
         assert!(!path.exists());
-        assert_eq!(fs::read_to_string(&neighbor).unwrap(), "unrelated application data");
+        assert_eq!(
+            fs::read_to_string(&neighbor).unwrap(),
+            "unrelated application data"
+        );
 
         symlink(&neighbor, &path).unwrap();
         assert!(clear_credentials_at(&path).is_err());
-        assert_eq!(fs::read_to_string(&neighbor).unwrap(), "unrelated application data");
+        assert_eq!(
+            fs::read_to_string(&neighbor).unwrap(),
+            "unrelated application data"
+        );
         fs::remove_file(&path).unwrap();
 
         persist_credentials_at(&path, &stored).unwrap();
