@@ -141,4 +141,44 @@ mod tests {
         assert_eq!(forbidden_origin.status(), StatusCode::UNAUTHORIZED);
         task.abort();
     }
+
+    #[tokio::test]
+    async fn authorized_loopback_http_initializes_real_mcp() {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let server = Synmetra::new(GoogleClient::new(None), false);
+        let task = tokio::spawn(async move {
+            axum::serve(
+                listener,
+                app(server, "test-only-token-that-is-long-enough-123".to_owned(), port),
+            )
+            .await
+            .unwrap();
+        });
+        let endpoint = format!("http://127.0.0.1:{port}/mcp");
+        let response = reqwest::Client::new()
+            .post(endpoint)
+            .header(header::AUTHORIZATION, "Bearer test-only-token-that-is-long-enough-123")
+            .header(header::ORIGIN, format!("http://127.0.0.1:{port}"))
+            .header(header::ACCEPT, "application/json, text/event-stream")
+            .header(header::CONTENT_TYPE, "application/json")
+            .json(&serde_json::json!({
+                "jsonrpc": "2.0",
+                "id": 1,
+                "method": "initialize",
+                "params": {
+                    "protocolVersion": "2025-11-25",
+                    "capabilities": {},
+                    "clientInfo": { "name": "synmetra-synthetic-http-test", "version": "0" }
+                }
+            }))
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        let payload: serde_json::Value = response.json().await.unwrap();
+        assert_eq!(payload["result"]["serverInfo"]["name"], "synmetra");
+        assert!(payload["result"]["capabilities"]["tools"].is_object());
+        task.abort();
+    }
 }
