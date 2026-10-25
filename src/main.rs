@@ -3032,6 +3032,98 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn funnel_subreports_are_projected_independently_with_open_funnel_options() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        use tokio::net::TcpListener;
+
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let endpoint = format!("http://{}", listener.local_addr().unwrap());
+        let responder = tokio::spawn(async move {
+            let (mut stream, _) = listener.accept().await.unwrap();
+            let mut buffer = [0u8; 4096];
+            let n = stream.read(&mut buffer).await.unwrap();
+            let request = String::from_utf8_lossy(&buffer[..n]);
+            assert!(request.contains("properties/42:runFunnelReport"));
+            assert!(request.contains(r#""isOpenFunnel":true"#));
+            assert!(request.contains(r#""funnelVisualizationType":"TRENDED_FUNNEL""#));
+            assert!(request.contains(r#""limit":"1""#));
+            let subreport = json!({
+                "dimensionHeaders":[{"name":"funnelStepName"}],
+                "metricHeaders":[{"name":"activeUsers"}],
+                "rows":[{"dimensionValues":[{"value":"1. Viewed"}],
+                         "metricValues":[{"value":"9"}]}],
+                "rowCount":2
+            });
+            let body = json!({
+                "funnelTable": subreport,
+                "funnelVisualization": subreport,
+                "propertyQuota":{"concurrentRequests":{"remaining":2}}
+            })
+            .to_string();
+            let reply = format!(
+                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                body.len(),
+                body
+            );
+            stream.write_all(reply.as_bytes()).await.unwrap();
+        });
+        let server = Synmetra::new(
+            GoogleClient::with_endpoints(Some("private-funnel-token".into()), &endpoint, &endpoint),
+            false,
+        );
+        let args: FunnelArgs = serde_json::from_value(json!({
+            "property_id":42,
+            "funnel_steps":[{"name":"Viewed","event":"page_view"}],
+            "is_open_funnel":true,
+            "funnel_visualization_type":"TRENDED_FUNNEL",
+            "dimension_filter":"country==US",
+            "limit":10,
+            "max_rows":1,
+            "output_mode":"rows"
+        }))
+        .unwrap();
+        let result = server.run_funnel_report(Parameters(args)).await;
+        responder.await.unwrap();
+        assert_eq!(result.is_error, Some(false));
+        let payload = result.structured_content.unwrap();
+        assert_eq!(payload["data"]["funnel_table"][0]["funnelStepName"], "1. Viewed");
+        assert_eq!(payload["data"]["funnel_visualization"][0]["activeUsers"], "9");
+        assert_eq!(payload["meta"]["funnel_table"]["row_count_total"], 2);
+        assert_eq!(payload["meta"]["funnel_visualization"]["row_count_returned"], 1);
+        assert_eq!(payload["meta"]["ga4"]["propertyQuota"]["concurrentRequests"]["remaining"], 2);
+        assert!(!payload.to_string().contains("private-funnel-token"));
+    }
+
+    #[test]
+    fn funnel_summary_only_keeps_both_total_counts_without_rows() {
+        let subreport = json!({
+            "dimensionHeaders":[{"name":"funnelStepName"}],
+            "metricHeaders":[{"name":"activeUsers"}],
+            "rows":[{"dimensionValues":[{"value":"1. Viewed"}],
+                     "metricValues":[{"value":"9"}]}],
+            "rowCount":4
+        });
+        let controls = tabular::Controls {
+            output_mode: Some(tabular::OutputMode::Tuples),
+            summary_only: true,
+            max_rows: Some(1),
+            max_cell_chars: None,
+            cursor_supplied: false,
+        };
+        let reply = result_with_funnel_projection(
+            Ok(json!({"funnelTable":subreport,"funnelVisualization":subreport})),
+            controls,
+        );
+        assert_eq!(reply.is_error, Some(false));
+        let payload = reply.structured_content.unwrap();
+        assert!(payload["data"]["funnel_table"].is_null());
+        assert!(payload["data"]["funnel_visualization"].is_null());
+        assert_eq!(payload["meta"]["funnel_table"]["row_count_total"], 4);
+        assert_eq!(payload["meta"]["funnel_visualization"]["row_count_total"], 4);
+        assert!(payload["meta"]["funnel_table"]["next_cursor"].is_null());
+    }
+
+    #[tokio::test]
     async fn pivot_report_provider_denial_excludes_http_body_and_bearer() {
         use tokio::io::{AsyncReadExt, AsyncWriteExt};
         use tokio::net::TcpListener;
