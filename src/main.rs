@@ -2465,8 +2465,14 @@ mod tests {
         responder.await.unwrap();
         assert_eq!(response.is_error, Some(false));
         let payload = response.structured_content.unwrap();
-        assert_eq!(payload["data"]["dimensionCompatibilities"][0]["compatibility"], "COMPATIBLE");
-        assert_eq!(payload["data"]["metricCompatibilities"][0]["compatibility"], "COMPATIBLE");
+        assert_eq!(
+            payload["data"]["dimensionCompatibilities"][0]["compatibility"],
+            "COMPATIBLE"
+        );
+        assert_eq!(
+            payload["data"]["metricCompatibilities"][0]["compatibility"],
+            "COMPATIBLE"
+        );
         assert!(!payload.to_string().contains("secret-fixture-token"));
 
         let invalid = Synmetra::new(GoogleClient::new(None), false)
@@ -2477,7 +2483,10 @@ mod tests {
             }))
             .await;
         assert_eq!(invalid.is_error, Some(true));
-        assert_eq!(invalid.structured_content.unwrap()["error"]["code"], "INVALID_REQUEST");
+        assert_eq!(
+            invalid.structured_content.unwrap()["error"]["code"],
+            "INVALID_REQUEST"
+        );
     }
 
     #[tokio::test]

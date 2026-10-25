@@ -398,13 +398,12 @@ impl GoogleClient {
         request: Value,
         method: &str,
     ) -> Result<Value, ApiError> {
-        let property = if method == "checkCompatibility"
-            && (property == "0" || property == "properties/0")
-        {
-            "properties/0".to_owned()
-        } else {
-            property_name(property)?
-        };
+        let property =
+            if method == "checkCompatibility" && (property == "0" || property == "properties/0") {
+                "properties/0".to_owned()
+            } else {
+                property_name(property)?
+            };
         Self::validate_body(&request)?;
         if ![
             "runReport",
