@@ -2164,36 +2164,36 @@ mod tests {
     #[test]
     fn mcp_text_envelopes_have_stable_error_categories_and_explicit_unmeasured_timing() {
         let success = result(Ok(json!({"rows":[]})));
-        let output: Value = serde_json::from_str(&success.content[0].as_text().unwrap().text)
-            .unwrap();
+        let output: Value =
+            serde_json::from_str(&success.content[0].as_text().unwrap().text).unwrap();
         assert_eq!(output["ok"], true);
         assert!(output["data"]["rows"].is_array());
         assert_eq!(output["meta"]["elapsed_ms"], 0);
         assert_eq!(output["meta"]["elapsed_ms_measured"], false);
 
         let invalid = result(Err(ApiError::InvalidIdentifier));
-        let failure: Value = serde_json::from_str(
-            &invalid.content[0].as_text().unwrap().text
-        ).unwrap();
+        let failure: Value =
+            serde_json::from_str(&invalid.content[0].as_text().unwrap().text).unwrap();
         assert_eq!(invalid.is_error, Some(true));
         assert_eq!(failure["error"]["code"], "INVALID_IDENTIFIER");
         assert_eq!(failure["error"]["category"], "validation");
-        assert!(failure["error"]["message"].as_str().unwrap().contains("identifier"));
+        assert!(failure["error"]["message"]
+            .as_str()
+            .unwrap()
+            .contains("identifier"));
         assert!(failure["error"].get("status_code").is_none());
 
         let status = result(Err(ApiError::Http(429)));
-        let failure: Value = serde_json::from_str(
-            &status.content[0].as_text().unwrap().text
-        ).unwrap();
+        let failure: Value =
+            serde_json::from_str(&status.content[0].as_text().unwrap().text).unwrap();
         assert_eq!(failure["error"]["status_code"], 429);
         assert_eq!(failure["error"]["code"], "GOOGLE_HTTP_ERROR");
 
         #[cfg(feature = "scratchpad")]
         {
             let local = local_result(Err("Scratchpad session expired".into()));
-            let failure: Value = serde_json::from_str(
-                &local.content[0].as_text().unwrap().text
-            ).unwrap();
+            let failure: Value =
+                serde_json::from_str(&local.content[0].as_text().unwrap().text).unwrap();
             assert_eq!(failure["error"]["code"], "SCRATCHPAD_ERROR");
             assert_eq!(failure["error"]["category"], "local");
         }
