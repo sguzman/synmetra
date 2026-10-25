@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `████░░░░░░ 41.6%` · **+41.63 percentage points from initial empty repo; +0.66 pp from CI-verified real stdio discovery, dispatch and JSON-RPC stdout isolation** · 75/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `████░░░░░░ 41.8%` · **+41.85 percentage points from initial empty repo; +0.22 pp from green pinned Rust 1.99.1 core and DuckDB CI** · 76/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -11,7 +11,7 @@
 - On each stewardship round, report total and actively worked milestone/phase/task bars plus the **signed delta in percentage points** against the previous verified committed ledger; completed 100% tasks can be omitted in ongoing status updates.
 - **No progress padding.** Upstream feature inventory, planning and brand assets count only for their specific documentation tasks; GA4 functionality starts at 0% until tests establish otherwise. Real Google access, credentials and live tests are separate explicit gates.
 
-## 🧭 M0 — Reference baseline and project governance — `███████░░░ 73.5%`
+## 🧭 M0 — Reference baseline and project governance — `████████░░ 76.5%`
 
 **Scope:** MVP. **Acceptance gate:** Audited pinned feature-union inventory, color identity, public-safe policies and reproducible plan. Foundation is not runtime parity.
 
@@ -36,7 +36,7 @@
 - 🔁 **T008 — Set up upstream drift tracking and version pin policy** — `██████████ 100.0%`
   - ✅ **Gate:** CI alerts on name/signature deltas without silent breaking changes · **Evidence:** docs/UPSTREAM.md, docs/PROVENANCE.md, docs/tool-inventory.json and src/bin/synmetra-progress.rs: pinned source revisions and CI-checked 36-name union; GitHub Actions 40211821382 passed; upstream signature drift alert automation remains open.; .github/workflows/upstream-drift.yml now checks pinned upstream signature-bearing source blobs on weekly schedule, manual dispatch and changes to the watch/lock; spec/upstream/drift-lock.json pins SednaLabs schema snapshot blob 646c0baa and Google coordinator blob a1e7936a at separately documented source commits; drift produces a failed GitHub Actions job and review guidance without silently updating the baseline. docs/UPSTREAM.md documents the conservative source-change policy and its limitations. GitHub Actions 40241902469 verified both public current blobs against the pins; 40241902503 core and DuckDB passed. The watch detects file changes for review, not automatic parsing of Google's entire dynamic runtime schema.
 
-### 🦀 P01 — Native scaffold and quality gates — `██████░░░░ 55.6%`
+### 🦀 P01 — Native scaffold and quality gates — `██████░░░░ 61.1%`
 
 **Feature:** Rust foundation.
 
@@ -46,8 +46,8 @@
   - ✅ **Gate:** Protocol version pin plus compile-time registration tests · **Evidence:** src/main.rs rmcp 3.5.1 tool router and 17 registered MCP handlers; Actions 40202015488 passed; Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.
 - 🌐 **T011 — Add reqwest rustls API client skeleton** — `██████████ 100.0%`
   - ✅ **Gate:** No OpenSSL or Python runtime dependency · **Evidence:** src/google.rs reqwest/rustls fixed-host Admin/Data HTTP transport; Actions 40202015488 passed; Cargo.toml uses reqwest default-features=false with rustls-tls, no Python/OpenSSL requirement. .github/workflows/ci.yml native runtime step runs locked cargo tree and fails on openssl/openssl-sys/native-tls/pyo3 dependencies, builds the synmetra executable, then fails if ldd shows libssl/libcrypto/libpython. GitHub Actions 40241002371 both core and DuckDB jobs passed, including this native dependency/linkage check. Acceptance covers the default native Linux API server binary and dependency graph, not a claim about every user-installed system library.
-- 🧪 **T012 — Add fmt clippy unit tests and CI jobs** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Green push checks with pinned toolchain and dependency cache
+- 🧪 **T012 — Add fmt clippy unit tests and CI jobs** — `██████████ 100.0%`
+  - ✅ **Gate:** Green push checks with pinned toolchain and dependency cache · **Evidence:** Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.; rust-toolchain.toml pins Rust 1.99.1 (rustfmt, Clippy); both core and DuckDB CI jobs explicitly install and assert rustc 1.99.1, reuse Swatinem/rust-cache@v2, use Cargo.lock via --locked and enforce formatting/tests/strict Clippy/progress integrity. GitHub Actions run 40243957373 completed successfully for core and DuckDB. Synthetic and release-tag DuckDB strict Clippy remain separate verification goals.
 - 🧷 **T013 — Add lockfile dependency audits and license checks** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Dependencies auditable with deny or equivalent process
 - 🧰 **T014 — Create deterministic offline fixtures and mock server** — `██████████ 100.0%`

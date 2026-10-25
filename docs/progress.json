@@ -254,7 +254,7 @@
               "id": "T012",
               "emoji": "🧪",
               "name": "Add fmt clippy unit tests and CI jobs",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Green push checks with pinned toolchain and dependency cache",
               "checks": [
                 {
@@ -264,7 +264,8 @@
                 },
                 {
                   "text": "Green push checks with pinned toolchain and dependency cache",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "rust-toolchain.toml pins Rust 1.99.1 (rustfmt, Clippy); both core and DuckDB CI jobs explicitly install and assert rustc 1.99.1, reuse Swatinem/rust-cache@v2, use Cargo.lock via --locked and enforce formatting/tests/strict Clippy/progress integrity. GitHub Actions run 40243957373 completed successfully for core and DuckDB. Synthetic and release-tag DuckDB strict Clippy remain separate verification goals."
                 }
               ]
             },
