@@ -1214,7 +1214,7 @@
               "id": "T063",
               "emoji": "🚫",
               "name": "Block SSRF via URLs in config or request arguments",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Only pinned Google API hosts are contacted by default",
               "checks": [
                 {
@@ -1224,7 +1224,8 @@
                 },
                 {
                   "text": "Only pinned Google API hosts are contacted by default",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs GoogleClient::new pins analyticsadmin.googleapis.com and analyticsdata.googleapis.com via HTTPS with redirect policy none; production_google_hosts_are_pinned_and_http_redirects_never_followed verifies both hosts, rejects URL/authority/path injection in property/account identifiers, and checks an isolated 302 response is terminal rather than redirecting authorization headers. Only test-local with_endpoints can substitute loopback origins. GitHub Actions 40240180552 core Rust fmt, tests, Clippy, ledger and native DuckDB job passed; actual live Google identity/access remains a separate acceptance gate."
                 }
               ]
             },

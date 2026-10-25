@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `████░░░░░░ 38.1%` · **+38.11 percentage points from initial empty repo; +0.22 pp from verified no-retry annotation safety gate** · 62/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `████░░░░░░ 38.3%` · **+38.33 percentage points from initial empty repo; +0.22 pp from CI-proven SSRF boundary and redirect safety** · 63/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -126,7 +126,7 @@
   - ✅ **Gate:** Protocol wire fixtures pass multiple clients
 
 
-## 🔑 M2 — Google authentication and credential isolation — `██░░░░░░░░ 23.1%`
+## 🔑 M2 — Google authentication and credential isolation — `███░░░░░░░ 25.0%`
 
 **Scope:** MVP. **Acceptance gate:** Secure, least-privilege, non-Python auth across interactive, local and service configurations; no secret leaks.
 
@@ -174,7 +174,7 @@
 - ⏳ **T057 — Guard clock skew and rotation races** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Expiring secrets renew safely during concurrent calls
 
-### 🛡️ P07 — Inbound versus upstream trust — `██░░░░░░░░ 22.2%`
+### 🛡️ P07 — Inbound versus upstream trust — `███░░░░░░░ 27.8%`
 
 **Feature:** Identity security.
 
@@ -188,8 +188,8 @@
   - ✅ **Gate:** No broad-scope silent escalation on 403
 - 🔐 **T062 — Protect local credential files from symlink attacks** — `██████████ 100.0%`
   - ✅ **Gate:** No world-readable files and atomic writes · **Evidence:** src/auth.rs private_file/read_credentials/persist_credentials reject symlinks and world-readable files; CI 40202015488 compilation; security tests pending; Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.
-- 🚫 **T063 — Block SSRF via URLs in config or request arguments** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Only pinned Google API hosts are contacted by default
+- 🚫 **T063 — Block SSRF via URLs in config or request arguments** — `██████████ 100.0%`
+  - ✅ **Gate:** Only pinned Google API hosts are contacted by default · **Evidence:** src/google.rs hardcoded HTTPS Google API origins; property/account resource name sanitation; CI 40202015488 tests and fixed-host synthetic requests; src/google.rs GoogleClient::new pins analyticsadmin.googleapis.com and analyticsdata.googleapis.com via HTTPS with redirect policy none; production_google_hosts_are_pinned_and_http_redirects_never_followed verifies both hosts, rejects URL/authority/path injection in property/account identifiers, and checks an isolated 302 response is terminal rather than redirecting authorization headers. Only test-local with_endpoints can substitute loopback origins. GitHub Actions 40240180552 core Rust fmt, tests, Clippy, ledger and native DuckDB job passed; actual live Google identity/access remains a separate acceptance gate.
 - 🧪 **T064 — Exercise expired revoked and invalid credentials** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** All modes fail safely with stable errors
 - 📦 **T065 — Ensure no auth dependency on gcloud installation** — `░░░░░░░░░░ 0.0%`
