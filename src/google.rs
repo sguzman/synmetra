@@ -216,7 +216,8 @@ impl GoogleClient {
             if let Some(items) = page.get(field) {
                 let items = items.as_array().ok_or(ApiError::InvalidResponse)?;
                 let bytes = serde_json::to_vec(items)
-                    .map_err(|_| ApiError::InvalidResponse)?.len();
+                    .map_err(|_| ApiError::InvalidResponse)?
+                    .len();
                 if output.len().saturating_add(items.len()) > MAX_COLLECTION_ITEMS
                     || payload_bytes.saturating_add(bytes) > MAX_COLLECTION_BYTES
                 {
@@ -1287,8 +1288,9 @@ mod tests {
         }
         let (url, handle) = serve(vec![
             r#"{"accountSummaries":[{"name":"accounts/1"}],"nextPageToken":"cursor2"}"#,
-            r#"{"accountSummaries":[{"name":"accounts/2"}]}"#
-        ]).await;
+            r#"{"accountSummaries":[{"name":"accounts/2"}]}"#,
+        ])
+        .await;
         let client = GoogleClient::with_endpoints(Some("mock".into()), &url, &url);
         let response = client.account_summaries().await.unwrap();
         assert_eq!(response["accountSummaries"].as_array().unwrap().len(), 2);
@@ -1298,10 +1300,14 @@ mod tests {
 
         let (url, handle) = serve(vec![
             r#"{"accountSummaries":[],"nextPageToken":"cycle"}"#,
-            r#"{"accountSummaries":[],"nextPageToken":"cycle"}"#
-        ]).await;
+            r#"{"accountSummaries":[],"nextPageToken":"cycle"}"#,
+        ])
+        .await;
         let client = GoogleClient::with_endpoints(Some("mock".into()), &url, &url);
-        assert_eq!(client.account_summaries().await.unwrap_err(), ApiError::InvalidResponse);
+        assert_eq!(
+            client.account_summaries().await.unwrap_err(),
+            ApiError::InvalidResponse
+        );
         assert_eq!(handle.await.unwrap().len(), 2);
 
         let (url, handle) = serve(vec![
@@ -1309,8 +1315,13 @@ mod tests {
             r#"{"googleAdsLinks":[{"name":"properties/42/googleAdsLinks/2"}]}"#,
         ]).await;
         let client = GoogleClient::with_endpoints(Some("mock".into()), &url, &url);
-        assert_eq!(client.ads_links("42").await.unwrap()["googleAdsLinks"]
-            .as_array().unwrap().len(), 2);
+        assert_eq!(
+            client.ads_links("42").await.unwrap()["googleAdsLinks"]
+                .as_array()
+                .unwrap()
+                .len(),
+            2
+        );
         let requests = handle.await.unwrap();
         assert!(requests[0].starts_with("GET /v1beta/properties/42/googleAdsLinks HTTP/1.1"));
         assert!(requests[1].contains("pageToken=next"));
@@ -1318,14 +1329,15 @@ mod tests {
 
     #[tokio::test]
     async fn account_collection_rejects_unbounded_item_count() {
-        let payload = json!({"accountSummaries":vec![json!({"name":"accounts/1"});10_001]})
-            .to_string();
+        let payload =
+            json!({"accountSummaries":vec![json!({"name":"accounts/1"});10_001]}).to_string();
         let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
         let address = listener.local_addr().unwrap();
         let handle = tokio::spawn(async move {
             let (mut socket, _) = listener.accept().await.unwrap();
             let mut buf = [0u8; 4096];
-            socket.read(&mut buf).await.unwrap();
+            let received = socket.read(&mut buf).await.unwrap();
+            assert!(received > 0);
             let reply = format!(
                 "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
                 payload.len(), payload
@@ -1334,7 +1346,10 @@ mod tests {
         });
         let url = format!("http://{address}");
         let client = GoogleClient::with_endpoints(Some("mock".into()), &url, &url);
-        assert_eq!(client.account_summaries().await.unwrap_err(), ApiError::CollectionTooLarge);
+        assert_eq!(
+            client.account_summaries().await.unwrap_err(),
+            ApiError::CollectionTooLarge
+        );
         handle.await.unwrap();
     }
 
