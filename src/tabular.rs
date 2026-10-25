@@ -282,6 +282,7 @@ pub fn project(
     let mut ga4 = Map::new();
     for field in [
         "metadata",
+        "pivotHeaders",
         "propertyQuota",
         "quota",
         "totals",
