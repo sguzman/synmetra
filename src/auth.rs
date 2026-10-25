@@ -82,17 +82,23 @@ fn private_file(path: &Path) -> Result<(), String> {
     Ok(())
 }
 
-fn read_credentials() -> Result<Option<Stored>, String> {
-    let path = credentials_path()?;
+fn read_credentials_at(path: &Path) -> Result<Option<Stored>, String> {
+    if let Some(dir) = path.parent() {
+        if let Ok(meta) = fs::symlink_metadata(dir) {
+            if !meta.is_dir() || meta.file_type().is_symlink() {
+                return Err("Refusing credentials in a symlinked auth directory".into());
+            }
+        }
+    }
     if !path.exists() {
         // A dangling symlink is still unsafe: don't follow/create at this path.
-        if fs::symlink_metadata(&path).is_ok() {
+        if fs::symlink_metadata(path).is_ok() {
             return Err("Credentials path is an invalid symlink".into());
         }
         return Ok(None);
     }
-    private_file(&path)?;
-    let mut file = fs::File::open(&path).map_err(|_| "Cannot open credentials")?;
+    private_file(path)?;
+    let file = fs::File::open(path).map_err(|_| "Cannot open credentials")?;
     let mut data = String::new();
     file.take(32 * 1024).read_to_string(&mut data).map_err(|_| "Cannot read credentials")?;
     let stored: Stored = serde_json::from_str(&data).map_err(|_| "Credentials file has invalid format")?;
@@ -102,9 +108,12 @@ fn read_credentials() -> Result<Option<Stored>, String> {
     Ok(Some(stored))
 }
 
-fn persist_credentials(stored: &Stored) -> Result<(), String> {
+fn read_credentials() -> Result<Option<Stored>, String> {
+    read_credentials_at(&credentials_path()?)
+}
+
+fn persist_credentials_at(path: &Path, stored: &Stored) -> Result<(), String> {
     use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
-    let path = credentials_path()?;
     let dir = path.parent().ok_or("No credential directory")?;
     fs::create_dir_all(dir).map_err(|_| "Cannot create private auth directory")?;
     let meta = fs::symlink_metadata(dir).map_err(|_| "Cannot stat auth directory")?;
@@ -113,8 +122,8 @@ fn persist_credentials(stored: &Stored) -> Result<(), String> {
     }
     fs::set_permissions(dir, fs::Permissions::from_mode(0o700)).map_err(|_| "Cannot secure auth directory")?;
     // Refuse modifying or replacing a symlink at the destination.
-    if fs::symlink_metadata(&path).is_ok() {
-        private_file(&path)?;
+    if fs::symlink_metadata(path).is_ok() {
+        private_file(path)?;
     }
     let temp = dir.join(format!(".credentials.{}.tmp", std::process::id()));
     let mut file = fs::OpenOptions::new().create_new(true).write(true).mode(0o600)
@@ -123,13 +132,17 @@ fn persist_credentials(stored: &Stored) -> Result<(), String> {
     let result = (|| -> Result<(), String> {
         file.write_all(&data).map_err(|_| "Cannot write credentials")?;
         file.sync_all().map_err(|_| "Cannot sync credentials")?;
-        fs::rename(&temp, &path).map_err(|_| "Cannot install credentials")?;
+        fs::rename(&temp, path).map_err(|_| "Cannot install credentials")?;
         Ok(())
     })();
     if result.is_err() {
         let _ = fs::remove_file(&temp);
     }
     result
+}
+
+fn persist_credentials(stored: &Stored) -> Result<(), String> {
+    persist_credentials_at(&credentials_path()?, stored)
 }
 
 fn nonce() -> String {
@@ -322,6 +335,43 @@ mod tests {
         for bad in ["GET /callback?state=other&code=secret HTTP/1.1", "GET /evil?state=s&code=a HTTP/1.1", "GET /callback?state=s HTTP/1.1", "POST /callback?state=s&code=a HTTP/1.1"] {
             assert!(callback_code(bad, "s").is_err());
         }
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn credential_files_are_private_and_symlinks_are_rejected() {
+        use std::os::unix::fs::{symlink, PermissionsExt};
+        let base = std::env::temp_dir().join(format!("synmetra-cred-test-{}-{}", std::process::id(), nonce()));
+        let dir = base.join("synmetra");
+        let path = dir.join("credentials.json");
+        let stored = Stored {
+            client_id: "example.apps.googleusercontent.com".into(),
+            client_secret: "synthetic-client".into(),
+            refresh_token: "synthetic-refresh".into(),
+            access_token: "synthetic-access".into(),
+            expires_at: 42,
+        };
+        persist_credentials_at(&path, &stored).unwrap();
+        assert_eq!(fs::metadata(&path).unwrap().permissions().mode() & 0o777, 0o600);
+        assert_eq!(fs::metadata(&dir).unwrap().permissions().mode() & 0o777, 0o700);
+        assert_eq!(read_credentials_at(&path).unwrap().unwrap().refresh_token, "synthetic-refresh");
+
+        let alias = dir.join("bad.json");
+        symlink(&path, &alias).unwrap();
+        assert!(read_credentials_at(&alias).is_err());
+        assert!(persist_credentials_at(&alias, &stored).is_err());
+
+        fs::set_permissions(&path, fs::Permissions::from_mode(0o644)).unwrap();
+        assert!(read_credentials_at(&path).is_err());
+        assert!(persist_credentials_at(&path, &stored).is_err());
+        fs::remove_file(alias).unwrap();
+        fs::set_permissions(&path, fs::Permissions::from_mode(0o600)).unwrap();
+
+        let symlink_dir = base.join("linked");
+        symlink(&dir, &symlink_dir).unwrap();
+        assert!(read_credentials_at(&symlink_dir.join("credentials.json")).is_err());
+        assert!(persist_credentials_at(&symlink_dir.join("credentials.json"), &stored).is_err());
+        fs::remove_dir_all(base).unwrap();
     }
 
     #[test]
