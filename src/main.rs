@@ -61,7 +61,7 @@ impl Synmetra {
 }
 
 #[cfg(feature = "scratchpad")]
-const SCRATCHPAD_TOOL_NAMES: [&str; 10] = [
+const SCRATCHPAD_TOOL_NAMES: [&str; 12] = [
     "scratchpad_open_session",
     "scratchpad_close_session",
     "scratchpad_list_sessions",
@@ -72,6 +72,8 @@ const SCRATCHPAD_TOOL_NAMES: [&str; 10] = [
     "scratchpad_describe_table",
     "scratchpad_summarize_table",
     "scratchpad_export_evidence_bundle",
+    "scratchpad_ingest_report",
+    "scratchpad_ingest_realtime_report",
 ];
 
 #[cfg(feature = "scratchpad")]
@@ -125,6 +127,57 @@ struct ScratchEvidenceArgs {
     table_names: Option<Vec<String>>,
     #[serde(default)]
     sample_rows_per_table: Option<usize>,
+}
+
+#[cfg(feature = "scratchpad")]
+#[derive(Debug, Deserialize, JsonSchema)]
+struct ScratchIngestReportArgs {
+    session_id: String,
+    table_name: String,
+    property_id: String,
+    dimensions: Vec<String>,
+    metrics: Vec<String>,
+    #[serde(default)]
+    append: bool,
+    #[serde(default)]
+    limit: Option<u32>,
+    #[serde(default)]
+    offset: Option<u64>,
+    #[serde(default)]
+    dimension_filter: Option<Value>,
+    #[serde(default)]
+    metric_filter: Option<Value>,
+    #[serde(default)]
+    order_bys: Option<Vec<Value>>,
+    #[serde(default)]
+    return_property_quota: bool,
+    date_ranges: Vec<Value>,
+    #[serde(default)]
+    currency_code: Option<String>,
+}
+
+#[cfg(feature = "scratchpad")]
+#[derive(Debug, Deserialize, JsonSchema)]
+struct ScratchIngestRealtimeArgs {
+    session_id: String,
+    table_name: String,
+    property_id: String,
+    dimensions: Vec<String>,
+    metrics: Vec<String>,
+    #[serde(default)]
+    append: bool,
+    #[serde(default)]
+    limit: Option<u32>,
+    #[serde(default)]
+    offset: Option<u64>,
+    #[serde(default)]
+    dimension_filter: Option<Value>,
+    #[serde(default)]
+    metric_filter: Option<Value>,
+    #[serde(default)]
+    order_bys: Option<Vec<Value>>,
+    #[serde(default)]
+    return_property_quota: bool,
 }
 
 #[cfg(feature = "scratchpad")]
@@ -1056,6 +1109,93 @@ impl Synmetra {
                 ),
         )
     }
+    #[tool(
+        description = "Read one bounded GA4 historical report and ingest its returned rows into a private DuckDB table. Append requires identical schema.",
+        annotations(
+            read_only_hint = false,
+            destructive_hint = false,
+            idempotent_hint = false,
+            open_world_hint = true
+        )
+    )]
+    async fn scratchpad_ingest_report(
+        &self,
+        Parameters(args): Parameters<ScratchIngestReportArgs>,
+    ) -> CallToolResult {
+        let scratch = self.scratchpad.as_ref().expect("scratchpad capability required");
+        if let Err(reason) = scratch.require_session(&args.session_id) {
+            return local_result(Err(reason));
+        }
+        if args.limit.is_some_and(|v| v == 0 || v > 1000) {
+            return local_result(Err("GA4 ingest limit must be 1-1000".into()));
+        }
+        let body = report_request(
+            Some(args.date_ranges), args.dimensions, args.metrics,
+            vec![
+                ("dimensionFilter", args.dimension_filter),
+                ("metricFilter", args.metric_filter),
+                ("orderBys", args.order_bys.map(|v| json!(v))),
+                ("limit", Some(json!(args.limit.unwrap_or(1000).to_string()))),
+                ("offset", args.offset.map(|v| json!(v.to_string()))),
+                ("currencyCode", args.currency_code.map(|v| json!(v))),
+                ("returnPropertyQuota", Some(json!(args.return_property_quota))),
+            ],
+        );
+        let body = match body {
+            Ok(body) => body,
+            Err(error) => return result(Err(error)),
+        };
+        match self.api.report(&args.property_id, body, false).await {
+            Ok(data) => local_result(scratch.ingest_ga_response(
+                &args.session_id, &args.table_name, &data, args.append,
+            )),
+            Err(error) => result(Err(error)),
+        }
+    }
+
+    #[tool(
+        description = "Read one bounded GA4 realtime report and ingest its returned rows into a private DuckDB table. Append requires identical schema.",
+        annotations(
+            read_only_hint = false,
+            destructive_hint = false,
+            idempotent_hint = false,
+            open_world_hint = true
+        )
+    )]
+    async fn scratchpad_ingest_realtime_report(
+        &self,
+        Parameters(args): Parameters<ScratchIngestRealtimeArgs>,
+    ) -> CallToolResult {
+        let scratch = self.scratchpad.as_ref().expect("scratchpad capability required");
+        if let Err(reason) = scratch.require_session(&args.session_id) {
+            return local_result(Err(reason));
+        }
+        if args.limit.is_some_and(|v| v == 0 || v > 1000) {
+            return local_result(Err("GA4 ingest limit must be 1-1000".into()));
+        }
+        let body = report_request(
+            None, args.dimensions, args.metrics,
+            vec![
+                ("dimensionFilter", args.dimension_filter),
+                ("metricFilter", args.metric_filter),
+                ("orderBys", args.order_bys.map(|v| json!(v))),
+                ("limit", Some(json!(args.limit.unwrap_or(1000).to_string()))),
+                ("offset", args.offset.map(|v| json!(v.to_string()))),
+                ("returnPropertyQuota", Some(json!(args.return_property_quota))),
+            ],
+        );
+        let body = match body {
+            Ok(body) => body,
+            Err(error) => return result(Err(error)),
+        };
+        match self.api.report(&args.property_id, body, true).await {
+            Ok(data) => local_result(scratch.ingest_ga_response(
+                &args.session_id, &args.table_name, &data, args.append,
+            )),
+            Err(error) => result(Err(error)),
+        }
+    }
+
 }
 
 #[tool_handler(
@@ -1451,9 +1591,26 @@ mod tests {
         let base = Synmetra::new(GoogleClient::new(None), false);
         assert_eq!(base.router.list_all().len(), 20);
         let enabled = base.enable_scratchpad();
-        assert_eq!(enabled.router.list_all().len(), 30);
+        assert_eq!(enabled.router.list_all().len(), 32);
         assert!(enabled.router.has_route("scratchpad_drop_table"));
         assert!(!enabled.router.has_route("create_property_annotation"));
+    }
+
+    #[cfg(feature = "scratchpad")]
+    #[tokio::test]
+    async fn ingest_mcp_preflights_local_session_before_google_api() {
+        let server = Synmetra::new(GoogleClient::new(None), false).enable_scratchpad();
+        let result = server.scratchpad_ingest_realtime_report(Parameters(
+            ScratchIngestRealtimeArgs {
+                session_id: "missing".into(), table_name: "events".into(),
+                property_id: "42".into(), dimensions: vec!["country".into()],
+                metrics: vec!["activeUsers".into()], append: false,
+                limit: Some(10), offset: None, dimension_filter: None,
+                metric_filter: None, order_bys: None, return_property_quota: false,
+            }
+        )).await;
+        assert_eq!(result.is_error, Some(true));
+        assert!(result.content[0].as_text().unwrap().text.contains("session not found"));
     }
 
     #[test]
