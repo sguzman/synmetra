@@ -447,13 +447,23 @@ struct ConversionArgs {
     #[serde(default)]
     order_bys: Option<Vec<Value>>,
     #[serde(default)]
-    limit: Option<u32>,
+    limit: Option<u64>,
     #[serde(default)]
     offset: Option<u64>,
     #[serde(default)]
     currency_code: Option<String>,
     #[serde(default)]
     return_property_quota: bool,
+    #[serde(default)]
+    max_rows: Option<usize>,
+    #[serde(default)]
+    max_cell_chars: Option<usize>,
+    #[serde(default)]
+    summary_only: bool,
+    #[serde(default)]
+    output_mode: Option<tabular::OutputMode>,
+    #[serde(default)]
+    cursor: Option<String>,
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
@@ -1037,11 +1047,19 @@ impl Synmetra {
         &self,
         Parameters(args): Parameters<ConversionArgs>,
     ) -> CallToolResult {
+        let controls = tabular::Controls {
+            output_mode: args.output_mode,
+            summary_only: args.summary_only,
+            max_rows: args.max_rows,
+            max_cell_chars: args.max_cell_chars,
+            cursor_supplied: args.cursor.is_some(),
+        };
+        let limit = match controls.request_limit(args.limit) {
+            Ok(limit) => limit,
+            Err(error) => return result(Err(error)),
+        };
         let body = google::conversion_spec(&args.conversion_spec, &args.dimensions, &args.metrics)
             .and_then(|spec| {
-                if args.limit.is_some_and(|v| v == 0 || v > 250_000) {
-                    return Err(ApiError::InvalidRequest);
-                }
                 report_request(
                     Some(args.date_ranges),
                     args.dimensions,
@@ -1051,7 +1069,7 @@ impl Synmetra {
                         ("dimensionFilter", args.dimension_filter),
                         ("metricFilter", args.metric_filter),
                         ("orderBys", args.order_bys.map(|v| json!(v))),
-                        ("limit", args.limit.map(|v| json!(v.to_string()))),
+                        ("limit", limit.map(|v| json!(v.to_string()))),
                         ("offset", args.offset.map(|v| json!(v.to_string()))),
                         ("currencyCode", args.currency_code.map(|v| json!(v))),
                         (
@@ -1061,10 +1079,33 @@ impl Synmetra {
                     ],
                 )
             });
-        result(match body {
-            Ok(body) => self.api.alpha_report(&args.property_id, body, false).await,
-            Err(error) => Err(error),
-        })
+        let (response, pagination) = match body {
+            Ok(mut body) => {
+                let page = if controls.active() {
+                    match tabular::prepare_historical(
+                        &mut body,
+                        &args.property_id,
+                        args.cursor.as_deref(),
+                        args.offset,
+                    ) {
+                        Ok(page) => Some(page),
+                        Err(error) => return result(Err(error)),
+                    }
+                } else {
+                    None
+                };
+                (
+                    self.api.alpha_report(&args.property_id, body, false).await,
+                    page,
+                )
+            }
+            Err(error) => (Err(error), None),
+        };
+        if controls.active() {
+            result_with_tabular_projection(response, controls, false, pagination.as_ref())
+        } else {
+            result(response)
+        }
     }
 
     #[tool(
@@ -2542,6 +2583,61 @@ mod tests {
             invalid.structured_content.unwrap()["error"]["code"],
             "INVALID_REQUEST"
         );
+    }
+
+    #[tokio::test]
+    async fn conversion_report_opt_in_projection_uses_alpha_endpoint_and_bounded_response() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        use tokio::net::TcpListener;
+
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let endpoint = format!("http://{}", listener.local_addr().unwrap());
+        let responder = tokio::spawn(async move {
+            let (mut stream, _) = listener.accept().await.unwrap();
+            let mut buffer = [0u8; 4096];
+            let len = stream.read(&mut buffer).await.unwrap();
+            let request = String::from_utf8_lossy(&buffer[..len]);
+            assert!(request.starts_with("POST /v1alpha/properties/42:runReport "));
+            assert!(request.contains(r#""conversionSpec":{"attributionModel":"LAST_CLICK""#));
+            assert!(request.contains(r#""limit":"1""#));
+            let body = json!({
+                "dimensionHeaders":[{"name":"country"}],
+                "metricHeaders":[{"name":"allConversionsByInteractionDate"}],
+                "rows":[{"dimensionValues":[{"value":"Mexico"}],"metricValues":[{"value":"4"}]}],
+                "rowCount":2
+            })
+            .to_string();
+            let reply = format!(
+                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                body.len(),
+                body
+            );
+            stream.write_all(reply.as_bytes()).await.unwrap();
+        });
+        let server = Synmetra::new(
+            GoogleClient::with_endpoints(Some("mock-private-token".into()), &endpoint, &endpoint),
+            false,
+        );
+        let args: ConversionArgs = serde_json::from_value(json!({
+            "property_id":42,
+            "date_ranges":[{"start_date":"yesterday","end_date":"today"}],
+            "dimensions":["country"],
+            "metrics":["allConversionsByInteractionDate"],
+            "conversion_spec":{"attribution_model":"LAST_CLICK"},
+            "max_rows":1,
+            "output_mode":"rows",
+            "summary_only":false
+        }))
+        .unwrap();
+        let response = server.run_conversions_report(Parameters(args)).await;
+        responder.await.unwrap();
+        assert_eq!(response.is_error, Some(false));
+        let payload = response.structured_content.unwrap();
+        assert_eq!(payload["data"][0]["country"], "Mexico");
+        assert_eq!(payload["meta"]["row_count_total"], 2);
+        assert_eq!(payload["meta"]["row_count_returned"], 1);
+        assert!(payload["meta"]["next_cursor"].as_str().is_some());
+        assert!(!payload.to_string().contains("mock-private-token"));
     }
 
     #[tokio::test]
