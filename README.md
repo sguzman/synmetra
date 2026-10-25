@@ -10,7 +10,7 @@
 
 ## 📊 Evidence-backed progress
 
-**Overall:** `░░░░░░░░░░ 2.6%` · **bootstrap delta: +2.64 percentage points** from a fresh 0% ledger. **MVP/runtime tool parity: 0/36 verified.** Documentation acceptance is not functional parity.
+**Overall:** `░░░░░░░░░░ 2.9%` · **overall delta: +2.86 percentage points** from the initial 0% ledger (**latest audited round: +0.22 pp**). **MVP/runtime tool parity: 0/36 verified.** Documentation acceptance is not functional parity.
 
 | Milestone | Progress | Gate |
 | --- | --- | --- |
@@ -22,7 +22,7 @@
 | ✍️ M5 Explicitly gated GA mutation parity | `░░░░░░░░░░ 0.0%` | MVP |
 | 🗃️ M6 DuckDB scratchpad and advanced analytics parity | `░░░░░░░░░░ 0.0%` | MVP |
 | 🧬 M7 Tool contract interoperability and parity audits | `░░░░░░░░░░ 0.0%` | MVP |
-| 🧪 M8 Verification, resilience and security acceptance | `░░░░░░░░░░ 0.0%` | MVP |
+| 🧪 M8 Verification, resilience and security acceptance | `░░░░░░░░░░ 1.8%` | MVP |
 | 🚀 M9 Linux release and Codex-ready inauguration | `░░░░░░░░░░ 0.0%` | MVP |
 | 🔭 M10 Post-MVP extensions and sustained stewardship | `░░░░░░░░░░ 0.0%` | POST_MVP |
 

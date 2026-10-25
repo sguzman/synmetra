@@ -2,7 +2,7 @@
 
 **Status:** bootstrap planning, **0/36 runtime tools accepted**. This project is not yet an MCP server. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `░░░░░░░░░░ 2.6%` · **+2.64 percentage points since initial empty repo** · 6/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `░░░░░░░░░░ 2.9%` · **+2.86 percentage points since initial empty repo (+0.22 points in this CI validation round)** · 6/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -495,11 +495,11 @@
   - ✅ **Gate:** Changes open maintenance work rather than silently inflate parity
 
 
-## 🧪 M8 — Verification, resilience and security acceptance — `░░░░░░░░░░ 0.0%`
+## 🧪 M8 — Verification, resilience and security acceptance — `░░░░░░░░░░ 1.8%`
 
 **Scope:** MVP. **Acceptance gate:** Full offline and authorized live verification including malformed inputs, MCP interoperability and threat model.
 
-### 🧫 P22 — Deterministic tests — `░░░░░░░░░░ 0.0%`
+### 🧫 P22 — Deterministic tests — `█░░░░░░░░░ 5.0%`
 
 **Feature:** Offline QA.
 
@@ -515,7 +515,7 @@
   - ✅ **Gate:** Every advertised tool can be called with synthetic fixtures
 - 🛰️ **T173 — Exercise protected Streamable HTTP end-to-end** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Valid and invalid sessions checked over loopback
-- 🧹 **T174 — Enforce schema/roadmap ledger consistency in CI** — `░░░░░░░░░░ 0.0%`
+- 🧹 **T174 — Enforce schema/roadmap ledger consistency in CI** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Progress bars and evidence checks regenerated reproducibly
 - ⏱️ **T175 — Validate timeouts retries backoff and rate limits** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Offline deterministic clock and throttled 429 tests

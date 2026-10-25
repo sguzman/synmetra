@@ -3239,12 +3239,13 @@
               "id": "T174",
               "emoji": "🧹",
               "name": "Enforce schema/roadmap ledger consistency in CI",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Progress bars and evidence checks regenerated reproducibly",
               "checks": [
                 {
                   "text": "Deliver enforce schema/roadmap ledger consistency in ci as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/bin/synmetra-progress.rs and .github/workflows/ci.yml, GitHub Actions run 40199550979 (2026-10-25) passed Rust tests and verified 36-tool union, 227 task evidence states, and README/roadmap percentages"
                 },
                 {
                   "text": "Progress bars and evidence checks regenerated reproducibly",
