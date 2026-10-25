@@ -3687,7 +3687,9 @@ mod tests {
             assert_eq!(payload["error"]["status_code"], code);
             assert_eq!(payload["error"]["category"], "upstream");
             assert!(!payload.to_string().contains("private-conversion-token"));
-            assert!(!payload.to_string().contains("private-ineligible-property-fixture"));
+            assert!(!payload
+                .to_string()
+                .contains("private-ineligible-property-fixture"));
         }
     }
 
