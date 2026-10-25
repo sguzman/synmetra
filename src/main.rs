@@ -530,10 +530,38 @@ struct RealtimeArgs {
     dimension_filter: Option<Value>,
     #[serde(default)]
     metric_filter: Option<Value>,
+    /// Google realtime supports OrderBy arrays in the v1beta request body.
+    #[serde(default)]
+    order_bys: Option<Vec<Value>>,
     #[serde(default)]
     limit: Option<u32>,
+    /// Present for official Python signature compatibility. A nonzero value is
+    /// rejected: Google's current v1beta realtime request has no offset field.
+    #[serde(default)]
+    offset: Option<u64>,
     #[serde(default = "default_return_property_quota")]
     return_property_quota: bool,
+}
+
+fn realtime_report_request(args: &RealtimeArgs) -> Result<Value, ApiError> {
+    if args.offset.is_some_and(|offset| offset > 0) {
+        return Err(ApiError::UnsupportedRealtimeOffset);
+    }
+    report_request(
+        None,
+        args.dimensions.clone(),
+        args.metrics.clone(),
+        vec![
+            ("dimensionFilter", args.dimension_filter.clone()),
+            ("metricFilter", args.metric_filter.clone()),
+            ("orderBys", args.order_bys.clone().map(|x| json!(x))),
+            ("limit", args.limit.map(|x| json!(x.to_string()))),
+            (
+                "returnPropertyQuota",
+                Some(json!(args.return_property_quota)),
+            ),
+        ],
+    )
 }
 
 fn api_error_code(error: &ApiError) -> (&'static str, &'static str) {
@@ -543,6 +571,7 @@ fn api_error_code(error: &ApiError) -> (&'static str, &'static str) {
         ApiError::InvalidIdentifier => ("INVALID_IDENTIFIER", "validation"),
         ApiError::InvalidRequest => ("INVALID_REQUEST", "validation"),
         ApiError::UnsupportedAuthOption => ("UNSUPPORTED_AUTH_OPTION", "validation"),
+        ApiError::UnsupportedRealtimeOffset => ("UNSUPPORTED_REALTIME_OFFSET", "validation"),
         ApiError::InvalidAnnotation => ("INVALID_ANNOTATION", "validation"),
         ApiError::RequestFailed => ("UPSTREAM_UNAVAILABLE", "transport"),
         ApiError::Http(_) => ("GOOGLE_HTTP_ERROR", "upstream"),
@@ -1130,7 +1159,7 @@ impl Synmetra {
     }
 
     #[tool(
-        description = "Run a realtime GA4 report. Realtime reports cannot use offsets or page cursors.",
+        description = "Run a GA4 realtime report with ordering and quota metadata; reject unsupported nonzero offsets explicitly rather than silently ignoring them.",
         annotations(
             read_only_hint = true,
             destructive_hint = false,
@@ -1142,20 +1171,7 @@ impl Synmetra {
         &self,
         Parameters(args): Parameters<RealtimeArgs>,
     ) -> CallToolResult {
-        let body = report_request(
-            None,
-            args.dimensions,
-            args.metrics,
-            vec![
-                ("dimensionFilter", args.dimension_filter),
-                ("metricFilter", args.metric_filter),
-                ("limit", args.limit.map(|x| json!(x.to_string()))),
-                (
-                    "returnPropertyQuota",
-                    Some(json!(args.return_property_quota)),
-                ),
-            ],
-        );
+        let body = realtime_report_request(&args);
         result(match body {
             Ok(body) => self.api.report(&args.property_id, body, true).await,
             Err(e) => Err(e),
@@ -1454,6 +1470,9 @@ impl Synmetra {
         if args.limit.is_some_and(|v| v == 0 || v > 1000) {
             return local_result(Err("GA4 ingest limit must be 1-1000".into()));
         }
+        if args.offset.is_some_and(|offset| offset > 0) {
+            return result(Err(ApiError::UnsupportedRealtimeOffset));
+        }
         let body = report_request(
             None,
             args.dimensions,
@@ -1463,7 +1482,6 @@ impl Synmetra {
                 ("metricFilter", args.metric_filter),
                 ("orderBys", args.order_bys.map(|v| json!(v))),
                 ("limit", Some(json!(args.limit.unwrap_or(1000).to_string()))),
-                ("offset", args.offset.map(|v| json!(v.to_string()))),
                 (
                     "returnPropertyQuota",
                     Some(json!(args.return_property_quota)),
@@ -1998,6 +2016,62 @@ mod tests {
         assert_eq!(
             response.structured_content.unwrap()["data"]["request"]["returnPropertyQuota"],
             false
+        );
+    }
+
+    #[test]
+    fn realtime_official_optional_arguments_are_declared_and_ordering_is_forwarded() {
+        let official: Value = serde_json::from_str(include_str!(
+            "../spec/upstream/google-official-signatures.json"
+        ))
+        .unwrap();
+        let signature = official["tools"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|tool| tool["name"] == "run_realtime_report")
+            .unwrap();
+        let declared = Synmetra::tool_router()
+            .list_all()
+            .into_iter()
+            .find(|tool| tool.name == "run_realtime_report")
+            .unwrap();
+        let properties = declared.input_schema.get("properties").unwrap();
+        for arg in signature["parameters"].as_array().unwrap() {
+            let name = arg["name"].as_str().unwrap();
+            assert!(properties.get(name).is_some(), "Missing official argument {name}");
+        }
+
+        let args: RealtimeArgs = serde_json::from_value(json!({
+            "property_id": "42",
+            "dimensions": ["country"],
+            "metrics": ["activeUsers"],
+            "order_bys": [{"dimension": {"dimensionName": "country"}}],
+            "offset": 0
+        }))
+        .unwrap();
+        let body = realtime_report_request(&args).unwrap();
+        assert_eq!(body["orderBys"][0]["dimension"]["dimensionName"], "country");
+        assert_eq!(body["returnPropertyQuota"], true);
+        assert!(body.get("offset").is_none());
+    }
+
+    #[test]
+    fn realtime_nonzero_offset_has_stable_preflight_error() {
+        let args: RealtimeArgs = serde_json::from_value(json!({
+            "property_id": "42",
+            "dimensions": [],
+            "metrics": ["activeUsers"],
+            "offset": 7
+        }))
+        .unwrap();
+        assert_eq!(
+            realtime_report_request(&args),
+            Err(ApiError::UnsupportedRealtimeOffset)
+        );
+        assert_eq!(
+            api_error_code(&ApiError::UnsupportedRealtimeOffset),
+            ("UNSUPPORTED_REALTIME_OFFSET", "validation")
         );
     }
 
