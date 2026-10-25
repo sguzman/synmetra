@@ -1,8 +1,8 @@
 # 🗺️ Synmetra exhaustive roadmap
 
-**Status:** experimental Rust MCP stdio server, 17/36 handlers implemented provisionally; **0/36 fully parity-accepted**. This project is not yet an MCP server. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
+**Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `█░░░░░░░░░ 11.4%` · **+11.45 percentage points from initial empty repo; +8.59 pp since the previous accepted ledger** · 8/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `██░░░░░░░░ 17.8%` · **+17.84 percentage points from initial empty repo; +6.39 pp in this implementation round** · 8/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -11,7 +11,7 @@
 - On each stewardship round, report total and actively worked milestone/phase/task bars plus the **signed delta in percentage points** against the previous verified committed ledger; completed 100% tasks can be omitted in ongoing status updates.
 - **No progress padding.** Upstream feature inventory, planning and brand assets count only for their specific documentation tasks; GA4 functionality starts at 0% until tests establish otherwise. Real Google access, credentials and live tests are separate explicit gates.
 
-## 🧭 M0 — Reference baseline and project governance — `█████░░░░░ 52.9%`
+## 🧭 M0 — Reference baseline and project governance — `██████░░░░ 58.8%`
 
 **Scope:** MVP. **Acceptance gate:** Audited pinned feature-union inventory, color identity, public-safe policies and reproducible plan. Foundation is not runtime parity.
 
@@ -36,17 +36,17 @@
 - 🔁 **T008 — Set up upstream drift tracking and version pin policy** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** CI alerts on name/signature deltas without silent breaking changes
 
-### 🦀 P01 — Native scaffold and quality gates — `███░░░░░░░ 33.3%`
+### 🦀 P01 — Native scaffold and quality gates — `████░░░░░░ 44.4%`
 
 **Feature:** Rust foundation.
 
 - 📦 **T009 — Initialize single-crate Rust executable synmetra** — `██████████ 100.0%`
   - ✅ **Gate:** Cargo metadata and CLI build on stable Rust x86-64 Linux · **Evidence:** Cargo.toml; src/main.rs; Actions 40202015488 compiled Synmetra native Rust binary and passed unit tests; Cargo.toml; src/main.rs; Actions 40202015488 compiled Synmetra native Rust binary and passed unit tests
-- 🔌 **T010 — Integrate rmcp server SDK foundation** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Protocol version pin plus compile-time registration tests
+- 🔌 **T010 — Integrate rmcp server SDK foundation** — `██████████ 100.0%`
+  - ✅ **Gate:** Protocol version pin plus compile-time registration tests · **Evidence:** src/main.rs rmcp 3.5.1 tool router and 17 registered MCP handlers; Actions 40202015488 passed; Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.
 - 🌐 **T011 — Add reqwest rustls API client skeleton** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** No OpenSSL or Python runtime dependency
-- 🧪 **T012 — Add fmt clippy unit tests and CI jobs** — `░░░░░░░░░░ 0.0%`
+- 🧪 **T012 — Add fmt clippy unit tests and CI jobs** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Green push checks with pinned toolchain and dependency cache
 - 🧷 **T013 — Add lockfile dependency audits and license checks** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Dependencies auditable with deny or equivalent process
@@ -60,7 +60,7 @@
   - ✅ **Gate:** Document semver and provenance gates
 
 
-## 🔌 M1 — MCP protocol and transport fidelity — `█░░░░░░░░░ 10.9%`
+## 🔌 M1 — MCP protocol and transport fidelity — `███░░░░░░░ 28.3%`
 
 **Scope:** MVP. **Acceptance gate:** Spec-conforming native MCP discovery and calls over stdio plus bounded Streamable HTTP; all transport safety tests pass.
 
@@ -83,21 +83,21 @@
 - ⌨️ **T024 — Integrate Codex stdio configuration smoke** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Codex recognizes locally built synmetra binary
 
-### 🌐 P03 — Streamable HTTP protocol — `░░░░░░░░░░ 0.0%`
+### 🌐 P03 — Streamable HTTP protocol — `████░░░░░░ 38.9%`
 
 **Feature:** MCP Streamable HTTP.
 
-- 🌍 **T025 — Expose Streamable HTTP MCP endpoint** — `░░░░░░░░░░ 0.0%`
+- 🌍 **T025 — Expose Streamable HTTP MCP endpoint** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Official MCP inspector connects and initializes
-- 🏠 **T026 — Default bind to loopback only** — `░░░░░░░░░░ 0.0%`
+- 🏠 **T026 — Default bind to loopback only** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Non-loopback starts are rejected unless policy configured
-- 🧿 **T027 — Validate Host Origin and DNS rebinding defenses** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Host header and Origin tests block inappropriate requests
-- 🔐 **T028 — Add inbound bearer authorization policy** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Unauthenticated requests cannot enumerate tools on protected endpoints
+- 🧿 **T027 — Validate Host Origin and DNS rebinding defenses** — `██████████ 100.0%`
+  - ✅ **Gate:** Host header and Origin tests block inappropriate requests · **Evidence:** Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.; Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.
+- 🔐 **T028 — Add inbound bearer authorization policy** — `██████████ 100.0%`
+  - ✅ **Gate:** Unauthenticated requests cannot enumerate tools on protected endpoints · **Evidence:** Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.; Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.
 - 🧭 **T029 — Serve protected MCP metadata and health endpoints** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Health is not publicly exposed under inbound auth
-- 📡 **T030 — Support authenticated sessions and request routing** — `░░░░░░░░░░ 0.0%`
+- 📡 **T030 — Support authenticated sessions and request routing** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Sessions terminate and cannot cross principal boundaries
 - 🧊 **T031 — Enforce payload and connection resource limits** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Slow and oversized requests are bounded under load
@@ -106,7 +106,7 @@
 - 🧫 **T033 — Test MCP HTTP inspector interoperability** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** End-to-end tool invocation under loopback and protected remote modes
 
-### 🧾 P04 — MCP schema semantics — `█░░░░░░░░░ 7.1%`
+### 🧾 P04 — MCP schema semantics — `█░░░░░░░░░ 14.3%`
 
 **Feature:** MCP contract.
 
@@ -114,7 +114,7 @@
   - ✅ **Gate:** Tool arguments validated with stable user-facing errors
 - 🧩 **T035 — Declare read-only versus mutating tool annotations** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Annotation write differs accurately from read tools
-- 🎛️ **T036 — Expose capability-profile filtered tool lists** — `░░░░░░░░░░ 0.0%`
+- 🎛️ **T036 — Expose capability-profile filtered tool lists** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Default read-only excludes writes and scratchpad effects
 - ♻️ **T037 — Honor deterministic pagination and tool list consistency** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Discovery pagination and list change tests pass
@@ -126,11 +126,11 @@
   - ✅ **Gate:** Protocol wire fixtures pass multiple clients
 
 
-## 🔑 M2 — Google authentication and credential isolation — `██░░░░░░░░ 17.3%`
+## 🔑 M2 — Google authentication and credential isolation — `██░░░░░░░░ 21.2%`
 
 **Scope:** MVP. **Acceptance gate:** Secure, least-privilege, non-Python auth across interactive, local and service configurations; no secret leaks.
 
-### 🪪 P05 — Native OAuth login and operators — `███░░░░░░░ 31.2%`
+### 🪪 P05 — Native OAuth login and operators — `████░░░░░░ 37.5%`
 
 **Feature:** Native OAuth.
 
@@ -142,8 +142,8 @@
   - ✅ **Gate:** CSRF state, PKCE, timeout and redirect checks pass
 - 🖥️ **T044 — Support headless copy-back OAuth setup** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Headless flow completes and rejects replayed callbacks
-- 🔐 **T045 — Store tokens in GA4-specific user config storage** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Private file permissions and no shared ADC clobbering
+- 🔐 **T045 — Store tokens in GA4-specific user config storage** — `██████████ 100.0%`
+  - ✅ **Gate:** Private file permissions and no shared ADC clobbering · **Evidence:** src/auth.rs isolated XDG credential path and atomic mode-0600 persistence; Actions 40202015488 compiled; file-mode tests pending; Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.
 - ♻️ **T046 — Implement expiry-aware access-token refresh** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Refresh honors expiry and avoids parallel stampedes
 - 📛 **T047 — Validate requested OAuth scopes per capability** — `█████░░░░░ 50.0%`
@@ -174,7 +174,7 @@
 - ⏳ **T057 — Guard clock skew and rotation races** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Expiring secrets renew safely during concurrent calls
 
-### 🛡️ P07 — Inbound versus upstream trust — `██░░░░░░░░ 16.7%`
+### 🛡️ P07 — Inbound versus upstream trust — `██░░░░░░░░ 22.2%`
 
 **Feature:** Identity security.
 
@@ -186,8 +186,8 @@
   - ✅ **Gate:** Secret scanner fixtures remain clean
 - 🔍 **T061 — Validate Google scope and role errors distinctly** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** No broad-scope silent escalation on 403
-- 🔐 **T062 — Protect local credential files from symlink attacks** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** No world-readable files and atomic writes
+- 🔐 **T062 — Protect local credential files from symlink attacks** — `██████████ 100.0%`
+  - ✅ **Gate:** No world-readable files and atomic writes · **Evidence:** src/auth.rs private_file/read_credentials/persist_credentials reject symlinks and world-readable files; CI 40202015488 compilation; security tests pending; Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.
 - 🚫 **T063 — Block SSRF via URLs in config or request arguments** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Only pinned Google API hosts are contacted by default
 - 🧪 **T064 — Exercise expired revoked and invalid credentials** — `░░░░░░░░░░ 0.0%`
@@ -325,45 +325,45 @@
   - ✅ **Gate:** Quotas accessible without leaking tokens
 
 
-## ✍️ M5 — Explicitly gated GA mutation parity — `░░░░░░░░░░ 0.0%`
+## ✍️ M5 — Explicitly gated GA mutation parity — `█████░░░░░ 53.8%`
 
 **Scope:** MVP. **Acceptance gate:** One official write tool operates with analytics.edit and explicit opt-in; ordinary mode cannot mutate GA.
 
-### 📝 P13 — Annotation creation parity — `░░░░░░░░░░ 0.0%`
+### 📝 P13 — Annotation creation parity — `██████░░░░ 62.5%`
 
 **Feature:** One opt-in Google write tool.
 
-- 🖊️ **T113 — Implement create_property_annotation** — `░░░░░░░░░░ 0.0%`
+- 🖊️ **T113 — Implement create_property_annotation** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Full official title description dates and color schema contract tested
-- 📅 **T114 — Validate annotation date and range order** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Reject malformed dates and reversed ranges before Google call
-- 🎨 **T115 — Reject reserved ORANGE and invalid enum colors** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Only supported annotation colors submitted to Google
-- 📝 **T116 — Validate maximum title and description lengths** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** 60-character title and 150-character description bounds respected
-- 🔐 **T117 — Require explicit allow-write startup capability** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Default tools/list and tools/call cannot write
+- 📅 **T114 — Validate annotation date and range order** — `██████████ 100.0%`
+  - ✅ **Gate:** Reject malformed dates and reversed ranges before Google call · **Evidence:** Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.; Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.
+- 🎨 **T115 — Reject reserved ORANGE and invalid enum colors** — `██████████ 100.0%`
+  - ✅ **Gate:** Only supported annotation colors submitted to Google · **Evidence:** Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.; Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.
+- 📝 **T116 — Validate maximum title and description lengths** — `██████████ 100.0%`
+  - ✅ **Gate:** 60-character title and 150-character description bounds respected · **Evidence:** Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.; Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.
+- 🔐 **T117 — Require explicit allow-write startup capability** — `██████████ 100.0%`
+  - ✅ **Gate:** Default tools/list and tools/call cannot write · **Evidence:** Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.; Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.
 - 🪪 **T118 — Demand analytics.edit scope and sufficient property role** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Clear denial without escalating OAuth permissions
 - ✋ **T119 — Require user confirmation at client boundary when supported** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** High-impact writes annotated and host approval guidance explicit
-- 🧪 **T120 — Test write denial and optional live opt-in acceptance** — `░░░░░░░░░░ 0.0%`
+- 🧪 **T120 — Test write denial and optional live opt-in acceptance** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** No writes in automated public CI
 
-### 🚦 P14 — Write safety policies — `░░░░░░░░░░ 0.0%`
+### 🚦 P14 — Write safety policies — `████░░░░░░ 40.0%`
 
 **Feature:** Write gating.
 
 - 🏷️ **T121 — Annotate mutating MCP tools correctly** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** ReadOnly and idempotence hints match effects
-- 🛡️ **T122 — Keep write tool hidden under read-only profiles** — `░░░░░░░░░░ 0.0%`
+- 🛡️ **T122 — Keep write tool hidden under read-only profiles** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Bypass attempts fail regardless of tool visibility
 - 🧾 **T123 — Produce redacted audit events for writes** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Timestamp and action identifiable but no secrets
-- ♻️ **T124 — Handle Google transient failures without blind retries** — `░░░░░░░░░░ 0.0%`
+- ♻️ **T124 — Handle Google transient failures without blind retries** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** No automatic duplicate annotation creation
-- 🧯 **T125 — Support reversible config opt-out without token replacement** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Disable write capability at runtime restart
+- 🧯 **T125 — Support reversible config opt-out without token replacement** — `██████████ 100.0%`
+  - ✅ **Gate:** Disable write capability at runtime restart · **Evidence:** Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.; Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.
 
 
 ## 🗃️ M6 — DuckDB scratchpad and advanced analytics parity — `░░░░░░░░░░ 0.0%`
@@ -495,11 +495,11 @@
   - ✅ **Gate:** Changes open maintenance work rather than silently inflate parity
 
 
-## 🧪 M8 — Verification, resilience and security acceptance — `░░░░░░░░░░ 3.6%`
+## 🧪 M8 — Verification, resilience and security acceptance — `█░░░░░░░░░ 8.9%`
 
 **Scope:** MVP. **Acceptance gate:** Full offline and authorized live verification including malformed inputs, MCP interoperability and threat model.
 
-### 🧫 P22 — Deterministic tests — `█░░░░░░░░░ 10.0%`
+### 🧫 P22 — Deterministic tests — `███░░░░░░░ 25.0%`
 
 **Feature:** Offline QA.
 
@@ -513,14 +513,14 @@
   - ✅ **Gate:** Normalized golden fixtures generated from pinned baseline
 - 🪟 **T172 — Exercise stdio tools under an MCP inspector** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Every advertised tool can be called with synthetic fixtures
-- 🛰️ **T173 — Exercise protected Streamable HTTP end-to-end** — `░░░░░░░░░░ 0.0%`
+- 🛰️ **T173 — Exercise protected Streamable HTTP end-to-end** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Valid and invalid sessions checked over loopback
 - 🧹 **T174 — Enforce schema/roadmap ledger consistency in CI** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Progress bars and evidence checks regenerated reproducibly
 - ⏱️ **T175 — Validate timeouts retries backoff and rate limits** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Offline deterministic clock and throttled 429 tests
-- 🦀 **T176 — Pass rustfmt clippy and tests on clean environment** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** All-target strict checks green in CI
+- 🦀 **T176 — Pass rustfmt clippy and tests on clean environment** — `██████████ 100.0%`
+  - ✅ **Gate:** All-target strict checks green in CI · **Evidence:** Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.; Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.
 - 🔐 **T177 — Run dependency secret and license scanners** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** No accidental credentials or prohibited licenses in repository
 
