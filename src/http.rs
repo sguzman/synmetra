@@ -221,7 +221,9 @@ mod tests {
         let tools = listing["result"]["tools"].as_array().unwrap();
         assert_eq!(tools.len(), 20);
         assert!(tools.iter().any(|item| item["name"] == "ga4_get_started"));
-        assert!(tools.iter().all(|item| item["name"] != "create_property_annotation"));
+        assert!(tools
+            .iter()
+            .all(|item| item["name"] != "create_property_annotation"));
 
         let invoked = request(
             json!({"jsonrpc":"2.0","id":3,"method":"tools/call","params":{
