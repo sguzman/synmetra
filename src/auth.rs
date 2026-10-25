@@ -371,6 +371,27 @@ async fn login(path: &str) -> Result<(), String> {
     Ok(())
 }
 
+pub fn public_status() -> serde_json::Value {
+    let override_token = std::env::var("SYNMETRA_GOOGLE_ACCESS_TOKEN")
+        .is_ok_and(|value| !value.trim().is_empty());
+    match read_credentials() {
+        Ok(Some(config)) => serde_json::json!({
+            "local_oauth_configured": true, "override_token_present": override_token,
+            "cached_token_fresh": config.expires_at > epoch_seconds().saturating_add(120),
+            "scope": SCOPE
+        }),
+        Ok(None) => serde_json::json!({
+            "local_oauth_configured": false, "override_token_present": override_token,
+            "scope": SCOPE
+        }),
+        Err(_) => serde_json::json!({
+            "local_oauth_status": "unreadable_private_credentials",
+            "override_token_present": override_token,
+            "scope": SCOPE
+        }),
+    }
+}
+
 pub async fn command(args: &[String]) -> Result<(), String> {
     match args {
         [mode, flag, path] if mode == "login" && flag == "--client-id-file" => login(path).await,

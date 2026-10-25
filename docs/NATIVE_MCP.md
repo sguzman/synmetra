@@ -1,6 +1,6 @@
 # 🦀 Native MCP implementation status
 
-The executable `synmetra` now boots an experimental **read-only** MCP stdio server using the official Rust `rmcp` SDK. Seventeen tool names are currently advertised because they have concrete handlers: `get_account_summaries`, `get_property_details`, `list_google_ads_links`, `list_property_annotations`, `get_custom_dimensions_and_metrics`, `run_report`, `run_realtime_report`, `get_account_data_sharing_settings`, `get_property_data_retention_settings`, `run_pivot_report`, `batch_run_reports`, `check_report_compatibility`, `run_property_access_report`, `run_account_access_report`, `preview_report_request`, `run_funnel_report`, and `run_conversions_report`.
+The executable `synmetra` now boots an experimental **read-only** MCP stdio server using the official Rust `rmcp` SDK. Twenty tool names are now advertised because they have concrete handlers: `get_account_summaries`, `get_property_details`, `list_google_ads_links`, `list_property_annotations`, `get_custom_dimensions_and_metrics`, `run_report`, `run_realtime_report`, `get_account_data_sharing_settings`, `get_property_data_retention_settings`, `run_pivot_report`, `batch_run_reports`, `check_report_compatibility`, `run_property_access_report`, `run_account_access_report`, `preview_report_request`, `run_funnel_report`, and `run_conversions_report`.
 
 **Not feature parity.** These handlers are an initial slice: they still need upstream parameter-level and output contract comparisons, Google ADC/OAuth login, authorized live GA testing, complete filtering and pagination cases, HTTP transport, and scratchpad. The 36-name ledger remains a *target* inventory, not an advertised set of working tools.
 
@@ -19,3 +19,5 @@ Credentials are written as `$XDG_CONFIG_HOME/synmetra/credentials.json` (or `~/.
 **Security/acceptance:** OAuth is implemented with synthetic callback and PKCE tests, but no real Google login or refresh flow has yet been verified. An interactive OAuth login necessarily requires a one-time browser authorization by the account owner. Do not commit OAuth client JSON, credentials.json or browser callback URLs.
 
 The new v1alpha conversion and funnel handlers are intentionally **eligibility-sensitive**: conversion reports use v1alpha `runReport` with conversionSpec or conversion metrics; funnel reports use v1alpha `runFunnelReport` and bounded step counts. Preview constructs a report body without network access. These are initial request routes rather than completed upstream contract parity.
+
+Three new read-only setup helpers provide commands and safe credential status without returning tokens, client identifiers, or private paths.

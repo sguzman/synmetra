@@ -108,6 +108,30 @@ fn result(r: Result<Value, ApiError>) -> CallToolResult {
 
 #[tool_router]
 impl Synmetra {
+    #[tool(description = "Explain secure one-time setup for Synmetra with Google Analytics APIs and native OAuth.")]
+    fn ga4_get_started(&self) -> CallToolResult {
+        result(Ok(json!({
+            "command": "synmetra auth login --client-id-file /path/to/desktop-oauth.json",
+            "requires": ["Google Analytics Admin API", "Google Analytics Data API", "GA4 property access"],
+            "scope": "https://www.googleapis.com/auth/analytics.readonly",
+            "python_required": false, "npm_required": false
+        })))
+    }
+
+    #[tool(description = "Report safe Google Analytics credential status without exposing secrets, IDs, or local paths.")]
+    fn ga4_auth_status(&self) -> CallToolResult {
+        result(Ok(auth::public_status()))
+    }
+
+    #[tool(description = "Return the native OAuth desktop login command; never perform interactive authorization inside an MCP tool.")]
+    fn ga4_auth_login_command(&self) -> CallToolResult {
+        result(Ok(json!({
+            "command": "synmetra auth login --client-id-file /path/to/desktop-oauth.json",
+            "interactive_authorization_required": true,
+            "scope": "https://www.googleapis.com/auth/analytics.readonly"
+        })))
+    }
+
     #[tool(
         description = "List the Google Analytics accounts and properties accessible with the configured Google token."
     )]
@@ -379,8 +403,11 @@ mod tests {
             .into_iter()
             .map(|tool| tool.name.to_string())
             .collect();
-        assert_eq!(names.len(), 17);
+        assert_eq!(names.len(), 20);
         for name in [
+            "ga4_get_started",
+            "ga4_auth_status",
+            "ga4_auth_login_command",
             "get_account_summaries",
             "get_property_details",
             "preview_report_request",
@@ -422,7 +449,7 @@ mod tests {
         });
         let client = ().serve(client_stream).await.unwrap();
         let tools = client.list_all_tools().await.unwrap();
-        assert_eq!(tools.len(), 17);
+        assert_eq!(tools.len(), 20);
         assert!(tools
             .iter()
             .all(|tool| tool.name != "create_property_annotation"));
