@@ -41,6 +41,17 @@ jobs:
             echo "Unexpected OpenSSL or Python dynamic runtime linkage" >&2
             exit 1
           fi
+      - name: Verify real stdio transport is unpolluted JSON-RPC
+        shell: bash
+        run: |
+          request='{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"synmetra-ci","version":"1"}}}'
+          printf '%s\n' "$request" | timeout 10s target/debug/synmetra serve \
+            > "$RUNNER_TEMP/synmetra-stdio.jsonl" \
+            2> "$RUNNER_TEMP/synmetra-stdio.stderr"
+          test -s "$RUNNER_TEMP/synmetra-stdio.jsonl"
+          jq --slurp --exit-status \
+            'length > 0 and all(.[]; .jsonrpc == "2.0") and any(.[]; .id == 1 and (.result != null))' \
+            "$RUNNER_TEMP/synmetra-stdio.jsonl" > /dev/null
       - name: Verify progress ledger and pinned contracts
         run: cargo run --locked --bin synmetra-progress
       - name: Verify README and roadmap bars regenerate reproducibly
