@@ -1230,6 +1230,7 @@ mod tests {
         }
         assert_eq!(property_name("321").unwrap(), "properties/321");
         assert_eq!(property_name("properties/321").unwrap(), "properties/321");
+        assert_eq!(account_name("123").unwrap(), "accounts/123");
         assert_eq!(account_name("accounts/123").unwrap(), "accounts/123");
         assert!(account_name("properties/5").is_err());
     }
