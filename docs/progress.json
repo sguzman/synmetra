@@ -2007,16 +2007,18 @@
               "id": "T103",
               "emoji": "🧪",
               "name": "Support funnel steps segments trended and breakdown",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "Complex v1alpha funnel shapes round-trip",
               "checks": [
                 {
                   "text": "Deliver support funnel steps segments trended and breakdown as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs funnel_request and funnel_request_options normalize v1alpha event or filter expression steps, prior-step sequencing/duration, up to four segments, breakdown and next-action controls, open/trended visualization, quota flag and bounded dimension filtering; src/main.rs run_funnel_report calls the v1alpha Google endpoint. Complex funnel fixture and API mock tests run in GitHub Actions 40239266063 with both core and DuckDB jobs passing."
                 },
                 {
                   "text": "Complex v1alpha funnel shapes round-trip",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs complex_funnel_steps_segments_breakdown_and_trended_options_round_trip, funnel_steps_preserve_sequencing_durations_and_bounded_breakdown_limits, and funnel_nullable_optionals_and_unknown_fields_have_explicit_semantics verify multi-step v1alpha JSON round-trip, null handling, aliases, invalid first-step sequencing, malformed durations, and conflicting or unknown fields. GitHub Actions 40239266063 passed. This gate does not certify live property eligibility or all SednaLabs response semantics."
                 }
               ]
             },

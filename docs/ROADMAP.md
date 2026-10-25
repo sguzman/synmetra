@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `████░░░░░░ 37.4%` · **+37.44 percentage points from initial empty repo; +1.32 pp from CI-tested pivot axes, output formats and bounded projection controls** · 60/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `████░░░░░░ 37.9%` · **+37.89 percentage points from initial empty repo; +0.45 pp from CI-tested complex funnel round-trip and validation** · 61/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -245,7 +245,7 @@
   - ✅ **Gate:** No stale cross-principal cache confusion
 
 
-## 📊 M4 — Reporting, preflight and Data API parity — `████████░░ 78.3%`
+## 📊 M4 — Reporting, preflight and Data API parity — `████████░░ 81.7%`
 
 **Scope:** MVP. **Acceptance gate:** All report tools return correct GA4 semantics, including documented alpha, pagination and response projections.
 
@@ -289,7 +289,7 @@
 - 📝 **T097 — Normalize input values without silent coercion** — `██████████ 100.0%`
   - ✅ **Gate:** Lossless valid requests and typed invalid results · **Evidence:** src/google.rs: canonical normalization of dates and typed invalid-request rejection before Google API calls; synthetic unit tests passed GitHub Actions core 40212316165. Full filter and pivot coercion and live API parity remain open.; src/google.rs normalized_report_body_preserves_valid_inputs_and_rejects_ambiguous_values round-trips relative and leap-day dates, nested dimension filters, exact signed-64 metric values, ordering, dimensions and decimal string limits without silent coercion; invalid overflow, non-finite numbers, nonnumeric filter inputs and ambiguous date aliases yield typed INVALID_REQUEST. numeric_metric_filter_preserves_i64_edges_and_rejects_overflow adds signed boundary coverage. GitHub Actions 40237203370 passed core Rust tests, fmt, strict Clippy and native DuckDB. This does not certify Google's semantic validity for arbitrary field names.
 
-### 📐 P12 — Data request fidelity and limits — `███████░░░ 73.3%`
+### 📐 P12 — Data request fidelity and limits — `████████░░ 80.0%`
 
 **Feature:** Reporting correctness.
 
@@ -303,8 +303,8 @@
   - ✅ **Gate:** Nested pivots and row groups validated by fixtures · **Evidence:** src/google.rs normalize_pivots now enforces 1–4 Google v1beta pivot axes, nonempty requested dimension fieldNames, required positive per-axis limits and bounded product <=250,000; accepts numeric/string offset/limit and normalizes to Google int64 strings, rejects invalid dimension/metric orderings and conflicting sort selectors. src/main.rs run_pivot_report uses it before Google calls; tests multi_axis_pivot_ordering_and_cardinality_are_bounded passed Actions 40238367789 full CI.; src/tabular.rs multi_axis_pivot_groups_preserve_headers_and_never_claim_flat_cursors uses grouped synthetic country/browser rows with two pivotHeaders, verifies all row values, original pivot header grouping, true totals, truncated bounds and no fabricated flat cursor. Existing pivot_report_projection_keeps_pivot_header_metadata_without_fake_cursor exercises read-only Google v1beta HTTP routing. GitHub Actions 40238367789 core+DuckDB passed. Live Google acceptance remains separate.
 - 📦 **T102 — Enforce batch report maximums and isolation** — `██████████ 100.0%`
   - ✅ **Gate:** Five-report constraint and distinct report results preserved · **Evidence:** src/google.rs data_operation rejects batches with 0 or >5 requests; Actions 40202015488 passed guards; src/main.rs BatchReportItemArgs typed snake_case-to-Google normalization and batch_reports_normalize_separate_requests_and_preserve_distinct_results mock HTTP test preserve distinct first/second reports without cross-contamination; batch_report_five_item_boundary_is_enforced_before_google_credentials proves empty and six requests fail with INVALID_REQUEST while exactly five proceed to missing credentials; google.rs rejects_invalid_batch_without_http_request guards counts. GitHub Actions 40228564460 core tests, formatting and Clippy passed. Full SednaLabs batch output controls and live Google parity remain open on T088/T155 follow-up.
-- 🧪 **T103 — Support funnel steps segments trended and breakdown** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Complex v1alpha funnel shapes round-trip
+- 🧪 **T103 — Support funnel steps segments trended and breakdown** — `██████████ 100.0%`
+  - ✅ **Gate:** Complex v1alpha funnel shapes round-trip · **Evidence:** src/google.rs funnel_request and funnel_request_options normalize v1alpha event or filter expression steps, prior-step sequencing/duration, up to four segments, breakdown and next-action controls, open/trended visualization, quota flag and bounded dimension filtering; src/main.rs run_funnel_report calls the v1alpha Google endpoint. Complex funnel fixture and API mock tests run in GitHub Actions 40239266063 with both core and DuckDB jobs passing.; src/google.rs complex_funnel_steps_segments_breakdown_and_trended_options_round_trip, funnel_steps_preserve_sequencing_durations_and_bounded_breakdown_limits, and funnel_nullable_optionals_and_unknown_fields_have_explicit_semantics verify multi-step v1alpha JSON round-trip, null handling, aliases, invalid first-step sequencing, malformed durations, and conflicting or unknown fields. GitHub Actions 40239266063 passed. This gate does not certify live property eligibility or all SednaLabs response semantics.
 - 🛒 **T104 — Support conversion and attribution reporting v1alpha** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Eligible and ineligible properties/errors tested
 - 💵 **T105 — Preserve currency timezone and numeric precision** — `██████████ 100.0%`
