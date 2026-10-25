@@ -117,6 +117,18 @@ jobs:
             > "$RUNNER_TEMP/synmetra-logout.txt"
           grep -Fq 'Revoke access in your Google account' "$RUNNER_TEMP/synmetra-logout.txt"
 
+      - name: Reject unsupported public MCP bind overrides before network startup
+        shell: bash
+        run: |
+          if target/debug/synmetra serve --http-loopback --host 0.0.0.0 \
+            > "$RUNNER_TEMP/synmetra-nonloopback.stdout" \
+            2> "$RUNNER_TEMP/synmetra-nonloopback.stderr"; then
+            echo "Unsupported public bind override unexpectedly succeeded" >&2
+            exit 1
+          fi
+          grep -Fq 'Usage: synmetra serve' "$RUNNER_TEMP/synmetra-nonloopback.stderr"
+          test ! -s "$RUNNER_TEMP/synmetra-nonloopback.stdout"
+
       - name: Verify progress ledger and pinned contracts
         run: cargo run --locked --bin synmetra-progress
       - name: Verify README and roadmap bars regenerate reproducibly

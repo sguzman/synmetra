@@ -69,6 +69,10 @@ fn app(server: Synmetra, token: String, port: u16) -> Router {
         .layer(middleware::from_fn_with_state(access, require_local_auth))
 }
 
+fn loopback_address(port: u16) -> std::net::SocketAddr {
+    std::net::SocketAddr::from(([127, 0, 0, 1], port))
+}
+
 pub async fn serve_loopback(server: Synmetra) -> Result<(), Box<dyn std::error::Error>> {
     let token = std::env::var("SYNMETRA_MCP_BEARER_TOKEN").map_err(|_| {
         "Loopback HTTP requires SYNMETRA_MCP_BEARER_TOKEN (at least 32 characters)."
@@ -89,7 +93,7 @@ pub async fn serve_loopback(server: Synmetra) -> Result<(), Box<dyn std::error::
     if port == 0 {
         return Err("SYNMETRA_MCP_PORT must be nonzero.".into());
     }
-    let listener = tokio::net::TcpListener::bind(("127.0.0.1", port)).await?;
+    let listener = tokio::net::TcpListener::bind(loopback_address(port)).await?;
     eprintln!("Synmetra experimental authenticated MCP listening on http://127.0.0.1:{port}/mcp");
     axum::serve(listener, app(server, token, port)).await?;
     Ok(())
@@ -135,6 +139,15 @@ mod tests {
                     }
                 }
             }
+        }
+    }
+
+    #[test]
+    fn production_http_bind_is_always_ipv4_loopback() {
+        for port in [1, 44128, 65535] {
+            let address = loopback_address(port);
+            assert_eq!(address.ip(), std::net::IpAddr::V4(std::net::Ipv4Addr::LOCALHOST));
+            assert_eq!(address.port(), port);
         }
     }
 
