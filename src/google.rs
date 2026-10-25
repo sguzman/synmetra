@@ -1199,7 +1199,10 @@ mod tests {
         .unwrap();
         let output = normalized["dateRanges"].as_array().unwrap();
         assert_eq!(output.len(), 4);
-        assert_eq!(output[0], json!({"startDate":"7daysAgo","endDate":"yesterday","name":"Recent"}));
+        assert_eq!(
+            output[0],
+            json!({"startDate":"7daysAgo","endDate":"yesterday","name":"Recent"})
+        );
         assert_eq!(output[1]["name"], "January");
         assert_eq!(output[2]["startDate"], "today");
         assert_eq!(output[3]["startDate"], "2024-02-29");
