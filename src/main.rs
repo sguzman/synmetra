@@ -2214,6 +2214,33 @@ mod tests {
         assert!(!body.to_string().contains("private-batch-fixture-token"));
     }
 
+    #[tokio::test]
+    async fn batch_report_five_item_boundary_is_enforced_before_google_credentials() {
+        let server = Synmetra::new(GoogleClient::new(None), false);
+        let item = json!({
+            "date_ranges":[{"start_date":"yesterday","end_date":"today"}],
+            "dimensions":[],
+            "metrics":["activeUsers"]
+        });
+        for (count, expected_code) in [
+            (0, "INVALID_REQUEST"),
+            (5, "AUTH_NOT_CONFIGURED"),
+            (6, "INVALID_REQUEST"),
+        ] {
+            let args: BatchArgs = serde_json::from_value(json!({
+                "property_id":"42",
+                "requests":vec![item.clone();count]
+            }))
+            .unwrap();
+            let result = server.batch_run_reports(Parameters(args)).await;
+            assert_eq!(result.is_error, Some(true));
+            assert_eq!(
+                result.structured_content.unwrap()["error"]["code"],
+                expected_code
+            );
+        }
+    }
+
     #[test]
     fn batch_arguments_reject_unimplemented_output_controls_and_bad_items() {
         for invalid in [
