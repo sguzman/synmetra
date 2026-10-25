@@ -430,6 +430,27 @@ struct FunnelArgs {
     return_property_quota: bool,
 }
 
+/// Input-schema mirror of the pinned conversion specification. The runtime
+/// continues accepting snake_case and Google camelCase through Value, while
+/// the advertised public schema retains typed enum and action-list bounds.
+#[allow(dead_code)]
+#[derive(JsonSchema)]
+#[serde(deny_unknown_fields)]
+struct ConversionSpecInput {
+    #[schemars(default)]
+    attribution_model: Option<ConversionAttributionModel>,
+    #[schemars(default)]
+    conversion_actions: Vec<String>,
+}
+
+#[allow(dead_code)]
+#[derive(JsonSchema)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+enum ConversionAttributionModel {
+    DataDriven,
+    LastClick,
+}
+
 #[derive(Debug, Deserialize, JsonSchema)]
 struct ConversionArgs {
     #[serde(deserialize_with = "deserialize_google_id")]
@@ -439,6 +460,7 @@ struct ConversionArgs {
     date_ranges: Vec<Value>,
     dimensions: Vec<String>,
     metrics: Vec<String>,
+    #[schemars(with = "ConversionSpecInput")]
     conversion_spec: Value,
     #[serde(default)]
     dimension_filter: Option<Value>,
@@ -2582,6 +2604,32 @@ mod tests {
         assert_eq!(
             invalid.structured_content.unwrap()["error"]["code"],
             "INVALID_REQUEST"
+        );
+    }
+
+    #[test]
+    fn conversion_spec_schema_advertises_pinned_action_and_attribution_fields() {
+        let router = Synmetra::tool_router();
+        let tool = router
+            .list_all()
+            .into_iter()
+            .find(|tool| tool.name == "run_conversions_report")
+            .unwrap();
+        let all = serde_json::to_value(&tool.input_schema).unwrap();
+        let source = &all["properties"]["conversion_spec"];
+        let schema = if let Some(name) = source["$ref"]
+            .as_str()
+            .and_then(|reference| reference.strip_prefix("#/$defs/"))
+        {
+            &all["$defs"][name]
+        } else {
+            source
+        };
+        assert!(schema["properties"]["conversion_actions"]["items"].is_object());
+        assert!(schema["properties"]["attribution_model"].is_object());
+        assert_eq!(
+            schema["properties"]["conversion_actions"]["default"],
+            json!([])
         );
     }
 
