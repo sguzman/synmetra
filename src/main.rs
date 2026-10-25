@@ -430,9 +430,56 @@ struct PivotArgs {
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+struct BatchReportItemArgs {
+    date_ranges: Vec<Value>,
+    dimensions: Vec<String>,
+    metrics: Vec<String>,
+    #[serde(default)]
+    dimension_filter: Option<Value>,
+    #[serde(default)]
+    metric_filter: Option<Value>,
+    #[serde(default)]
+    order_bys: Option<Vec<Value>>,
+    #[serde(default)]
+    limit: Option<u64>,
+    #[serde(default)]
+    offset: Option<u64>,
+    #[serde(default)]
+    currency_code: Option<String>,
+    #[serde(default = "default_return_property_quota")]
+    return_property_quota: bool,
+}
+
+impl BatchReportItemArgs {
+    fn to_google_request(&self) -> Result<Value, ApiError> {
+        if self.limit.is_some_and(|limit| limit == 0 || limit > 250_000) {
+            return Err(ApiError::InvalidRequest);
+        }
+        report_request(
+            Some(self.date_ranges.clone()),
+            self.dimensions.clone(),
+            self.metrics.clone(),
+            vec![
+                ("dimensionFilter", self.dimension_filter.clone()),
+                ("metricFilter", self.metric_filter.clone()),
+                ("orderBys", self.order_bys.clone().map(|x| json!(x))),
+                ("limit", self.limit.map(|v| json!(v.to_string()))),
+                ("offset", self.offset.map(|v| json!(v.to_string()))),
+                ("currencyCode", self.currency_code.clone().map(|x| json!(x))),
+                (
+                    "returnPropertyQuota",
+                    Some(json!(self.return_property_quota)),
+                ),
+            ],
+        )
+    }
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
 struct BatchArgs {
     property_id: String,
-    requests: Vec<Value>,
+    requests: Vec<BatchReportItemArgs>,
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
@@ -984,7 +1031,7 @@ impl Synmetra {
     }
 
     #[tool(
-        description = "Execute one to five GA4 historical reports in a single batch using a requests JSON array.",
+        description = "Execute one to five GA4 historical reports with typed snake_case report arguments normalized into Google Data API batch JSON.",
         annotations(
             read_only_hint = true,
             destructive_hint = false,
@@ -993,15 +1040,26 @@ impl Synmetra {
         )
     )]
     async fn batch_run_reports(&self, Parameters(args): Parameters<BatchArgs>) -> CallToolResult {
-        result(
-            self.api
-                .data_operation(
-                    &args.property_id,
-                    json!({"requests": args.requests}),
-                    "batchRunReports",
-                )
-                .await,
-        )
+        if args.requests.is_empty() || args.requests.len() > 5 {
+            return result(Err(ApiError::InvalidRequest));
+        }
+        let requests = args
+            .requests
+            .iter()
+            .map(BatchReportItemArgs::to_google_request)
+            .collect::<Result<Vec<_>, _>>();
+        result(match requests {
+            Ok(requests) => {
+                self.api
+                    .data_operation(
+                        &args.property_id,
+                        json!({"requests": requests}),
+                        "batchRunReports",
+                    )
+                    .await
+            }
+            Err(error) => Err(error),
+        })
     }
 
     #[tool(
@@ -2079,6 +2137,98 @@ mod tests {
         assert_eq!(body["orderBys"][0]["dimension"]["dimensionName"], "country");
         assert_eq!(body["returnPropertyQuota"], true);
         assert!(body.get("offset").is_none());
+    }
+
+    #[tokio::test]
+    async fn batch_reports_normalize_separate_requests_and_preserve_distinct_results() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        use tokio::net::TcpListener;
+
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let endpoint = format!("http://{}", listener.local_addr().unwrap());
+        let api = GoogleClient::with_endpoints(
+            Some("private-batch-fixture-token".into()),
+            &endpoint,
+            &endpoint,
+        );
+        let responder = tokio::spawn(async move {
+            let (mut stream, _) = listener.accept().await.unwrap();
+            let mut buffer = vec![0u8; 8192];
+            let read = stream.read(&mut buffer).await.unwrap();
+            let request = String::from_utf8_lossy(&buffer[..read]);
+            assert!(request.starts_with("POST /v1beta/properties/42:batchRunReports "));
+            assert!(request.contains(r#""dateRanges":[{"endDate":"today","startDate":"yesterday"}]"#));
+            assert!(request.contains(r#""returnPropertyQuota":true"#));
+            assert!(request.contains(r#""name":"activeUsers""#));
+            assert!(request.contains(r#""name":"screenPageViews""#));
+            assert!(!request.contains("date_ranges"));
+            let body = json!({
+                "reports": [
+                    {"rowCount":1,"rows":[{"metricValues":[{"value":"17"}]}]},
+                    {"rowCount":1,"rows":[{"metricValues":[{"value":"23"}]}]}
+                ]
+            })
+            .to_string();
+            let response = format!(
+                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                body.len(),
+                body
+            );
+            stream.write_all(response.as_bytes()).await.unwrap();
+        });
+        let args: BatchArgs = serde_json::from_value(json!({
+            "property_id":"42",
+            "requests":[
+                {
+                    "date_ranges":[{"start_date":"yesterday","end_date":"today"}],
+                    "dimensions":["country"],
+                    "metrics":["activeUsers"]
+                },
+                {
+                    "date_ranges":[{"start_date":"yesterday","end_date":"today"}],
+                    "dimensions":["country"],
+                    "metrics":["screenPageViews"],
+                    "return_property_quota":false
+                }
+            ]
+        }))
+        .unwrap();
+        let server = Synmetra::new(api, false);
+        let response = server.batch_run_reports(Parameters(args)).await;
+        responder.await.unwrap();
+        assert_eq!(response.is_error, Some(false));
+        let body = response.structured_content.unwrap();
+        assert_eq!(body["data"]["reports"][0]["rows"][0]["metricValues"][0]["value"], "17");
+        assert_eq!(body["data"]["reports"][1]["rows"][0]["metricValues"][0]["value"], "23");
+        assert!(!body.to_string().contains("private-batch-fixture-token"));
+    }
+
+    #[test]
+    fn batch_arguments_reject_unimplemented_output_controls_and_bad_items() {
+        for invalid in [
+            json!({
+                "date_ranges":[{"start_date":"yesterday","end_date":"today"}],
+                "dimensions":[],
+                "metrics":["activeUsers"],
+                "cursor":"unimplemented"
+            }),
+            json!({
+                "date_ranges":[{"start_date":"yesterday","end_date":"today"}],
+                "dimensions":[],
+                "metrics":["activeUsers"],
+                "limit":250001
+            }),
+            json!({
+                "date_ranges":[{"start_date":"yesterday","end_date":"today"}],
+                "dimensions":[],
+                "metrics":[]
+            })
+        ] {
+            let item = serde_json::from_value::<BatchReportItemArgs>(invalid);
+            if let Ok(parsed) = item {
+                assert_eq!(parsed.to_google_request(), Err(ApiError::InvalidRequest));
+            }
+        }
     }
 
     #[tokio::test]
