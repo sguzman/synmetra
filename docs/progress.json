@@ -309,7 +309,7 @@
               "id": "T015",
               "emoji": "🧭",
               "name": "Implement CLI config parsing and doctor subcommands",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Actionable diagnostics and typed failures without exposing secrets",
               "checks": [
                 {
@@ -319,7 +319,8 @@
                 },
                 {
                   "text": "Actionable diagnostics and typed failures without exposing secrets",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/auth.rs CLI offers private read-only auth doctor/status/command, typed malformed login validation and revocation guidance. GitHub Actions 40244436625 built the actual synmetra executable and passed Verify native auth doctor and credential-safe CLI failures, with isolated XDG_CONFIG_HOME, no configured credentials, synthetic override-token canary never disclosed, actionable Admin/Data API prerequisites, failed headless login without --client-id-file, and logout guidance. This accepts local CLI diagnostics, not an authorized live OAuth login."
                 }
               ]
             },
