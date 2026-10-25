@@ -1025,7 +1025,10 @@ impl Synmetra {
                     ("offset", args.offset.map(|x| json!(x.to_string()))),
                     ("currencyCode", args.currency_code.map(|x| json!(x))),
                     ("keepEmptyRows", args.keep_empty_rows.map(|x| json!(x))),
-                    ("returnPropertyQuota", Some(json!(args.return_property_quota))),
+                    (
+                        "returnPropertyQuota",
+                        Some(json!(args.return_property_quota)),
+                    ),
                 ],
             )
         });
@@ -1054,7 +1057,10 @@ impl Synmetra {
                 ("offset", args.offset.map(|x| json!(x.to_string()))),
                 ("currencyCode", args.currency_code.map(|x| json!(x))),
                 ("keepEmptyRows", args.keep_empty_rows.map(|x| json!(x))),
-                ("returnPropertyQuota", Some(json!(args.return_property_quota))),
+                (
+                    "returnPropertyQuota",
+                    Some(json!(args.return_property_quota)),
+                ),
             ],
         );
         result(match body {
@@ -1909,7 +1915,9 @@ mod tests {
         });
         let default_args: ReportArgs = serde_json::from_value(fields.clone()).unwrap();
         assert!(default_args.return_property_quota);
-        let response = server.preview_report_request(Parameters(default_args)).await;
+        let response = server
+            .preview_report_request(Parameters(default_args))
+            .await;
         assert_eq!(response.is_error, Some(false));
         assert_eq!(
             response.structured_content.unwrap()["data"]["request"]["returnPropertyQuota"],
@@ -1920,7 +1928,9 @@ mod tests {
         overridden["return_property_quota"] = json!(false);
         let explicit_args: ReportArgs = serde_json::from_value(overridden).unwrap();
         assert!(!explicit_args.return_property_quota);
-        let response = server.preview_report_request(Parameters(explicit_args)).await;
+        let response = server
+            .preview_report_request(Parameters(explicit_args))
+            .await;
         assert_eq!(
             response.structured_content.unwrap()["data"]["request"]["returnPropertyQuota"],
             false
