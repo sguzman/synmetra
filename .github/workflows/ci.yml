@@ -41,17 +41,38 @@ jobs:
             echo "Unexpected OpenSSL or Python dynamic runtime linkage" >&2
             exit 1
           fi
-      - name: Verify real stdio transport is unpolluted JSON-RPC
+      - name: Verify real stdio negotiation, tool discovery, calls, and clean stdout
         shell: bash
         run: |
-          request='{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"synmetra-ci","version":"1"}}}'
-          printf '%s\n' "$request" | timeout 10s target/debug/synmetra serve \
+          initialize='{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"synmetra-ci","version":"1"}}}'
+          initialized='{"jsonrpc":"2.0","method":"notifications/initialized"}'
+          discovery='{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}'
+          call='{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"ga4_get_started","arguments":{}}}'
+          printf '%s\n' "$initialize" "$initialized" "$discovery" "$call" | \
+            timeout 10s target/debug/synmetra serve \
             > "$RUNNER_TEMP/synmetra-stdio.jsonl" \
             2> "$RUNNER_TEMP/synmetra-stdio.stderr"
           test -s "$RUNNER_TEMP/synmetra-stdio.jsonl"
-          jq --slurp --exit-status \
-            'length > 0 and all(.[]; .jsonrpc == "2.0") and any(.[]; .id == 1 and (.result != null))' \
-            "$RUNNER_TEMP/synmetra-stdio.jsonl" > /dev/null
+          jq --slurp --exit-status '
+            length == 3
+            and all(.[]; .jsonrpc == "2.0" and .error == null)
+            and any(.[]; .id == 1
+              and (.result.protocolVersion | type == "string")
+              and (.result.serverInfo.name | type == "string"))
+            and any(.[]; .id == 2
+              and (.result.tools | length == 20)
+              and (.result.tools | any(.name == "ga4_get_started"))
+              and (.result.tools | all(.inputSchema.type == "object"))
+              and (.result.tools | all(.name != "create_property_annotation")))
+            and any(.[]; .id == 3
+              and .result.isError == false
+              and (.result.structuredContent.ok == true)
+              and (.result.structuredContent.data.scope == "https://www.googleapis.com/auth/analytics.readonly"))
+          ' "$RUNNER_TEMP/synmetra-stdio.jsonl" > /dev/null
+          if grep -Ei 'secret|client_secret|access_token' "$RUNNER_TEMP/synmetra-stdio.jsonl"; then
+            echo "Unexpected credential material in MCP stdout" >&2
+            exit 1
+          fi
       - name: Verify progress ledger and pinned contracts
         run: cargo run --locked --bin synmetra-progress
       - name: Verify README and roadmap bars regenerate reproducibly
