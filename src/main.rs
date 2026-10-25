@@ -278,6 +278,23 @@ fn local_result(value: Result<Value, String>) -> CallToolResult {
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
+struct CollectionArgs {
+    #[serde(default)]
+    page_size: Option<u32>,
+    #[serde(default)]
+    max_pages: Option<u32>,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+struct PropertyCollectionArgs {
+    property_id: String,
+    #[serde(default)]
+    page_size: Option<u32>,
+    #[serde(default)]
+    max_pages: Option<u32>,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
 struct PropertyArgs {
     /// Positive numeric GA4 property ID or canonical properties/<id>.
     property_id: String,
@@ -563,8 +580,13 @@ impl Synmetra {
             open_world_hint = true
         )
     )]
-    async fn get_account_summaries(&self) -> CallToolResult {
-        result(self.api.account_summaries().await)
+    async fn get_account_summaries(
+        &self,
+        Parameters(args): Parameters<CollectionArgs>,
+    ) -> CallToolResult {
+        result(self.api.account_summaries_with_options(
+            args.page_size, args.max_pages
+        ).await)
     }
 
     #[tool(
@@ -626,9 +648,11 @@ impl Synmetra {
     )]
     async fn list_google_ads_links(
         &self,
-        Parameters(args): Parameters<PropertyArgs>,
+        Parameters(args): Parameters<PropertyCollectionArgs>,
     ) -> CallToolResult {
-        result(self.api.ads_links(&args.property_id).await)
+        result(self.api.ads_links_with_options(
+            &args.property_id,args.page_size,args.max_pages
+        ).await)
     }
 
     #[tool(
@@ -642,9 +666,11 @@ impl Synmetra {
     )]
     async fn list_property_annotations(
         &self,
-        Parameters(args): Parameters<PropertyArgs>,
+        Parameters(args): Parameters<PropertyCollectionArgs>,
     ) -> CallToolResult {
-        result(self.api.annotations(&args.property_id).await)
+        result(self.api.annotations_with_options(
+            &args.property_id,args.page_size,args.max_pages
+        ).await)
     }
 
     #[tool(
@@ -1555,6 +1581,26 @@ mod tests {
                 actual, expected,
                 "Official Google parameters differ for {name}"
             );
+        }
+    }
+
+    #[test]
+    fn admin_list_page_controls_match_pinned_optional_inputs() {
+        use std::collections::BTreeSet;
+        let snapshot: Value=serde_json::from_str(
+            include_str!("../spec/upstream/sednalabs-tool-schema.v1.json")
+        ).unwrap();
+        let actual=Synmetra::new(GoogleClient::new(None),false).router.list_all();
+        for name in ["get_account_summaries","list_google_ads_links","list_property_annotations"] {
+            let upstream=snapshot["tools"].as_array().unwrap().iter()
+                .find(|item|item["name"]==name).unwrap();
+            let native=actual.iter().find(|tool|tool.name==name).unwrap();
+            let expected:BTreeSet<_>=upstream["inputSchema"]["properties"]
+                .as_object().unwrap().keys().map(String::as_str).collect();
+            let got:BTreeSet<_>=native.input_schema.get("properties")
+                .and_then(Value::as_object).into_iter().flat_map(|items|items.keys())
+                .map(String::as_str).collect();
+            assert_eq!(expected,got,"{name} optional input drift");
         }
     }
 
