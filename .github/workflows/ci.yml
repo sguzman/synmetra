@@ -1,4 +1,4 @@
-name: Rust foundation and progress integrity
+name: Rust native MCP and evidence integrity
 
 on:
   push:
@@ -11,14 +11,28 @@ permissions:
 jobs:
   quality:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CARGO_BUILD_JOBS: 2
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - name: Test Rust project
+      - uses: Swatinem/rust-cache@v2
+      - name: Generate canonical scratchpad source and lock snapshot
+        run: |
+          cargo fmt --all
+          cargo generate-lockfile
+          for file in src/main.rs src/scratchpad.rs Cargo.lock; do
+            echo "SYNMETRA_FILE_BEGIN:$file"
+            base64 -w0 "$file"
+            echo
+            echo "SYNMETRA_FILE_END:$file"
+          done
+      - name: Test standard Rust MCP
         run: cargo test --all-targets --locked
-      - name: Verify committed Rust formatting
-        run: cargo fmt --all -- --check
-      - name: Check Clippy strictly
-        run: cargo clippy --all-targets --locked -- -D warnings
+      - name: Test feature-gated native DuckDB scratchpad
+        run: cargo test --all-targets --locked --features scratchpad
+      - name: Strict Clippy with DuckDB feature
+        run: cargo clippy --all-targets --locked --features scratchpad -- -D warnings
       - name: Verify task evidence and pinned MCP union
         run: cargo run --locked --bin synmetra-progress
