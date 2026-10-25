@@ -48,8 +48,9 @@ jobs:
           initialized='{"jsonrpc":"2.0","method":"notifications/initialized"}'
           discovery='{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}'
           call='{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"ga4_get_started","arguments":{}}}'
+          canary='synmetra-ci-private-canary-572'
           printf '%s\n' "$initialize" "$initialized" "$discovery" "$call" | \
-            timeout 10s target/debug/synmetra serve \
+            SYNMETRA_GOOGLE_ACCESS_TOKEN="$canary" timeout 10s target/debug/synmetra serve \
             > "$RUNNER_TEMP/synmetra-stdio.jsonl" \
             2> "$RUNNER_TEMP/synmetra-stdio.stderr"
           test -s "$RUNNER_TEMP/synmetra-stdio.jsonl"
@@ -69,7 +70,7 @@ jobs:
               and (.result.structuredContent.ok == true)
               and (.result.structuredContent.data.scope == "https://www.googleapis.com/auth/analytics.readonly"))
           ' "$RUNNER_TEMP/synmetra-stdio.jsonl" > /dev/null
-          if grep -Ei 'secret|client_secret|access_token' "$RUNNER_TEMP/synmetra-stdio.jsonl"; then
+          if grep -Fq "$canary" "$RUNNER_TEMP/synmetra-stdio.jsonl"; then
             echo "Unexpected credential material in MCP stdout" >&2
             exit 1
           fi
