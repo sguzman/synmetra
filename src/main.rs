@@ -660,11 +660,17 @@ impl Synmetra {
         &self,
         Parameters(args): Parameters<PropertyAccessArgs>,
     ) -> CallToolResult {
-        let request = google::access_report_request(
-            args.date_ranges, args.dimensions, args.metrics,
-            args.dimension_filter, args.metric_filter, args.order_bys,
-            args.limit, args.offset, args.time_zone,
-        );
+        let request = google::access_report_request(google::AccessReportSpec {
+            date_ranges: args.date_ranges,
+            dimensions: args.dimensions,
+            metrics: args.metrics,
+            dimension_filter: args.dimension_filter,
+            metric_filter: args.metric_filter,
+            order_bys: args.order_bys,
+            limit: args.limit,
+            offset: args.offset,
+            time_zone: args.time_zone,
+        });
         result(match request {
             Ok(body) => self.api.access_report(&args.property_id, body, false).await,
             Err(error) => Err(error),
@@ -684,11 +690,17 @@ impl Synmetra {
         &self,
         Parameters(args): Parameters<AccountAccessArgs>,
     ) -> CallToolResult {
-        let request = google::access_report_request(
-            args.date_ranges, args.dimensions, args.metrics,
-            args.dimension_filter, args.metric_filter, args.order_bys,
-            args.limit, args.offset, args.time_zone,
-        );
+        let request = google::access_report_request(google::AccessReportSpec {
+            date_ranges: args.date_ranges,
+            dimensions: args.dimensions,
+            metrics: args.metrics,
+            dimension_filter: args.dimension_filter,
+            metric_filter: args.metric_filter,
+            order_bys: args.order_bys,
+            limit: args.limit,
+            offset: args.offset,
+            time_zone: args.time_zone,
+        });
         result(match request {
             Ok(body) => self.api.access_report(&args.account_id, body, true).await,
             Err(error) => Err(error),
@@ -1087,9 +1099,10 @@ mod tests {
             let native = advertised.iter().find(|tool| tool.name == name).unwrap();
             let native_fields: BTreeSet<_> = native.input_schema.get("properties")
                 .and_then(serde_json::Value::as_object)
-                .unwrap().keys().map(String::as_str).collect();
+                .into_iter().flat_map(|props| props.keys()).map(String::as_str).collect();
             let expected_fields: BTreeSet<_> = reference["inputSchema"]["properties"]
-                .as_object().unwrap().keys().map(String::as_str).collect();
+                .as_object().into_iter().flat_map(|props| props.keys())
+                .map(String::as_str).collect();
             assert_eq!(native_fields, expected_fields, "MCP input properties drifted for {name}");
             let native_required: BTreeSet<_> = native.input_schema.get("required")
                 .and_then(serde_json::Value::as_array)

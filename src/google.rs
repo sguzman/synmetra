@@ -519,12 +519,23 @@ pub fn funnel_request(
 
 /// Normalize Google Analytics Admin API access-report inputs.
 /// AccessDimension/AccessMetric use dimensionName/metricName (not "name").
-pub fn access_report_request(
-    date_ranges: Vec<Value>, dimensions: Vec<String>, metrics: Vec<String>,
-    dimension_filter: Option<Value>, metric_filter: Option<Value>,
-    order_bys: Option<Vec<Value>>, limit: Option<u32>, offset: Option<u64>,
-    time_zone: Option<String>,
-) -> Result<Value, ApiError> {
+pub struct AccessReportSpec {
+    pub date_ranges: Vec<Value>,
+    pub dimensions: Vec<String>,
+    pub metrics: Vec<String>,
+    pub dimension_filter: Option<Value>,
+    pub metric_filter: Option<Value>,
+    pub order_bys: Option<Vec<Value>>,
+    pub limit: Option<u32>,
+    pub offset: Option<u64>,
+    pub time_zone: Option<String>,
+}
+
+pub fn access_report_request(spec: AccessReportSpec) -> Result<Value, ApiError> {
+    let AccessReportSpec {
+        date_ranges, dimensions, metrics, dimension_filter, metric_filter,
+        order_bys, limit, offset, time_zone,
+    } = spec;
     if date_ranges.is_empty() || date_ranges.len() > 4
         || metrics.is_empty() || metrics.len() > 10 || dimensions.len() > 9
         || dimensions.iter().chain(metrics.iter()).any(|s| s.trim().is_empty())
@@ -666,18 +677,38 @@ mod tests {
 
     #[test]
     fn access_reports_use_admin_field_names_and_reject_invalid_ranges() {
-        let request = access_report_request(
-            vec![json!({"start_date":"2026-10-20","end_date":"2026-10-25"})],
-            vec!["userEmail".into()], vec!["accessCount".into()],
-            None,None,None,Some(200),Some(0),Some("America/Mexico_City".into()),
-        ).unwrap();
+        let request = access_report_request(AccessReportSpec {
+            date_ranges: vec![json!({"start_date":"2026-10-20","end_date":"2026-10-25"})],
+            dimensions: vec!["userEmail".into()],
+            metrics: vec!["accessCount".into()],
+            dimension_filter: None, metric_filter: None, order_bys: None,
+            limit: Some(200), offset: Some(0), time_zone: Some("America/Mexico_City".into()),
+        }).unwrap();
         assert_eq!(request["dateRanges"][0]["startDate"], "2026-10-20");
         assert_eq!(request["dimensions"][0]["dimensionName"], "userEmail");
         assert_eq!(request["metrics"][0]["metricName"], "accessCount");
         assert_eq!(request["limit"], "200");
-        assert!(access_report_request(vec![], vec![], vec!["accessCount".into()],None,None,None,None,None,None).is_err());
-        assert!(access_report_request(vec![json!({})],vec![],vec!["accessCount".into()],None,None,None,None,None,None).is_err());
-        assert!(access_report_request(vec![json!({"startDate":"today","endDate":"today"})],vec![],vec!["accessCount".into()],None,None,None,None,None,Some("bad zone".into())).is_err());
+        assert!(access_report_request(AccessReportSpec {
+            date_ranges: vec![],
+            dimensions: vec![],
+            metrics: vec!["accessCount".into()],
+            dimension_filter: None, metric_filter: None, order_bys: None,
+            limit: None, offset: None, time_zone: None,
+        }).is_err());
+        assert!(access_report_request(AccessReportSpec {
+            date_ranges: vec![json!({})],
+            dimensions: vec![],
+            metrics: vec!["accessCount".into()],
+            dimension_filter: None, metric_filter: None, order_bys: None,
+            limit: None, offset: None, time_zone: None,
+        }).is_err());
+        assert!(access_report_request(AccessReportSpec {
+            date_ranges: vec![json!({"startDate":"today","endDate":"today"})],
+            dimensions: vec![],
+            metrics: vec!["accessCount".into()],
+            dimension_filter: None, metric_filter: None, order_bys: None,
+            limit: None, offset: None, time_zone: Some("bad zone".into()),
+        }).is_err());
     }
 
     #[test]
