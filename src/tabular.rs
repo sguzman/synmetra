@@ -181,11 +181,18 @@ fn columns(response: &Value, header: &str, fallback: &str) -> Result<Vec<Value>,
                 .filter(|name| !name.is_empty())
                 .map(ToOwned::to_owned)
                 .unwrap_or_else(|| format!("{fallback}{index}"));
-            Ok(json!({
+            let mut column = json!({
                 "name": name,
                 "logical_type": if header == "dimensionHeaders" { "string" } else { "number" },
                 "nullable": true
-            }))
+            });
+            if header == "metricHeaders" {
+                if let Some(kind) = item.get("type") {
+                    let kind = kind.as_str().ok_or(ApiError::InvalidResponse)?;
+                    column["ga4_type"] = json!(kind);
+                }
+            }
+            Ok(column)
         })
         .collect()
 }
@@ -489,6 +496,7 @@ mod tests {
         assert_eq!(output.meta["cell_clipping"]["clipped_cells"], 1);
         assert_eq!(output.meta["ga4"]["metadata"], response["metadata"]);
         assert_eq!(output.meta["columns"][1]["logical_type"], "number");
+        assert_eq!(output.meta["columns"][1]["ga4_type"], "TYPE_CURRENCY");
 
         let mut tuples = options;
         tuples.output_mode = Some(OutputMode::Tuples);
