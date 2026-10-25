@@ -53,3 +53,7 @@ Sources: [TOOL_GUIDE](https://github.com/sednalabs/ga4-mcp/blob/039fd4620064fc4b
 ## 📜 Archived input schemas
 
 [Exact SednaLabs input-schema snapshot](../spec/upstream/tool_schema_snapshot.v1.json) is retained as a pinned, Apache-2.0 attributed test reference. It includes 35 tool names with the original `inputSchema` objects, not acceptance of any Synmetra implementation. Google's 10 dynamic schemas still need a separate authenticated reference export before T007 reaches full completion.
+
+### 📄 Exact SednaLabs schema fixture
+
+The complete 35-tool MCP JSON schema snapshot is archived unchanged at [`spec/upstream/sednalabs-tool-schema.v1.json`](../spec/upstream/sednalabs-tool-schema.v1.json) with the original Apache 2.0 LICENSE in [`licenses/SEDNALABS-APACHE-2.0.txt`](../licenses/SEDNALABS-APACHE-2.0.txt). The snapshot pins argument-level signature expectations and will support differential tests; it **does not** certify native Rust argument or behavior parity. Google's pinned schema capture remains separate work.
