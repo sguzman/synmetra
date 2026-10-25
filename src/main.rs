@@ -199,6 +199,40 @@ struct RawPropertyRequestArgs {
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
+struct PivotArgs {
+    property_id: String,
+    date_ranges: Vec<Value>,
+    dimensions: Vec<String>,
+    metrics: Vec<String>,
+    pivots: Vec<Value>,
+    #[serde(default)]
+    dimension_filter: Option<Value>,
+    #[serde(default)]
+    metric_filter: Option<Value>,
+    #[serde(default)]
+    order_bys: Option<Vec<Value>>,
+    #[serde(default)]
+    currency_code: Option<String>,
+    #[serde(default)]
+    keep_empty_rows: Option<bool>,
+    #[serde(default)]
+    return_property_quota: bool,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+struct BatchArgs {
+    property_id: String,
+    requests: Vec<Value>,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+struct CompatibilityArgs {
+    property_id: String,
+    dimensions: Vec<String>,
+    metrics: Vec<String>,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
 struct RawAccountRequestArgs {
     /// Positive GA4 account number or canonical accounts/<id>.
     account_id: String,
@@ -525,13 +559,30 @@ impl Synmetra {
     )]
     async fn run_pivot_report(
         &self,
-        Parameters(args): Parameters<RawPropertyRequestArgs>,
+        Parameters(args): Parameters<PivotArgs>,
     ) -> CallToolResult {
-        result(
-            self.api
-                .data_operation(&args.property_id, args.request, "runPivotReport")
-                .await,
-        )
+        let body = if args.pivots.is_empty() || args.pivots.len() > 4
+            || args.pivots.iter().any(|p| !p.is_object() || p.as_object().is_some_and(|x| x.is_empty()))
+        {
+            Err(ApiError::InvalidRequest)
+        } else {
+            report_request(
+                Some(args.date_ranges), args.dimensions, args.metrics,
+                vec![
+                    ("pivots", Some(json!(args.pivots))),
+                    ("dimensionFilter", args.dimension_filter),
+                    ("metricFilter", args.metric_filter),
+                    ("orderBys", args.order_bys.map(|x| json!(x))),
+                    ("currencyCode", args.currency_code.map(|x| json!(x))),
+                    ("keepEmptyRows", args.keep_empty_rows.map(|x| json!(x))),
+                    ("returnPropertyQuota", Some(json!(args.return_property_quota))),
+                ],
+            )
+        };
+        result(match body {
+            Ok(body) => self.api.data_operation(&args.property_id, body, "runPivotReport").await,
+            Err(error) => Err(error),
+        })
     }
 
     #[tool(
@@ -545,13 +596,11 @@ impl Synmetra {
     )]
     async fn batch_run_reports(
         &self,
-        Parameters(args): Parameters<RawPropertyRequestArgs>,
+        Parameters(args): Parameters<BatchArgs>,
     ) -> CallToolResult {
-        result(
-            self.api
-                .data_operation(&args.property_id, args.request, "batchRunReports")
-                .await,
-        )
+        result(self.api.data_operation(
+            &args.property_id, json!({"requests": args.requests}), "batchRunReports"
+        ).await)
     }
 
     #[tool(
@@ -565,13 +614,13 @@ impl Synmetra {
     )]
     async fn check_report_compatibility(
         &self,
-        Parameters(args): Parameters<RawPropertyRequestArgs>,
+        Parameters(args): Parameters<CompatibilityArgs>,
     ) -> CallToolResult {
-        result(
-            self.api
-                .data_operation(&args.property_id, args.request, "checkCompatibility")
-                .await,
-        )
+        let request = report_request(None, args.dimensions, args.metrics, Vec::new());
+        result(match request {
+            Ok(body) => self.api.data_operation(&args.property_id, body, "checkCompatibility").await,
+            Err(error) => Err(error),
+        })
     }
 
     #[tool(
@@ -949,6 +998,26 @@ mod tests {
         assert_eq!(call.is_error, Some(true));
         client.cancel().await.unwrap();
         worker.await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn core_preflight_and_batch_reject_invalid_input_before_google_calls() {
+        let server = Synmetra::new(GoogleClient::new(None), false);
+        let bad_batch = server.batch_run_reports(Parameters(BatchArgs {
+            property_id: "42".into(), requests: vec![],
+        })).await;
+        assert_eq!(bad_batch.is_error, Some(true));
+        let bad_pivot = server.run_pivot_report(Parameters(PivotArgs {
+            property_id: "42".into(), date_ranges: vec![json!({"startDate":"today","endDate":"today"})],
+            dimensions: vec!["country".into()], metrics: vec!["activeUsers".into()],
+            pivots: vec![], dimension_filter: None, metric_filter: None, order_bys: None,
+            currency_code: None, keep_empty_rows: None, return_property_quota: false,
+        })).await;
+        assert_eq!(bad_pivot.is_error, Some(true));
+        let bad_compat = server.check_report_compatibility(Parameters(CompatibilityArgs {
+            property_id: "42".into(), dimensions: vec!["country".into()], metrics: vec![],
+        })).await;
+        assert_eq!(bad_compat.is_error, Some(true));
     }
 
     #[tokio::test]
