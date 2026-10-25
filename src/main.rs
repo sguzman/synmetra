@@ -3199,6 +3199,68 @@ mod tests {
         assert!(!payload.to_string().contains("private-funnel-token"));
     }
 
+    #[tokio::test]
+    async fn funnel_invalid_arguments_and_google_permission_denials_are_redacted() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        use tokio::net::TcpListener;
+
+        for invalid in [
+            json!({"funnel_steps":[{"event":"page_view","filter_expression":{}}]}),
+            json!({"funnel_steps":[{"event":"page_view"}],"limit":0}),
+            json!({"funnel_steps":[{"event":"page_view"}],"funnel_visualization_type":"INVALID"}),
+        ] {
+            let mut request = invalid;
+            request["property_id"] = json!(42);
+            let args: FunnelArgs = serde_json::from_value(request).unwrap();
+            let reply = Synmetra::new(GoogleClient::new(None), false)
+                .run_funnel_report(Parameters(args))
+                .await;
+            assert_eq!(reply.is_error, Some(true));
+            assert_eq!(
+                reply.structured_content.unwrap()["error"]["code"],
+                "INVALID_REQUEST"
+            );
+        }
+
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let endpoint = format!("http://{}", listener.local_addr().unwrap());
+        let responder = tokio::spawn(async move {
+            let (mut stream, _) = listener.accept().await.unwrap();
+            let mut buffer = [0u8; 4096];
+            let n = stream.read(&mut buffer).await.unwrap();
+            assert!(String::from_utf8_lossy(&buffer[..n]).contains("properties/42:runFunnelReport"));
+            let body = r#"{"error":{"message":"private-funnel-denial"}}"#;
+            let response = format!(
+                "HTTP/1.1 403 Forbidden\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                body.len(),
+                body
+            );
+            stream.write_all(response.as_bytes()).await.unwrap();
+        });
+        let server = Synmetra::new(
+            GoogleClient::with_endpoints(
+                Some("private-funnel-bearer".into()),
+                &endpoint,
+                &endpoint,
+            ),
+            false,
+        );
+        let args: FunnelArgs = serde_json::from_value(json!({
+            "property_id":42,
+            "funnel_steps":[{"event":"page_view"}],
+            "max_rows":1
+        }))
+        .unwrap();
+        let reply = server.run_funnel_report(Parameters(args)).await;
+        responder.await.unwrap();
+        assert_eq!(reply.is_error, Some(true));
+        let payload = reply.structured_content.unwrap();
+        assert_eq!(payload["error"]["code"], "GOOGLE_HTTP_ERROR");
+        assert_eq!(payload["error"]["status_code"], 403);
+        assert!(!payload.to_string().contains("private-funnel-denial"));
+        assert!(!payload.to_string().contains("private-funnel-bearer"));
+    }
+
     #[test]
     fn funnel_summary_only_keeps_both_total_counts_without_rows() {
         let subreport = json!({
