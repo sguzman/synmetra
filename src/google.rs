@@ -853,23 +853,22 @@ pub fn normalize_report_filter(input: Value, metric: bool) -> Result<Value, ApiE
                         return Err(ApiError::InvalidRequest);
                     }
                     let digits = raw_value.strip_prefix('-').unwrap_or(raw_value);
-                    let numeric = if !digits.is_empty()
-                        && digits.bytes().all(|byte| byte.is_ascii_digit())
-                    {
-                        // Never silently convert an out-of-range integer to f64.
-                        let value = raw_value
-                            .parse::<i64>()
-                            .map_err(|_| ApiError::InvalidRequest)?;
-                        json!({"int64Value":value.to_string()})
-                    } else {
-                        let value = raw_value
-                            .parse::<f64>()
-                            .map_err(|_| ApiError::InvalidRequest)?;
-                        if !value.is_finite() {
-                            return Err(ApiError::InvalidRequest);
-                        }
-                        json!({"doubleValue":value})
-                    };
+                    let numeric =
+                        if !digits.is_empty() && digits.bytes().all(|byte| byte.is_ascii_digit()) {
+                            // Never silently convert an out-of-range integer to f64.
+                            let value = raw_value
+                                .parse::<i64>()
+                                .map_err(|_| ApiError::InvalidRequest)?;
+                            json!({"int64Value":value.to_string()})
+                        } else {
+                            let value = raw_value
+                                .parse::<f64>()
+                                .map_err(|_| ApiError::InvalidRequest)?;
+                            if !value.is_finite() {
+                                return Err(ApiError::InvalidRequest);
+                            }
+                            json!({"doubleValue":value})
+                        };
                     json!({"filter":{"fieldName":field,"numericFilter":{"operation":"EQUAL","value":numeric}}})
                 } else {
                     let parsed = if raw_value.starts_with('"') {
@@ -1113,11 +1112,8 @@ mod tests {
             ("-9223372036854775808", "-9223372036854775808"),
             ("0", "0"),
         ] {
-            let value = normalize_report_filter(
-                json!(format!("sessions=={literal}")),
-                true,
-            )
-            .unwrap();
+            let value =
+                normalize_report_filter(json!(format!("sessions=={literal}")), true).unwrap();
             assert_eq!(
                 value["filter"]["numericFilter"]["value"]["int64Value"],
                 canonical
