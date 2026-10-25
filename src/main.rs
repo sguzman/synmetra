@@ -2283,6 +2283,11 @@ mod tests {
                 currency_code: None,
                 keep_empty_rows: None,
                 return_property_quota: false,
+                max_rows: None,
+                max_cell_chars: None,
+                summary_only: false,
+                output_mode: None,
+                cursor: None,
             }))
             .await;
         assert_eq!(bad_pivot.is_error, Some(true));
