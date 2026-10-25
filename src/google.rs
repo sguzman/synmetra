@@ -1183,6 +1183,53 @@ mod tests {
     }
 
     #[test]
+    fn four_historical_date_ranges_round_trip_and_a_fifth_is_rejected() {
+        let ranges = vec![
+            json!({"start_date":"7daysAgo","end_date":"yesterday","name":"Recent"}),
+            json!({"startDate":"2026-01-01","endDate":"2026-01-31","name":"January"}),
+            json!({"startDate":"today","endDate":"today"}),
+            json!({"startDate":"2024-02-29","endDate":"2024-03-01","name":"Leap day"}),
+        ];
+        let normalized = report_request(
+            Some(ranges.clone()),
+            vec!["country".into()],
+            vec!["activeUsers".into()],
+            vec![],
+        )
+        .unwrap();
+        let output = normalized["dateRanges"].as_array().unwrap();
+        assert_eq!(output.len(), 4);
+        assert_eq!(output[0], json!({"startDate":"7daysAgo","endDate":"yesterday","name":"Recent"}));
+        assert_eq!(output[1]["name"], "January");
+        assert_eq!(output[2]["startDate"], "today");
+        assert_eq!(output[3]["startDate"], "2024-02-29");
+
+        let mut too_many = ranges;
+        too_many.push(json!({"startDate":"yesterday","endDate":"today"}));
+        assert_eq!(
+            report_request(
+                Some(too_many),
+                vec!["country".into()],
+                vec!["activeUsers".into()],
+                vec![],
+            ),
+            Err(ApiError::InvalidRequest)
+        );
+
+        for invalid in [
+            json!({"startDate":"2026-03-02","endDate":"2026-03-01"}),
+            json!({"startDate":"2026-02-30","endDate":"2026-03-01"}),
+            json!({"startDate":"2026-03-01","start_date":"2026-03-01","endDate":"2026-03-02"}),
+            json!({"startDate":"2026-03-01","endDate":"2026-03-02","name":""}),
+        ] {
+            assert_eq!(
+                normalize_date_ranges(vec![invalid]),
+                Err(ApiError::InvalidRequest)
+            );
+        }
+    }
+
+    #[test]
     fn access_reports_use_admin_field_names_and_reject_invalid_ranges() {
         let request = access_report_request(AccessReportSpec {
             date_ranges: vec![json!({"start_date":"2026-10-20","end_date":"2026-10-25"})],
