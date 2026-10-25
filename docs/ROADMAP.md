@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `██░░░░░░░░ 23.6%` · **+23.57 percentage points from initial empty repo; +0.22 pp in the verified shorthand round** · 21/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `██░░░░░░░░ 24.7%` · **+24.67 percentage points from initial empty repo; +1.10 pp in the verified pagination round** · 21/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -198,7 +198,7 @@
   - ✅ **Gate:** State cleared without touching unrelated Google apps
 
 
-## 🏢 M3 — Admin API information parity — `██░░░░░░░░ 21.9%`
+## 🏢 M3 — Admin API information parity — `███░░░░░░░ 31.3%`
 
 **Scope:** MVP. **Acceptance gate:** All administrative read tools and metadata endpoints match pinned signatures and response behavior.
 
@@ -221,13 +221,13 @@
 - 🧬 **T073 — Implement get_custom_dimensions_and_metrics** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Golden Admin API mock response and auth-denial case for get_custom_dimensions_and_metrics
 
-### 🏷️ P09 — Administrative edge cases — `░░░░░░░░░░ 0.0%`
+### 🏷️ P09 — Administrative edge cases — `██░░░░░░░░ 16.7%`
 
 **Feature:** Admin fidelity.
 
-- 📚 **T074 — Page through all account summaries and Google Ads links** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Multi-page provider fixtures return complete results
-- 🗺️ **T075 — Normalize property and account resource names** — `░░░░░░░░░░ 0.0%`
+- 📚 **T074 — Page through all account summaries and Google Ads links** — `██████████ 100.0%`
+  - ✅ **Gate:** Multi-page provider fixtures return complete results · **Evidence:** src/google.rs: GoogleClient::collection caps accumulated results at 10,000 items / 16 MiB, rejects repeated or oversized cursors, and aggregates account summaries/Ads links in mocked multi-page fixtures. Tests account_pagination_collects_pages_and_rejects_replayed_tokens and account_collection_rejects_unbounded_item_count passed GitHub Actions core run 40218035242, 2026-10-25.; src/google.rs: GoogleClient::collection caps accumulated results at 10,000 items / 16 MiB, rejects repeated or oversized cursors, and aggregates account summaries/Ads links in mocked multi-page fixtures. Tests account_pagination_collects_pages_and_rejects_replayed_tokens and account_collection_rejects_unbounded_item_count passed GitHub Actions core run 40218035242, 2026-10-25.
+- 🗺️ **T075 — Normalize property and account resource names** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Numeric and canonical IDs round-trip
 - 🧱 **T076 — Handle GA4 property account hierarchy and time zones** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Correct property selection and permissions
@@ -495,19 +495,19 @@
   - ✅ **Gate:** Changes open maintenance work rather than silently inflate parity
 
 
-## 🧪 M8 — Verification, resilience and security acceptance — `█░░░░░░░░░ 8.9%`
+## 🧪 M8 — Verification, resilience and security acceptance — `█░░░░░░░░░ 12.5%`
 
 **Scope:** MVP. **Acceptance gate:** Full offline and authorized live verification including malformed inputs, MCP interoperability and threat model.
 
-### 🧫 P22 — Deterministic tests — `███░░░░░░░ 25.0%`
+### 🧫 P22 — Deterministic tests — `████░░░░░░ 35.0%`
 
 **Feature:** Offline QA.
 
-- 🧪 **T168 — Create offline GA Admin and Data endpoint mocks** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Representative success empty error and pagination fixtures
+- 🧪 **T168 — Create offline GA Admin and Data endpoint mocks** — `██████████ 100.0%`
+  - ✅ **Gate:** Representative success empty error and pagination fixtures · **Evidence:** src/google.rs deterministic HTTP mock harness and numerous no-secrets synthetic route/auth tests; Actions 40202015488 passed; src/google.rs in-memory Admin/Data server tests cover successful, empty, invalid response/replayed token and oversized collection cases; GitHub Actions core 40218035242 passed the mock suite.
 - 📦 **T169 — Exercise all 36 tool names through MCP dispatch** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Tool-by-tool tests verify tool catalog and call behavior
-- 🧿 **T170 — Test JSON schema rejection and nested depth caps** — `░░░░░░░░░░ 0.0%`
+- 🧿 **T170 — Test JSON schema rejection and nested depth caps** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Adversarial payload corpus is bounded and rejected
 - 📚 **T171 — Differentially compare upstream response projections** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Normalized golden fixtures generated from pinned baseline

@@ -1434,16 +1434,18 @@
               "id": "T074",
               "emoji": "📚",
               "name": "Page through all account summaries and Google Ads links",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "Multi-page provider fixtures return complete results",
               "checks": [
                 {
                   "text": "Deliver page through all account summaries and google ads links as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs: GoogleClient::collection caps accumulated results at 10,000 items / 16 MiB, rejects repeated or oversized cursors, and aggregates account summaries/Ads links in mocked multi-page fixtures. Tests account_pagination_collects_pages_and_rejects_replayed_tokens and account_collection_rejects_unbounded_item_count passed GitHub Actions core run 40218035242, 2026-10-25."
                 },
                 {
                   "text": "Multi-page provider fixtures return complete results",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs: GoogleClient::collection caps accumulated results at 10,000 items / 16 MiB, rejects repeated or oversized cursors, and aggregates account summaries/Ads links in mocked multi-page fixtures. Tests account_pagination_collects_pages_and_rejects_replayed_tokens and account_collection_rejects_unbounded_item_count passed GitHub Actions core run 40218035242, 2026-10-25."
                 }
               ]
             },
@@ -1451,12 +1453,13 @@
               "id": "T075",
               "emoji": "🗺️",
               "name": "Normalize property and account resource names",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Numeric and canonical IDs round-trip",
               "checks": [
                 {
                   "text": "Deliver normalize property and account resource names as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs: scoped_name, property_name, account_name restrict and normalize positive resource IDs. Test rejects_property_path_and_zero passed GitHub Actions core 40218035242; complete account ID equivalence and live boundary QA remain open."
                 },
                 {
                   "text": "Numeric and canonical IDs round-trip",
@@ -3227,7 +3230,7 @@
               "id": "T168",
               "emoji": "🧪",
               "name": "Create offline GA Admin and Data endpoint mocks",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Representative success empty error and pagination fixtures",
               "checks": [
                 {
@@ -3237,7 +3240,8 @@
                 },
                 {
                   "text": "Representative success empty error and pagination fixtures",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs in-memory Admin/Data server tests cover successful, empty, invalid response/replayed token and oversized collection cases; GitHub Actions core 40218035242 passed the mock suite."
                 }
               ]
             },
@@ -3262,12 +3266,13 @@
               "id": "T170",
               "emoji": "🧿",
               "name": "Test JSON schema rejection and nested depth caps",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Adversarial payload corpus is bounded and rejected",
               "checks": [
                 {
                   "text": "Deliver test json schema rejection and nested depth caps as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs: exhaustive bounded filter tests reject excess nesting, too many nodes, long strings, oversize JSON, and invalid filter shapes; GitHub Actions core 40218035242. Full adversarial fuzz corpus remains unaccepted."
                 },
                 {
                   "text": "Adversarial payload corpus is bounded and rejected",
