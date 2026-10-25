@@ -1130,7 +1130,7 @@ pub fn normalize_pivots(
         let mut seen = HashSet::new();
         for field in fields {
             let field = field.as_str().ok_or(ApiError::InvalidRequest)?;
-            if !seen.insert(field)
+            if !seen.insert(field.to_owned())
                 || (field != "dateRange" && !dimensions.iter().any(|name| name == field))
             {
                 return Err(ApiError::InvalidRequest);
