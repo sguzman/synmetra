@@ -921,7 +921,7 @@
               "id": "T047",
               "emoji": "📛",
               "name": "Validate requested OAuth scopes per capability",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Read-only uses analytics.readonly; writes demand analytics.edit",
               "checks": [
                 {
@@ -931,7 +931,8 @@
                 },
                 {
                   "text": "Read-only uses analytics.readonly; writes demand analytics.edit",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/auth.rs now requires explicit auth login --client-id-file PATH --allow-edit to request both analytics.readonly and analytics.edit, verifies both returned scopes, persists granted scope in mode-0600 private storage and keeps normal login readonly; tests pkce_authorization_is_readonly_and_state_bound and edit_scopes_require_explicit_consent_in_authorization_url passed core/feature CI 40222541416. Google's permissions remain independently enforced and live consent is unverified."
                 }
               ]
             },
@@ -3046,12 +3047,13 @@
               "id": "T158",
               "emoji": "⚖️",
               "name": "Preserve official response semantics where conflicting",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Document compatibility choice and adapters",
               "checks": [
                 {
                   "text": "Deliver preserve official response semantics where conflicting as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs now returns both structuredContent and legacy JSON text with ok/data/meta and stable error categories, documented as deliberate compatibility boundary in docs/CONTRACT.md; offline assertions passed core and native CI 40222074607. Full official response semantics and adapters remain open."
                 },
                 {
                   "text": "Document compatibility choice and adapters",
