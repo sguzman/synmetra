@@ -170,7 +170,7 @@
               "id": "T008",
               "emoji": "🔁",
               "name": "Set up upstream drift tracking and version pin policy",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "CI alerts on name/signature deltas without silent breaking changes",
               "checks": [
                 {
@@ -180,7 +180,8 @@
                 },
                 {
                   "text": "CI alerts on name/signature deltas without silent breaking changes",
-                  "passed": false
+                  "passed": true,
+                  "evidence": ".github/workflows/upstream-drift.yml now checks pinned upstream signature-bearing source blobs on weekly schedule, manual dispatch and changes to the watch/lock; spec/upstream/drift-lock.json pins SednaLabs schema snapshot blob 646c0baa and Google coordinator blob a1e7936a at separately documented source commits; drift produces a failed GitHub Actions job and review guidance without silently updating the baseline. docs/UPSTREAM.md documents the conservative source-change policy and its limitations. GitHub Actions 40241902469 verified both public current blobs against the pins; 40241902503 core and DuckDB passed. The watch detects file changes for review, not automatic parsing of Google's entire dynamic runtime schema."
                 }
               ]
             }

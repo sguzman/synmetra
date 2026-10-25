@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `████░░░░░░ 40.8%` · **+40.75 percentage points from initial empty repo; +0.22 pp from verified deterministic progress bar regeneration** · 71/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `████░░░░░░ 41.0%` · **+40.97 percentage points from initial empty repo; +0.22 pp from CI-tested automatic upstream source drift alerts** · 72/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -11,11 +11,11 @@
 - On each stewardship round, report total and actively worked milestone/phase/task bars plus the **signed delta in percentage points** against the previous verified committed ledger; completed 100% tasks can be omitted in ongoing status updates.
 - **No progress padding.** Upstream feature inventory, planning and brand assets count only for their specific documentation tasks; GA4 functionality starts at 0% until tests establish otherwise. Real Google access, credentials and live tests are separate explicit gates.
 
-## 🧭 M0 — Reference baseline and project governance — `███████░░░ 70.6%`
+## 🧭 M0 — Reference baseline and project governance — `███████░░░ 73.5%`
 
 **Scope:** MVP. **Acceptance gate:** Audited pinned feature-union inventory, color identity, public-safe policies and reproducible plan. Foundation is not runtime parity.
 
-### 📚 P00 — Upstream contracts and provenance — `█████████░ 87.5%`
+### 📚 P00 — Upstream contracts and provenance — `█████████░ 93.8%`
 
 **Feature:** Reference provenance.
 
@@ -33,8 +33,8 @@
   - ✅ **Gate:** Explicit no-secret and read-only defaults and evidence policy · **Evidence:** docs/GOVERNANCE.md and docs/SECURITY.md; docs/GOVERNANCE.md and docs/SECURITY.md approved policies
 - 🧾 **T007 — Archive exact upstream tool schemas and signatures** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Verifiable pinned schema snapshots with tool argument parity tests
-- 🔁 **T008 — Set up upstream drift tracking and version pin policy** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** CI alerts on name/signature deltas without silent breaking changes
+- 🔁 **T008 — Set up upstream drift tracking and version pin policy** — `██████████ 100.0%`
+  - ✅ **Gate:** CI alerts on name/signature deltas without silent breaking changes · **Evidence:** docs/UPSTREAM.md, docs/PROVENANCE.md, docs/tool-inventory.json and src/bin/synmetra-progress.rs: pinned source revisions and CI-checked 36-name union; GitHub Actions 40211821382 passed; upstream signature drift alert automation remains open.; .github/workflows/upstream-drift.yml now checks pinned upstream signature-bearing source blobs on weekly schedule, manual dispatch and changes to the watch/lock; spec/upstream/drift-lock.json pins SednaLabs schema snapshot blob 646c0baa and Google coordinator blob a1e7936a at separately documented source commits; drift produces a failed GitHub Actions job and review guidance without silently updating the baseline. docs/UPSTREAM.md documents the conservative source-change policy and its limitations. GitHub Actions 40241902469 verified both public current blobs against the pins; 40241902503 core and DuckDB passed. The watch detects file changes for review, not automatic parsing of Google's entire dynamic runtime schema.
 
 ### 🦀 P01 — Native scaffold and quality gates — `██████░░░░ 55.6%`
 
