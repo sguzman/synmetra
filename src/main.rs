@@ -2,6 +2,7 @@
 mod auth;
 mod google;
 mod http;
+mod tabular;
 #[cfg(feature = "scratchpad")]
 mod scratchpad;
 
@@ -569,6 +570,16 @@ struct ReportArgs {
     /// Include GA4 property quota metadata in the provider response (upstream default: true).
     #[serde(default = "default_return_property_quota")]
     return_property_quota: bool,
+    #[serde(default)]
+    max_rows: Option<usize>,
+    #[serde(default)]
+    max_cell_chars: Option<usize>,
+    #[serde(default)]
+    summary_only: bool,
+    #[serde(default)]
+    output_mode: Option<tabular::OutputMode>,
+    #[serde(default)]
+    cursor: Option<String>,
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
@@ -591,6 +602,16 @@ struct RealtimeArgs {
     offset: Option<u64>,
     #[serde(default = "default_return_property_quota")]
     return_property_quota: bool,
+    #[serde(default)]
+    max_rows: Option<usize>,
+    #[serde(default)]
+    max_cell_chars: Option<usize>,
+    #[serde(default)]
+    summary_only: bool,
+    #[serde(default)]
+    output_mode: Option<tabular::OutputMode>,
+    #[serde(default)]
+    cursor: Option<String>,
 }
 
 fn realtime_report_request(args: &RealtimeArgs) -> Result<Value, ApiError> {
@@ -629,6 +650,23 @@ fn api_error_code(error: &ApiError) -> (&'static str, &'static str) {
         ApiError::CollectionTooLarge => ("COLLECTION_TOO_LARGE", "limits"),
         ApiError::TooManyPages => ("PAGINATION_LIMIT", "limits"),
         ApiError::InvalidResponse => ("INVALID_UPSTREAM_RESPONSE", "upstream"),
+    }
+}
+
+fn result_with_tabular_projection(
+    response: Result<Value, ApiError>,
+    controls: tabular::Controls,
+    realtime: bool,
+) -> CallToolResult {
+    match response.and_then(|provider| tabular::project(&provider, controls, realtime)) {
+        Ok(projection) => {
+            let payload = json!({"ok":true,"data":projection.data,"meta":projection.meta});
+            let mut result =
+                CallToolResult::success(vec![ContentBlock::text(payload.to_string())]);
+            result.structured_content = Some(payload);
+            result
+        }
+        Err(error) => result(Err(error)),
     }
 }
 
@@ -1162,7 +1200,16 @@ impl Synmetra {
         &self,
         Parameters(args): Parameters<ReportArgs>,
     ) -> CallToolResult {
-        let validation = google::property_name(&args.property_id).and_then(|_| {
+        let controls = tabular::Controls {
+            output_mode: args.output_mode,
+            summary_only: args.summary_only,
+            max_rows: args.max_rows,
+            max_cell_chars: args.max_cell_chars,
+            cursor_supplied: args.cursor.is_some(),
+        };
+        let validation = controls.request_limit(args.limit).and_then(|effective_limit| {
+            google::property_name(&args.property_id)?;
+            let args_limit = effective_limit;
             report_request(
                 Some(args.date_ranges),
                 args.dimensions,
@@ -1171,7 +1218,7 @@ impl Synmetra {
                     ("dimensionFilter", args.dimension_filter),
                     ("metricFilter", args.metric_filter),
                     ("orderBys", args.order_bys.map(|x| json!(x))),
-                    ("limit", args.limit.map(|x| json!(x.to_string()))),
+                    ("limit", args_limit.map(|x| json!(x.to_string()))),
                     ("offset", args.offset.map(|x| json!(x.to_string()))),
                     ("currencyCode", args.currency_code.map(|x| json!(x))),
                     ("keepEmptyRows", args.keep_empty_rows.map(|x| json!(x))),
@@ -1195,6 +1242,17 @@ impl Synmetra {
         )
     )]
     async fn run_report(&self, Parameters(args): Parameters<ReportArgs>) -> CallToolResult {
+        let controls = tabular::Controls {
+            output_mode: args.output_mode,
+            summary_only: args.summary_only,
+            max_rows: args.max_rows,
+            max_cell_chars: args.max_cell_chars,
+            cursor_supplied: args.cursor.is_some(),
+        };
+        let effective_limit = match controls.request_limit(args.limit) {
+            Ok(limit) => limit,
+            Err(error) => return result(Err(error)),
+        };
         let body = report_request(
             Some(args.date_ranges),
             args.dimensions,
@@ -1203,7 +1261,7 @@ impl Synmetra {
                 ("dimensionFilter", args.dimension_filter),
                 ("metricFilter", args.metric_filter),
                 ("orderBys", args.order_bys.map(|x| json!(x))),
-                ("limit", args.limit.map(|x| json!(x.to_string()))),
+                ("limit", effective_limit.map(|x| json!(x.to_string()))),
                 ("offset", args.offset.map(|x| json!(x.to_string()))),
                 ("currencyCode", args.currency_code.map(|x| json!(x))),
                 ("keepEmptyRows", args.keep_empty_rows.map(|x| json!(x))),
@@ -1213,10 +1271,15 @@ impl Synmetra {
                 ),
             ],
         );
-        result(match body {
+        let response = match body {
             Ok(body) => self.api.report(&args.property_id, body, false).await,
-            Err(e) => Err(e),
-        })
+            Err(error) => Err(error),
+        };
+        if controls.active() {
+            result_with_tabular_projection(response, controls, false)
+        } else {
+            result(response)
+        }
     }
 
     #[tool(
@@ -1232,11 +1295,29 @@ impl Synmetra {
         &self,
         Parameters(args): Parameters<RealtimeArgs>,
     ) -> CallToolResult {
+        let controls = tabular::Controls {
+            output_mode: args.output_mode,
+            summary_only: args.summary_only,
+            max_rows: args.max_rows,
+            max_cell_chars: args.max_cell_chars,
+            cursor_supplied: args.cursor.is_some(),
+        };
+        let effective_limit = match controls.request_limit(args.limit) {
+            Ok(limit) => limit,
+            Err(error) => return result(Err(error)),
+        };
+        let mut args = args;
+        args.limit = effective_limit;
         let body = realtime_report_request(&args);
-        result(match body {
+        let response = match body {
             Ok(body) => self.api.report(&args.property_id, body, true).await,
-            Err(e) => Err(e),
-        })
+            Err(error) => Err(error),
+        };
+        if controls.active() {
+            result_with_tabular_projection(response, controls, true)
+        } else {
+            result(response)
+        }
     }
 }
 
@@ -2042,6 +2123,11 @@ mod tests {
             currency_code: None,
             keep_empty_rows: None,
             return_property_quota: true,
+            max_rows: None,
+            max_cell_chars: None,
+            summary_only: false,
+            output_mode: None,
+            cursor: None,
         };
         let result = server.preview_report_request(Parameters(bad)).await;
         assert_eq!(result.is_error, Some(true));
