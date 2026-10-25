@@ -61,7 +61,7 @@ impl Synmetra {
 }
 
 #[cfg(feature = "scratchpad")]
-const SCRATCHPAD_TOOL_NAMES: [&str; 12] = [
+const SCRATCHPAD_TOOL_NAMES: [&str; 13] = [
     "scratchpad_open_session",
     "scratchpad_close_session",
     "scratchpad_list_sessions",
@@ -74,6 +74,7 @@ const SCRATCHPAD_TOOL_NAMES: [&str; 12] = [
     "scratchpad_export_evidence_bundle",
     "scratchpad_ingest_report",
     "scratchpad_ingest_realtime_report",
+    "scratchpad_query",
 ];
 
 #[cfg(feature = "scratchpad")]
@@ -178,6 +179,23 @@ struct ScratchIngestRealtimeArgs {
     order_bys: Option<Vec<Value>>,
     #[serde(default)]
     return_property_quota: bool,
+}
+
+#[cfg(feature = "scratchpad")]
+#[derive(Debug, Deserialize, JsonSchema)]
+struct ScratchQueryArgs {
+    session_id: String,
+    sql: String,
+    #[serde(default)]
+    max_rows: Option<usize>,
+    #[serde(default)]
+    max_cell_chars: Option<usize>,
+    #[serde(default)]
+    summary_only: bool,
+    #[serde(default)]
+    output_mode: Option<String>,
+    #[serde(default)]
+    cursor: Option<String>,
 }
 
 #[cfg(feature = "scratchpad")]
@@ -1217,6 +1235,35 @@ impl Synmetra {
             Err(error) => result(Err(error)),
         }
     }
+    #[tool(
+        description = "Execute a restricted, identifier-validated read-only SELECT subset against one private DuckDB scratchpad session.",
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = false
+        )
+    )]
+    fn scratchpad_query(
+        &self,
+        Parameters(args): Parameters<ScratchQueryArgs>,
+    ) -> CallToolResult {
+        if args.cursor.is_some()
+            || args.output_mode.as_deref().is_some_and(|mode| mode != "rows")
+        {
+            return local_result(Err(
+                "This query profile supports rows output without pagination cursors".into()
+            ));
+        }
+        local_result(
+            self.scratchpad.as_ref().expect("scratchpad capability required")
+                .query_bounded(
+                    &args.session_id, &args.sql, args.max_rows,
+                    args.max_cell_chars, args.summary_only,
+                ),
+        )
+    }
+
 }
 
 #[tool_handler(
@@ -1612,9 +1659,30 @@ mod tests {
         let base = Synmetra::new(GoogleClient::new(None), false);
         assert_eq!(base.router.list_all().len(), 20);
         let enabled = base.enable_scratchpad();
-        assert_eq!(enabled.router.list_all().len(), 32);
+        assert_eq!(enabled.router.list_all().len(), 33);
         assert!(enabled.router.has_route("scratchpad_drop_table"));
         assert!(!enabled.router.has_route("create_property_annotation"));
+    }
+
+    #[cfg(feature = "scratchpad")]
+    #[test]
+    fn read_only_query_preserves_pinned_required_args_and_annotations() {
+        use std::collections::BTreeSet;
+        let reference: Value = serde_json::from_str(
+            include_str!("../spec/upstream/sednalabs-tool-schema.v1.json")
+        ).unwrap();
+        let upstream = reference["tools"].as_array().unwrap().iter()
+            .find(|tool| tool["name"]=="scratchpad_query").unwrap();
+        let enabled = Synmetra::new(GoogleClient::new(None),false).enable_scratchpad();
+        let tool = enabled.router.list_all().into_iter()
+            .find(|tool| tool.name=="scratchpad_query").unwrap();
+        let expected: BTreeSet<_> = upstream["inputSchema"]["required"]
+            .as_array().into_iter().flatten().filter_map(Value::as_str).collect();
+        let actual: BTreeSet<_> = tool.input_schema.get("required")
+            .and_then(Value::as_array).into_iter().flatten()
+            .filter_map(Value::as_str).collect();
+        assert_eq!(actual,expected);
+        assert_eq!(tool.annotations.as_ref().unwrap().read_only_hint,Some(true));
     }
 
     #[cfg(feature = "scratchpad")]
