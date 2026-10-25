@@ -61,7 +61,7 @@ impl Synmetra {
 }
 
 #[cfg(feature = "scratchpad")]
-const SCRATCHPAD_TOOL_NAMES: [&str; 9] = [
+const SCRATCHPAD_TOOL_NAMES: [&str; 10] = [
     "scratchpad_open_session",
     "scratchpad_close_session",
     "scratchpad_list_sessions",
@@ -71,6 +71,7 @@ const SCRATCHPAD_TOOL_NAMES: [&str; 9] = [
     "scratchpad_drop_table",
     "scratchpad_describe_table",
     "scratchpad_summarize_table",
+    "scratchpad_export_evidence_bundle",
 ];
 
 #[cfg(feature = "scratchpad")]
@@ -114,6 +115,16 @@ struct ScratchTableArgs {
 struct ScratchReadTableArgs {
     session_id: String,
     table_name: String,
+}
+
+#[cfg(feature = "scratchpad")]
+#[derive(Debug, Deserialize, JsonSchema)]
+struct ScratchEvidenceArgs {
+    session_id: String,
+    #[serde(default)]
+    table_names: Option<Vec<String>>,
+    #[serde(default)]
+    sample_rows_per_table: Option<usize>,
 }
 
 #[cfg(feature = "scratchpad")]
@@ -284,7 +295,6 @@ struct ReportArgs {
     /// Historical date ranges, e.g. [{"startDate":"7daysAgo","endDate":"today"}].
     date_ranges: Vec<Value>,
     /// Names of dimensions (not Dimension objects).
-    #[serde(default)]
     dimensions: Vec<String>,
     /// Names of metrics (not Metric objects).
     metrics: Vec<String>,
@@ -313,7 +323,6 @@ struct ReportArgs {
 #[derive(Debug, Deserialize, JsonSchema)]
 struct RealtimeArgs {
     property_id: String,
-    #[serde(default)]
     dimensions: Vec<String>,
     metrics: Vec<String>,
     #[serde(default)]
@@ -1022,6 +1031,31 @@ impl Synmetra {
                 .summarize_table(&args.session_id, &args.table_name),
         )
     }
+
+    #[tool(
+        description = "Export bounded private in-memory JSON and Markdown evidence from selected scratchpad tables, without touching the filesystem.",
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = false
+        )
+    )]
+    fn scratchpad_export_evidence_bundle(
+        &self,
+        Parameters(args): Parameters<ScratchEvidenceArgs>,
+    ) -> CallToolResult {
+        local_result(
+            self.scratchpad
+                .as_ref()
+                .expect("scratchpad capability required")
+                .export_evidence_bundle(
+                    &args.session_id,
+                    args.table_names,
+                    args.sample_rows_per_table,
+                ),
+        )
+    }
 }
 
 #[tool_handler(
@@ -1101,6 +1135,71 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn every_registered_tool_preserves_pinned_required_mcp_arguments() {
+        use std::collections::BTreeSet;
+
+        let sedna: Value = serde_json::from_str(include_str!(
+            "../spec/upstream/sednalabs-tool-schema.v1.json"
+        ))
+        .unwrap();
+        let official: Value = serde_json::from_str(include_str!(
+            "../spec/upstream/google-official-signatures.json"
+        ))
+        .unwrap();
+
+        let baseline = Synmetra::new(GoogleClient::new(None), false);
+        for tool in baseline.router.list_all() {
+            let upstream = sedna["tools"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|entry| entry["name"].as_str() == Some(tool.name.as_ref()))
+                .unwrap_or_else(|| panic!("Missing pinned upstream tool {}", tool.name));
+            let expected: BTreeSet<_> = upstream["inputSchema"]["required"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .filter_map(Value::as_str)
+                .collect();
+            let actual: BTreeSet<_> = tool
+                .input_schema
+                .get("required")
+                .and_then(Value::as_array)
+                .into_iter()
+                .flatten()
+                .filter_map(Value::as_str)
+                .collect();
+            assert_eq!(actual, expected, "Required MCP parameters differ for {}", tool.name);
+        }
+
+        let with_write = Synmetra::new(GoogleClient::new(None), true);
+        for reference in official["tools"].as_array().unwrap() {
+            let name = reference["name"].as_str().unwrap();
+            let tool = with_write
+                .router
+                .list_all()
+                .into_iter()
+                .find(|tool| tool.name == name)
+                .unwrap_or_else(|| panic!("Missing official Google MCP tool {name}"));
+            let expected: BTreeSet<_> = reference["required"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .filter_map(Value::as_str)
+                .collect();
+            let actual: BTreeSet<_> = tool
+                .input_schema
+                .get("required")
+                .and_then(Value::as_array)
+                .into_iter()
+                .flatten()
+                .filter_map(Value::as_str)
+                .collect();
+            assert_eq!(actual, expected, "Official Google parameters differ for {name}");
+        }
+    }
 
     #[test]
     fn only_implemented_tools_are_discovered() {
@@ -1345,7 +1444,7 @@ mod tests {
         let base = Synmetra::new(GoogleClient::new(None), false);
         assert_eq!(base.router.list_all().len(), 20);
         let enabled = base.enable_scratchpad();
-        assert_eq!(enabled.router.list_all().len(), 29);
+        assert_eq!(enabled.router.list_all().len(), 30);
         assert!(enabled.router.has_route("scratchpad_drop_table"));
         assert!(!enabled.router.has_route("create_property_annotation"));
     }

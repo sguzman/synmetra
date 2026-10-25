@@ -266,6 +266,130 @@ impl ScratchState {
         }))
     }
 
+    /// Export bounded in-memory JSON and Markdown evidence. Never writes files.
+    pub fn export_evidence_bundle(
+        &self,
+        raw: &str,
+        requested_tables: Option<Vec<String>>,
+        sample_rows_per_table: Option<usize>,
+    ) -> Result<Value, String> {
+        use sha2::{Digest, Sha256};
+        use std::collections::BTreeSet;
+
+        let id = session_id(raw)?;
+        let sample_limit = sample_rows_per_table.unwrap_or(20);
+        if sample_limit > 20 {
+            return Err("Evidence sample_rows_per_table must be at most 20".into());
+        }
+        let mut inner = self.guard()?;
+        Self::expire(&mut inner);
+        let db = &inner
+            .sessions
+            .get(id)
+            .ok_or("Scratchpad session not found or expired")?
+            .db;
+        let selected: Vec<String> = if let Some(tables) = requested_tables {
+            if tables.len() > 8 {
+                return Err("Evidence bundle may include at most eight tables".into());
+            }
+            let mut unique = BTreeSet::new();
+            for name in &tables {
+                table_name(name)?;
+                if !unique.insert(name) {
+                    return Err("Evidence bundle table names must be unique".into());
+                }
+            }
+            tables
+        } else {
+            let mut statement = db
+                .prepare(
+                    "SELECT table_name FROM information_schema.tables
+                     WHERE table_schema='main' AND table_type='BASE TABLE'
+                     ORDER BY table_name LIMIT 9",
+                )
+                .map_err(|_| "Evidence catalog query failed")?;
+            let tables = statement
+                .query_map([], |row| row.get::<_, String>(0))
+                .map_err(|_| "Evidence catalog query failed")?
+                .collect::<Result<Vec<_>, _>>()
+                .map_err(|_| "Evidence catalog read failed")?;
+            if tables.len() > 8 {
+                return Err("More than eight tables: explicitly select a bounded subset".into());
+            }
+            tables
+        };
+
+        let mut evidence = Vec::new();
+        let mut markdown = String::from(
+            "# Synmetra scratchpad evidence\n\n| Table | Rows | Sampled |\n|---|---:|---:|\n",
+        );
+        for name in selected {
+            let name = table_name(&name)?;
+            let exists: i64 = db
+                .query_row(
+                    "SELECT COUNT(*) FROM information_schema.tables
+                     WHERE table_schema='main' AND table_type='BASE TABLE' AND table_name=?1",
+                    [name],
+                    |row| row.get(0),
+                )
+                .map_err(|_| "Evidence catalog validation failed")?;
+            if exists != 1 {
+                return Err("Selected evidence table does not exist".into());
+            }
+            let row_count: i64 = db
+                .query_row(&format!("SELECT COUNT(*) FROM \"{name}\""), [], |row| row.get(0))
+                .map_err(|_| "Evidence row count query failed")?;
+            let query = format!(
+                "SELECT substr(row_to_json(t)::VARCHAR, 1, 2049) FROM \"{name}\" AS t LIMIT {sample_limit}"
+            );
+            let samples: Vec<Value> = if sample_limit == 0 {
+                Vec::new()
+            } else {
+                let mut statement = db
+                    .prepare(&query)
+                    .map_err(|_| "Evidence sampling query failed")?;
+                let raw_samples = statement
+                    .query_map([], |row| row.get::<_, String>(0))
+                    .map_err(|_| "Evidence sampling query failed")?
+                    .collect::<Result<Vec<_>, _>>()
+                    .map_err(|_| "Evidence sampling returned invalid rows")?;
+                raw_samples
+                    .into_iter()
+                    .map(|row| {
+                        if row.len() > 2048 {
+                            return Err("An evidence sample row exceeds 2048 bytes".to_owned());
+                        }
+                        serde_json::from_str(&row).map_err(|_| "Invalid evidence JSON sample".into())
+                    })
+                    .collect::<Result<Vec<_>, String>>()?
+            };
+            markdown.push_str(&format!(
+                "| {name} | {row_count} | {} |\n",
+                samples.len()
+            ));
+            evidence.push(json!({
+                "table_name":name,
+                "row_count":row_count,
+                "sample_rows":samples,
+                "sample_query_sha256":format!("{:x}", Sha256::digest(query.as_bytes())),
+            }));
+        }
+        let result = json!({
+            "session_id":id,
+            "tables":evidence,
+            "sample_rows_per_table":sample_limit,
+            "markdown":markdown,
+            "source":"local_scratchpad",
+            "provider_called":false,
+        });
+        if serde_json::to_vec(&result)
+            .map_or(true, |data| data.len() > 256 * 1024)
+        {
+            return Err("Evidence bundle exceeds 256 KiB output policy".into());
+        }
+        Ok(result)
+    }
+
     pub fn summarize_table(&self, raw: &str, table: &str) -> Result<Value, String> {
         // Catalog validation precedes the only dynamically constructed SQL statement.
         let schema = self.describe_table(raw, table)?;
@@ -310,6 +434,35 @@ mod tests {
         assert!(state.open("another").is_err());
         assert_eq!(state.close("project_1").unwrap()["closed"], true);
         assert!(state.close("project_1").is_err());
+    }
+
+    #[test]
+    fn exports_private_bounded_json_and_markdown_evidence() {
+        let state = ScratchState::new();
+        state.open("analysis_1").unwrap();
+        {
+            let mut inner = state.guard().unwrap();
+            let db = &inner.sessions.get_mut("analysis_1").unwrap().db;
+            db.execute_batch(
+                "CREATE TABLE sample (event_name VARCHAR, count INTEGER);
+                 INSERT INTO sample VALUES ('page_view', 3), ('purchase', 1);",
+            ).unwrap();
+        }
+        let export = state.export_evidence_bundle(
+            "analysis_1", Some(vec!["sample".into()]), Some(2)
+        ).unwrap();
+        assert_eq!(export["tables"][0]["row_count"], 2);
+        assert_eq!(export["tables"][0]["sample_rows"][0]["event_name"], "page_view");
+        assert!(export["markdown"].as_str().unwrap().contains("| sample | 2 | 2 |"));
+        assert_eq!(export["provider_called"], false);
+        assert!(state.export_evidence_bundle("analysis_1", None, Some(21)).is_err());
+        assert!(state.export_evidence_bundle(
+            "analysis_1", Some(vec!["sample".into(), "sample".into()]), None
+        ).is_err());
+        assert!(state.export_evidence_bundle(
+            "analysis_1", Some(vec!["bad\";DROP TABLE sample;--".into()]), None
+        ).is_err());
+        assert_eq!(state.summarize_table("analysis_1", "sample").unwrap()["row_count"], 2);
     }
 
     #[test]
