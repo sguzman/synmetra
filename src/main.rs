@@ -428,6 +428,22 @@ struct FunnelArgs {
     segments: Option<Vec<Value>>,
     #[serde(default)]
     return_property_quota: bool,
+    #[serde(default)]
+    is_open_funnel: bool,
+    #[serde(default)]
+    funnel_visualization_type: Option<String>,
+    #[serde(default)]
+    dimension_filter: Option<Value>,
+    #[serde(default)]
+    limit: Option<u64>,
+    #[serde(default)]
+    max_rows: Option<usize>,
+    #[serde(default)]
+    max_cell_chars: Option<usize>,
+    #[serde(default)]
+    summary_only: bool,
+    #[serde(default)]
+    output_mode: Option<tabular::OutputMode>,
 }
 
 /// Input-schema mirror of the pinned conversion specification. The runtime
@@ -778,6 +794,50 @@ fn api_error_code(error: &ApiError) -> (&'static str, &'static str) {
         ApiError::CollectionTooLarge => ("COLLECTION_TOO_LARGE", "limits"),
         ApiError::TooManyPages => ("PAGINATION_LIMIT", "limits"),
         ApiError::InvalidResponse => ("INVALID_UPSTREAM_RESPONSE", "upstream"),
+    }
+}
+
+fn result_with_funnel_projection(
+    response: Result<Value, ApiError>,
+    controls: tabular::Controls,
+) -> CallToolResult {
+    let output = response.and_then(|response| {
+        let table = response
+            .get("funnelTable")
+            .ok_or(ApiError::InvalidResponse)?;
+        let visualization = response
+            .get("funnelVisualization")
+            .ok_or(ApiError::InvalidResponse)?;
+        let table = tabular::project(table, controls, false, None)?;
+        let visualization = tabular::project(visualization, controls, false, None)?;
+        let mut ga4 = json!({});
+        for field in ["propertyQuota", "kind", "metadata"] {
+            if let Some(value) = response.get(field) {
+                ga4[field] = value.clone();
+            }
+        }
+        Ok(json!({
+            "ok": true,
+            "data": {
+                "funnel_table": table.data,
+                "funnel_visualization": visualization.data
+            },
+            "meta": {
+                "funnel_table": table.meta,
+                "funnel_visualization": visualization.meta,
+                "ga4": ga4,
+                "elapsed_ms": 0,
+                "elapsed_ms_measured": false
+            }
+        }))
+    });
+    match output {
+        Ok(payload) => {
+            let mut result = CallToolResult::success(vec![ContentBlock::text(payload.to_string())]);
+            result.structured_content = Some(payload);
+            result
+        }
+        Err(error) => result(Err(error)),
     }
 }
 
@@ -1170,18 +1230,47 @@ impl Synmetra {
         )
     )]
     async fn run_funnel_report(&self, Parameters(args): Parameters<FunnelArgs>) -> CallToolResult {
-        let body = google::funnel_request(
+        let mut controls = tabular::Controls {
+            output_mode: args.output_mode,
+            summary_only: args.summary_only,
+            max_rows: args.max_rows,
+            max_cell_chars: args.max_cell_chars,
+            cursor_supplied: false,
+        };
+        if controls.active() && controls.max_rows.is_none() {
+            // Funnel output uses a 200-row default per subreport.
+            controls.max_rows = Some(200);
+        }
+        let limit = match controls.request_limit(args.limit) {
+            Ok(value) => value,
+            Err(error) => return result(Err(error)),
+        };
+        let request = google::funnel_request(
             args.funnel_steps,
             args.date_ranges,
             args.funnel_breakdown,
             args.funnel_next_action,
             args.segments,
             args.return_property_quota,
-        );
-        result(match body {
+        )
+        .and_then(|body| {
+            google::funnel_request_options(
+                body,
+                args.is_open_funnel,
+                args.funnel_visualization_type.as_deref(),
+                limit,
+                args.dimension_filter,
+            )
+        });
+        let response = match request {
             Ok(body) => self.api.alpha_report(&args.property_id, body, true).await,
             Err(error) => Err(error),
-        })
+        };
+        if controls.active() {
+            result_with_funnel_projection(response, controls)
+        } else {
+            result(response)
+        }
     }
 
     #[tool(
