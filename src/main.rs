@@ -897,6 +897,34 @@ mod tests {
 
     #[cfg(feature = "scratchpad")]
     #[test]
+    fn scratchpad_inputs_match_pinned_sednalabs_mcp_fields() {
+        use std::collections::BTreeSet;
+        let fixture: serde_json::Value = serde_json::from_str(
+            include_str!("../spec/upstream/sednalabs-tool-schema.v1.json")
+        ).unwrap();
+        let server = Synmetra::new(GoogleClient::new(None), false).enable_scratchpad();
+        let advertised = server.router.list_all();
+        for name in SCRATCHPAD_TOOL_NAMES {
+            let reference = fixture["tools"].as_array().unwrap().iter()
+                .find(|tool| tool["name"].as_str() == Some(name)).unwrap();
+            let native = advertised.iter().find(|tool| tool.name == name).unwrap();
+            let native_fields: BTreeSet<_> = native.input_schema.get("properties")
+                .and_then(serde_json::Value::as_object)
+                .unwrap().keys().map(String::as_str).collect();
+            let expected_fields: BTreeSet<_> = reference["inputSchema"]["properties"]
+                .as_object().unwrap().keys().map(String::as_str).collect();
+            assert_eq!(native_fields, expected_fields, "MCP input properties drifted for {name}");
+            let native_required: BTreeSet<_> = native.input_schema.get("required")
+                .and_then(serde_json::Value::as_array)
+                .into_iter().flatten().filter_map(serde_json::Value::as_str).collect();
+            let expected_required: BTreeSet<_> = reference["inputSchema"]["required"]
+                .as_array().into_iter().flatten().filter_map(serde_json::Value::as_str).collect();
+            assert_eq!(native_required, expected_required, "MCP required fields drifted for {name}");
+        }
+    }
+
+    #[cfg(feature = "scratchpad")]
+    #[test]
     fn scratchpad_tools_are_hidden_without_explicit_capability() {
         let base = Synmetra::new(GoogleClient::new(None), false);
         assert_eq!(base.router.list_all().len(), 20);
