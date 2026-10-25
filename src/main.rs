@@ -2801,6 +2801,99 @@ mod tests {
         assert!(!payload.to_string().contains("mock-private-token"));
     }
 
+    #[test]
+    fn pivot_input_fields_and_required_sets_match_pinned_contract() {
+        use std::collections::BTreeSet;
+
+        let pinned: Value = serde_json::from_str(include_str!(
+            "../spec/upstream/sednalabs-tool-schema.v1.json"
+        ))
+        .unwrap();
+        let source = pinned["tools"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|tool| tool["name"] == "run_pivot_report")
+            .unwrap();
+        let local = Synmetra::tool_router()
+            .list_all()
+            .into_iter()
+            .find(|tool| tool.name == "run_pivot_report")
+            .unwrap();
+        let fields: BTreeSet<_> = local.input_schema["properties"]
+            .as_object()
+            .unwrap()
+            .keys()
+            .map(String::as_str)
+            .collect();
+        let upstream: BTreeSet<_> = source["inputSchema"]["properties"]
+            .as_object()
+            .unwrap()
+            .keys()
+            .map(String::as_str)
+            .collect();
+        assert_eq!(fields, upstream);
+        let required: BTreeSet<_> = local.input_schema["required"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter_map(Value::as_str)
+            .collect();
+        let expected: BTreeSet<_> = source["inputSchema"]["required"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter_map(Value::as_str)
+            .collect();
+        assert_eq!(required, expected);
+        assert_eq!(
+            local.input_schema["properties"]["return_property_quota"]["default"],
+            source["inputSchema"]["properties"]["return_property_quota"]["default"]
+        );
+    }
+
+    #[tokio::test]
+    async fn pivot_report_provider_denial_excludes_http_body_and_bearer() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        use tokio::net::TcpListener;
+
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let endpoint = format!("http://{}", listener.local_addr().unwrap());
+        let responder = tokio::spawn(async move {
+            let (mut stream, _) = listener.accept().await.unwrap();
+            let mut buffer = [0u8; 4096];
+            let n = stream.read(&mut buffer).await.unwrap();
+            assert!(String::from_utf8_lossy(&buffer[..n]).contains("properties/42:runPivotReport"));
+            let body = r#"{"error":{"message":"private-pivot-body"}}"#;
+            let response = format!(
+                "HTTP/1.1 403 Forbidden\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                body.len(),
+                body
+            );
+            stream.write_all(response.as_bytes()).await.unwrap();
+        });
+        let server = Synmetra::new(
+            GoogleClient::with_endpoints(Some("private-pivot-bearer".into()), &endpoint, &endpoint),
+            false,
+        );
+        let args: PivotArgs = serde_json::from_value(json!({
+            "property_id":42,
+            "date_ranges":[{"start_date":"yesterday","end_date":"today"}],
+            "dimensions":["country"],
+            "metrics":["activeUsers"],
+            "pivots":[{"fieldNames":["country"],"limit":"2"}]
+        }))
+        .unwrap();
+        let result = server.run_pivot_report(Parameters(args)).await;
+        responder.await.unwrap();
+        assert_eq!(result.is_error, Some(true));
+        let content = result.structured_content.unwrap();
+        assert_eq!(content["error"]["code"], "GOOGLE_HTTP_ERROR");
+        assert_eq!(content["error"]["status_code"], 403);
+        assert!(!content.to_string().contains("private-pivot-body"));
+        assert!(!content.to_string().contains("private-pivot-bearer"));
+    }
+
     #[tokio::test]
     async fn pivot_report_projection_keeps_pivot_header_metadata_without_fake_cursor() {
         use tokio::io::{AsyncReadExt, AsyncWriteExt};
