@@ -61,7 +61,7 @@ impl Synmetra {
 }
 
 #[cfg(feature = "scratchpad")]
-const SCRATCHPAD_TOOL_NAMES: [&str; 14] = [
+const SCRATCHPAD_TOOL_NAMES: [&str; 15] = [
     "scratchpad_open_session",
     "scratchpad_close_session",
     "scratchpad_list_sessions",
@@ -76,6 +76,7 @@ const SCRATCHPAD_TOOL_NAMES: [&str; 14] = [
     "scratchpad_ingest_realtime_report",
     "scratchpad_query",
     "scratchpad_release_regression_report",
+    "scratchpad_landing_param_shift_report",
 ];
 
 #[cfg(feature = "scratchpad")]
@@ -219,6 +220,36 @@ struct ScratchReleaseArgs {
     transition_days: Option<u32>,
     #[serde(default)]
     post_days: Option<u32>,
+    #[serde(default)]
+    summary_only: bool,
+    #[serde(default)]
+    output_mode: Option<String>,
+    #[serde(default)]
+    cursor: Option<String>,
+}
+
+#[cfg(feature = "scratchpad")]
+#[derive(Debug, Deserialize, JsonSchema)]
+struct ScratchLandingArgs {
+    session_id: String,
+    table_name: String,
+    release_date: String,
+    #[serde(default)]
+    date_column: Option<String>,
+    #[serde(default)]
+    landing_url_column: Option<String>,
+    #[serde(default)]
+    channel_column: Option<String>,
+    #[serde(default)]
+    source_medium_column: Option<String>,
+    #[serde(default)]
+    pre_days: Option<u32>,
+    #[serde(default)]
+    transition_days: Option<u32>,
+    #[serde(default)]
+    post_days: Option<u32>,
+    #[serde(default)]
+    top_n: Option<usize>,
     #[serde(default)]
     summary_only: bool,
     #[serde(default)]
@@ -1336,6 +1367,38 @@ impl Synmetra {
                 .release_regression(&config),
         )
     }
+    #[tool(
+        description = "Compare landing URL query-parameter key frequency before and after a release across optional channel and source/medium groups.",
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = false
+        )
+    )]
+    fn scratchpad_landing_param_shift_report(
+        &self,
+        Parameters(args): Parameters<ScratchLandingArgs>,
+    ) -> CallToolResult {
+        if args.cursor.is_some() || args.output_mode.as_deref().is_some_and(|v| v != "rows") {
+            return local_result(Err("Landing diagnostics do not yet support cursors or alternate output modes".into()));
+        }
+        let config = scratchpad::LandingShiftConfig {
+            session_id: args.session_id, table_name: args.table_name,
+            release_date: args.release_date, date_column: args.date_column,
+            landing_url_column: args.landing_url_column,
+            channel_column: args.channel_column,
+            source_medium_column: args.source_medium_column,
+            pre_days: args.pre_days, transition_days: args.transition_days,
+            post_days: args.post_days, top_n: args.top_n,
+        };
+        let _summary_only = args.summary_only;
+        local_result(
+            self.scratchpad.as_ref().expect("scratchpad capability required")
+                .landing_param_shift(&config)
+        )
+    }
+
 }
 
 #[tool_handler(
@@ -1731,9 +1794,30 @@ mod tests {
         let base = Synmetra::new(GoogleClient::new(None), false);
         assert_eq!(base.router.list_all().len(), 20);
         let enabled = base.enable_scratchpad();
-        assert_eq!(enabled.router.list_all().len(), 34);
+        assert_eq!(enabled.router.list_all().len(), 35);
         assert!(enabled.router.has_route("scratchpad_drop_table"));
         assert!(!enabled.router.has_route("create_property_annotation"));
+    }
+
+    #[cfg(feature = "scratchpad")]
+    #[test]
+    fn landing_shift_required_fields_match_pinned_upstream_contract() {
+        use std::collections::BTreeSet;
+        let upstream: Value=serde_json::from_str(
+            include_str!("../spec/upstream/sednalabs-tool-schema.v1.json")
+        ).unwrap();
+        let expected_tool=upstream["tools"].as_array().unwrap().iter()
+            .find(|t|t["name"]=="scratchpad_landing_param_shift_report").unwrap();
+        let server=Synmetra::new(GoogleClient::new(None),false).enable_scratchpad();
+        let native=server.router.list_all().into_iter()
+            .find(|tool|tool.name=="scratchpad_landing_param_shift_report").unwrap();
+        let expected:BTreeSet<_>=expected_tool["inputSchema"]["required"]
+            .as_array().into_iter().flatten().filter_map(Value::as_str).collect();
+        let actual:BTreeSet<_>=native.input_schema.get("required")
+            .and_then(Value::as_array).into_iter().flatten()
+            .filter_map(Value::as_str).collect();
+        assert_eq!(expected,actual);
+        assert_eq!(native.annotations.as_ref().unwrap().read_only_hint,Some(true));
     }
 
     #[cfg(feature = "scratchpad")]
