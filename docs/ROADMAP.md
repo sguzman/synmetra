@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `███░░░░░░░ 32.8%` · **+32.82 percentage points from initial empty repo; +0.44 pp from CI-tested query-bound historical pagination** · 44/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `███░░░░░░░ 33.0%` · **+33.04 percentage points from initial empty repo; +0.22 pp from verified GA compatibility preflight** · 45/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -245,7 +245,7 @@
   - ✅ **Gate:** No stale cross-principal cache confusion
 
 
-## 📊 M4 — Reporting, preflight and Data API parity — `████░░░░░░ 43.3%`
+## 📊 M4 — Reporting, preflight and Data API parity — `█████░░░░░ 45.0%`
 
 **Scope:** MVP. **Acceptance gate:** All report tools return correct GA4 semantics, including documented alpha, pagination and response projections.
 
@@ -270,14 +270,14 @@
 - 👥 **T090 — Implement run_account_access_report** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** MCP schema, Google request, golden output and error cases for run_account_access_report
 
-### 🧭 P11 — Preflight MCP tools — `█████░░░░░ 50.0%`
+### 🧭 P11 — Preflight MCP tools — `██████░░░░ 57.1%`
 
 **Feature:** Preflight and metadata.
 
 - 🧭 **T091 — Implement preview_report_request** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Validate its contract and unsupported metrics without wasteful report requests
-- ✅ **T092 — Implement check_report_compatibility** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Validate its contract and unsupported metrics without wasteful report requests
+- ✅ **T092 — Implement check_report_compatibility** — `██████████ 100.0%`
+  - ✅ **Gate:** Validate its contract and unsupported metrics without wasteful report requests · **Evidence:** src/main.rs implemented check_report_compatibility MCP handler plus src/google.rs request route/validation; Rust unit and in-memory MCP tests passed Actions 40202015488; full upstream schema/live GA parity remains open; src/google.rs compatibility_request builds the dedicated Google Data API checkCompatibility body without inventing report date ranges or requiring metrics; property 0 is allowed only for checkCompatibility. src/main.rs compatibility_probe_uses_property_zero_without_a_report_call mock verifies correct POST endpoint, empty inventory request, compatibility reason metadata and secret-free response, plus offline rejection of invalid fields; src/google.rs compatibility_requests_allow_inventory_or_metric_only_without_report_dates tests dimension-only, metric-only, inventory and invalid values. GitHub Actions 40232788668 core Rust tests, fmt and Clippy passed. This does not certify authorized live property-specific metadata or all upstream enriched response adapters.
 - 🧬 **T093 — Cache and refresh Data API metadata safely** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Metadata cache keys include property and caller
 - 🔤 **T094 — Support flexible dimension and metric filters** — `██████████ 100.0%`

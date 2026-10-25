@@ -1786,7 +1786,7 @@
               "id": "T092",
               "emoji": "✅",
               "name": "Implement check_report_compatibility",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Validate its contract and unsupported metrics without wasteful report requests",
               "checks": [
                 {
@@ -1796,7 +1796,8 @@
                 },
                 {
                   "text": "Validate its contract and unsupported metrics without wasteful report requests",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs compatibility_request builds the dedicated Google Data API checkCompatibility body without inventing report date ranges or requiring metrics; property 0 is allowed only for checkCompatibility. src/main.rs compatibility_probe_uses_property_zero_without_a_report_call mock verifies correct POST endpoint, empty inventory request, compatibility reason metadata and secret-free response, plus offline rejection of invalid fields; src/google.rs compatibility_requests_allow_inventory_or_metric_only_without_report_dates tests dimension-only, metric-only, inventory and invalid values. GitHub Actions 40232788668 core Rust tests, fmt and Clippy passed. This does not certify authorized live property-specific metadata or all upstream enriched response adapters."
                 }
               ]
             },
