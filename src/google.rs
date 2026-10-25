@@ -740,6 +740,42 @@ pub fn funnel_request(
     Ok(request)
 }
 
+/// Attach official v1alpha funnel controls after step/segment normalization.
+pub fn funnel_request_options(
+    mut request: Value,
+    is_open_funnel: bool,
+    visualization: Option<&str>,
+    limit: Option<u64>,
+    dimension_filter: Option<Value>,
+) -> Result<Value, ApiError> {
+    if is_open_funnel {
+        request["funnel"]["isOpenFunnel"] = json!(true);
+    }
+    if let Some(kind) = visualization {
+        if ![
+            "STANDARD_FUNNEL",
+            "TRENDED_FUNNEL",
+            "FUNNEL_VISUALIZATION_TYPE_UNSPECIFIED",
+        ]
+        .contains(&kind)
+        {
+            return Err(ApiError::InvalidRequest);
+        }
+        request["funnelVisualizationType"] = json!(kind);
+    }
+    if let Some(limit) = limit {
+        if limit == 0 || limit > 250_000 {
+            return Err(ApiError::InvalidRequest);
+        }
+        request["limit"] = json!(limit.to_string());
+    }
+    if let Some(filter) = dimension_filter {
+        request["dimensionFilter"] = normalize_report_filter(filter, false)?;
+    }
+    GoogleClient::validate_body(&request)?;
+    Ok(request)
+}
+
 /// Normalize Google Analytics Admin API access-report inputs.
 /// AccessDimension/AccessMetric use dimensionName/metricName (not "name").
 pub struct AccessReportSpec {
@@ -1519,6 +1555,44 @@ mod tests {
                 Err(ApiError::InvalidResponse)
             );
         }
+    }
+
+    #[test]
+    fn funnel_options_map_open_trended_and_dimension_filters_with_bounds() {
+        let base = funnel_request(
+            vec![json!({"name":"Viewed","event":"page_view"})],
+            None,
+            None,
+            None,
+            None,
+            false,
+        )
+        .unwrap();
+        let request = funnel_request_options(
+            base.clone(),
+            true,
+            Some("TRENDED_FUNNEL"),
+            Some(150),
+            Some(json!("country==US")),
+        )
+        .unwrap();
+        assert_eq!(request["funnel"]["isOpenFunnel"], true);
+        assert_eq!(request["funnelVisualizationType"], "TRENDED_FUNNEL");
+        assert_eq!(request["limit"], "150");
+        assert_eq!(
+            request["dimensionFilter"]["filter"]["fieldName"],
+            "country"
+        );
+        for bad in [0, 250_001, u64::MAX] {
+            assert_eq!(
+                funnel_request_options(base.clone(), false, None, Some(bad), None),
+                Err(ApiError::InvalidRequest)
+            );
+        }
+        assert_eq!(
+            funnel_request_options(base, false, Some("UNKNOWN"), None, None),
+            Err(ApiError::InvalidRequest)
+        );
     }
 
     #[test]
