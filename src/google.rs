@@ -45,8 +45,9 @@ impl fmt::Display for ApiError {
     }
 }
 
-pub fn property_name(input: &str) -> Result<String, ApiError> {
-    let digits = input.strip_prefix("properties/").unwrap_or(input);
+fn scoped_name(input: &str, scope: &str) -> Result<String, ApiError> {
+    let prefix = format!("{scope}/");
+    let digits = input.strip_prefix(&prefix).unwrap_or(input);
     if digits.is_empty()
         || digits.starts_with('0')
         || !digits.bytes().all(|c| c.is_ascii_digit())
@@ -54,7 +55,15 @@ pub fn property_name(input: &str) -> Result<String, ApiError> {
     {
         return Err(ApiError::InvalidIdentifier);
     }
-    Ok(format!("properties/{digits}"))
+    Ok(format!("{scope}/{digits}"))
+}
+
+pub fn property_name(input: &str) -> Result<String, ApiError> {
+    scoped_name(input, "properties")
+}
+
+pub fn account_name(input: &str) -> Result<String, ApiError> {
+    scoped_name(input, "accounts")
 }
 
 impl GoogleClient {
@@ -143,6 +152,16 @@ impl GoogleClient {
         self.get(&self.admin_base, &path, None).await
     }
 
+    pub async fn account_sharing(&self, account: &str) -> Result<Value, ApiError> {
+        let path = format!("/v1beta/{}/dataSharingSettings", account_name(account)?);
+        self.get(&self.admin_base, &path, None).await
+    }
+
+    pub async fn retention_settings(&self, property: &str) -> Result<Value, ApiError> {
+        let path = format!("/v1beta/{}/dataRetentionSettings", property_name(property)?);
+        self.get(&self.admin_base, &path, None).await
+    }
+
     pub async fn ads_links(&self, property: &str) -> Result<Value, ApiError> {
         let path = format!("/{}/googleAdsLinks", property_name(property)?);
         self.collection(&path, "googleAdsLinks", false).await
@@ -167,14 +186,42 @@ impl GoogleClient {
         }))
     }
 
-    pub async fn report(&self, property: &str, request: Value, realtime: bool) -> Result<Value, ApiError> {
-        let property = property_name(property)?;
-        if !request.is_object() {
+    fn validate_body(request: &Value) -> Result<(), ApiError> {
+        if !request.is_object()
+            || serde_json::to_vec(request).map_or(true, |bytes| bytes.len() > 64 * 1024)
+        {
             return Err(ApiError::InvalidRequest);
         }
-        let method = if realtime { "runRealtimeReport" } else { "runReport" };
+        Ok(())
+    }
+
+    pub async fn data_operation(&self, property: &str, request: Value, method: &str) -> Result<Value, ApiError> {
+        let property = property_name(property)?;
+        Self::validate_body(&request)?;
+        if !["runReport", "runRealtimeReport", "runPivotReport", "batchRunReports", "checkCompatibility"]
+            .contains(&method)
+        {
+            return Err(ApiError::InvalidRequest);
+        }
+        if method == "batchRunReports"
+            && request["requests"].as_array().is_none_or(|list| list.is_empty() || list.len() > 5)
+        {
+            return Err(ApiError::InvalidRequest);
+        }
         let url = format!("{}/v1beta/{property}:{method}", self.data_base);
         self.send(self.http.post(url).json(&request)).await
+    }
+
+    pub async fn access_report(&self, entity: &str, request: Value, account: bool) -> Result<Value, ApiError> {
+        let entity = if account { account_name(entity)? } else { property_name(entity)? };
+        Self::validate_body(&request)?;
+        // This Admin API endpoint requires Administrator privileges on the selected entity.
+        let url = format!("{}/v1beta/{entity}:runAccessReport", self.admin_base);
+        self.send(self.http.post(url).json(&request)).await
+    }
+
+    pub async fn report(&self, property: &str, request: Value, realtime: bool) -> Result<Value, ApiError> {
+        self.data_operation(property, request, if realtime { "runRealtimeReport" } else { "runReport" }).await
     }
 }
 
@@ -217,6 +264,8 @@ mod tests {
         }
         assert_eq!(property_name("321").unwrap(), "properties/321");
         assert_eq!(property_name("properties/321").unwrap(), "properties/321");
+        assert_eq!(account_name("accounts/123").unwrap(), "accounts/123");
+        assert!(account_name("properties/5").is_err());
     }
 
     #[test]
@@ -274,5 +323,52 @@ mod tests {
     async fn missing_credentials_reject_before_http() {
         let client = GoogleClient::new(None);
         assert_eq!(client.account_summaries().await.unwrap_err(), ApiError::MissingCredentials);
+    }
+
+    #[tokio::test]
+    async fn account_sharing_and_retention_use_correct_paths() {
+        let (url, handle) = once(r#"{"sharingWithOthersEnabled":false}"#).await;
+        let c = GoogleClient::with_endpoints(Some("token".into()), &url, &url);
+        let value = c.account_sharing("accounts/87").await.unwrap();
+        assert_eq!(value["sharingWithOthersEnabled"], false);
+        assert!(handle.await.unwrap().starts_with("GET /v1beta/accounts/87/dataSharingSettings HTTP/1.1"));
+
+        let (url, handle) = once(r#"{"eventDataRetention":"FOURTEEN_MONTHS"}"#).await;
+        let c = GoogleClient::with_endpoints(Some("token".into()), &url, &url);
+        let value = c.retention_settings("42").await.unwrap();
+        assert_eq!(value["eventDataRetention"], "FOURTEEN_MONTHS");
+        assert!(handle.await.unwrap().starts_with("GET /v1beta/properties/42/dataRetentionSettings HTTP/1.1"));
+    }
+
+    #[tokio::test]
+    async fn advanced_reports_use_read_only_api_paths() {
+        for method in ["runPivotReport", "checkCompatibility", "batchRunReports"] {
+            let (url, handle) = once(r#"{"ok":true}"#).await;
+            let c = GoogleClient::with_endpoints(Some("token".into()), &url, &url);
+            let body = if method == "batchRunReports" {
+                json!({"requests":[{"metrics":[{"name":"activeUsers"}]}]})
+            } else { json!({"metrics":[{"name":"activeUsers"}]}) };
+            assert_eq!(c.data_operation("properties/77", body, method).await.unwrap()["ok"], true);
+            assert!(handle.await.unwrap().starts_with(&format!("POST /v1beta/properties/77:{method} HTTP/1.1")));
+        }
+    }
+
+    #[tokio::test]
+    async fn access_reports_are_scoped_to_account_or_property() {
+        for (id, account) in [("accounts/16", true), ("properties/82", false)] {
+            let (url, handle) = once(r#"{"rowCount":0}"#).await;
+            let c = GoogleClient::with_endpoints(Some("token".into()), &url, &url);
+            assert_eq!(c.access_report(id, json!({"dimensions":[]}), account).await.unwrap()["rowCount"], 0);
+            assert!(handle.await.unwrap().starts_with(&format!("POST /v1beta/{id}:runAccessReport HTTP/1.1")));
+        }
+    }
+
+    #[tokio::test]
+    async fn rejects_invalid_batch_without_http_request() {
+        let c = GoogleClient::new(Some("token".into()));
+        for bad in [json!({}), json!({"requests":[]}), json!({"requests":[{},{},{},{},{},{}]})] {
+            assert_eq!(c.data_operation("99", bad, "batchRunReports").await.unwrap_err(), ApiError::InvalidRequest);
+        }
+        assert_eq!(c.data_operation("99", json!({}), "notARealMethod").await.unwrap_err(), ApiError::InvalidRequest);
     }
 }

@@ -24,6 +24,28 @@ struct PropertyArgs {
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
+struct AccountArgs {
+    /// Positive GA4 account number or canonical accounts/<id>.
+    account_id: String,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+struct RawPropertyRequestArgs {
+    /// Positive GA4 property number or canonical properties/<id>.
+    property_id: String,
+    /// Provider-compatible Google API request JSON. Maximum 64 KiB.
+    request: Value,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+struct RawAccountRequestArgs {
+    /// Positive GA4 account number or canonical accounts/<id>.
+    account_id: String,
+    /// Provider-compatible Google Admin API access-report request JSON. Maximum 64 KiB.
+    request: Value,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
 struct ReportArgs {
     /// Positive numeric GA4 property ID or canonical properties/<id>.
     property_id: String,
@@ -91,6 +113,16 @@ impl Synmetra {
         result(self.api.property(&args.property_id).await)
     }
 
+    #[tool(description = "Get an Analytics account's data-sharing settings.")]
+    async fn get_account_data_sharing_settings(&self, Parameters(args): Parameters<AccountArgs>) -> CallToolResult {
+        result(self.api.account_sharing(&args.account_id).await)
+    }
+
+    #[tool(description = "Get a GA4 property's event and user data retention settings.")]
+    async fn get_property_data_retention_settings(&self, Parameters(args): Parameters<PropertyArgs>) -> CallToolResult {
+        result(self.api.retention_settings(&args.property_id).await)
+    }
+
     #[tool(description = "List Google Ads account links for one GA4 property.")]
     async fn list_google_ads_links(&self, Parameters(args): Parameters<PropertyArgs>) -> CallToolResult {
         result(self.api.ads_links(&args.property_id).await)
@@ -104,6 +136,31 @@ impl Synmetra {
     #[tool(description = "List property-specific custom dimensions and metrics.")]
     async fn get_custom_dimensions_and_metrics(&self, Parameters(args): Parameters<PropertyArgs>) -> CallToolResult {
         result(self.api.custom_definitions(&args.property_id).await)
+    }
+
+    #[tool(description = "Run a GA4 pivot report using the provider's RunPivotReportRequest JSON.")]
+    async fn run_pivot_report(&self, Parameters(args): Parameters<RawPropertyRequestArgs>) -> CallToolResult {
+        result(self.api.data_operation(&args.property_id, args.request, "runPivotReport").await)
+    }
+
+    #[tool(description = "Execute one to five GA4 historical reports in a single batch using a requests JSON array.")]
+    async fn batch_run_reports(&self, Parameters(args): Parameters<RawPropertyRequestArgs>) -> CallToolResult {
+        result(self.api.data_operation(&args.property_id, args.request, "batchRunReports").await)
+    }
+
+    #[tool(description = "Check GA4 Core Data API metric/dimension compatibility using CheckCompatibilityRequest JSON.")]
+    async fn check_report_compatibility(&self, Parameters(args): Parameters<RawPropertyRequestArgs>) -> CallToolResult {
+        result(self.api.data_operation(&args.property_id, args.request, "checkCompatibility").await)
+    }
+
+    #[tool(description = "Run a GA4 property-level data access report (requires Google Analytics Administrator privileges).")]
+    async fn run_property_access_report(&self, Parameters(args): Parameters<RawPropertyRequestArgs>) -> CallToolResult {
+        result(self.api.access_report(&args.property_id, args.request, false).await)
+    }
+
+    #[tool(description = "Run an account-level data access report (requires Google Analytics Administrator privileges).")]
+    async fn run_account_access_report(&self, Parameters(args): Parameters<RawAccountRequestArgs>) -> CallToolResult {
+        result(self.api.access_report(&args.account_id, args.request, true).await)
     }
 
     #[tool(description = "Run a historical Google Analytics Data API report with metric and dimension names.")]
@@ -184,8 +241,8 @@ mod tests {
             .into_iter()
             .map(|tool| tool.name.to_string())
             .collect();
-        assert_eq!(names.len(), 7);
-        for name in ["get_account_summaries", "get_property_details", "list_google_ads_links", "list_property_annotations", "get_custom_dimensions_and_metrics", "run_report", "run_realtime_report"] {
+        assert_eq!(names.len(), 14);
+        for name in ["get_account_summaries", "get_property_details", "get_account_data_sharing_settings", "get_property_data_retention_settings", "list_google_ads_links", "list_property_annotations", "get_custom_dimensions_and_metrics", "run_report", "run_realtime_report", "run_pivot_report", "batch_run_reports", "check_report_compatibility", "run_property_access_report", "run_account_access_report"] {
             assert!(names.contains(name), "missing {name}");
         }
         assert!(!names.contains("create_property_annotation"));
