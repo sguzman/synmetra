@@ -3,6 +3,7 @@
 
 use crate::Synmetra;
 use axum::{
+    body::{to_bytes, Body},
     extract::{Request, State},
     http::{header, StatusCode},
     middleware::{self, Next},
@@ -14,14 +15,22 @@ use rmcp::transport::streamable_http_server::{
     session::local::LocalSessionManager, StreamableHttpServerConfig, StreamableHttpService,
 };
 use serde_json::json;
-use std::sync::Arc;
+use std::{sync::Arc, time::Duration};
 use subtle::ConstantTimeEq;
+use tokio::sync::Semaphore;
+
+const MAX_HTTP_REQUEST_BYTES: usize = 1_048_576;
+const MAX_INFLIGHT_HTTP_REQUESTS: usize = 16;
+const MAX_BODY_WAIT: Duration = Duration::from_secs(10);
+const MAX_HANDLER_WAIT: Duration = Duration::from_secs(30);
 
 #[derive(Clone)]
 struct Access {
     secret: Arc<[u8]>,
     host: String,
     origin: String,
+    in_flight: Arc<Semaphore>,
+    body_timeout: Duration,
 }
 
 async fn require_local_auth(
@@ -47,14 +56,62 @@ async fn require_local_auth(
     if !host_valid || !origin_valid || !authorized {
         return StatusCode::UNAUTHORIZED.into_response();
     }
-    next.run(request).await
+    // Reject overload and oversized/slow bodies before invoking MCP parsing or
+    // Google API calls. Chunked bodies are bounded by to_bytes, not only headers.
+    let _permit = match access.in_flight.try_acquire() {
+        Ok(permit) => permit,
+        Err(_) => return StatusCode::SERVICE_UNAVAILABLE.into_response(),
+    };
+    if request
+        .headers()
+        .get(header::CONTENT_LENGTH)
+        .and_then(|v| v.to_str().ok())
+        .and_then(|v| v.parse::<usize>().ok())
+        .is_some_and(|len| len > MAX_HTTP_REQUEST_BYTES)
+    {
+        return StatusCode::PAYLOAD_TOO_LARGE.into_response();
+    }
+    let (parts, body) = request.into_parts();
+    let bytes = match tokio::time::timeout(
+        access.body_timeout,
+        to_bytes(body, MAX_HTTP_REQUEST_BYTES),
+    )
+    .await
+    {
+        Ok(Ok(bytes)) => bytes,
+        Ok(Err(_)) => return StatusCode::PAYLOAD_TOO_LARGE.into_response(),
+        Err(_) => return StatusCode::REQUEST_TIMEOUT.into_response(),
+    };
+    let request = Request::from_parts(parts, Body::from(bytes));
+    match tokio::time::timeout(MAX_HANDLER_WAIT, next.run(request)).await {
+        Ok(response) => response,
+        Err(_) => StatusCode::GATEWAY_TIMEOUT.into_response(),
+    }
 }
 
 fn app(server: Synmetra, token: String, port: u16) -> Router {
+    app_with_limits(
+        server,
+        token,
+        port,
+        Arc::new(Semaphore::new(MAX_INFLIGHT_HTTP_REQUESTS)),
+        MAX_BODY_WAIT,
+    )
+}
+
+fn app_with_limits(
+    server: Synmetra,
+    token: String,
+    port: u16,
+    in_flight: Arc<Semaphore>,
+    body_timeout: Duration,
+) -> Router {
     let access = Access {
         secret: Arc::from(token.into_bytes().into_boxed_slice()),
         host: format!("127.0.0.1:{port}"),
         origin: format!("http://127.0.0.1:{port}"),
+        in_flight,
+        body_timeout,
     };
     // Preserve legacy 2025 clients' MCP sessions. The current 2026 protocol
     // remains stateless by specification, independent of this legacy setting.
@@ -357,6 +414,76 @@ mod tests {
         .await
         .unwrap();
         assert_eq!(after_logout.status(), StatusCode::NOT_FOUND);
+        task.abort();
+    }
+
+    #[tokio::test]
+    async fn authenticated_http_rejects_oversize_slow_and_overloaded_requests() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let token = "synthetic-resource-limit-bearer-token-1234";
+        let limiter = Arc::new(Semaphore::new(1));
+        let server = Synmetra::new(GoogleClient::new(None), false);
+        let task = tokio::spawn({
+            let limiter = limiter.clone();
+            async move {
+                axum::serve(
+                    listener,
+                    app_with_limits(
+                        server,
+                        token.to_owned(),
+                        port,
+                        limiter,
+                        Duration::from_millis(150),
+                    ),
+                )
+                .await
+                .unwrap();
+            }
+        });
+        let client = reqwest::Client::new();
+        let endpoint = format!("http://127.0.0.1:{port}/mcp");
+
+        let oversized = client
+            .post(&endpoint)
+            .header(header::AUTHORIZATION, format!("Bearer {token}"))
+            .body(vec![b'x'; MAX_HTTP_REQUEST_BYTES + 1])
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(oversized.status(), StatusCode::PAYLOAD_TOO_LARGE);
+
+        let held = limiter.clone().acquire_owned().await.unwrap();
+        let overloaded = client
+            .post(&endpoint)
+            .header(header::AUTHORIZATION, format!("Bearer {token}"))
+            .body("{}")
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(overloaded.status(), StatusCode::SERVICE_UNAVAILABLE);
+        drop(held);
+
+        let mut slow = tokio::net::TcpStream::connect(("127.0.0.1", port))
+            .await
+            .unwrap();
+        slow.write_all(
+            format!(
+                "POST /mcp HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nAuthorization: Bearer {token}\r\nContent-Length: 10\r\nConnection: close\r\n\r\nx"
+            )
+            .as_bytes(),
+        )
+        .await
+        .unwrap();
+        let mut response = [0u8; 2048];
+        let len = tokio::time::timeout(Duration::from_secs(3), slow.read(&mut response))
+            .await
+            .unwrap()
+            .unwrap();
+        let result = String::from_utf8_lossy(&response[..len]);
+        assert!(result.contains("408"), "{result}");
         task.abort();
     }
 
