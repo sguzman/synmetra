@@ -43,6 +43,10 @@ jobs:
           fi
       - name: Verify progress ledger and pinned contracts
         run: cargo run --locked --bin synmetra-progress
+      - name: Verify README and roadmap bars regenerate reproducibly
+        run: |
+          cargo run --locked --bin synmetra-progress -- --write-bars
+          git diff --exit-code -- README.md docs/ROADMAP.md
 
   duckdb:
     concurrency:
