@@ -10,8 +10,7 @@ use axum::{
     Router,
 };
 use rmcp::transport::streamable_http_server::{
-    session::local::LocalSessionManager,
-    StreamableHttpServerConfig, StreamableHttpService,
+    session::local::LocalSessionManager, StreamableHttpServerConfig, StreamableHttpService,
 };
 use std::sync::Arc;
 use subtle::ConstantTimeEq;
@@ -29,13 +28,16 @@ async fn require_local_auth(
     next: Next,
 ) -> Response {
     let headers = request.headers();
-    let host_valid = headers.get(header::HOST)
+    let host_valid = headers
+        .get(header::HOST)
         .and_then(|v| v.to_str().ok())
         .is_some_and(|v| v == access.host);
-    let origin_valid = headers.get(header::ORIGIN)
+    let origin_valid = headers
+        .get(header::ORIGIN)
         .map(|v| v.to_str().ok() == Some(access.origin.as_str()))
         .unwrap_or(true);
-    let token = headers.get(header::AUTHORIZATION)
+    let token = headers
+        .get(header::AUTHORIZATION)
         .and_then(|v| v.to_str().ok())
         .and_then(|v| v.strip_prefix("Bearer "))
         .unwrap_or("");
@@ -69,11 +71,17 @@ pub async fn serve_loopback(server: Synmetra) -> Result<(), Box<dyn std::error::
     let token = std::env::var("SYNMETRA_MCP_BEARER_TOKEN").map_err(|_| {
         "Loopback HTTP requires SYNMETRA_MCP_BEARER_TOKEN (at least 32 characters)."
     })?;
-    if token.len() < 32 || token.bytes().any(|v| v.is_ascii_whitespace() || !v.is_ascii_graphic()) {
+    if token.len() < 32
+        || token
+            .bytes()
+            .any(|v| v.is_ascii_whitespace() || !v.is_ascii_graphic())
+    {
         return Err("SYNMETRA_MCP_BEARER_TOKEN must contain at least 32 printable nonspace ASCII characters.".into());
     }
     let port = match std::env::var("SYNMETRA_MCP_PORT") {
-        Ok(raw) => raw.parse::<u16>().map_err(|_| "Invalid SYNMETRA_MCP_PORT value")?,
+        Ok(raw) => raw
+            .parse::<u16>()
+            .map_err(|_| "Invalid SYNMETRA_MCP_PORT value")?,
         Err(_) => 44128,
     };
     if port == 0 {
@@ -94,26 +102,44 @@ mod tests {
     async fn loopback_http_rejects_unauthenticated_wrong_host_and_wrong_origin() {
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let port = listener.local_addr().unwrap().port();
-        let server = Synmetra { api: GoogleClient::new(None) };
+        let server = Synmetra {
+            api: GoogleClient::new(None),
+        };
         let token = "test-only-token-that-is-long-enough-123".to_owned();
         let task = tokio::spawn(async move {
-            axum::serve(listener, app(server, token, port)).await.unwrap();
+            axum::serve(listener, app(server, token, port))
+                .await
+                .unwrap();
         });
         let client = reqwest::Client::new();
         let endpoint = format!("http://127.0.0.1:{port}/mcp");
         let unauthorized = client.post(&endpoint).body("{}").send().await.unwrap();
         assert_eq!(unauthorized.status(), StatusCode::UNAUTHORIZED);
 
-        let forbidden_host = client.post(&endpoint)
-            .header(header::AUTHORIZATION, "Bearer test-only-token-that-is-long-enough-123")
+        let forbidden_host = client
+            .post(&endpoint)
+            .header(
+                header::AUTHORIZATION,
+                "Bearer test-only-token-that-is-long-enough-123",
+            )
             .header(header::HOST, "malicious.example")
-            .body("{}").send().await.unwrap();
+            .body("{}")
+            .send()
+            .await
+            .unwrap();
         assert_eq!(forbidden_host.status(), StatusCode::UNAUTHORIZED);
 
-        let forbidden_origin = client.post(&endpoint)
-            .header(header::AUTHORIZATION, "Bearer test-only-token-that-is-long-enough-123")
+        let forbidden_origin = client
+            .post(&endpoint)
+            .header(
+                header::AUTHORIZATION,
+                "Bearer test-only-token-that-is-long-enough-123",
+            )
             .header(header::ORIGIN, "https://malicious.example")
-            .body("{}").send().await.unwrap();
+            .body("{}")
+            .send()
+            .await
+            .unwrap();
         assert_eq!(forbidden_origin.status(), StatusCode::UNAUTHORIZED);
         task.abort();
     }

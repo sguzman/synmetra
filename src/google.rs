@@ -112,7 +112,10 @@ impl GoogleClient {
             // Do not reflect response body or URL: both may contain secrets.
             return Err(ApiError::Http(status.as_u16()));
         }
-        if response.content_length().is_some_and(|n| n > MAX_RESPONSE_BYTES as u64) {
+        if response
+            .content_length()
+            .is_some_and(|n| n > MAX_RESPONSE_BYTES as u64)
+        {
             return Err(ApiError::ResponseTooLarge);
         }
         let mut data = Vec::new();
@@ -127,13 +130,27 @@ impl GoogleClient {
         serde_json::from_slice(&data).map_err(|_| ApiError::InvalidResponse)
     }
 
-    async fn get(&self, base: &str, path: &str, page_token: Option<&str>) -> Result<Value, ApiError> {
+    async fn get(
+        &self,
+        base: &str,
+        path: &str,
+        page_token: Option<&str>,
+    ) -> Result<Value, ApiError> {
         let req = self.http.get(format!("{base}{path}"));
-        let req = if let Some(token) = page_token { req.query(&[("pageToken", token)]) } else { req };
+        let req = if let Some(token) = page_token {
+            req.query(&[("pageToken", token)])
+        } else {
+            req
+        };
         self.send(req).await
     }
 
-    pub async fn collection(&self, path: &str, field: &str, alpha: bool) -> Result<Value, ApiError> {
+    pub async fn collection(
+        &self,
+        path: &str,
+        field: &str,
+        alpha: bool,
+    ) -> Result<Value, ApiError> {
         let base = &self.admin_base;
         let path = format!("/{}{path}", if alpha { "v1alpha" } else { "v1beta" });
         let mut output = Vec::new();
@@ -141,10 +158,16 @@ impl GoogleClient {
         for _ in 0..MAX_PAGES {
             let page = self.get(base, &path, next.as_deref()).await?;
             if let Some(items) = page.get(field) {
-                let Some(items) = items.as_array() else { return Err(ApiError::InvalidResponse) };
+                let Some(items) = items.as_array() else {
+                    return Err(ApiError::InvalidResponse);
+                };
                 output.extend_from_slice(items);
             }
-            next = page.get("nextPageToken").and_then(Value::as_str).filter(|s| !s.is_empty()).map(ToOwned::to_owned);
+            next = page
+                .get("nextPageToken")
+                .and_then(Value::as_str)
+                .filter(|s| !s.is_empty())
+                .map(ToOwned::to_owned);
             if next.is_none() {
                 return Ok(json!({field: output}));
             }
@@ -153,7 +176,8 @@ impl GoogleClient {
     }
 
     pub async fn account_summaries(&self) -> Result<Value, ApiError> {
-        self.collection("/accountSummaries", "accountSummaries", false).await
+        self.collection("/accountSummaries", "accountSummaries", false)
+            .await
     }
 
     pub async fn property(&self, property: &str) -> Result<Value, ApiError> {
@@ -178,13 +202,18 @@ impl GoogleClient {
 
     pub async fn annotations(&self, property: &str) -> Result<Value, ApiError> {
         let path = format!("/{}/reportingDataAnnotations", property_name(property)?);
-        self.collection(&path, "reportingDataAnnotations", true).await
+        self.collection(&path, "reportingDataAnnotations", true)
+            .await
     }
 
     pub async fn custom_definitions(&self, property: &str) -> Result<Value, ApiError> {
         let path = property_name(property)?;
         let dimensions = self
-            .collection(&format!("/{path}/customDimensions"), "customDimensions", false)
+            .collection(
+                &format!("/{path}/customDimensions"),
+                "customDimensions",
+                false,
+            )
             .await?;
         let metrics = self
             .collection(&format!("/{path}/customMetrics"), "customMetrics", false)
@@ -204,16 +233,29 @@ impl GoogleClient {
         Ok(())
     }
 
-    pub async fn data_operation(&self, property: &str, request: Value, method: &str) -> Result<Value, ApiError> {
+    pub async fn data_operation(
+        &self,
+        property: &str,
+        request: Value,
+        method: &str,
+    ) -> Result<Value, ApiError> {
         let property = property_name(property)?;
         Self::validate_body(&request)?;
-        if !["runReport", "runRealtimeReport", "runPivotReport", "batchRunReports", "checkCompatibility"]
-            .contains(&method)
+        if ![
+            "runReport",
+            "runRealtimeReport",
+            "runPivotReport",
+            "batchRunReports",
+            "checkCompatibility",
+        ]
+        .contains(&method)
         {
             return Err(ApiError::InvalidRequest);
         }
         if method == "batchRunReports"
-            && request["requests"].as_array().is_none_or(|list| list.is_empty() || list.len() > 5)
+            && request["requests"]
+                .as_array()
+                .is_none_or(|list| list.is_empty() || list.len() > 5)
         {
             return Err(ApiError::InvalidRequest);
         }
@@ -221,36 +263,74 @@ impl GoogleClient {
         self.send(self.http.post(url).json(&request)).await
     }
 
-    pub async fn alpha_report(&self, property: &str, request: Value, funnel: bool) -> Result<Value, ApiError> {
+    pub async fn alpha_report(
+        &self,
+        property: &str,
+        request: Value,
+        funnel: bool,
+    ) -> Result<Value, ApiError> {
         let property = property_name(property)?;
         Self::validate_body(&request)?;
         if funnel {
-            let steps = request["funnel"]["steps"].as_array().ok_or(ApiError::InvalidRequest)?;
+            let steps = request["funnel"]["steps"]
+                .as_array()
+                .ok_or(ApiError::InvalidRequest)?;
             if steps.is_empty() || steps.len() > 10 {
                 return Err(ApiError::InvalidRequest);
             }
         } else if request.get("conversionSpec").is_none()
-            && !request["metrics"].as_array().is_some_and(|metrics|
-                metrics.iter().any(|metric| metric["name"].as_str().is_some_and(|name| name.to_lowercase().contains("conversion")))
-            )
+            && !request["metrics"].as_array().is_some_and(|metrics| {
+                metrics.iter().any(|metric| {
+                    metric["name"]
+                        .as_str()
+                        .is_some_and(|name| name.to_lowercase().contains("conversion"))
+                })
+            })
         {
             return Err(ApiError::InvalidRequest);
         }
-        let method = if funnel { "runFunnelReport" } else { "runReport" };
+        let method = if funnel {
+            "runFunnelReport"
+        } else {
+            "runReport"
+        };
         let url = format!("{}/v1alpha/{property}:{method}", self.data_base);
         self.send(self.http.post(url).json(&request)).await
     }
 
-    pub async fn access_report(&self, entity: &str, request: Value, account: bool) -> Result<Value, ApiError> {
-        let entity = if account { account_name(entity)? } else { property_name(entity)? };
+    pub async fn access_report(
+        &self,
+        entity: &str,
+        request: Value,
+        account: bool,
+    ) -> Result<Value, ApiError> {
+        let entity = if account {
+            account_name(entity)?
+        } else {
+            property_name(entity)?
+        };
         Self::validate_body(&request)?;
         // This Admin API endpoint requires Administrator privileges on the selected entity.
         let url = format!("{}/v1beta/{entity}:runAccessReport", self.admin_base);
         self.send(self.http.post(url).json(&request)).await
     }
 
-    pub async fn report(&self, property: &str, request: Value, realtime: bool) -> Result<Value, ApiError> {
-        self.data_operation(property, request, if realtime { "runRealtimeReport" } else { "runReport" }).await
+    pub async fn report(
+        &self,
+        property: &str,
+        request: Value,
+        realtime: bool,
+    ) -> Result<Value, ApiError> {
+        self.data_operation(
+            property,
+            request,
+            if realtime {
+                "runRealtimeReport"
+            } else {
+                "runReport"
+            },
+        )
+        .await
     }
 }
 
@@ -261,7 +341,14 @@ pub fn report_request(
     metrics: Vec<String>,
     extras: Vec<(&str, Option<Value>)>,
 ) -> Result<Value, ApiError> {
-    if metrics.is_empty() || metrics.len() > 10 || dimensions.len() > 9 || metrics.iter().chain(dimensions.iter()).any(|s| s.trim().is_empty()) {
+    if metrics.is_empty()
+        || metrics.len() > 10
+        || dimensions.len() > 9
+        || metrics
+            .iter()
+            .chain(dimensions.iter())
+            .any(|s| s.trim().is_empty())
+    {
         return Err(ApiError::InvalidRequest);
     }
     if dates.as_ref().is_some_and(|d| d.is_empty() || d.len() > 4) {
@@ -271,8 +358,24 @@ pub fn report_request(
     if let Some(dates) = dates {
         request.insert("dateRanges".to_owned(), Value::Array(dates));
     }
-    request.insert("dimensions".to_owned(), Value::Array(dimensions.into_iter().map(|name| json!({"name": name})).collect()));
-    request.insert("metrics".to_owned(), Value::Array(metrics.into_iter().map(|name| json!({"name": name})).collect()));
+    request.insert(
+        "dimensions".to_owned(),
+        Value::Array(
+            dimensions
+                .into_iter()
+                .map(|name| json!({"name": name}))
+                .collect(),
+        ),
+    );
+    request.insert(
+        "metrics".to_owned(),
+        Value::Array(
+            metrics
+                .into_iter()
+                .map(|name| json!({"name": name}))
+                .collect(),
+        ),
+    );
     for (name, val) in extras {
         if let Some(val) = val {
             request.insert(name.to_owned(), val);
@@ -284,11 +387,25 @@ pub fn report_request(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tokio::{io::{AsyncReadExt, AsyncWriteExt}, net::TcpListener};
+    use tokio::{
+        io::{AsyncReadExt, AsyncWriteExt},
+        net::TcpListener,
+    };
 
     #[test]
     fn rejects_property_path_and_zero() {
-        for bad in ["", "0", "001", "-1", "../x", "properties/2/ads", "https://example.org", "123?x=1", " 21", "18446744073709551616"] {
+        for bad in [
+            "",
+            "0",
+            "001",
+            "-1",
+            "../x",
+            "properties/2/ads",
+            "https://example.org",
+            "123?x=1",
+            " 21",
+            "18446744073709551616",
+        ] {
             assert!(property_name(bad).is_err(), "{bad}");
         }
         assert_eq!(property_name("321").unwrap(), "properties/321");
@@ -304,7 +421,8 @@ mod tests {
             vec!["country".into()],
             vec!["activeUsers".into()],
             vec![("limit", Some(json!("10")))],
-        ).unwrap();
+        )
+        .unwrap();
         assert_eq!(req["dimensions"][0]["name"], "country");
         assert_eq!(req["metrics"][0]["name"], "activeUsers");
         assert!(report_request(None, vec![], vec![], vec![]).is_err());
@@ -334,7 +452,9 @@ mod tests {
         assert_eq!(response["accountSummaries"][0]["name"], "accounts/1");
         let request = handle.await.unwrap();
         assert!(request.starts_with("GET /v1beta/accountSummaries HTTP/1.1"));
-        assert!(request.to_lowercase().contains("authorization: bearer test-token"));
+        assert!(request
+            .to_lowercase()
+            .contains("authorization: bearer test-token"));
         assert!(!format!("{:?}", ApiError::Http(403)).contains("test-token"));
     }
 
@@ -342,7 +462,14 @@ mod tests {
     async fn report_posts_to_correct_data_api_endpoint() {
         let (url, handle) = once(r#"{"rowCount":1}"#).await;
         let client = GoogleClient::with_endpoints(Some("token".into()), &url, &url);
-        let response = client.report("properties/42", json!({"metrics":[{"name":"activeUsers"}]}), false).await.unwrap();
+        let response = client
+            .report(
+                "properties/42",
+                json!({"metrics":[{"name":"activeUsers"}]}),
+                false,
+            )
+            .await
+            .unwrap();
         assert_eq!(response["rowCount"], 1);
         let request = handle.await.unwrap();
         assert!(request.starts_with("POST /v1beta/properties/42:runReport HTTP/1.1"));
@@ -351,7 +478,10 @@ mod tests {
     #[tokio::test]
     async fn missing_credentials_reject_before_http() {
         let client = GoogleClient::new(None);
-        assert_eq!(client.account_summaries().await.unwrap_err(), ApiError::MissingCredentials);
+        assert_eq!(
+            client.account_summaries().await.unwrap_err(),
+            ApiError::MissingCredentials
+        );
     }
 
     #[tokio::test]
@@ -360,13 +490,19 @@ mod tests {
         let c = GoogleClient::with_endpoints(Some("token".into()), &url, &url);
         let value = c.account_sharing("accounts/87").await.unwrap();
         assert_eq!(value["sharingWithOthersEnabled"], false);
-        assert!(handle.await.unwrap().starts_with("GET /v1beta/accounts/87/dataSharingSettings HTTP/1.1"));
+        assert!(handle
+            .await
+            .unwrap()
+            .starts_with("GET /v1beta/accounts/87/dataSharingSettings HTTP/1.1"));
 
         let (url, handle) = once(r#"{"eventDataRetention":"FOURTEEN_MONTHS"}"#).await;
         let c = GoogleClient::with_endpoints(Some("token".into()), &url, &url);
         let value = c.retention_settings("42").await.unwrap();
         assert_eq!(value["eventDataRetention"], "FOURTEEN_MONTHS");
-        assert!(handle.await.unwrap().starts_with("GET /v1beta/properties/42/dataRetentionSettings HTTP/1.1"));
+        assert!(handle
+            .await
+            .unwrap()
+            .starts_with("GET /v1beta/properties/42/dataRetentionSettings HTTP/1.1"));
     }
 
     #[tokio::test]
@@ -376,9 +512,19 @@ mod tests {
             let c = GoogleClient::with_endpoints(Some("token".into()), &url, &url);
             let body = if method == "batchRunReports" {
                 json!({"requests":[{"metrics":[{"name":"activeUsers"}]}]})
-            } else { json!({"metrics":[{"name":"activeUsers"}]}) };
-            assert_eq!(c.data_operation("properties/77", body, method).await.unwrap()["ok"], true);
-            assert!(handle.await.unwrap().starts_with(&format!("POST /v1beta/properties/77:{method} HTTP/1.1")));
+            } else {
+                json!({"metrics":[{"name":"activeUsers"}]})
+            };
+            assert_eq!(
+                c.data_operation("properties/77", body, method)
+                    .await
+                    .unwrap()["ok"],
+                true
+            );
+            assert!(handle
+                .await
+                .unwrap()
+                .starts_with(&format!("POST /v1beta/properties/77:{method} HTTP/1.1")));
         }
     }
 
@@ -387,39 +533,87 @@ mod tests {
         for (id, account) in [("accounts/16", true), ("properties/82", false)] {
             let (url, handle) = once(r#"{"rowCount":0}"#).await;
             let c = GoogleClient::with_endpoints(Some("token".into()), &url, &url);
-            assert_eq!(c.access_report(id, json!({"dimensions":[]}), account).await.unwrap()["rowCount"], 0);
-            assert!(handle.await.unwrap().starts_with(&format!("POST /v1beta/{id}:runAccessReport HTTP/1.1")));
+            assert_eq!(
+                c.access_report(id, json!({"dimensions":[]}), account)
+                    .await
+                    .unwrap()["rowCount"],
+                0
+            );
+            assert!(handle
+                .await
+                .unwrap()
+                .starts_with(&format!("POST /v1beta/{id}:runAccessReport HTTP/1.1")));
         }
     }
 
     #[tokio::test]
     async fn alpha_conversions_and_funnel_use_expected_methods() {
         for (funnel, method, request) in [
-            (true, "runFunnelReport", json!({"funnel":{"steps":[{"name":"Home","filterExpression":{}}]}})),
-            (false, "runReport", json!({"conversionSpec":{"attributionModel":"LAST_CLICK"}})),
+            (
+                true,
+                "runFunnelReport",
+                json!({"funnel":{"steps":[{"name":"Home","filterExpression":{}}]}}),
+            ),
+            (
+                false,
+                "runReport",
+                json!({"conversionSpec":{"attributionModel":"LAST_CLICK"}}),
+            ),
         ] {
             let (url, handle) = once(r#"{"rowCount":0}"#).await;
             let c = GoogleClient::with_endpoints(Some("token".into()), &url, &url);
-            assert_eq!(c.alpha_report("42", request, funnel).await.unwrap()["rowCount"], 0);
-            assert!(handle.await.unwrap().starts_with(&format!("POST /v1alpha/properties/42:{method} HTTP/1.1")));
+            assert_eq!(
+                c.alpha_report("42", request, funnel).await.unwrap()["rowCount"],
+                0
+            );
+            assert!(handle
+                .await
+                .unwrap()
+                .starts_with(&format!("POST /v1alpha/properties/42:{method} HTTP/1.1")));
         }
     }
 
     #[tokio::test]
     async fn rejects_invalid_funnel_and_missing_conversion_spec() {
         let c = GoogleClient::new(Some("token".into()));
-        for request in [json!({}), json!({"funnel":{"steps":[]}}), json!({"funnel":{"steps":vec![json!({});11]}})] {
-            assert_eq!(c.alpha_report("42", request, true).await.unwrap_err(), ApiError::InvalidRequest);
+        for request in [
+            json!({}),
+            json!({"funnel":{"steps":[]}}),
+            json!({"funnel":{"steps":vec![json!({});11]}}),
+        ] {
+            assert_eq!(
+                c.alpha_report("42", request, true).await.unwrap_err(),
+                ApiError::InvalidRequest
+            );
         }
-        assert_eq!(c.alpha_report("42", json!({"metrics":[{"name":"activeUsers"}]}), false).await.unwrap_err(), ApiError::InvalidRequest);
+        assert_eq!(
+            c.alpha_report("42", json!({"metrics":[{"name":"activeUsers"}]}), false)
+                .await
+                .unwrap_err(),
+            ApiError::InvalidRequest
+        );
     }
 
     #[tokio::test]
     async fn rejects_invalid_batch_without_http_request() {
         let c = GoogleClient::new(Some("token".into()));
-        for bad in [json!({}), json!({"requests":[]}), json!({"requests":[{},{},{},{},{},{}]})] {
-            assert_eq!(c.data_operation("99", bad, "batchRunReports").await.unwrap_err(), ApiError::InvalidRequest);
+        for bad in [
+            json!({}),
+            json!({"requests":[]}),
+            json!({"requests":[{},{},{},{},{},{}]}),
+        ] {
+            assert_eq!(
+                c.data_operation("99", bad, "batchRunReports")
+                    .await
+                    .unwrap_err(),
+                ApiError::InvalidRequest
+            );
         }
-        assert_eq!(c.data_operation("99", json!({}), "notARealMethod").await.unwrap_err(), ApiError::InvalidRequest);
+        assert_eq!(
+            c.data_operation("99", json!({}), "notARealMethod")
+                .await
+                .unwrap_err(),
+            ApiError::InvalidRequest
+        );
     }
 }

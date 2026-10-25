@@ -58,9 +58,17 @@ fn main() -> Result<(), Box<dyn Error>> {
                 let id = field(task, "id");
                 let name = field(task, "name");
                 names.insert(name.to_owned());
-                check(ids.insert(id.to_owned()), format!("Duplicate task {id}"), &mut errors);
+                check(
+                    ids.insert(id.to_owned()),
+                    format!("Duplicate task {id}"),
+                    &mut errors,
+                );
                 let checks = array(task, "checks");
-                check(checks.len() == 2, format!("Task {id} must have two checks"), &mut errors);
+                check(
+                    checks.len() == 2,
+                    format!("Task {id} must have two checks"),
+                    &mut errors,
+                );
                 let mut passed = 0;
                 for c in checks {
                     let done = c["passed"].as_bool() == Some(true);
@@ -87,8 +95,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     &mut errors,
                 );
                 check(
-                    roadmap.contains(&format!("{id} — {name}"))
-                        && roadmap.contains(&bar(actual)),
+                    roadmap.contains(&format!("{id} — {name}")) && roadmap.contains(&bar(actual)),
                     format!("Missing roadmap task/bar for {id}"),
                     &mut errors,
                 );
@@ -99,7 +106,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                 mile_values.push(actual);
                 all.push(actual);
             }
-            let pct = round_two(phase_values.iter().sum::<f64>() / phase_values.len().max(1) as f64);
+            let pct =
+                round_two(phase_values.iter().sum::<f64>() / phase_values.len().max(1) as f64);
             check(
                 roadmap.contains(&format!("{pid} — {}", field(phase, "name")))
                     && roadmap.contains(&bar(pct)),
@@ -136,8 +144,16 @@ fn main() -> Result<(), Box<dyn Error>> {
         .iter()
         .map(|tool| field(tool, "name").to_owned())
         .collect();
-    check(official.len() == 10, "Official tool count changed".into(), &mut errors);
-    check(sedna.len() == 35, "Rust tool count changed".into(), &mut errors);
+    check(
+        official.len() == 10,
+        "Official tool count changed".into(),
+        &mut errors,
+    );
+    check(
+        sedna.len() == 35,
+        "Rust tool count changed".into(),
+        &mut errors,
+    );
     check(
         wanted.len() == 36 && wanted == listed,
         "36-name feature union changed".into(),
@@ -167,7 +183,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         &mut errors,
     );
     println!("📊 Synmetra overall: {}", bar(overall));
-    println!("✅ {accepted}/{} tasks accepted, {nphase} phases, 36 planned MCP tools", ids.len());
+    println!(
+        "✅ {accepted}/{} tasks accepted, {nphase} phases, 36 planned MCP tools",
+        ids.len()
+    );
     if errors.is_empty() {
         Ok(())
     } else {

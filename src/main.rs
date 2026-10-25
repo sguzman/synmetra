@@ -8,8 +8,9 @@ use rmcp::{
     handler::server::wrapper::Parameters,
     model::{CallToolResult, ContentBlock},
     schemars::JsonSchema,
-    tool, tool_handler, tool_router, ServerHandler, ServiceExt,
+    tool, tool_handler, tool_router,
     transport::stdio,
+    ServerHandler, ServiceExt,
 };
 use serde::Deserialize;
 use serde_json::{json, Value};
@@ -96,105 +97,199 @@ struct RealtimeArgs {
 
 fn result(r: Result<Value, ApiError>) -> CallToolResult {
     match r {
-        Ok(v) => CallToolResult::success(vec![ContentBlock::text(json!({"ok": true, "data": v}).to_string())]),
+        Ok(v) => CallToolResult::success(vec![ContentBlock::text(
+            json!({"ok": true, "data": v}).to_string(),
+        )]),
         Err(error) => CallToolResult::error(vec![ContentBlock::text(
-            json!({"ok": false, "error": {"reason": error.to_string()}}).to_string()
+            json!({"ok": false, "error": {"reason": error.to_string()}}).to_string(),
         )]),
     }
 }
 
 #[tool_router]
 impl Synmetra {
-    #[tool(description = "List the Google Analytics accounts and properties accessible with the configured Google token.")]
+    #[tool(
+        description = "List the Google Analytics accounts and properties accessible with the configured Google token."
+    )]
     async fn get_account_summaries(&self) -> CallToolResult {
         result(self.api.account_summaries().await)
     }
 
-    #[tool(description = "Read one Google Analytics 4 property, by numeric property ID or properties/<id>.")]
-    async fn get_property_details(&self, Parameters(args): Parameters<PropertyArgs>) -> CallToolResult {
+    #[tool(
+        description = "Read one Google Analytics 4 property, by numeric property ID or properties/<id>."
+    )]
+    async fn get_property_details(
+        &self,
+        Parameters(args): Parameters<PropertyArgs>,
+    ) -> CallToolResult {
         result(self.api.property(&args.property_id).await)
     }
 
     #[tool(description = "Get an Analytics account's data-sharing settings.")]
-    async fn get_account_data_sharing_settings(&self, Parameters(args): Parameters<AccountArgs>) -> CallToolResult {
+    async fn get_account_data_sharing_settings(
+        &self,
+        Parameters(args): Parameters<AccountArgs>,
+    ) -> CallToolResult {
         result(self.api.account_sharing(&args.account_id).await)
     }
 
     #[tool(description = "Get a GA4 property's event and user data retention settings.")]
-    async fn get_property_data_retention_settings(&self, Parameters(args): Parameters<PropertyArgs>) -> CallToolResult {
+    async fn get_property_data_retention_settings(
+        &self,
+        Parameters(args): Parameters<PropertyArgs>,
+    ) -> CallToolResult {
         result(self.api.retention_settings(&args.property_id).await)
     }
 
     #[tool(description = "List Google Ads account links for one GA4 property.")]
-    async fn list_google_ads_links(&self, Parameters(args): Parameters<PropertyArgs>) -> CallToolResult {
+    async fn list_google_ads_links(
+        &self,
+        Parameters(args): Parameters<PropertyArgs>,
+    ) -> CallToolResult {
         result(self.api.ads_links(&args.property_id).await)
     }
 
     #[tool(description = "List reporting annotations attached to one GA4 property (read-only).")]
-    async fn list_property_annotations(&self, Parameters(args): Parameters<PropertyArgs>) -> CallToolResult {
+    async fn list_property_annotations(
+        &self,
+        Parameters(args): Parameters<PropertyArgs>,
+    ) -> CallToolResult {
         result(self.api.annotations(&args.property_id).await)
     }
 
     #[tool(description = "List property-specific custom dimensions and metrics.")]
-    async fn get_custom_dimensions_and_metrics(&self, Parameters(args): Parameters<PropertyArgs>) -> CallToolResult {
+    async fn get_custom_dimensions_and_metrics(
+        &self,
+        Parameters(args): Parameters<PropertyArgs>,
+    ) -> CallToolResult {
         result(self.api.custom_definitions(&args.property_id).await)
     }
 
-    #[tool(description = "Run Google Analytics Data API v1alpha conversion reporting with conversionSpec or conversion metrics. Requires an eligible property.")]
-    async fn run_conversions_report(&self, Parameters(args): Parameters<RawPropertyRequestArgs>) -> CallToolResult {
-        result(self.api.alpha_report(&args.property_id, args.request, false).await)
+    #[tool(
+        description = "Run Google Analytics Data API v1alpha conversion reporting with conversionSpec or conversion metrics. Requires an eligible property."
+    )]
+    async fn run_conversions_report(
+        &self,
+        Parameters(args): Parameters<RawPropertyRequestArgs>,
+    ) -> CallToolResult {
+        result(
+            self.api
+                .alpha_report(&args.property_id, args.request, false)
+                .await,
+        )
     }
 
-    #[tool(description = "Run Google Analytics Data API v1alpha funnel reporting with 1-10 funnel steps.")]
-    async fn run_funnel_report(&self, Parameters(args): Parameters<RawPropertyRequestArgs>) -> CallToolResult {
-        result(self.api.alpha_report(&args.property_id, args.request, true).await)
+    #[tool(
+        description = "Run Google Analytics Data API v1alpha funnel reporting with 1-10 funnel steps."
+    )]
+    async fn run_funnel_report(
+        &self,
+        Parameters(args): Parameters<RawPropertyRequestArgs>,
+    ) -> CallToolResult {
+        result(
+            self.api
+                .alpha_report(&args.property_id, args.request, true)
+                .await,
+        )
     }
 
     #[tool(description = "Run a GA4 pivot report using the provider's RunPivotReportRequest JSON.")]
-    async fn run_pivot_report(&self, Parameters(args): Parameters<RawPropertyRequestArgs>) -> CallToolResult {
-        result(self.api.data_operation(&args.property_id, args.request, "runPivotReport").await)
+    async fn run_pivot_report(
+        &self,
+        Parameters(args): Parameters<RawPropertyRequestArgs>,
+    ) -> CallToolResult {
+        result(
+            self.api
+                .data_operation(&args.property_id, args.request, "runPivotReport")
+                .await,
+        )
     }
 
-    #[tool(description = "Execute one to five GA4 historical reports in a single batch using a requests JSON array.")]
-    async fn batch_run_reports(&self, Parameters(args): Parameters<RawPropertyRequestArgs>) -> CallToolResult {
-        result(self.api.data_operation(&args.property_id, args.request, "batchRunReports").await)
+    #[tool(
+        description = "Execute one to five GA4 historical reports in a single batch using a requests JSON array."
+    )]
+    async fn batch_run_reports(
+        &self,
+        Parameters(args): Parameters<RawPropertyRequestArgs>,
+    ) -> CallToolResult {
+        result(
+            self.api
+                .data_operation(&args.property_id, args.request, "batchRunReports")
+                .await,
+        )
     }
 
-    #[tool(description = "Check GA4 Core Data API metric/dimension compatibility using CheckCompatibilityRequest JSON.")]
-    async fn check_report_compatibility(&self, Parameters(args): Parameters<RawPropertyRequestArgs>) -> CallToolResult {
-        result(self.api.data_operation(&args.property_id, args.request, "checkCompatibility").await)
+    #[tool(
+        description = "Check GA4 Core Data API metric/dimension compatibility using CheckCompatibilityRequest JSON."
+    )]
+    async fn check_report_compatibility(
+        &self,
+        Parameters(args): Parameters<RawPropertyRequestArgs>,
+    ) -> CallToolResult {
+        result(
+            self.api
+                .data_operation(&args.property_id, args.request, "checkCompatibility")
+                .await,
+        )
     }
 
-    #[tool(description = "Run a GA4 property-level data access report (requires Google Analytics Administrator privileges).")]
-    async fn run_property_access_report(&self, Parameters(args): Parameters<RawPropertyRequestArgs>) -> CallToolResult {
-        result(self.api.access_report(&args.property_id, args.request, false).await)
+    #[tool(
+        description = "Run a GA4 property-level data access report (requires Google Analytics Administrator privileges)."
+    )]
+    async fn run_property_access_report(
+        &self,
+        Parameters(args): Parameters<RawPropertyRequestArgs>,
+    ) -> CallToolResult {
+        result(
+            self.api
+                .access_report(&args.property_id, args.request, false)
+                .await,
+        )
     }
 
-    #[tool(description = "Run an account-level data access report (requires Google Analytics Administrator privileges).")]
-    async fn run_account_access_report(&self, Parameters(args): Parameters<RawAccountRequestArgs>) -> CallToolResult {
-        result(self.api.access_report(&args.account_id, args.request, true).await)
+    #[tool(
+        description = "Run an account-level data access report (requires Google Analytics Administrator privileges)."
+    )]
+    async fn run_account_access_report(
+        &self,
+        Parameters(args): Parameters<RawAccountRequestArgs>,
+    ) -> CallToolResult {
+        result(
+            self.api
+                .access_report(&args.account_id, args.request, true)
+                .await,
+        )
     }
 
-    #[tool(description = "Preview normalized historical report JSON offline without sending data to Google.")]
-    async fn preview_report_request(&self, Parameters(args): Parameters<ReportArgs>) -> CallToolResult {
-        let validation = google::property_name(&args.property_id).and_then(|_| report_request(
-            Some(args.date_ranges),
-            args.dimensions,
-            args.metrics,
-            vec![
-                ("dimensionFilter", args.dimension_filter),
-                ("metricFilter", args.metric_filter),
-                ("orderBys", args.order_bys.map(|x| json!(x))),
-                ("limit", args.limit.map(|x| json!(x.to_string()))),
-                ("offset", args.offset.map(|x| json!(x.to_string()))),
-                ("currencyCode", args.currency_code.map(|x| json!(x))),
-                ("keepEmptyRows", args.keep_empty_rows.map(|x| json!(x)))
-            ],
-        ));
+    #[tool(
+        description = "Preview normalized historical report JSON offline without sending data to Google."
+    )]
+    async fn preview_report_request(
+        &self,
+        Parameters(args): Parameters<ReportArgs>,
+    ) -> CallToolResult {
+        let validation = google::property_name(&args.property_id).and_then(|_| {
+            report_request(
+                Some(args.date_ranges),
+                args.dimensions,
+                args.metrics,
+                vec![
+                    ("dimensionFilter", args.dimension_filter),
+                    ("metricFilter", args.metric_filter),
+                    ("orderBys", args.order_bys.map(|x| json!(x))),
+                    ("limit", args.limit.map(|x| json!(x.to_string()))),
+                    ("offset", args.offset.map(|x| json!(x.to_string()))),
+                    ("currencyCode", args.currency_code.map(|x| json!(x))),
+                    ("keepEmptyRows", args.keep_empty_rows.map(|x| json!(x))),
+                ],
+            )
+        });
         result(validation.map(|body| json!({"request":body, "provider_called":false})))
     }
 
-    #[tool(description = "Run a historical Google Analytics Data API report with metric and dimension names.")]
+    #[tool(
+        description = "Run a historical Google Analytics Data API report with metric and dimension names."
+    )]
     async fn run_report(&self, Parameters(args): Parameters<ReportArgs>) -> CallToolResult {
         let body = report_request(
             Some(args.date_ranges),
@@ -207,7 +302,7 @@ impl Synmetra {
                 ("limit", args.limit.map(|x| json!(x.to_string()))),
                 ("offset", args.offset.map(|x| json!(x.to_string()))),
                 ("currencyCode", args.currency_code.map(|x| json!(x))),
-                ("keepEmptyRows", args.keep_empty_rows.map(|x| json!(x)))
+                ("keepEmptyRows", args.keep_empty_rows.map(|x| json!(x))),
             ],
         );
         result(match body {
@@ -216,8 +311,13 @@ impl Synmetra {
         })
     }
 
-    #[tool(description = "Run a realtime GA4 report. Realtime reports cannot use offsets or page cursors.")]
-    async fn run_realtime_report(&self, Parameters(args): Parameters<RealtimeArgs>) -> CallToolResult {
+    #[tool(
+        description = "Run a realtime GA4 report. Realtime reports cannot use offsets or page cursors."
+    )]
+    async fn run_realtime_report(
+        &self,
+        Parameters(args): Parameters<RealtimeArgs>,
+    ) -> CallToolResult {
         let body = report_request(
             None,
             args.dimensions,
@@ -225,7 +325,7 @@ impl Synmetra {
             vec![
                 ("dimensionFilter", args.dimension_filter),
                 ("metricFilter", args.metric_filter),
-                ("limit", args.limit.map(|x| json!(x.to_string())))
+                ("limit", args.limit.map(|x| json!(x.to_string()))),
             ],
         );
         result(match body {
@@ -280,7 +380,25 @@ mod tests {
             .map(|tool| tool.name.to_string())
             .collect();
         assert_eq!(names.len(), 17);
-        for name in ["get_account_summaries", "get_property_details", "preview_report_request", "run_conversions_report", "run_funnel_report", "get_account_data_sharing_settings", "get_property_data_retention_settings", "list_google_ads_links", "list_property_annotations", "get_custom_dimensions_and_metrics", "run_report", "run_realtime_report", "run_pivot_report", "batch_run_reports", "check_report_compatibility", "run_property_access_report", "run_account_access_report"] {
+        for name in [
+            "get_account_summaries",
+            "get_property_details",
+            "preview_report_request",
+            "run_conversions_report",
+            "run_funnel_report",
+            "get_account_data_sharing_settings",
+            "get_property_data_retention_settings",
+            "list_google_ads_links",
+            "list_property_annotations",
+            "get_custom_dimensions_and_metrics",
+            "run_report",
+            "run_realtime_report",
+            "run_pivot_report",
+            "batch_run_reports",
+            "check_report_compatibility",
+            "run_property_access_report",
+            "run_account_access_report",
+        ] {
             assert!(names.contains(name), "missing {name}");
         }
         assert!(!names.contains("create_property_annotation"));
@@ -291,14 +409,27 @@ mod tests {
         use rmcp::model::CallToolRequestParams;
         let (server_stream, client_stream) = tokio::io::duplex(65536);
         let worker = tokio::spawn(async move {
-            let server = Synmetra { api: GoogleClient::new(None) };
-            server.serve(server_stream).await.unwrap().waiting().await.unwrap();
+            let server = Synmetra {
+                api: GoogleClient::new(None),
+            };
+            server
+                .serve(server_stream)
+                .await
+                .unwrap()
+                .waiting()
+                .await
+                .unwrap();
         });
         let client = ().serve(client_stream).await.unwrap();
         let tools = client.list_all_tools().await.unwrap();
         assert_eq!(tools.len(), 17);
-        assert!(tools.iter().all(|tool| tool.name != "create_property_annotation"));
-        let call = client.call_tool(CallToolRequestParams::new("get_account_summaries")).await.unwrap();
+        assert!(tools
+            .iter()
+            .all(|tool| tool.name != "create_property_annotation"));
+        let call = client
+            .call_tool(CallToolRequestParams::new("get_account_summaries"))
+            .await
+            .unwrap();
         assert_eq!(call.is_error, Some(true));
         let message = &call.content[0].as_text().unwrap().text;
         assert!(message.contains("No Google access token"));
@@ -309,7 +440,9 @@ mod tests {
 
     #[tokio::test]
     async fn offline_preview_rejects_bad_metrics_without_credentials() {
-        let server = Synmetra { api: GoogleClient::new(None) };
+        let server = Synmetra {
+            api: GoogleClient::new(None),
+        };
         let bad = ReportArgs {
             property_id: "55".into(),
             date_ranges: vec![json!({"startDate":"7daysAgo","endDate":"today"})],
