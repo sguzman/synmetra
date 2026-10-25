@@ -2384,7 +2384,8 @@ mod tests {
 
         let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
         let endpoint = format!("http://{}", listener.local_addr().unwrap());
-        let api = GoogleClient::with_endpoints(Some("fixture-only-token".into()), &endpoint, &endpoint);
+        let api =
+            GoogleClient::with_endpoints(Some("fixture-only-token".into()), &endpoint, &endpoint);
         let responder = tokio::spawn(async move {
             let (mut stream, _) = listener.accept().await.unwrap();
             let mut buffer = [0_u8; 4096];
@@ -2401,9 +2402,7 @@ mod tests {
         });
         let server = Synmetra::new(api, false);
         let result = server
-            .ga4_auth_status(Parameters(AuthStatusArgs {
-                verify_token: true,
-            }))
+            .ga4_auth_status(Parameters(AuthStatusArgs { verify_token: true }))
             .await;
         responder.await.unwrap();
         let payload = result.structured_content.unwrap();
