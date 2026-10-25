@@ -337,7 +337,9 @@ impl ScratchState {
                 return Err("Selected evidence table does not exist".into());
             }
             let row_count: i64 = db
-                .query_row(&format!("SELECT COUNT(*) FROM \"{name}\""), [], |row| row.get(0))
+                .query_row(&format!("SELECT COUNT(*) FROM \"{name}\""), [], |row| {
+                    row.get(0)
+                })
                 .map_err(|_| "Evidence row count query failed")?;
             let query = format!(
                 "SELECT substr(row_to_json(t)::VARCHAR, 1, 2049) FROM \"{name}\" AS t LIMIT {sample_limit}"
@@ -359,14 +361,12 @@ impl ScratchState {
                         if row.len() > 2048 {
                             return Err("An evidence sample row exceeds 2048 bytes".to_owned());
                         }
-                        serde_json::from_str(&row).map_err(|_| "Invalid evidence JSON sample".into())
+                        serde_json::from_str(&row)
+                            .map_err(|_| "Invalid evidence JSON sample".into())
                     })
                     .collect::<Result<Vec<_>, String>>()?
             };
-            markdown.push_str(&format!(
-                "| {name} | {row_count} | {} |\n",
-                samples.len()
-            ));
+            markdown.push_str(&format!("| {name} | {row_count} | {} |\n", samples.len()));
             evidence.push(json!({
                 "table_name":name,
                 "row_count":row_count,
@@ -382,9 +382,7 @@ impl ScratchState {
             "source":"local_scratchpad",
             "provider_called":false,
         });
-        if serde_json::to_vec(&result)
-            .map_or(true, |data| data.len() > 256 * 1024)
-        {
+        if serde_json::to_vec(&result).map_or(true, |data| data.len() > 256 * 1024) {
             return Err("Evidence bundle exceeds 256 KiB output policy".into());
         }
         Ok(result)
@@ -446,23 +444,43 @@ mod tests {
             db.execute_batch(
                 "CREATE TABLE sample (event_name VARCHAR, count INTEGER);
                  INSERT INTO sample VALUES ('page_view', 3), ('purchase', 1);",
-            ).unwrap();
+            )
+            .unwrap();
         }
-        let export = state.export_evidence_bundle(
-            "analysis_1", Some(vec!["sample".into()]), Some(2)
-        ).unwrap();
+        let export = state
+            .export_evidence_bundle("analysis_1", Some(vec!["sample".into()]), Some(2))
+            .unwrap();
         assert_eq!(export["tables"][0]["row_count"], 2);
-        assert_eq!(export["tables"][0]["sample_rows"][0]["event_name"], "page_view");
-        assert!(export["markdown"].as_str().unwrap().contains("| sample | 2 | 2 |"));
+        assert_eq!(
+            export["tables"][0]["sample_rows"][0]["event_name"],
+            "page_view"
+        );
+        assert!(export["markdown"]
+            .as_str()
+            .unwrap()
+            .contains("| sample | 2 | 2 |"));
         assert_eq!(export["provider_called"], false);
-        assert!(state.export_evidence_bundle("analysis_1", None, Some(21)).is_err());
-        assert!(state.export_evidence_bundle(
-            "analysis_1", Some(vec!["sample".into(), "sample".into()]), None
-        ).is_err());
-        assert!(state.export_evidence_bundle(
-            "analysis_1", Some(vec!["bad\";DROP TABLE sample;--".into()]), None
-        ).is_err());
-        assert_eq!(state.summarize_table("analysis_1", "sample").unwrap()["row_count"], 2);
+        assert!(state
+            .export_evidence_bundle("analysis_1", None, Some(21))
+            .is_err());
+        assert!(state
+            .export_evidence_bundle(
+                "analysis_1",
+                Some(vec!["sample".into(), "sample".into()]),
+                None
+            )
+            .is_err());
+        assert!(state
+            .export_evidence_bundle(
+                "analysis_1",
+                Some(vec!["bad\";DROP TABLE sample;--".into()]),
+                None
+            )
+            .is_err());
+        assert_eq!(
+            state.summarize_table("analysis_1", "sample").unwrap()["row_count"],
+            2
+        );
     }
 
     #[test]

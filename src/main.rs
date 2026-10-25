@@ -1171,7 +1171,11 @@ mod tests {
                 .flatten()
                 .filter_map(Value::as_str)
                 .collect();
-            assert_eq!(actual, expected, "Required MCP parameters differ for {}", tool.name);
+            assert_eq!(
+                actual, expected,
+                "Required MCP parameters differ for {}",
+                tool.name
+            );
         }
 
         let with_write = Synmetra::new(GoogleClient::new(None), true);
@@ -1197,7 +1201,10 @@ mod tests {
                 .flatten()
                 .filter_map(Value::as_str)
                 .collect();
-            assert_eq!(actual, expected, "Official Google parameters differ for {name}");
+            assert_eq!(
+                actual, expected,
+                "Official Google parameters differ for {name}"
+            );
         }
     }
 
