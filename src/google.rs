@@ -396,25 +396,40 @@ impl GoogleClient {
     }
 }
 
-
 /// Normalize and validate Google's v1alpha conversion report specification.
 /// Schema differs from historical GA4 Core Data reports.
 pub fn conversion_spec(
-    spec: &Value, dimensions: &[String], metrics: &[String],
+    spec: &Value,
+    dimensions: &[String],
+    metrics: &[String],
 ) -> Result<Value, ApiError> {
     const DIMS: &[&str] = &[
-        "campaignName","continent","country","defaultChannelGroup",
-        "deviceCategory","medium","platform","primaryChannelGroup","source",
-        "sourceMedium","sourcePlatform","subcontinent",
+        "campaignName",
+        "continent",
+        "country",
+        "defaultChannelGroup",
+        "deviceCategory",
+        "medium",
+        "platform",
+        "primaryChannelGroup",
+        "source",
+        "sourceMedium",
+        "sourcePlatform",
+        "subcontinent",
     ];
     const METRICS: &[&str] = &[
-        "advertiserAdClicks","advertiserAdCost",
+        "advertiserAdClicks",
+        "advertiserAdCost",
         "advertiserAdCostPerAllConversionsByConversionDate",
         "advertiserAdCostPerAllConversionsByInteractionDate",
-        "advertiserAdCostPerClick","advertiserAdImpressions",
-        "allConversionsByConversionDate","allConversionsByInteractionDate",
-        "returnOnAdSpendByConversionDate","returnOnAdSpendByInteractionDate",
-        "totalRevenueByConversionDate","totalRevenueByInteractionDate",
+        "advertiserAdCostPerClick",
+        "advertiserAdImpressions",
+        "allConversionsByConversionDate",
+        "allConversionsByInteractionDate",
+        "returnOnAdSpendByConversionDate",
+        "returnOnAdSpendByInteractionDate",
+        "totalRevenueByConversionDate",
+        "totalRevenueByInteractionDate",
     ];
     if !spec.is_object()
         || dimensions.iter().any(|s| !DIMS.contains(&s.as_str()))
@@ -423,21 +438,29 @@ pub fn conversion_spec(
     {
         return Err(ApiError::InvalidRequest);
     }
-    let actions = spec.get("conversion_actions").or_else(|| spec.get("conversionActions"));
+    let actions = spec
+        .get("conversion_actions")
+        .or_else(|| spec.get("conversionActions"));
     let actions = match actions {
         Some(value) => value.as_array().ok_or(ApiError::InvalidRequest)?.clone(),
         None => Vec::new(),
     };
-    if actions.len() > 50 || actions.iter().any(|action| {
-        action.as_str().is_none_or(|s| {
-            let Some(id) = s.strip_prefix("conversionActions/") else { return true };
-            id.is_empty() || id.bytes().any(|c| !c.is_ascii_digit())
+    if actions.len() > 50
+        || actions.iter().any(|action| {
+            action.as_str().is_none_or(|s| {
+                let Some(id) = s.strip_prefix("conversionActions/") else {
+                    return true;
+                };
+                id.is_empty() || id.bytes().any(|c| !c.is_ascii_digit())
+            })
         })
-    }) {
+    {
         return Err(ApiError::InvalidRequest);
     }
-    let model = spec.get("attribution_model").or_else(|| spec.get("attributionModel"));
-    if model.is_some_and(|v| !["DATA_DRIVEN","LAST_CLICK"].contains(&v.as_str().unwrap_or(""))) {
+    let model = spec
+        .get("attribution_model")
+        .or_else(|| spec.get("attributionModel"));
+    if model.is_some_and(|v| !["DATA_DRIVEN", "LAST_CLICK"].contains(&v.as_str().unwrap_or(""))) {
         return Err(ApiError::InvalidRequest);
     }
     let mut result = json!({"conversionActions":actions});
@@ -447,15 +470,23 @@ pub fn conversion_spec(
     Ok(result)
 }
 
-
 /// Map official funnel step arguments into Google Data API v1alpha REST JSON.
 pub fn funnel_request(
-    steps: Vec<Value>, dates: Option<Vec<Value>>,
-    breakdown: Option<Value>, next_action: Option<Value>,
-    segments: Option<Vec<Value>>, quota: bool,
+    steps: Vec<Value>,
+    dates: Option<Vec<Value>>,
+    breakdown: Option<Value>,
+    next_action: Option<Value>,
+    segments: Option<Vec<Value>>,
+    quota: bool,
 ) -> Result<Value, ApiError> {
-    if steps.is_empty() || steps.len() > 10 || dates.as_ref().is_some_and(|d| d.len() > 4)
-        || segments.as_ref().is_some_and(|s| s.len() > 4 || s.iter().any(|x| !x.is_object() || x.as_object().is_some_and(|obj| obj.is_empty())))
+    if steps.is_empty()
+        || steps.len() > 10
+        || dates.as_ref().is_some_and(|d| d.len() > 4)
+        || segments.as_ref().is_some_and(|s| {
+            s.len() > 4
+                || s.iter()
+                    .any(|x| !x.is_object() || x.as_object().is_some_and(|obj| obj.is_empty()))
+        })
     {
         return Err(ApiError::InvalidRequest);
     }
@@ -463,21 +494,35 @@ pub fn funnel_request(
     for (index, step) in steps.into_iter().enumerate() {
         let object = step.as_object().ok_or(ApiError::InvalidRequest)?;
         let event = object.get("event");
-        let filter = object.get("filter_expression").or_else(|| object.get("filterExpression"));
+        let filter = object
+            .get("filter_expression")
+            .or_else(|| object.get("filterExpression"));
         if event.is_some() == filter.is_some() {
             return Err(ApiError::InvalidRequest);
         }
-        let name = object.get("name").and_then(Value::as_str)
-            .unwrap_or("").trim().to_owned();
-        let name = if name.is_empty() { format!("Step {}", index + 1) } else { name };
-        if name.len() > 100 { return Err(ApiError::InvalidRequest); }
+        let name = object
+            .get("name")
+            .and_then(Value::as_str)
+            .unwrap_or("")
+            .trim()
+            .to_owned();
+        let name = if name.is_empty() {
+            format!("Step {}", index + 1)
+        } else {
+            name
+        };
+        if name.len() > 100 {
+            return Err(ApiError::InvalidRequest);
+        }
         let expression = if let Some(event) = event {
             let event = event.as_str().ok_or(ApiError::InvalidRequest)?;
-            if event.is_empty() || event.len() > 128 { return Err(ApiError::InvalidRequest); }
+            if event.is_empty() || event.len() > 128 {
+                return Err(ApiError::InvalidRequest);
+            }
             json!({"funnelEventFilter":{"eventName":event}})
         } else {
             let value = filter.ok_or(ApiError::InvalidRequest)?;
-            if !value.is_object() || value.as_object().is_some_and(|x|x.is_empty()) {
+            if !value.is_object() || value.as_object().is_some_and(|x| x.is_empty()) {
                 return Err(ApiError::InvalidRequest);
             }
             value.clone()
@@ -494,32 +539,43 @@ pub fn funnel_request(
         "returnPropertyQuota":quota
     });
     if let Some(breakdown) = breakdown {
-        let field = breakdown.get("breakdown_dimension")
+        let field = breakdown
+            .get("breakdown_dimension")
             .or_else(|| breakdown.get("breakdownDimension"))
-            .and_then(Value::as_str).ok_or(ApiError::InvalidRequest)?;
-        if field.trim().is_empty() {return Err(ApiError::InvalidRequest);}
+            .and_then(Value::as_str)
+            .ok_or(ApiError::InvalidRequest)?;
+        if field.trim().is_empty() {
+            return Err(ApiError::InvalidRequest);
+        }
         request["funnelBreakdown"] = json!({"breakdownDimension":{"name":field}});
     }
     if let Some(next_action) = next_action {
-        let field = next_action.get("next_action_dimension")
+        let field = next_action
+            .get("next_action_dimension")
             .or_else(|| next_action.get("nextActionDimension"))
-            .and_then(Value::as_str).ok_or(ApiError::InvalidRequest)?;
-        if field.trim().is_empty() {return Err(ApiError::InvalidRequest);}
+            .and_then(Value::as_str)
+            .ok_or(ApiError::InvalidRequest)?;
+        if field.trim().is_empty() {
+            return Err(ApiError::InvalidRequest);
+        }
         let mut action = json!({"nextActionDimension":{"name":field}});
         if let Some(limit) = next_action.get("limit") {
             let amount = limit.as_u64().ok_or(ApiError::InvalidRequest)?;
-            if amount == 0 || amount > 1000 {return Err(ApiError::InvalidRequest);}
+            if amount == 0 || amount > 1000 {
+                return Err(ApiError::InvalidRequest);
+            }
             action["limit"] = json!(amount.to_string());
         }
         request["funnelNextAction"] = action;
     }
-    if let Some(segments) = segments { request["segments"] = json!(segments); }
+    if let Some(segments) = segments {
+        request["segments"] = json!(segments);
+    }
     if serde_json::to_vec(&request).map_or(true, |bytes| bytes.len() > 64 * 1024) {
         return Err(ApiError::InvalidRequest);
     }
     Ok(request)
 }
-
 
 /// Normalize Google Analytics Admin API access-report inputs.
 /// AccessDimension/AccessMetric use dimensionName/metricName (not "name").
@@ -537,12 +593,25 @@ pub struct AccessReportSpec {
 
 pub fn access_report_request(spec: AccessReportSpec) -> Result<Value, ApiError> {
     let AccessReportSpec {
-        date_ranges, dimensions, metrics, dimension_filter, metric_filter,
-        order_bys, limit, offset, time_zone,
+        date_ranges,
+        dimensions,
+        metrics,
+        dimension_filter,
+        metric_filter,
+        order_bys,
+        limit,
+        offset,
+        time_zone,
     } = spec;
-    if date_ranges.is_empty() || date_ranges.len() > 4
-        || metrics.is_empty() || metrics.len() > 10 || dimensions.len() > 9
-        || dimensions.iter().chain(metrics.iter()).any(|s| s.trim().is_empty())
+    if date_ranges.is_empty()
+        || date_ranges.len() > 4
+        || metrics.is_empty()
+        || metrics.len() > 10
+        || dimensions.len() > 9
+        || dimensions
+            .iter()
+            .chain(metrics.iter())
+            .any(|s| s.trim().is_empty())
         || limit.is_some_and(|v| v == 0 || v > 250_000)
     {
         return Err(ApiError::InvalidRequest);
@@ -553,13 +622,28 @@ pub fn access_report_request(spec: AccessReportSpec) -> Result<Value, ApiError> 
         "dimensions":dimensions.iter().map(|name| json!({"dimensionName":name})).collect::<Vec<_>>(),
         "metrics":metrics.iter().map(|name| json!({"metricName":name})).collect::<Vec<_>>()
     });
-    if let Some(filter) = dimension_filter { req["dimensionFilter"] = filter; }
-    if let Some(filter) = metric_filter { req["metricFilter"] = filter; }
-    if let Some(order_bys) = order_bys { req["orderBys"] = json!(order_bys); }
-    if let Some(limit) = limit { req["limit"] = json!(limit.to_string()); }
-    if let Some(offset) = offset { req["offset"] = json!(offset.to_string()); }
+    if let Some(filter) = dimension_filter {
+        req["dimensionFilter"] = filter;
+    }
+    if let Some(filter) = metric_filter {
+        req["metricFilter"] = filter;
+    }
+    if let Some(order_bys) = order_bys {
+        req["orderBys"] = json!(order_bys);
+    }
+    if let Some(limit) = limit {
+        req["limit"] = json!(limit.to_string());
+    }
+    if let Some(offset) = offset {
+        req["offset"] = json!(offset.to_string());
+    }
     if let Some(zone) = time_zone {
-        if zone.is_empty() || zone.len() > 80 || zone.chars().any(|c| !c.is_ascii_alphanumeric() && !"/_+-".contains(c)) {
+        if zone.is_empty()
+            || zone.len() > 80
+            || zone
+                .chars()
+                .any(|c| !c.is_ascii_alphanumeric() && !"/_+-".contains(c))
+        {
             return Err(ApiError::InvalidRequest);
         }
         req["timeZone"] = json!(zone);
@@ -591,39 +675,51 @@ pub fn normalize_date_ranges(dates: Vec<Value>) -> Result<Vec<Value>, ApiError> 
             return Ok(None);
         }
         NaiveDate::parse_from_str(value, "%Y-%m-%d")
-            .map(Some).map_err(|_| ApiError::InvalidRequest)
+            .map(Some)
+            .map_err(|_| ApiError::InvalidRequest)
     }
-    dates.into_iter().map(|date| {
-        let data = date.as_object().ok_or(ApiError::InvalidRequest)?;
-        if data.keys().any(|key| !["startDate", "endDate", "start_date", "end_date", "name"].contains(&key.as_str())) {
-            return Err(ApiError::InvalidRequest);
-        }
-        let start = data.get("startDate").or_else(|| data.get("start_date"))
-            .and_then(Value::as_str).ok_or(ApiError::InvalidRequest)?;
-        let end = data.get("endDate").or_else(|| data.get("end_date"))
-            .and_then(Value::as_str).ok_or(ApiError::InvalidRequest)?;
-        if data.contains_key("startDate") && data.contains_key("start_date")
-            || data.contains_key("endDate") && data.contains_key("end_date")
-        {
-            return Err(ApiError::InvalidRequest);
-        }
-        let start_abs = validate_date(start)?;
-        let end_abs = validate_date(end)?;
-        if let (Some(start), Some(end)) = (start_abs, end_abs) {
-            if start > end {
+    dates
+        .into_iter()
+        .map(|date| {
+            let data = date.as_object().ok_or(ApiError::InvalidRequest)?;
+            if data.keys().any(|key| {
+                !["startDate", "endDate", "start_date", "end_date", "name"].contains(&key.as_str())
+            }) {
                 return Err(ApiError::InvalidRequest);
             }
-        }
-        let mut range = json!({"startDate":start,"endDate":end});
-        if let Some(name) = data.get("name") {
-            let name = name.as_str().ok_or(ApiError::InvalidRequest)?;
-            if name.trim().is_empty() || name.len() > 64 {
+            let start = data
+                .get("startDate")
+                .or_else(|| data.get("start_date"))
+                .and_then(Value::as_str)
+                .ok_or(ApiError::InvalidRequest)?;
+            let end = data
+                .get("endDate")
+                .or_else(|| data.get("end_date"))
+                .and_then(Value::as_str)
+                .ok_or(ApiError::InvalidRequest)?;
+            if data.contains_key("startDate") && data.contains_key("start_date")
+                || data.contains_key("endDate") && data.contains_key("end_date")
+            {
                 return Err(ApiError::InvalidRequest);
             }
-            range["name"] = json!(name);
-        }
-        Ok(range)
-    }).collect()
+            let start_abs = validate_date(start)?;
+            let end_abs = validate_date(end)?;
+            if let (Some(start), Some(end)) = (start_abs, end_abs) {
+                if start > end {
+                    return Err(ApiError::InvalidRequest);
+                }
+            }
+            let mut range = json!({"startDate":start,"endDate":end});
+            if let Some(name) = data.get("name") {
+                let name = name.as_str().ok_or(ApiError::InvalidRequest)?;
+                if name.trim().is_empty() || name.len() > 64 {
+                    return Err(ApiError::InvalidRequest);
+                }
+                range["name"] = json!(name);
+            }
+            Ok(range)
+        })
+        .collect()
 }
 
 /// Google REST APIs accept array entries as objects, not raw field names.
@@ -646,7 +742,10 @@ pub fn report_request(
 
     let mut request = Map::new();
     if let Some(dates) = dates {
-        request.insert("dateRanges".to_owned(), Value::Array(normalize_date_ranges(dates)?));
+        request.insert(
+            "dateRanges".to_owned(),
+            Value::Array(normalize_date_ranges(dates)?),
+        );
     }
     request.insert(
         "dimensions".to_owned(),
@@ -694,32 +793,53 @@ mod tests {
         assert_eq!(converted["attributionModel"], "LAST_CLICK");
         assert!(conversion_spec(&json!({}), &["invalid".into()], &metric).is_err());
         assert!(conversion_spec(&json!({}), &dim, &["activeUsers".into()]).is_err());
-        assert!(conversion_spec(&json!({"conversion_actions":["../unsafe"]}), &dim, &metric).is_err());
-        assert!(conversion_spec(&json!({"conversion_actions":vec!["conversionActions/5";51]}), &dim, &metric).is_err());
-        assert!(conversion_spec(&json!({"attribution_model":"NOT_A_MODEL"}), &dim, &metric).is_err());
+        assert!(
+            conversion_spec(&json!({"conversion_actions":["../unsafe"]}), &dim, &metric).is_err()
+        );
+        assert!(conversion_spec(
+            &json!({"conversion_actions":vec!["conversionActions/5";51]}),
+            &dim,
+            &metric
+        )
+        .is_err());
+        assert!(
+            conversion_spec(&json!({"attribution_model":"NOT_A_MODEL"}), &dim, &metric).is_err()
+        );
     }
 
     #[test]
     fn funnels_normalize_events_and_reject_unsafe_step_shapes() {
         let request = funnel_request(
-            vec![json!({"event":"page_view"}), json!({"name":"Signup","event":"sign_up"})],
+            vec![
+                json!({"event":"page_view"}),
+                json!({"name":"Signup","event":"sign_up"}),
+            ],
             Some(vec![json!({"startDate":"7daysAgo","endDate":"today"})]),
             Some(json!({"breakdown_dimension":"deviceCategory"})),
             Some(json!({"next_action_dimension":"eventName","limit":5})),
-            None, false,
-        ).unwrap();
+            None,
+            false,
+        )
+        .unwrap();
         assert_eq!(request["funnel"]["steps"][0]["name"], "Step 1");
-        assert_eq!(request["funnel"]["steps"][0]["filterExpression"]["funnelEventFilter"]["eventName"], "page_view");
-        assert_eq!(request["funnelBreakdown"]["breakdownDimension"]["name"], "deviceCategory");
+        assert_eq!(
+            request["funnel"]["steps"][0]["filterExpression"]["funnelEventFilter"]["eventName"],
+            "page_view"
+        );
+        assert_eq!(
+            request["funnelBreakdown"]["breakdownDimension"]["name"],
+            "deviceCategory"
+        );
         assert_eq!(request["funnelNextAction"]["limit"], "5");
         for bad in [
-            vec![], vec![json!({})],
+            vec![],
+            vec![json!({})],
             vec![json!({"event":"page_view","filter_expression":{}})],
             vec![json!({"event":""})],
             vec![json!({"filter_expression":{}})],
-            vec![json!({"event":"page_view"});11],
+            vec![json!({"event":"page_view"}); 11],
         ] {
-            assert!(funnel_request(bad,None,None,None,None,false).is_err());
+            assert!(funnel_request(bad, None, None, None, None, false).is_err());
         }
     }
 
@@ -727,16 +847,20 @@ mod tests {
     fn date_ranges_preserve_relative_dates_and_normalize_snake_case() {
         let result = normalize_date_ranges(vec![
             json!({"startDate":"7daysAgo","endDate":"today"}),
-            json!({"start_date":"2026-10-01","end_date":"2026-10-25","name":"baseline"})
-        ]).unwrap();
+            json!({"start_date":"2026-10-01","end_date":"2026-10-25","name":"baseline"}),
+        ])
+        .unwrap();
         assert_eq!(result[0]["startDate"], "7daysAgo");
         assert_eq!(result[1]["startDate"], "2026-10-01");
         assert_eq!(result[1]["name"], "baseline");
         assert_eq!(result.len(), 2);
         assert!(report_request(
             Some(vec![json!({"start_date":"yesterday","end_date":"today"})]),
-            vec!["country".into()], vec!["activeUsers".into()], vec![]
-        ).is_ok());
+            vec!["country".into()],
+            vec!["activeUsers".into()],
+            vec![]
+        )
+        .is_ok());
     }
 
     #[test]
@@ -752,10 +876,15 @@ mod tests {
             json!({"startDate":"today"}),
             json!({"startDate":5,"endDate":"today"}),
         ] {
-            assert_eq!(normalize_date_ranges(vec![invalid]).unwrap_err(), ApiError::InvalidRequest);
+            assert_eq!(
+                normalize_date_ranges(vec![invalid]).unwrap_err(),
+                ApiError::InvalidRequest
+            );
         }
         assert!(normalize_date_ranges(vec![]).is_err());
-        assert!(normalize_date_ranges(vec![json!({"startDate":"today","endDate":"today"});5]).is_err());
+        assert!(
+            normalize_date_ranges(vec![json!({"startDate":"today","endDate":"today"}); 5]).is_err()
+        );
     }
 
     #[test]
@@ -764,9 +893,14 @@ mod tests {
             date_ranges: vec![json!({"start_date":"2026-10-20","end_date":"2026-10-25"})],
             dimensions: vec!["userEmail".into()],
             metrics: vec!["accessCount".into()],
-            dimension_filter: None, metric_filter: None, order_bys: None,
-            limit: Some(200), offset: Some(0), time_zone: Some("America/Mexico_City".into()),
-        }).unwrap();
+            dimension_filter: None,
+            metric_filter: None,
+            order_bys: None,
+            limit: Some(200),
+            offset: Some(0),
+            time_zone: Some("America/Mexico_City".into()),
+        })
+        .unwrap();
         assert_eq!(request["dateRanges"][0]["startDate"], "2026-10-20");
         assert_eq!(request["dimensions"][0]["dimensionName"], "userEmail");
         assert_eq!(request["metrics"][0]["metricName"], "accessCount");
@@ -775,23 +909,38 @@ mod tests {
             date_ranges: vec![],
             dimensions: vec![],
             metrics: vec!["accessCount".into()],
-            dimension_filter: None, metric_filter: None, order_bys: None,
-            limit: None, offset: None, time_zone: None,
-        }).is_err());
+            dimension_filter: None,
+            metric_filter: None,
+            order_bys: None,
+            limit: None,
+            offset: None,
+            time_zone: None,
+        })
+        .is_err());
         assert!(access_report_request(AccessReportSpec {
             date_ranges: vec![json!({})],
             dimensions: vec![],
             metrics: vec!["accessCount".into()],
-            dimension_filter: None, metric_filter: None, order_bys: None,
-            limit: None, offset: None, time_zone: None,
-        }).is_err());
+            dimension_filter: None,
+            metric_filter: None,
+            order_bys: None,
+            limit: None,
+            offset: None,
+            time_zone: None,
+        })
+        .is_err());
         assert!(access_report_request(AccessReportSpec {
             date_ranges: vec![json!({"startDate":"today","endDate":"today"})],
             dimensions: vec![],
             metrics: vec!["accessCount".into()],
-            dimension_filter: None, metric_filter: None, order_bys: None,
-            limit: None, offset: None, time_zone: Some("bad zone".into()),
-        }).is_err());
+            dimension_filter: None,
+            metric_filter: None,
+            order_bys: None,
+            limit: None,
+            offset: None,
+            time_zone: Some("bad zone".into()),
+        })
+        .is_err());
     }
 
     #[test]

@@ -62,25 +62,35 @@ impl Synmetra {
 
 #[cfg(feature = "scratchpad")]
 const SCRATCHPAD_TOOL_NAMES: [&str; 9] = [
-    "scratchpad_open_session", "scratchpad_close_session",
-    "scratchpad_list_sessions", "scratchpad_get_runtime_limits",
-    "scratchpad_set_runtime_limits", "scratchpad_list_tables",
-    "scratchpad_drop_table", "scratchpad_describe_table",
+    "scratchpad_open_session",
+    "scratchpad_close_session",
+    "scratchpad_list_sessions",
+    "scratchpad_get_runtime_limits",
+    "scratchpad_set_runtime_limits",
+    "scratchpad_list_tables",
+    "scratchpad_drop_table",
+    "scratchpad_describe_table",
     "scratchpad_summarize_table",
 ];
 
+#[cfg(feature = "scratchpad")]
+#[derive(Debug, Deserialize, JsonSchema)]
+struct ScratchSessionArgs {
+    session_id: String,
+}
 
 #[cfg(feature = "scratchpad")]
 #[derive(Debug, Deserialize, JsonSchema)]
-struct ScratchSessionArgs { session_id: String }
+struct ScratchOpenArgs {
+    session_id: String,
+}
 
 #[cfg(feature = "scratchpad")]
 #[derive(Debug, Deserialize, JsonSchema)]
-struct ScratchOpenArgs { session_id: String }
-
-#[cfg(feature = "scratchpad")]
-#[derive(Debug, Deserialize, JsonSchema)]
-struct ScratchListArgs { #[serde(default)] limit: Option<usize> }
+struct ScratchListArgs {
+    #[serde(default)]
+    limit: Option<usize>,
+}
 
 #[cfg(feature = "scratchpad")]
 #[derive(Debug, Deserialize, JsonSchema)]
@@ -101,7 +111,10 @@ struct ScratchTableArgs {
 
 #[cfg(feature = "scratchpad")]
 #[derive(Debug, Deserialize, JsonSchema)]
-struct ScratchReadTableArgs { session_id: String, table_name: String }
+struct ScratchReadTableArgs {
+    session_id: String,
+    table_name: String,
+}
 
 #[cfg(feature = "scratchpad")]
 #[derive(Debug, Deserialize, JsonSchema)]
@@ -523,26 +536,30 @@ impl Synmetra {
         &self,
         Parameters(args): Parameters<ConversionArgs>,
     ) -> CallToolResult {
-        let body = google::conversion_spec(
-            &args.conversion_spec, &args.dimensions, &args.metrics
-        ).and_then(|spec| {
-            if args.limit.is_some_and(|v| v == 0 || v > 250_000) {
-                return Err(ApiError::InvalidRequest);
-            }
-            report_request(
-                Some(args.date_ranges), args.dimensions, args.metrics,
-                vec![
-                    ("conversionSpec", Some(spec)),
-                    ("dimensionFilter", args.dimension_filter),
-                    ("metricFilter", args.metric_filter),
-                    ("orderBys", args.order_bys.map(|v| json!(v))),
-                    ("limit", args.limit.map(|v| json!(v.to_string()))),
-                    ("offset", args.offset.map(|v| json!(v.to_string()))),
-                    ("currencyCode", args.currency_code.map(|v| json!(v))),
-                    ("returnPropertyQuota", Some(json!(args.return_property_quota))),
-                ],
-            )
-        });
+        let body = google::conversion_spec(&args.conversion_spec, &args.dimensions, &args.metrics)
+            .and_then(|spec| {
+                if args.limit.is_some_and(|v| v == 0 || v > 250_000) {
+                    return Err(ApiError::InvalidRequest);
+                }
+                report_request(
+                    Some(args.date_ranges),
+                    args.dimensions,
+                    args.metrics,
+                    vec![
+                        ("conversionSpec", Some(spec)),
+                        ("dimensionFilter", args.dimension_filter),
+                        ("metricFilter", args.metric_filter),
+                        ("orderBys", args.order_bys.map(|v| json!(v))),
+                        ("limit", args.limit.map(|v| json!(v.to_string()))),
+                        ("offset", args.offset.map(|v| json!(v.to_string()))),
+                        ("currencyCode", args.currency_code.map(|v| json!(v))),
+                        (
+                            "returnPropertyQuota",
+                            Some(json!(args.return_property_quota)),
+                        ),
+                    ],
+                )
+            });
         result(match body {
             Ok(body) => self.api.alpha_report(&args.property_id, body, false).await,
             Err(error) => Err(error),
@@ -558,13 +575,14 @@ impl Synmetra {
             open_world_hint = true
         )
     )]
-    async fn run_funnel_report(
-        &self,
-        Parameters(args): Parameters<FunnelArgs>,
-    ) -> CallToolResult {
+    async fn run_funnel_report(&self, Parameters(args): Parameters<FunnelArgs>) -> CallToolResult {
         let body = google::funnel_request(
-            args.funnel_steps, args.date_ranges, args.funnel_breakdown,
-            args.funnel_next_action, args.segments, args.return_property_quota,
+            args.funnel_steps,
+            args.date_ranges,
+            args.funnel_breakdown,
+            args.funnel_next_action,
+            args.segments,
+            args.return_property_quota,
         );
         result(match body {
             Ok(body) => self.api.alpha_report(&args.property_id, body, true).await,
@@ -581,17 +599,20 @@ impl Synmetra {
             open_world_hint = true
         )
     )]
-    async fn run_pivot_report(
-        &self,
-        Parameters(args): Parameters<PivotArgs>,
-    ) -> CallToolResult {
-        let body = if args.pivots.is_empty() || args.pivots.len() > 4
-            || args.pivots.iter().any(|p| !p.is_object() || p.as_object().is_some_and(|x| x.is_empty()))
+    async fn run_pivot_report(&self, Parameters(args): Parameters<PivotArgs>) -> CallToolResult {
+        let body = if args.pivots.is_empty()
+            || args.pivots.len() > 4
+            || args
+                .pivots
+                .iter()
+                .any(|p| !p.is_object() || p.as_object().is_some_and(|x| x.is_empty()))
         {
             Err(ApiError::InvalidRequest)
         } else {
             report_request(
-                Some(args.date_ranges), args.dimensions, args.metrics,
+                Some(args.date_ranges),
+                args.dimensions,
+                args.metrics,
                 vec![
                     ("pivots", Some(json!(args.pivots))),
                     ("dimensionFilter", args.dimension_filter),
@@ -599,12 +620,19 @@ impl Synmetra {
                     ("orderBys", args.order_bys.map(|x| json!(x))),
                     ("currencyCode", args.currency_code.map(|x| json!(x))),
                     ("keepEmptyRows", args.keep_empty_rows.map(|x| json!(x))),
-                    ("returnPropertyQuota", Some(json!(args.return_property_quota))),
+                    (
+                        "returnPropertyQuota",
+                        Some(json!(args.return_property_quota)),
+                    ),
                 ],
             )
         };
         result(match body {
-            Ok(body) => self.api.data_operation(&args.property_id, body, "runPivotReport").await,
+            Ok(body) => {
+                self.api
+                    .data_operation(&args.property_id, body, "runPivotReport")
+                    .await
+            }
             Err(error) => Err(error),
         })
     }
@@ -618,13 +646,16 @@ impl Synmetra {
             open_world_hint = true
         )
     )]
-    async fn batch_run_reports(
-        &self,
-        Parameters(args): Parameters<BatchArgs>,
-    ) -> CallToolResult {
-        result(self.api.data_operation(
-            &args.property_id, json!({"requests": args.requests}), "batchRunReports"
-        ).await)
+    async fn batch_run_reports(&self, Parameters(args): Parameters<BatchArgs>) -> CallToolResult {
+        result(
+            self.api
+                .data_operation(
+                    &args.property_id,
+                    json!({"requests": args.requests}),
+                    "batchRunReports",
+                )
+                .await,
+        )
     }
 
     #[tool(
@@ -642,7 +673,11 @@ impl Synmetra {
     ) -> CallToolResult {
         let request = report_request(None, args.dimensions, args.metrics, Vec::new());
         result(match request {
-            Ok(body) => self.api.data_operation(&args.property_id, body, "checkCompatibility").await,
+            Ok(body) => {
+                self.api
+                    .data_operation(&args.property_id, body, "checkCompatibility")
+                    .await
+            }
             Err(error) => Err(error),
         })
     }
@@ -799,53 +834,193 @@ impl Synmetra {
     }
 }
 
-
 #[cfg(feature = "scratchpad")]
 #[tool_router(router = scratch_tool_router)]
 impl Synmetra {
-    #[tool(description = "Open a private in-memory DuckDB session.", annotations(read_only_hint = false, destructive_hint = false, idempotent_hint = false, open_world_hint = false))]
-    fn scratchpad_open_session(&self, Parameters(args): Parameters<ScratchOpenArgs>) -> CallToolResult {
-        local_result(self.scratchpad.as_ref().expect("scratchpad capability required").open(&args.session_id))
+    #[tool(
+        description = "Open a private in-memory DuckDB session.",
+        annotations(
+            read_only_hint = false,
+            destructive_hint = false,
+            idempotent_hint = false,
+            open_world_hint = false
+        )
+    )]
+    fn scratchpad_open_session(
+        &self,
+        Parameters(args): Parameters<ScratchOpenArgs>,
+    ) -> CallToolResult {
+        local_result(
+            self.scratchpad
+                .as_ref()
+                .expect("scratchpad capability required")
+                .open(&args.session_id),
+        )
     }
 
-    #[tool(description = "Close a private DuckDB session and destroy its tables.", annotations(read_only_hint = false, destructive_hint = true, idempotent_hint = false, open_world_hint = false))]
-    fn scratchpad_close_session(&self, Parameters(args): Parameters<ScratchSessionArgs>) -> CallToolResult {
-        local_result(self.scratchpad.as_ref().expect("scratchpad capability required").close(&args.session_id))
+    #[tool(
+        description = "Close a private DuckDB session and destroy its tables.",
+        annotations(
+            read_only_hint = false,
+            destructive_hint = true,
+            idempotent_hint = false,
+            open_world_hint = false
+        )
+    )]
+    fn scratchpad_close_session(
+        &self,
+        Parameters(args): Parameters<ScratchSessionArgs>,
+    ) -> CallToolResult {
+        local_result(
+            self.scratchpad
+                .as_ref()
+                .expect("scratchpad capability required")
+                .close(&args.session_id),
+        )
     }
 
-    #[tool(description = "List currently active local scratchpad sessions.", annotations(read_only_hint = true, destructive_hint = false, idempotent_hint = true, open_world_hint = false))]
-    fn scratchpad_list_sessions(&self, Parameters(args): Parameters<ScratchListArgs>) -> CallToolResult {
-        local_result(self.scratchpad.as_ref().expect("scratchpad capability required").sessions(args.limit))
+    #[tool(
+        description = "List currently active local scratchpad sessions.",
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = false
+        )
+    )]
+    fn scratchpad_list_sessions(
+        &self,
+        Parameters(args): Parameters<ScratchListArgs>,
+    ) -> CallToolResult {
+        local_result(
+            self.scratchpad
+                .as_ref()
+                .expect("scratchpad capability required")
+                .sessions(args.limit),
+        )
     }
 
-    #[tool(description = "Read hard-bounded scratchpad limits.", annotations(read_only_hint = true, destructive_hint = false, idempotent_hint = true, open_world_hint = false))]
+    #[tool(
+        description = "Read hard-bounded scratchpad limits.",
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = false
+        )
+    )]
     fn scratchpad_get_runtime_limits(&self) -> CallToolResult {
-        local_result(self.scratchpad.as_ref().expect("scratchpad capability required").limits())
+        local_result(
+            self.scratchpad
+                .as_ref()
+                .expect("scratchpad capability required")
+                .limits(),
+        )
     }
 
-    #[tool(description = "Set the bounded local session quota.", annotations(read_only_hint = false, destructive_hint = false, idempotent_hint = true, open_world_hint = false))]
-    fn scratchpad_set_runtime_limits(&self, Parameters(args): Parameters<ScratchLimitArgs>) -> CallToolResult {
-        local_result(self.scratchpad.as_ref().expect("scratchpad capability required").set_limits(args.max_sessions, args.max_tables_per_session))
+    #[tool(
+        description = "Set the bounded local session quota.",
+        annotations(
+            read_only_hint = false,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = false
+        )
+    )]
+    fn scratchpad_set_runtime_limits(
+        &self,
+        Parameters(args): Parameters<ScratchLimitArgs>,
+    ) -> CallToolResult {
+        local_result(
+            self.scratchpad
+                .as_ref()
+                .expect("scratchpad capability required")
+                .set_limits(args.max_sessions, args.max_tables_per_session),
+        )
     }
 
-    #[tool(description = "List DuckDB tables in one private session.", annotations(read_only_hint = true, destructive_hint = false, idempotent_hint = true, open_world_hint = false))]
-    fn scratchpad_list_tables(&self, Parameters(args): Parameters<ScratchListTablesArgs>) -> CallToolResult {
-        local_result(self.scratchpad.as_ref().expect("scratchpad capability required").tables(&args.session_id, args.limit))
+    #[tool(
+        description = "List DuckDB tables in one private session.",
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = false
+        )
+    )]
+    fn scratchpad_list_tables(
+        &self,
+        Parameters(args): Parameters<ScratchListTablesArgs>,
+    ) -> CallToolResult {
+        local_result(
+            self.scratchpad
+                .as_ref()
+                .expect("scratchpad capability required")
+                .tables(&args.session_id, args.limit),
+        )
     }
 
-    #[tool(description = "Drop one validated local DuckDB table.", annotations(read_only_hint = false, destructive_hint = true, idempotent_hint = true, open_world_hint = false))]
-    fn scratchpad_drop_table(&self, Parameters(args): Parameters<ScratchTableArgs>) -> CallToolResult {
-        local_result(self.scratchpad.as_ref().expect("scratchpad capability required").drop_table(&args.session_id, &args.table_name, args.if_exists))
+    #[tool(
+        description = "Drop one validated local DuckDB table.",
+        annotations(
+            read_only_hint = false,
+            destructive_hint = true,
+            idempotent_hint = true,
+            open_world_hint = false
+        )
+    )]
+    fn scratchpad_drop_table(
+        &self,
+        Parameters(args): Parameters<ScratchTableArgs>,
+    ) -> CallToolResult {
+        local_result(
+            self.scratchpad
+                .as_ref()
+                .expect("scratchpad capability required")
+                .drop_table(&args.session_id, &args.table_name, args.if_exists),
+        )
     }
 
-    #[tool(description = "Inspect a validated local DuckDB table's schema (first 32 columns).", annotations(read_only_hint = true, destructive_hint = false, idempotent_hint = true, open_world_hint = false))]
-    fn scratchpad_describe_table(&self, Parameters(args): Parameters<ScratchReadTableArgs>) -> CallToolResult {
-        local_result(self.scratchpad.as_ref().expect("scratchpad capability required").describe_table(&args.session_id, &args.table_name))
+    #[tool(
+        description = "Inspect a validated local DuckDB table's schema (first 32 columns).",
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = false
+        )
+    )]
+    fn scratchpad_describe_table(
+        &self,
+        Parameters(args): Parameters<ScratchReadTableArgs>,
+    ) -> CallToolResult {
+        local_result(
+            self.scratchpad
+                .as_ref()
+                .expect("scratchpad capability required")
+                .describe_table(&args.session_id, &args.table_name),
+        )
     }
 
-    #[tool(description = "Summarize one validated local table with bounded column metadata and a row count.", annotations(read_only_hint = true, destructive_hint = false, idempotent_hint = true, open_world_hint = false))]
-    fn scratchpad_summarize_table(&self, Parameters(args): Parameters<ScratchReadTableArgs>) -> CallToolResult {
-        local_result(self.scratchpad.as_ref().expect("scratchpad capability required").summarize_table(&args.session_id, &args.table_name))
+    #[tool(
+        description = "Summarize one validated local table with bounded column metadata and a row count.",
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = false
+        )
+    )]
+    fn scratchpad_summarize_table(
+        &self,
+        Parameters(args): Parameters<ScratchReadTableArgs>,
+    ) -> CallToolResult {
+        local_result(
+            self.scratchpad
+                .as_ref()
+                .expect("scratchpad capability required")
+                .summarize_table(&args.session_id, &args.table_name),
+        )
     }
 }
 
@@ -895,7 +1070,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Scratchpad state is process-shared, so allowing multiple HTTP callers would
     // cross the session trust boundary. Restrict this early slice to one stdio client.
     if scratchpad_requested && loopback {
-        return Err("Scratchpad cannot run over HTTP until per-client session isolation is implemented".into());
+        return Err(
+            "Scratchpad cannot run over HTTP until per-client session isolation is implemented"
+                .into(),
+        );
     }
     let server = Synmetra::new(
         GoogleClient::new(std::env::var("SYNMETRA_GOOGLE_ACCESS_TOKEN").ok()),
@@ -903,9 +1081,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
     let server = if scratchpad_requested {
         #[cfg(feature = "scratchpad")]
-        { server.enable_scratchpad() }
+        {
+            server.enable_scratchpad()
+        }
         #[cfg(not(feature = "scratchpad"))]
-        { return Err("Synmetra binary lacks optional scratchpad feature".into()); }
+        {
+            return Err("Synmetra binary lacks optional scratchpad feature".into());
+        }
     } else {
         server
     };
@@ -1047,20 +1229,36 @@ mod tests {
     #[tokio::test]
     async fn core_preflight_and_batch_reject_invalid_input_before_google_calls() {
         let server = Synmetra::new(GoogleClient::new(None), false);
-        let bad_batch = server.batch_run_reports(Parameters(BatchArgs {
-            property_id: "42".into(), requests: vec![],
-        })).await;
+        let bad_batch = server
+            .batch_run_reports(Parameters(BatchArgs {
+                property_id: "42".into(),
+                requests: vec![],
+            }))
+            .await;
         assert_eq!(bad_batch.is_error, Some(true));
-        let bad_pivot = server.run_pivot_report(Parameters(PivotArgs {
-            property_id: "42".into(), date_ranges: vec![json!({"startDate":"today","endDate":"today"})],
-            dimensions: vec!["country".into()], metrics: vec!["activeUsers".into()],
-            pivots: vec![], dimension_filter: None, metric_filter: None, order_bys: None,
-            currency_code: None, keep_empty_rows: None, return_property_quota: false,
-        })).await;
+        let bad_pivot = server
+            .run_pivot_report(Parameters(PivotArgs {
+                property_id: "42".into(),
+                date_ranges: vec![json!({"startDate":"today","endDate":"today"})],
+                dimensions: vec!["country".into()],
+                metrics: vec!["activeUsers".into()],
+                pivots: vec![],
+                dimension_filter: None,
+                metric_filter: None,
+                order_bys: None,
+                currency_code: None,
+                keep_empty_rows: None,
+                return_property_quota: false,
+            }))
+            .await;
         assert_eq!(bad_pivot.is_error, Some(true));
-        let bad_compat = server.check_report_compatibility(Parameters(CompatibilityArgs {
-            property_id: "42".into(), dimensions: vec!["country".into()], metrics: vec![],
-        })).await;
+        let bad_compat = server
+            .check_report_compatibility(Parameters(CompatibilityArgs {
+                property_id: "42".into(),
+                dimensions: vec!["country".into()],
+                metrics: vec![],
+            }))
+            .await;
         assert_eq!(bad_compat.is_error, Some(true));
     }
 
@@ -1088,28 +1286,56 @@ mod tests {
     #[test]
     fn scratchpad_inputs_match_pinned_sednalabs_mcp_fields() {
         use std::collections::BTreeSet;
-        let fixture: serde_json::Value = serde_json::from_str(
-            include_str!("../spec/upstream/sednalabs-tool-schema.v1.json")
-        ).unwrap();
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../spec/upstream/sednalabs-tool-schema.v1.json"
+        ))
+        .unwrap();
         let server = Synmetra::new(GoogleClient::new(None), false).enable_scratchpad();
         let advertised = server.router.list_all();
         for name in SCRATCHPAD_TOOL_NAMES.iter().take(7).copied() {
-            let reference = fixture["tools"].as_array().unwrap().iter()
-                .find(|tool| tool["name"].as_str() == Some(name)).unwrap();
+            let reference = fixture["tools"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|tool| tool["name"].as_str() == Some(name))
+                .unwrap();
             let native = advertised.iter().find(|tool| tool.name == name).unwrap();
-            let native_fields: BTreeSet<_> = native.input_schema.get("properties")
+            let native_fields: BTreeSet<_> = native
+                .input_schema
+                .get("properties")
                 .and_then(serde_json::Value::as_object)
-                .into_iter().flat_map(|props| props.keys()).map(String::as_str).collect();
+                .into_iter()
+                .flat_map(|props| props.keys())
+                .map(String::as_str)
+                .collect();
             let expected_fields: BTreeSet<_> = reference["inputSchema"]["properties"]
-                .as_object().into_iter().flat_map(|props| props.keys())
-                .map(String::as_str).collect();
-            assert_eq!(native_fields, expected_fields, "MCP input properties drifted for {name}");
-            let native_required: BTreeSet<_> = native.input_schema.get("required")
+                .as_object()
+                .into_iter()
+                .flat_map(|props| props.keys())
+                .map(String::as_str)
+                .collect();
+            assert_eq!(
+                native_fields, expected_fields,
+                "MCP input properties drifted for {name}"
+            );
+            let native_required: BTreeSet<_> = native
+                .input_schema
+                .get("required")
                 .and_then(serde_json::Value::as_array)
-                .into_iter().flatten().filter_map(serde_json::Value::as_str).collect();
+                .into_iter()
+                .flatten()
+                .filter_map(serde_json::Value::as_str)
+                .collect();
             let expected_required: BTreeSet<_> = reference["inputSchema"]["required"]
-                .as_array().into_iter().flatten().filter_map(serde_json::Value::as_str).collect();
-            assert_eq!(native_required, expected_required, "MCP required fields drifted for {name}");
+                .as_array()
+                .into_iter()
+                .flatten()
+                .filter_map(serde_json::Value::as_str)
+                .collect();
+            assert_eq!(
+                native_required, expected_required,
+                "MCP required fields drifted for {name}"
+            );
         }
     }
 

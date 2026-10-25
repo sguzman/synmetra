@@ -37,7 +37,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     std::env::set_current_dir(env!("CARGO_MANIFEST_DIR"))?;
     let ledger: Value = serde_json::from_str(&fs::read_to_string("docs/progress.json")?)?;
     let catalog: Value = serde_json::from_str(&fs::read_to_string("docs/tool-inventory.json")?)?;
-    let sedna_schema: Value = serde_json::from_str(&fs::read_to_string("spec/upstream/sednalabs-tool-schema.v1.json")?)?;
+    let sedna_schema: Value = serde_json::from_str(&fs::read_to_string(
+        "spec/upstream/sednalabs-tool-schema.v1.json",
+    )?)?;
     let roadmap = fs::read_to_string("docs/ROADMAP.md")?;
     let readme = fs::read_to_string("README.md")?;
     let issue_index = fs::read_to_string("docs/ISSUES.md")?;
