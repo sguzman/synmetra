@@ -3187,8 +3187,9 @@ mod tests {
                 let (mut stream, _) = listener.accept().await.unwrap();
                 let mut buffer = [0u8; 4096];
                 let n = stream.read(&mut buffer).await.unwrap();
-                assert!(String::from_utf8_lossy(&buffer[..n])
-                    .contains("properties/42:batchRunReports"));
+                assert!(
+                    String::from_utf8_lossy(&buffer[..n]).contains("properties/42:batchRunReports")
+                );
                 let body = r#"{"error":{"message":"provider-private-error"}}"#;
                 let reply = format!(
                     "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
