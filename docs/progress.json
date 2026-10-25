@@ -152,12 +152,13 @@
               "id": "T007",
               "emoji": "🧾",
               "name": "Archive exact upstream tool schemas and signatures",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Verifiable pinned schema snapshots with tool argument parity tests",
               "checks": [
                 {
                   "text": "Deliver archive exact upstream tool schemas and signatures as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "spec/upstream/sednalabs-tool-schema.v1.json pinned exact 35-tool upstream schema, spec/upstream/google-official-signatures.json pinned Google's 10 tool functions, licenses/SEDNALABS-APACHE-2.0.txt attribution, docs/PROVENANCE.md and docs/UPSTREAM.md; GitHub Actions 40211821382 passed pinned inventory integrity. Full runtime schema parity remains open."
                 },
                 {
                   "text": "Verifiable pinned schema snapshots with tool argument parity tests",
@@ -169,12 +170,13 @@
               "id": "T008",
               "emoji": "🔁",
               "name": "Set up upstream drift tracking and version pin policy",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "CI alerts on name/signature deltas without silent breaking changes",
               "checks": [
                 {
                   "text": "Deliver set up upstream drift tracking and version pin policy as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "docs/UPSTREAM.md, docs/PROVENANCE.md, docs/tool-inventory.json and src/bin/synmetra-progress.rs: pinned source revisions and CI-checked 36-name union; GitHub Actions 40211821382 passed; upstream signature drift alert automation remains open."
                 },
                 {
                   "text": "CI alerts on name/signature deltas without silent breaking changes",
@@ -304,12 +306,13 @@
               "id": "T015",
               "emoji": "🧭",
               "name": "Implement CLI config parsing and doctor subcommands",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Actionable diagnostics and typed failures without exposing secrets",
               "checks": [
                 {
                   "text": "Deliver implement cli config parsing and doctor subcommands as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/auth.rs implements native `auth doctor`, `auth command`, `auth status`, `auth login`, `auth logout`; public_status redacts token values and offline unit tests passed core run 40212316165; live Google authorization and full operator QA remain unverified."
                 },
                 {
                   "text": "Actionable diagnostics and typed failures without exposing secrets",

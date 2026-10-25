@@ -10,11 +10,11 @@
 
 ## 📊 Evidence-backed progress
 
-**Overall:** `██░░░░░░░░ 21.8%` · **overall delta: +21.81 percentage points** from initial 0% (**latest verified round: +0.44 pp**). **20/36 read-only provisional handlers and 1 opt-in annotation handler; 0/36 fully accepted upstream parity.** Real Google account acceptance and full tool schemas remain pending.
+**Overall:** `██░░░░░░░░ 22.5%` · **overall delta: +22.47 percentage points** from initial 0% (**latest accepted round: +0.66 pp**). **20/36 read-only provisional handlers and 1 opt-in annotation handler; 0/36 fully accepted upstream parity.** Real Google account acceptance and full tool schemas remain pending.
 
 | Milestone | Progress | Gate |
 | --- | --- | --- |
-| 🧭 M0 Reference baseline and project governance | `██████░░░░ 58.8%` | MVP |
+| 🧭 M0 Reference baseline and project governance | `███████░░░ 67.7%` | MVP |
 | 🔌 M1 MCP protocol and transport fidelity | `███░░░░░░░ 32.6%` | MVP |
 | 🔑 M2 Google authentication and credential isolation | `██░░░░░░░░ 21.1%` | MVP |
 | 🏢 M3 Admin API information parity | `██░░░░░░░░ 21.9%` | MVP |

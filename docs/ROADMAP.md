@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `██░░░░░░░░ 21.8%` · **+21.81 percentage points from initial empty repo; +0.44 pp in the verified DuckDB table-inspection round** · 21/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `██░░░░░░░░ 22.5%` · **+22.47 percentage points from initial empty repo; +0.66 pp from accepted provenance and native CLI implementation evidence** · 21/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -11,11 +11,11 @@
 - On each stewardship round, report total and actively worked milestone/phase/task bars plus the **signed delta in percentage points** against the previous verified committed ledger; completed 100% tasks can be omitted in ongoing status updates.
 - **No progress padding.** Upstream feature inventory, planning and brand assets count only for their specific documentation tasks; GA4 functionality starts at 0% until tests establish otherwise. Real Google access, credentials and live tests are separate explicit gates.
 
-## 🧭 M0 — Reference baseline and project governance — `██████░░░░ 58.8%`
+## 🧭 M0 — Reference baseline and project governance — `███████░░░ 67.7%`
 
 **Scope:** MVP. **Acceptance gate:** Audited pinned feature-union inventory, color identity, public-safe policies and reproducible plan. Foundation is not runtime parity.
 
-### 📚 P00 — Upstream contracts and provenance — `████████░░ 75.0%`
+### 📚 P00 — Upstream contracts and provenance — `█████████░ 87.5%`
 
 **Feature:** Reference provenance.
 
@@ -31,12 +31,12 @@
   - ✅ **Gate:** Document consistent task gates, percentages, visual bars and baseline deltas · **Evidence:** docs/ROADMAP.md and docs/progress.json; README.md and docs/ROADMAP.md reference ledger
 - 🛡️ **T006 — Document privacy, security and maintainer governance** — `██████████ 100.0%`
   - ✅ **Gate:** Explicit no-secret and read-only defaults and evidence policy · **Evidence:** docs/GOVERNANCE.md and docs/SECURITY.md; docs/GOVERNANCE.md and docs/SECURITY.md approved policies
-- 🧾 **T007 — Archive exact upstream tool schemas and signatures** — `░░░░░░░░░░ 0.0%`
+- 🧾 **T007 — Archive exact upstream tool schemas and signatures** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Verifiable pinned schema snapshots with tool argument parity tests
-- 🔁 **T008 — Set up upstream drift tracking and version pin policy** — `░░░░░░░░░░ 0.0%`
+- 🔁 **T008 — Set up upstream drift tracking and version pin policy** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** CI alerts on name/signature deltas without silent breaking changes
 
-### 🦀 P01 — Native scaffold and quality gates — `████░░░░░░ 44.4%`
+### 🦀 P01 — Native scaffold and quality gates — `█████░░░░░ 50.0%`
 
 **Feature:** Rust foundation.
 
@@ -52,7 +52,7 @@
   - ✅ **Gate:** Dependencies auditable with deny or equivalent process
 - 🧰 **T014 — Create deterministic offline fixtures and mock server** — `██████████ 100.0%`
   - ✅ **Gate:** No secrets or real analytics identifiers in fixtures · **Evidence:** src/google.rs synthetic tokio TcpListener Google API mock tests; Actions 40202015488 passed without real credentials; src/google.rs synthetic tokio TcpListener Google API mock tests; Actions 40202015488 passed without real credentials
-- 🧭 **T015 — Implement CLI config parsing and doctor subcommands** — `░░░░░░░░░░ 0.0%`
+- 🧭 **T015 — Implement CLI config parsing and doctor subcommands** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Actionable diagnostics and typed failures without exposing secrets
 - 🔏 **T016 — Threat-model local execution and its credential boundary** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Review accepted before live Google credentials
