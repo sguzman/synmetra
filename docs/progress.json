@@ -1709,7 +1709,7 @@
               "id": "T088",
               "emoji": "📦",
               "name": "Implement batch_run_reports",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "MCP schema, Google request, golden output and error cases for batch_run_reports",
               "checks": [
                 {
@@ -1719,7 +1719,8 @@
                 },
                 {
                   "text": "MCP schema, Google request, golden output and error cases for batch_run_reports",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs batch_input_contract_requires_only_property_and_report_requests verifies the exact pinned outer MCP properties/required fields; BatchReportItemArgs safely normalizes snake_case request items to Google camelCase; batch_reports_normalize_separate_requests_and_preserve_distinct_results mock confirms distinct golden results; batch_report_five_item_boundary_is_enforced_before_google_credentials tests one-to-five bounds; batch_report_permission_and_quota_denials_do_not_leak_provider_details validates HTTP 403/429, stable errors and secret redaction; src/google.rs batch_reports_reject_missing_or_extra_provider_results rejects inconsistent Google success arrays. GitHub Actions 40234680391 core passed tests, formatting, strict Clippy. This does not imply 36-tool parity or authorized live Google tests."
                 }
               ]
             },
