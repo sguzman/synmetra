@@ -31,3 +31,11 @@ The provisional `run_funnel_report` tool now uses the official required `funnel_
 Three additional read-only tools now use typed upstream argument shapes rather than generic provider request blobs: `run_pivot_report` (explicit dates, dimensions, metrics and pivot structures), `batch_run_reports` (1–5 report entries) and `check_report_compatibility` (dimension and metric lists). Input validation is synthetic-testable without Google credentials. Full SednaLabs optional controls, output projections and live API eligibility are separate unverified gates.
 
 Both Admin access-report tools now take explicit required date-range, dimension and metric arguments instead of generic provider JSON. The request builder uses Admin-specific `dimensionName` and `metricName` fields, with bounded input validation and synthetic tests. Authorized Administrator-role GA4 integration, optional SednaLabs projection controls and filter normalization remain unverified.
+
+## 🔎 Bounded GA4 collection pagination
+
+Account summaries and Google Ads links follow Google Admin API `nextPageToken` and merge multiple pages in source order, with a 100-page request limit. To bound persistent-agent memory, Synmetra enforces a maximum of 10,000 collected entries and 16 MiB of serialized items; it rejects overlong (over 1024-byte) or repeated continuation tokens. Two-page, empty/replayed-token, and oversized-result cases are tested against local HTTP mocks. These ceilings can reject very large legitimate properties rather than silently returning incomplete totals. They are implementation safeguards, not full real-Google acceptance.
+
+## 🧪 Structured and shorthand filters
+
+`dimension_filter` and `metric_filter` accept bounded Google FilterExpression objects, JSON-encoded objects, or equality shorthand. Examples: `country==Mexico`, `sessionDefaultChannelGroup=="Paid Other"`, `sessions==7`, and `engagementRate==0.5`. Dimension shorthand builds an exact string filter; metric shorthand builds an integer or finite decimal numeric filter. Ambiguous values, malformed nested expressions, and excessive depth/size are rejected before Google requests. Other shorthand operators and live field eligibility are not implemented.
