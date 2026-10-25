@@ -467,6 +467,62 @@ mod tests {
     }
 
     #[test]
+    fn bounded_projection_limits_are_explicit_in_all_tabular_modes() {
+        let provider = json!({
+            "dimensionHeaders":[{"name":"country"}],
+            "metricHeaders":[{"name":"activeUsers","type":"TYPE_INTEGER"}],
+            "rows":[
+                {"dimensionValues":[{"value":"México"}],"metricValues":[{"value":"125"}]},
+                {"dimensionValues":[{"value":"Canada"}],"metricValues":[{"value":"12"}]},
+                {"dimensionValues":[{"value":"France"}],"metricValues":[{"value":"3"}]}
+            ],
+            "rowCount":7
+        });
+        for mode in [
+            OutputMode::Rows,
+            OutputMode::Tuples,
+            OutputMode::Scalar,
+            OutputMode::Compact,
+        ] {
+            for summary_only in [false, true] {
+                let bounded = Controls {
+                    output_mode: Some(mode),
+                    summary_only,
+                    max_rows: Some(2),
+                    max_cell_chars: Some(2),
+                    cursor_supplied: false,
+                };
+                assert_eq!(bounded.request_limit(Some(250_000)).unwrap(), Some(2));
+                let result = project(&provider, bounded, false, None).unwrap();
+                assert_eq!(result.meta["row_count_total"], 7);
+                assert_eq!(result.meta["row_count_returned"], 2);
+                assert_eq!(result.meta["truncated"], true);
+                assert_eq!(result.meta["cell_clipping"]["clipped_cells"], 2);
+                assert_eq!(result.meta["cell_clipping"]["applied"], true);
+                assert_eq!(result.meta["cell_clipping"]["max_cell_chars"], 2);
+                if summary_only {
+                    assert!(result.data.is_null());
+                } else {
+                    assert!(!result.data.is_null());
+                }
+            }
+        }
+        assert_eq!(provider["rows"][0]["dimensionValues"][0]["value"], "México");
+        assert_eq!(provider["rows"][0]["metricValues"][0]["value"], "125");
+
+        let mut invalid = controls();
+        for rows in [0, MAX_ROWS + 1] {
+            invalid.max_rows = Some(rows);
+            assert_eq!(invalid.validate(), Err(ApiError::InvalidRequest));
+        }
+        invalid.max_rows = Some(1);
+        for chars in [0, MAX_CELL_CHARS + 1] {
+            invalid.max_cell_chars = Some(chars);
+            assert_eq!(invalid.validate(), Err(ApiError::InvalidRequest));
+        }
+    }
+
+    #[test]
     fn numeric_metric_precision_and_currency_metadata_survive_text_clipping() {
         let response = json!({
             "dimensionHeaders":[{"name":"country"}],
