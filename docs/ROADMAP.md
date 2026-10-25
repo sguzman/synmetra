@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `███░░░░░░░ 28.0%` · **+27.97 percentage points from initial empty repo; +0.22 pp from verified auth-status schema and mock contract acceptance** · 29/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `███░░░░░░░ 28.4%` · **+28.41 percentage points from initial empty repo; +0.44 pp from verified getting-started schema and native OAuth guidance** · 30/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -441,16 +441,16 @@
   - ✅ **Gate:** Dependency license architecture and portability reviewed
 
 
-## 🧬 M7 — Tool contract interoperability and parity audits — `██░░░░░░░░ 20.6%`
+## 🧬 M7 — Tool contract interoperability and parity audits — `███░░░░░░░ 26.5%`
 
 **Scope:** MVP. **Acceptance gate:** All 36 tool schemas and response mappings are independently snapshot-tested against both pinned upstreams.
 
-### 🧰 P19 — Setup and authentication MCP tools — `███░░░░░░░ 33.3%`
+### 🧰 P19 — Setup and authentication MCP tools — `███████░░░ 66.7%`
 
 **Feature:** Three auth/setup tools.
 
-- 🧭 **T151 — Implement ga4_get_started** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Native CLI guidance and MCP schema parity for ga4_get_started
+- 🧭 **T151 — Implement ga4_get_started** — `██████████ 100.0%`
+  - ✅ **Gate:** Native CLI guidance and MCP schema parity for ga4_get_started · **Evidence:** src/main.rs implements ga4_get_started with native synmetra auth login --client-id-file guidance, explicit read-only analytics scope, API prerequisites and no Python/npm runtime requirements; test get_started_matches_pinned_empty_input_schema_and_native_login_guidance passed GitHub Actions 40225106072 core job.; src/main.rs native getting-started test verifies registered MCP input properties match pinned SednaLabs ga4_get_started no-argument schema and response supplies copyable native read-only OAuth guidance without secrets. src/auth.rs implements the referenced native login command. GitHub Actions 40225106072 passed fmt, Rust tests, strict Clippy and progress validation. Other upstream feature/response acceptance remains open.
 - 🩺 **T152 — Implement ga4_auth_status** — `██████████ 100.0%`
   - ✅ **Gate:** Native CLI guidance and MCP schema parity for ga4_auth_status · **Evidence:** src/main.rs AuthStatusArgs and opt-in ga4_auth_status verify_token request with bounded Google account lookup and credential-free status; native schema and explicit-opt-in tests passed GitHub Actions 40223667547 core job (fmt, tests, strict Clippy). Live Google verification and exact upstream response parity remain open.; src/main.rs enforces ga4_auth_status verify_token type/default/description/optional required status against pinned SednaLabs inputSchema and tests opt-out plus explicitly authorized mock Google account-summary verification without exposing credential/account details; src/auth.rs native auth status guidance. GitHub Actions 40224853636 core job passed Rust tests, formatting, Clippy and ledger. This task does not certify entire upstream response parity or live Google acceptance.
 - 🗝️ **T153 — Implement ga4_auth_login_command** — `░░░░░░░░░░ 0.0%`

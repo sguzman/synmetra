@@ -2916,16 +2916,18 @@
               "id": "T151",
               "emoji": "🧭",
               "name": "Implement ga4_get_started",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "Native CLI guidance and MCP schema parity for ga4_get_started",
               "checks": [
                 {
                   "text": "Deliver implement ga4_get_started as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs implements ga4_get_started with native synmetra auth login --client-id-file guidance, explicit read-only analytics scope, API prerequisites and no Python/npm runtime requirements; test get_started_matches_pinned_empty_input_schema_and_native_login_guidance passed GitHub Actions 40225106072 core job."
                 },
                 {
                   "text": "Native CLI guidance and MCP schema parity for ga4_get_started",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs native getting-started test verifies registered MCP input properties match pinned SednaLabs ga4_get_started no-argument schema and response supplies copyable native read-only OAuth guidance without secrets. src/auth.rs implements the referenced native login command. GitHub Actions 40225106072 passed fmt, Rust tests, strict Clippy and progress validation. Other upstream feature/response acceptance remains open."
                 }
               ]
             },
