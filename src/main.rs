@@ -271,8 +271,8 @@ struct ScratchLimitArgs {
 fn local_result(value: Result<Value, String>) -> CallToolResult {
     match value {
         Ok(data) => result(Ok(data)),
-        Err(message) => CallToolResult::error(vec![ContentBlock::text(
-            json!({
+        Err(message) => {
+            let payload = json!({
                 "ok":false,
                 "error":{
                     "code":"SCRATCHPAD_ERROR",
@@ -281,9 +281,12 @@ fn local_result(value: Result<Value, String>) -> CallToolResult {
                     "category":"local"
                 },
                 "meta":{"elapsed_ms":0,"elapsed_ms_measured":false}
-            })
-            .to_string(),
-        )]),
+            });
+            let mut tool_result =
+                CallToolResult::error(vec![ContentBlock::text(payload.to_string())]);
+            tool_result.structured_content = Some(payload);
+            tool_result
+        }
     }
 }
 
@@ -512,9 +515,13 @@ fn result(r: Result<Value, ApiError>) -> CallToolResult {
     // claim of zero tool latency. Per-tool timing is a separate parity gate.
     let meta = json!({"elapsed_ms": 0, "elapsed_ms_measured": false});
     match r {
-        Ok(v) => CallToolResult::success(vec![ContentBlock::text(
-            json!({"ok": true, "data": v, "meta": meta}).to_string(),
-        )]),
+        Ok(v) => {
+            let payload = json!({"ok": true, "data": v, "meta": meta});
+            let mut tool_result =
+                CallToolResult::success(vec![ContentBlock::text(payload.to_string())]);
+            tool_result.structured_content = Some(payload);
+            tool_result
+        }
         Err(error) => {
             let (code, category) = api_error_code(&error);
             let mut payload = json!({
@@ -530,7 +537,10 @@ fn result(r: Result<Value, ApiError>) -> CallToolResult {
             if let ApiError::Http(status) = error {
                 payload["error"]["status_code"] = json!(status);
             }
-            CallToolResult::error(vec![ContentBlock::text(payload.to_string())])
+            let mut tool_result =
+                CallToolResult::error(vec![ContentBlock::text(payload.to_string())]);
+            tool_result.structured_content = Some(payload);
+            tool_result
         }
     }
 }
@@ -2170,6 +2180,7 @@ mod tests {
         assert!(output["data"]["rows"].is_array());
         assert_eq!(output["meta"]["elapsed_ms"], 0);
         assert_eq!(output["meta"]["elapsed_ms_measured"], false);
+        assert_eq!(success.structured_content.as_ref(), Some(&output));
 
         let invalid = result(Err(ApiError::InvalidIdentifier));
         let failure: Value =
@@ -2177,6 +2188,7 @@ mod tests {
         assert_eq!(invalid.is_error, Some(true));
         assert_eq!(failure["error"]["code"], "INVALID_IDENTIFIER");
         assert_eq!(failure["error"]["category"], "validation");
+        assert_eq!(invalid.structured_content.as_ref(), Some(&failure));
         assert!(failure["error"]["message"]
             .as_str()
             .unwrap()
@@ -2196,6 +2208,7 @@ mod tests {
                 serde_json::from_str(&local.content[0].as_text().unwrap().text).unwrap();
             assert_eq!(failure["error"]["code"], "SCRATCHPAD_ERROR");
             assert_eq!(failure["error"]["category"], "local");
+            assert_eq!(local.structured_content.as_ref(), Some(&failure));
         }
     }
 
