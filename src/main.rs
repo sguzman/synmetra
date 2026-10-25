@@ -412,17 +412,56 @@ struct AccountArgs {
     account_id: String,
 }
 
+#[allow(dead_code)]
+#[derive(JsonSchema)]
+#[serde(deny_unknown_fields)]
+struct FunnelStepInput {
+    name: Option<String>,
+    event: Option<String>,
+    filter_expression: Option<Value>,
+    is_directly_followed_by: Option<bool>,
+    within_duration_from_prior_step: Option<String>,
+}
+
+#[allow(dead_code)]
+#[derive(JsonSchema)]
+#[serde(deny_unknown_fields)]
+struct FunnelBreakdownInput {
+    breakdown_dimension: String,
+    limit: Option<u64>,
+}
+
+#[allow(dead_code)]
+#[derive(JsonSchema)]
+#[serde(deny_unknown_fields)]
+struct FunnelNextActionInput {
+    next_action_dimension: String,
+    limit: Option<u64>,
+}
+
+#[allow(dead_code)]
+#[derive(JsonSchema)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+enum FunnelVisualizationInput {
+    StandardFunnel,
+    TrendedFunnel,
+}
+
 #[derive(Debug, Deserialize, JsonSchema)]
 struct FunnelArgs {
     #[serde(deserialize_with = "deserialize_google_id")]
     #[schemars(with = "GaResourceIdInput")]
     property_id: String,
+    #[schemars(with = "Vec<FunnelStepInput>")]
     funnel_steps: Vec<Value>,
     #[serde(default)]
+    #[schemars(with = "Vec<ReportDateRangeInput>")]
     date_ranges: Option<Vec<Value>>,
     #[serde(default)]
+    #[schemars(with = "Option<FunnelBreakdownInput>")]
     funnel_breakdown: Option<Value>,
     #[serde(default)]
+    #[schemars(with = "Option<FunnelNextActionInput>")]
     funnel_next_action: Option<Value>,
     #[serde(default)]
     segments: Option<Vec<Value>>,
@@ -431,6 +470,7 @@ struct FunnelArgs {
     #[serde(default)]
     is_open_funnel: bool,
     #[serde(default)]
+    #[schemars(with = "Option<FunnelVisualizationInput>")]
     funnel_visualization_type: Option<String>,
     #[serde(default)]
     dimension_filter: Option<Value>,
@@ -3029,6 +3069,56 @@ mod tests {
             local.input_schema["properties"]["return_property_quota"]["default"],
             source["inputSchema"]["properties"]["return_property_quota"]["default"]
         );
+    }
+
+    #[test]
+    fn funnel_input_schema_covers_pinned_fields_and_structured_steps() {
+        use std::collections::BTreeSet;
+
+        let pinned: Value = serde_json::from_str(include_str!(
+            "../spec/upstream/sednalabs-tool-schema.v1.json"
+        ))
+        .unwrap();
+        let upstream = pinned["tools"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|entry| entry["name"] == "run_funnel_report")
+            .unwrap();
+        let local = Synmetra::tool_router()
+            .list_all()
+            .into_iter()
+            .find(|tool| tool.name == "run_funnel_report")
+            .unwrap();
+        let native: BTreeSet<_> = local.input_schema["properties"]
+            .as_object()
+            .unwrap()
+            .keys()
+            .map(String::as_str)
+            .collect();
+        let expected: BTreeSet<_> = upstream["inputSchema"]["properties"]
+            .as_object()
+            .unwrap()
+            .keys()
+            .map(String::as_str)
+            .collect();
+        assert_eq!(native, expected);
+        let native_required: BTreeSet<_> = local.input_schema["required"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter_map(Value::as_str)
+            .collect();
+        let pinned_required: BTreeSet<_> = upstream["inputSchema"]["required"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter_map(Value::as_str)
+            .collect();
+        assert_eq!(native_required, pinned_required);
+        assert_eq!(local.input_schema["properties"]["limit"]["format"], "uint64");
+        let schema = serde_json::to_value(&local.input_schema).unwrap();
+        assert!(schema["properties"]["funnel_steps"]["items"]["$ref"].is_string());
     }
 
     #[tokio::test]
