@@ -1234,6 +1234,26 @@ mod tests {
     }
 
     #[test]
+    fn report_currency_request_remains_exact_and_numeric_filter_is_not_rounded() {
+        let request = report_request(
+            Some(vec![json!({"start_date":"yesterday","end_date":"today"})]),
+            vec!["country".into()],
+            vec!["purchaseRevenue".into()],
+            vec![
+                ("currencyCode", Some(json!("MXN"))),
+                ("metricFilter", Some(json!("purchaseRevenue==0.000000001"))),
+            ],
+        )
+        .unwrap();
+        assert_eq!(request["currencyCode"], "MXN");
+        assert_eq!(request["metrics"][0]["name"], "purchaseRevenue");
+        assert_eq!(
+            request["metricFilter"]["filter"]["numericFilter"]["value"]["doubleValue"],
+            0.000000001
+        );
+    }
+
+    #[test]
     fn report_filter_shorthand_normalizes_without_ambiguous_coercions() {
         let country = normalize_report_filter(json!("country==Mexico"), false).unwrap();
         assert_eq!(country["filter"]["fieldName"], "country");
@@ -1525,6 +1545,7 @@ mod tests {
         assert_eq!(request["dimensions"][0]["dimensionName"], "userEmail");
         assert_eq!(request["metrics"][0]["metricName"], "accessCount");
         assert_eq!(request["limit"], "200");
+        assert_eq!(request["timeZone"], "America/Mexico_City");
         assert!(access_report_request(AccessReportSpec {
             date_ranges: vec![],
             dimensions: vec![],
