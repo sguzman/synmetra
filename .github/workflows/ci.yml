@@ -9,13 +9,37 @@ on:
 permissions:
   contents: read
 
-# Prevent several simultaneous bundled-DuckDB C++ builds competing for runner quotas.
 concurrency:
   group: synmetra-${{ github.workflow }}-${{ github.ref }}-${{ startsWith(github.event.head_commit.message, 'docs:') && 'docs' || 'code' }}
   cancel-in-progress: true
 
 jobs:
-  quality:
+  core:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CARGO_BUILD_JOBS: 2
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Capture canonical Rust source formatting
+        run: |
+          cargo fmt --all
+          for file in src/main.rs src/google.rs src/scratchpad.rs src/auth.rs src/http.rs src/bin/synmetra-progress.rs Cargo.lock; do
+            echo "SYNMETRA_FILE_BEGIN:$file"
+            base64 -w0 "$file"
+            echo
+            echo "SYNMETRA_FILE_END:$file"
+          done
+      - name: Run default Rust MCP tests
+        run: cargo test --all-targets --locked
+      - name: Strict Clippy on default features
+        run: cargo clippy --all-targets --locked -- -D warnings
+      - name: Verify progress ledger and pinned contracts
+        run: cargo run --locked --bin synmetra-progress
+
+  duckdb:
     runs-on: ubuntu-latest
     timeout-minutes: 70
     env:
@@ -26,19 +50,7 @@ jobs:
           fetch-depth: 2
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      - name: Generate canonical scratchpad source and lock snapshot
-        run: |
-          cargo fmt --all
-          cargo generate-lockfile
-          for file in src/main.rs src/scratchpad.rs Cargo.lock; do
-            echo "SYNMETRA_FILE_BEGIN:$file"
-            base64 -w0 "$file"
-            echo
-            echo "SYNMETRA_FILE_END:$file"
-          done
-      - name: Test standard Rust MCP
-        run: cargo test --all-targets --locked
-      - name: Determine if a native feature build is needed
+      - name: Determine whether the native feature changed
         id: native
         shell: bash
         run: |
@@ -47,16 +59,9 @@ jobs:
           else
             echo "changed=false" >> "$GITHUB_OUTPUT"
           fi
-      - name: Test feature-gated native DuckDB scratchpad
+      - name: Test bounded DuckDB scratchpad
         if: steps.native.outputs.changed == 'true' || startsWith(github.ref, 'refs/tags/v')
         run: cargo test --all-targets --locked --features scratchpad
-      - name: Strict Clippy for default Rust MCP
-        run: cargo clippy --all-targets --locked -- -D warnings
-      # Feature tests run on every native change. Bundled C++ plus a second
-      # Clippy build exceeds routine runner budgets, so strict feature lint is
-      # a mandatory release-tag gate in addition to default-feature Clippy.
-      - name: Strict Clippy with DuckDB feature (release gate)
+      - name: Release-gate strict Clippy with DuckDB
         if: startsWith(github.ref, 'refs/tags/v')
         run: cargo clippy --all-targets --locked --features scratchpad -- -D warnings
-      - name: Verify task evidence and pinned MCP union
-        run: cargo run --locked --bin synmetra-progress
