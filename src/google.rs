@@ -484,9 +484,13 @@ pub fn funnel_request(
         };
         mapped.push(json!({"name":name,"filterExpression":expression}));
     }
+    let dates = match dates {
+        Some(dates) => normalize_date_ranges(dates)?,
+        None => Vec::new(),
+    };
     let mut request = json!({
         "funnel":{"steps":mapped},
-        "dateRanges":dates.unwrap_or_default(),
+        "dateRanges":dates,
         "returnPropertyQuota":quota
     });
     if let Some(breakdown) = breakdown {
@@ -543,17 +547,7 @@ pub fn access_report_request(spec: AccessReportSpec) -> Result<Value, ApiError> 
     {
         return Err(ApiError::InvalidRequest);
     }
-    let mut dates = Vec::new();
-    for range in date_ranges {
-        let start = range.get("startDate").or_else(|| range.get("start_date"))
-            .and_then(Value::as_str).ok_or(ApiError::InvalidRequest)?;
-        let end = range.get("endDate").or_else(|| range.get("end_date"))
-            .and_then(Value::as_str).ok_or(ApiError::InvalidRequest)?;
-        if start.is_empty() || end.is_empty() || start.len() > 32 || end.len() > 32 {
-            return Err(ApiError::InvalidRequest);
-        }
-        dates.push(json!({"startDate":start,"endDate":end}));
-    }
+    let dates = normalize_date_ranges(date_ranges)?;
     let mut req = json!({
         "dateRanges":dates,
         "dimensions":dimensions.iter().map(|name| json!({"dimensionName":name})).collect::<Vec<_>>(),
@@ -576,6 +570,62 @@ pub fn access_report_request(spec: AccessReportSpec) -> Result<Value, ApiError> 
     Ok(req)
 }
 
+/// Canonicalize relative and absolute GA4 date ranges without silently
+/// passing malformed dates or unknown fields to the provider.
+pub fn normalize_date_ranges(dates: Vec<Value>) -> Result<Vec<Value>, ApiError> {
+    if dates.is_empty() || dates.len() > 4 {
+        return Err(ApiError::InvalidRequest);
+    }
+    fn validate_date(value: &str) -> Result<Option<NaiveDate>, ApiError> {
+        if value == "today" || value == "yesterday" {
+            return Ok(None);
+        }
+        if let Some(days) = value.strip_suffix("daysAgo") {
+            if days.is_empty()
+                || days.len() > 5
+                || !days.bytes().all(|ch| ch.is_ascii_digit())
+                || days.parse::<u32>().map_or(true, |n| n > 36500)
+            {
+                return Err(ApiError::InvalidRequest);
+            }
+            return Ok(None);
+        }
+        NaiveDate::parse_from_str(value, "%Y-%m-%d")
+            .map(Some).map_err(|_| ApiError::InvalidRequest)
+    }
+    dates.into_iter().map(|date| {
+        let data = date.as_object().ok_or(ApiError::InvalidRequest)?;
+        if data.keys().any(|key| !["startDate", "endDate", "start_date", "end_date", "name"].contains(&key.as_str())) {
+            return Err(ApiError::InvalidRequest);
+        }
+        let start = data.get("startDate").or_else(|| data.get("start_date"))
+            .and_then(Value::as_str).ok_or(ApiError::InvalidRequest)?;
+        let end = data.get("endDate").or_else(|| data.get("end_date"))
+            .and_then(Value::as_str).ok_or(ApiError::InvalidRequest)?;
+        if data.contains_key("startDate") && data.contains_key("start_date")
+            || data.contains_key("endDate") && data.contains_key("end_date")
+        {
+            return Err(ApiError::InvalidRequest);
+        }
+        let start_abs = validate_date(start)?;
+        let end_abs = validate_date(end)?;
+        if let (Some(start), Some(end)) = (start_abs, end_abs) {
+            if start > end {
+                return Err(ApiError::InvalidRequest);
+            }
+        }
+        let mut range = json!({"startDate":start,"endDate":end});
+        if let Some(name) = data.get("name") {
+            let name = name.as_str().ok_or(ApiError::InvalidRequest)?;
+            if name.trim().is_empty() || name.len() > 64 {
+                return Err(ApiError::InvalidRequest);
+            }
+            range["name"] = json!(name);
+        }
+        Ok(range)
+    }).collect()
+}
+
 /// Google REST APIs accept array entries as objects, not raw field names.
 pub fn report_request(
     dates: Option<Vec<Value>>,
@@ -593,12 +643,10 @@ pub fn report_request(
     {
         return Err(ApiError::InvalidRequest);
     }
-    if dates.as_ref().is_some_and(|d| d.is_empty() || d.len() > 4) {
-        return Err(ApiError::InvalidRequest);
-    }
+
     let mut request = Map::new();
     if let Some(dates) = dates {
-        request.insert("dateRanges".to_owned(), Value::Array(dates));
+        request.insert("dateRanges".to_owned(), Value::Array(normalize_date_ranges(dates)?));
     }
     request.insert(
         "dimensions".to_owned(),
@@ -673,6 +721,41 @@ mod tests {
         ] {
             assert!(funnel_request(bad,None,None,None,None,false).is_err());
         }
+    }
+
+    #[test]
+    fn date_ranges_preserve_relative_dates_and_normalize_snake_case() {
+        let result = normalize_date_ranges(vec![
+            json!({"startDate":"7daysAgo","endDate":"today"}),
+            json!({"start_date":"2026-10-01","end_date":"2026-10-25","name":"baseline"})
+        ]).unwrap();
+        assert_eq!(result[0]["startDate"], "7daysAgo");
+        assert_eq!(result[1]["startDate"], "2026-10-01");
+        assert_eq!(result[1]["name"], "baseline");
+        assert_eq!(result.len(), 2);
+        assert!(report_request(
+            Some(vec![json!({"start_date":"yesterday","end_date":"today"})]),
+            vec!["country".into()], vec!["activeUsers".into()], vec![]
+        ).is_ok());
+    }
+
+    #[test]
+    fn date_ranges_reject_invalid_dates_and_unknown_fields() {
+        for invalid in [
+            json!({"startDate":"2026-02-30","endDate":"today"}),
+            json!({"startDate":"2026-10-26","endDate":"2026-10-25"}),
+            json!({"startDate":"999999daysAgo","endDate":"today"}),
+            json!({"startDate":"-2daysAgo","endDate":"today"}),
+            json!({"startDate":"7dayAgo","endDate":"today"}),
+            json!({"startDate":"today","endDate":"today","other":"unrecognized"}),
+            json!({"startDate":"today","start_date":"today","endDate":"today"}),
+            json!({"startDate":"today"}),
+            json!({"startDate":5,"endDate":"today"}),
+        ] {
+            assert_eq!(normalize_date_ranges(vec![invalid]).unwrap_err(), ApiError::InvalidRequest);
+        }
+        assert!(normalize_date_ranges(vec![]).is_err());
+        assert!(normalize_date_ranges(vec![json!({"startDate":"today","endDate":"today"});5]).is_err());
     }
 
     #[test]
