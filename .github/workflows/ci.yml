@@ -10,7 +10,7 @@ permissions:
 
 # Prevent several simultaneous bundled-DuckDB C++ builds competing for runner quotas.
 concurrency:
-  group: synmetra-${{ github.workflow }}-${{ github.ref }}
+  group: synmetra-${{ github.workflow }}-${{ github.ref }}-${{ startsWith(github.event.head_commit.message, 'docs:') && 'docs' || 'code' }}
   cancel-in-progress: true
 
 jobs:
