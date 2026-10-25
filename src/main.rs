@@ -2482,8 +2482,15 @@ mod tests {
             .map(String::as_str)
             .collect();
         assert_eq!(expected, actual);
-        assert!(route.input_schema.get("required").and_then(Value::as_array).is_none_or(Vec::is_empty));
-        assert_eq!(route.input_schema["properties"]["headless"]["default"], false);
+        assert!(route
+            .input_schema
+            .get("required")
+            .and_then(Value::as_array)
+            .is_none_or(Vec::is_empty));
+        assert_eq!(
+            route.input_schema["properties"]["headless"]["default"],
+            false
+        );
         assert_eq!(
             shell_quote("/tmp/it's an OAuth file.json"),
             "'/tmp/it'\"'\"'s an OAuth file.json'"

@@ -307,8 +307,13 @@ fn parse_login_options(args: &[String]) -> Result<LoginOptions, String> {
         }
         match flag {
             "--client-id-file" | "--account" | "--callback-port" => {
-                let value = args.get(index + 1).ok_or("Missing OAuth login option value")?;
-                if value.is_empty() || value.starts_with("--") || value.chars().any(char::is_control) {
+                let value = args
+                    .get(index + 1)
+                    .ok_or("Missing OAuth login option value")?;
+                if value.is_empty()
+                    || value.starts_with("--")
+                    || value.chars().any(char::is_control)
+                {
                     return Err("Invalid OAuth login option value".into());
                 }
                 match flag {
@@ -329,7 +334,9 @@ fn parse_login_options(args: &[String]) -> Result<LoginOptions, String> {
                             return Err("Invalid OAuth callback port".into());
                         }
                         options.callback_port = Some(
-                            value.parse::<u16>().map_err(|_| "Invalid OAuth callback port")?,
+                            value
+                                .parse::<u16>()
+                                .map_err(|_| "Invalid OAuth callback port")?,
                         );
                     }
                     _ => unreachable!(),
@@ -573,8 +580,14 @@ mod tests {
         assert_eq!(default.account, None);
 
         let opts = parse(&[
-            "--headless", "--account", "user@example.com", "--callback-port", "39721",
-            "--client-id-file", "/home/user/My OAuth.json", "--allow-edit",
+            "--headless",
+            "--account",
+            "user@example.com",
+            "--callback-port",
+            "39721",
+            "--client-id-file",
+            "/home/user/My OAuth.json",
+            "--allow-edit",
         ])
         .unwrap();
         assert!(opts.headless);
