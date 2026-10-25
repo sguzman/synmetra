@@ -72,16 +72,14 @@ async fn require_local_auth(
         return StatusCode::PAYLOAD_TOO_LARGE.into_response();
     }
     let (parts, body) = request.into_parts();
-    let bytes = match tokio::time::timeout(
-        access.body_timeout,
-        to_bytes(body, MAX_HTTP_REQUEST_BYTES),
-    )
-    .await
-    {
-        Ok(Ok(bytes)) => bytes,
-        Ok(Err(_)) => return StatusCode::PAYLOAD_TOO_LARGE.into_response(),
-        Err(_) => return StatusCode::REQUEST_TIMEOUT.into_response(),
-    };
+    let bytes =
+        match tokio::time::timeout(access.body_timeout, to_bytes(body, MAX_HTTP_REQUEST_BYTES))
+            .await
+        {
+            Ok(Ok(bytes)) => bytes,
+            Ok(Err(_)) => return StatusCode::PAYLOAD_TOO_LARGE.into_response(),
+            Err(_) => return StatusCode::REQUEST_TIMEOUT.into_response(),
+        };
     let request = Request::from_parts(parts, Body::from(bytes));
     match tokio::time::timeout(MAX_HANDLER_WAIT, next.run(request)).await {
         Ok(response) => response,
