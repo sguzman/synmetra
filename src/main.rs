@@ -291,6 +291,12 @@ fn local_result(value: Result<Value, String>) -> CallToolResult {
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
+struct AuthStatusArgs {
+    #[serde(default)]
+    verify_token: bool,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
 struct CollectionArgs {
     #[serde(default)]
     page_size: Option<u32>,
@@ -574,8 +580,27 @@ impl Synmetra {
             open_world_hint = true
         )
     )]
-    fn ga4_auth_status(&self) -> CallToolResult {
-        result(Ok(auth::public_status()))
+    async fn ga4_auth_status(
+        &self,
+        Parameters(args): Parameters<AuthStatusArgs>,
+    ) -> CallToolResult {
+        let mut status = auth::public_status();
+        if args.verify_token {
+            // An explicit request may contact Google. Never include the token or
+            // any returned account/property identifiers in auth diagnostics.
+            let verification = self
+                .api
+                .account_summaries_with_options(Some(1), Some(1))
+                .await;
+            status["verification"] = match verification {
+                Ok(_) => json!({"attempted": true, "verified": true}),
+                Err(error) => {
+                    let (code, category) = api_error_code(&error);
+                    json!({"attempted": true, "verified": false, "code": code, "category": category})
+                }
+            };
+        }
+        result(Ok(status))
     }
 
     #[tool(
@@ -2180,6 +2205,32 @@ mod tests {
             .unwrap()
             .text
             .contains("session not found"));
+    }
+
+    #[test]
+    fn auth_status_schema_advertises_optional_upstream_verification_flag() {
+        let tool = Synmetra::tool_router()
+            .list_all()
+            .into_iter()
+            .find(|tool| tool.name == "ga4_auth_status")
+            .expect("registered auth status tool");
+        let schema = serde_json::to_value(&tool.input_schema).unwrap();
+        assert_eq!(schema["properties"]["verify_token"]["type"], "boolean");
+        assert!(!schema["required"]
+            .as_array()
+            .is_some_and(|required| required.iter().any(|v| v == "verify_token")));
+    }
+
+    #[tokio::test]
+    async fn auth_status_only_contacts_google_when_explicitly_requested() {
+        let server = Synmetra::new(GoogleClient::new(None), false);
+        let reply = server
+            .ga4_auth_status(Parameters(AuthStatusArgs { verify_token: false }))
+            .await;
+        let payload = reply.structured_content.expect("structured auth status");
+        assert_eq!(payload["ok"], true);
+        assert!(payload["data"].get("verification").is_none());
+        assert!(payload["data"].get("access_token").is_none());
     }
 
     #[test]
