@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `████░░░░░░ 40.5%` · **+40.53 percentage points from initial empty repo; +0.44 pp from tested annotation schema and public CI zero-write gates** · 70/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `████░░░░░░ 40.8%` · **+40.75 percentage points from initial empty repo; +0.22 pp from verified deterministic progress bar regeneration** · 71/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -495,11 +495,11 @@
   - ✅ **Gate:** Changes open maintenance work rather than silently inflate parity
 
 
-## 🧪 M8 — Verification, resilience and security acceptance — `█░░░░░░░░░ 14.3%`
+## 🧪 M8 — Verification, resilience and security acceptance — `██░░░░░░░░ 16.1%`
 
 **Scope:** MVP. **Acceptance gate:** Full offline and authorized live verification including malformed inputs, MCP interoperability and threat model.
 
-### 🧫 P22 — Deterministic tests — `████░░░░░░ 40.0%`
+### 🧫 P22 — Deterministic tests — `█████░░░░░ 45.0%`
 
 **Feature:** Offline QA.
 
@@ -515,8 +515,8 @@
   - ✅ **Gate:** Every advertised tool can be called with synthetic fixtures
 - 🛰️ **T173 — Exercise protected Streamable HTTP end-to-end** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Valid and invalid sessions checked over loopback
-- 🧹 **T174 — Enforce schema/roadmap ledger consistency in CI** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Progress bars and evidence checks regenerated reproducibly
+- 🧹 **T174 — Enforce schema/roadmap ledger consistency in CI** — `██████████ 100.0%`
+  - ✅ **Gate:** Progress bars and evidence checks regenerated reproducibly · **Evidence:** src/bin/synmetra-progress.rs and .github/workflows/ci.yml, GitHub Actions run 40199550979 (2026-10-25) passed Rust tests and verified 36-tool union, 227 task evidence states, and README/roadmap percentages; src/bin/synmetra-progress.rs regenerate_bars derives each task, phase, milestone and overall display bar directly from two evidence-backed acceptance checks, rejects inconsistent evidence, preserves editorial prose and is idempotent in bar_regeneration_is_idempotent_and_preserves_editorial_text. The opt-in --write-bars command updates README/ROADMAP; .github/workflows/ci.yml rebuilds the real 227-task bars and requires git diff --exit-code on both files, alongside normal inventory/evidence audits. GitHub Actions 40241555014 full core and DuckDB passed including actual no-diff regeneration.
 - ⏱️ **T175 — Validate timeouts retries backoff and rate limits** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Offline deterministic clock and throttled 429 tests
 - 🦀 **T176 — Pass rustfmt clippy and tests on clean environment** — `██████████ 100.0%`

@@ -3408,7 +3408,7 @@
               "id": "T174",
               "emoji": "🧹",
               "name": "Enforce schema/roadmap ledger consistency in CI",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Progress bars and evidence checks regenerated reproducibly",
               "checks": [
                 {
@@ -3418,7 +3418,8 @@
                 },
                 {
                   "text": "Progress bars and evidence checks regenerated reproducibly",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/bin/synmetra-progress.rs regenerate_bars derives each task, phase, milestone and overall display bar directly from two evidence-backed acceptance checks, rejects inconsistent evidence, preserves editorial prose and is idempotent in bar_regeneration_is_idempotent_and_preserves_editorial_text. The opt-in --write-bars command updates README/ROADMAP; .github/workflows/ci.yml rebuilds the real 227-task bars and requires git diff --exit-code on both files, alongside normal inventory/evidence audits. GitHub Actions 40241555014 full core and DuckDB passed including actual no-diff regeneration."
                 }
               ]
             },
