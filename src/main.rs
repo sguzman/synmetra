@@ -657,8 +657,9 @@ fn result_with_tabular_projection(
     response: Result<Value, ApiError>,
     controls: tabular::Controls,
     realtime: bool,
+    pagination: Option<&tabular::Pagination>,
 ) -> CallToolResult {
-    match response.and_then(|provider| tabular::project(&provider, controls, realtime)) {
+    match response.and_then(|provider| tabular::project(&provider, controls, realtime, pagination)) {
         Ok(projection) => {
             let payload = json!({"ok":true,"data":projection.data,"meta":projection.meta});
             let mut result = CallToolResult::success(vec![ContentBlock::text(payload.to_string())]);
@@ -1211,7 +1212,7 @@ impl Synmetra {
             .and_then(|effective_limit| {
                 google::property_name(&args.property_id)?;
                 let args_limit = effective_limit;
-                report_request(
+                let mut request = report_request(
                     Some(args.date_ranges),
                     args.dimensions,
                     args.metrics,
@@ -1228,7 +1229,16 @@ impl Synmetra {
                             Some(json!(args.return_property_quota)),
                         ),
                     ],
-                )
+                )?;
+                if controls.active() {
+                    tabular::prepare_historical(
+                        &mut request,
+                        &args.property_id,
+                        args.cursor.as_deref(),
+                        args.offset,
+                    )?;
+                }
+                Ok(request)
             });
         result(validation.map(|body| json!({"request":body, "provider_called":false})))
     }
@@ -1272,12 +1282,27 @@ impl Synmetra {
                 ),
             ],
         );
-        let response = match body {
-            Ok(body) => self.api.report(&args.property_id, body, false).await,
-            Err(error) => Err(error),
+        let (response, pagination) = match body {
+            Ok(mut body) => {
+                let page = if controls.active() {
+                    match tabular::prepare_historical(
+                        &mut body,
+                        &args.property_id,
+                        args.cursor.as_deref(),
+                        args.offset,
+                    ) {
+                        Ok(page) => Some(page),
+                        Err(error) => return result(Err(error)),
+                    }
+                } else {
+                    None
+                };
+                (self.api.report(&args.property_id, body, false).await, page)
+            }
+            Err(error) => (Err(error), None),
         };
         if controls.active() {
-            result_with_tabular_projection(response, controls, false)
+            result_with_tabular_projection(response, controls, false, pagination.as_ref())
         } else {
             result(response)
         }
@@ -1303,6 +1328,9 @@ impl Synmetra {
             max_cell_chars: args.max_cell_chars,
             cursor_supplied: args.cursor.is_some(),
         };
+        if controls.cursor_supplied {
+            return result(Err(ApiError::InvalidRequest));
+        }
         let effective_limit = match controls.request_limit(args.limit) {
             Ok(limit) => limit,
             Err(error) => return result(Err(error)),
@@ -1315,7 +1343,7 @@ impl Synmetra {
             Err(error) => Err(error),
         };
         if controls.active() {
-            result_with_tabular_projection(response, controls, true)
+            result_with_tabular_projection(response, controls, true, None)
         } else {
             result(response)
         }

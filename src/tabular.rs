@@ -5,11 +5,13 @@ use crate::google::ApiError;
 use rmcp::schemars::JsonSchema;
 use serde::Deserialize;
 use serde_json::{json, Map, Value};
+use sha2::{Digest, Sha256};
 use std::collections::HashSet;
 
 const DEFAULT_ROWS: usize = 100;
 const MAX_ROWS: usize = 1000;
 const MAX_CELL_CHARS: usize = 2048;
+const MAX_CURSOR_OFFSET: u64 = 10_000_000;
 
 #[derive(Debug, Clone, Copy, Deserialize, JsonSchema)]
 #[serde(rename_all = "lowercase")]
@@ -43,14 +45,14 @@ pub struct Controls {
 impl Controls {
     pub fn active(self) -> bool {
         self.output_mode.is_some()
+            || self.cursor_supplied
             || self.summary_only
             || self.max_rows.is_some()
             || self.max_cell_chars.is_some()
     }
 
     pub fn validate(self) -> Result<(), ApiError> {
-        if self.cursor_supplied
-            || self.max_rows.is_some_and(|n| n == 0 || n > MAX_ROWS)
+        if self.max_rows.is_some_and(|n| n == 0 || n > MAX_ROWS)
             || self
                 .max_cell_chars
                 .is_some_and(|n| n == 0 || n > MAX_CELL_CHARS)
@@ -77,6 +79,56 @@ pub struct Projection {
     pub data: Value,
     pub meta: Value,
 }
+
+pub struct Pagination {
+    pub query_hash: String,
+    pub offset: u64,
+}
+
+/// A continuation binds to the normalized property and query, never a row from a
+/// different filter/order. Paging fields are excluded so page sizes may change.
+pub fn prepare_historical(
+    request: &mut Value,
+    property_id: &str,
+    cursor: Option<&str>,
+    explicit_offset: Option<u64>,
+) -> Result<Pagination, ApiError> {
+    let property = crate::google::property_name(property_id)?;
+    let object = request.as_object_mut().ok_or(ApiError::InvalidRequest)?;
+    let mut query = object.clone();
+    query.remove("offset");
+    query.remove("limit");
+    let canonical = serde_json::to_vec(&json!({"property": property, "request": query}))
+        .map_err(|_| ApiError::InvalidRequest)?;
+    let query_hash = format!("{:x}", Sha256::digest(canonical));
+    let offset = if let Some(raw) = cursor {
+        if explicit_offset.is_some() || raw.len() > 100 {
+            return Err(ApiError::InvalidRequest);
+        }
+        let parts = raw.split(':').collect::<Vec<_>>();
+        if parts.len() != 3
+            || parts[0] != "v1"
+            || parts[1] != query_hash
+            || parts[2].is_empty()
+            || !parts[2].bytes().all(|byte| byte.is_ascii_digit())
+        {
+            return Err(ApiError::InvalidRequest);
+        }
+        parts[2].parse::<u64>().map_err(|_| ApiError::InvalidRequest)?
+    } else {
+        explicit_offset.unwrap_or(0)
+    };
+    if offset > MAX_CURSOR_OFFSET {
+        return Err(ApiError::InvalidRequest);
+    }
+    if offset > 0 || explicit_offset.is_some() {
+        object.insert("offset".to_owned(), json!(offset.to_string()));
+    } else {
+        object.remove("offset");
+    }
+    Ok(Pagination { query_hash, offset })
+}
+
 
 fn columns(response: &Value, header: &str, fallback: &str) -> Result<Vec<Value>, ApiError> {
     let headers = match response.get(header) {
@@ -120,6 +172,7 @@ pub fn project(
     provider: &Value,
     controls: Controls,
     realtime: bool,
+    pagination: Option<&Pagination>,
 ) -> Result<Projection, ApiError> {
     controls.validate()?;
     let provider = provider.as_object().ok_or(ApiError::InvalidResponse)?;
@@ -254,6 +307,16 @@ pub fn project(
         "columns": columns,
         "ga4": ga4
     });
+    if !realtime && row_count_total_known {
+        if let Some(page) = pagination {
+            meta["query_hash"] = json!(page.query_hash);
+            if let Some(next) = page.offset.checked_add(returned as u64) {
+                if returned > 0 && next < row_count_total as u64 && next <= MAX_CURSOR_OFFSET {
+                    meta["next_cursor"] = json!(format!("v1:{}:{next}", page.query_hash));
+                }
+            }
+        }
+    }
     if let Some(cell_cap) = controls.max_cell_chars {
         meta["cell_clipping"] = json!({
             "enabled": true,
@@ -266,7 +329,7 @@ pub fn project(
         meta["query_hints"] = json!([if realtime {
             "Realtime reports have no offset cursor; narrow filters or increase limit."
         } else {
-            "Cursor projection is not enabled; use provider-shaped offset/limit for pagination."
+            "Continue with meta.next_cursor if present, or provider-shaped offset/limit."
         }]);
     }
     Ok(Projection { data, meta })
@@ -302,7 +365,7 @@ mod tests {
 
     #[test]
     fn projections_keep_true_counts_and_upstream_quota() {
-        let rows = project(&fixture(), controls(), false).unwrap();
+        let rows = project(&fixture(), controls(), false, None).unwrap();
         assert_eq!(rows.data[0]["country"], "México");
         assert_eq!(rows.meta["row_count_total"], 3);
         assert_eq!(rows.meta["row_count_returned"], 1);
@@ -320,14 +383,14 @@ mod tests {
         let mut tuples = controls();
         tuples.output_mode = Some(OutputMode::Tuples);
         tuples.max_rows = Some(2);
-        assert_eq!(project(&fixture(), tuples, false).unwrap().data[1][1], "23");
+        assert_eq!(project(&fixture(), tuples, false, None).unwrap().data[1][1], "23");
 
         tuples.output_mode = Some(OutputMode::Scalar);
-        assert_eq!(project(&fixture(), tuples, false).unwrap().data, "México");
+        assert_eq!(project(&fixture(), tuples, false, None).unwrap().data, "México");
 
         tuples.output_mode = Some(OutputMode::Compact);
         assert_eq!(
-            project(&fixture(), tuples, false).unwrap().data["row_count"],
+            project(&fixture(), tuples, false, None).unwrap().data["row_count"],
             2
         );
     }
@@ -336,11 +399,11 @@ mod tests {
     fn summary_and_unicode_clipping_preserve_counts_without_row_payload() {
         let mut options = controls();
         options.max_cell_chars = Some(3);
-        let projected = project(&fixture(), options, true).unwrap();
+        let projected = project(&fixture(), options, true, None).unwrap();
         assert_eq!(projected.data[0]["country"], "Méx");
         assert_eq!(projected.meta["cell_clipping"]["clipped_cells"], 1);
         options.summary_only = true;
-        let summary = project(&fixture(), options, true).unwrap();
+        let summary = project(&fixture(), options, true, None).unwrap();
         assert!(summary.data.is_null());
         assert_eq!(summary.meta["row_count_returned"], 1);
         assert!(summary.meta["next_cursor"].is_null());
@@ -352,7 +415,7 @@ mod tests {
             "metricHeaders":[{"name":"activeUsers"}],
             "rows":[{"metricValues":[{"value":"12"}]}]
         });
-        let projected = project(&response, controls(), false).unwrap();
+        let projected = project(&response, controls(), false, None).unwrap();
         assert_eq!(projected.data[0]["activeUsers"], "12");
         assert_eq!(projected.meta["row_count_total"], 1);
         assert_eq!(projected.meta["row_count_total_known"], false);
@@ -362,7 +425,40 @@ mod tests {
             "metricHeaders":[{"name":"activeUsers"}],
             "rows":[{"dimensionValues":[{"value":"US"}],"metricValues":[{"value":"12"}]}]
         });
-        assert!(project(&duplicate, controls(), false).is_err());
+        assert!(project(&duplicate, controls(), false, None).is_err());
+    }
+
+    #[test]
+    fn historical_cursor_round_trip_enforces_query_hash_and_bounded_offset() {
+        let base = json!({
+            "dateRanges":[{"startDate":"yesterday","endDate":"today"}],
+            "dimensions":[{"name":"country"}],
+            "metrics":[{"name":"activeUsers"}],
+            "limit":"1"
+        });
+        let mut first = base.clone();
+        let one = prepare_historical(&mut first, "42", None, None).unwrap();
+        let projected = project(&fixture(), controls(), false, Some(&one)).unwrap();
+        let cursor = projected.meta["next_cursor"].as_str().unwrap().to_owned();
+        assert!(cursor.starts_with("v1:"));
+        assert!(cursor.ends_with(":1"));
+        let mut second = base.clone();
+        let two = prepare_historical(&mut second, "properties/42", Some(&cursor), None).unwrap();
+        assert_eq!(two.offset, 1);
+        assert_eq!(second["offset"], "1");
+        assert_eq!(one.query_hash, two.query_hash);
+        let third = project(&fixture(), controls(), false, Some(&two)).unwrap();
+        assert!(third.meta["next_cursor"].as_str().unwrap().ends_with(":2"));
+
+        let mut changed = base.clone();
+        changed["metrics"] = json!([{"name":"screenPageViews"}]);
+        assert!(prepare_historical(&mut changed, "42", Some(&cursor), None).is_err());
+        let mut mixed = base.clone();
+        assert!(prepare_historical(&mut mixed, "42", Some(&cursor), Some(1)).is_err());
+        let mut huge = base;
+        assert!(prepare_historical(&mut huge, "42", None, Some(MAX_CURSOR_OFFSET + 1)).is_err());
+        let mut malformed = first;
+        assert!(prepare_historical(&mut malformed, "42", Some("v1:broken:1"), None).is_err());
     }
 
     #[test]
@@ -376,9 +472,9 @@ mod tests {
         );
         options.max_rows = Some(1);
         options.cursor_supplied = true;
-        assert_eq!(options.validate(), Err(ApiError::InvalidRequest));
+        assert!(options.validate().is_ok());
         options.cursor_supplied = false;
-        assert!(project(&json!({"rows":[{}],"rowCount":1}), options, false).is_err());
-        assert!(project(&json!({"rows":[],"rowCount":-1}), options, false).is_err());
+        assert!(project(&json!({"rows":[{}],"rowCount":1}), options, false, None).is_err());
+        assert!(project(&json!({"rows":[],"rowCount":-1}), options, false, None).is_err());
     }
 }
