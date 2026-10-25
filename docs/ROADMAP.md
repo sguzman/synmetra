@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `████░░░░░░ 42.3%` · **+42.29 percentage points from initial empty repo; +0.22 pp from CI-tested isolated OAuth logout safety** · 78/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `████░░░░░░ 42.5%` · **+42.51 percentage points from initial empty repo; +0.22 pp from real authenticated HTTP session acceptance** · 79/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -495,11 +495,11 @@
   - ✅ **Gate:** Changes open maintenance work rather than silently inflate parity
 
 
-## 🧪 M8 — Verification, resilience and security acceptance — `██░░░░░░░░ 16.1%`
+## 🧪 M8 — Verification, resilience and security acceptance — `██░░░░░░░░ 17.9%`
 
 **Scope:** MVP. **Acceptance gate:** Full offline and authorized live verification including malformed inputs, MCP interoperability and threat model.
 
-### 🧫 P22 — Deterministic tests — `█████░░░░░ 45.0%`
+### 🧫 P22 — Deterministic tests — `█████░░░░░ 50.0%`
 
 **Feature:** Offline QA.
 
@@ -513,8 +513,8 @@
   - ✅ **Gate:** Normalized golden fixtures generated from pinned baseline
 - 🪟 **T172 — Exercise stdio tools under an MCP inspector** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Every advertised tool can be called with synthetic fixtures
-- 🛰️ **T173 — Exercise protected Streamable HTTP end-to-end** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Valid and invalid sessions checked over loopback
+- 🛰️ **T173 — Exercise protected Streamable HTTP end-to-end** — `██████████ 100.0%`
+  - ✅ **Gate:** Valid and invalid sessions checked over loopback · **Evidence:** Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.; src/http.rs authenticated_http_session_lists_and_calls_tools_but_rejects_invalid_sessions verifies a real Axum loopback HTTP server with rmcp legacy sessions, returned Mcp-Session-Id, initialized notification, authenticated tools/list (20 default read-only tools), successful ga4_get_started tools/call and structured payload, and rejection of unknown session, wrong bearer and wrong origin. mcp_json_response handles legacy SSE transport safely. GitHub Actions 40245367526 core and DuckDB passed. No live Google property was accessed; session termination/lifetime and modern stateless performance are separate hardening gates.
 - 🧹 **T174 — Enforce schema/roadmap ledger consistency in CI** — `██████████ 100.0%`
   - ✅ **Gate:** Progress bars and evidence checks regenerated reproducibly · **Evidence:** src/bin/synmetra-progress.rs and .github/workflows/ci.yml, GitHub Actions run 40199550979 (2026-10-25) passed Rust tests and verified 36-tool union, 227 task evidence states, and README/roadmap percentages; src/bin/synmetra-progress.rs regenerate_bars derives each task, phase, milestone and overall display bar directly from two evidence-backed acceptance checks, rejects inconsistent evidence, preserves editorial prose and is idempotent in bar_regeneration_is_idempotent_and_preserves_editorial_text. The opt-in --write-bars command updates README/ROADMAP; .github/workflows/ci.yml rebuilds the real 227-task bars and requires git diff --exit-code on both files, alongside normal inventory/evidence audits. GitHub Actions 40241555014 full core and DuckDB passed including actual no-diff regeneration.
 - ⏱️ **T175 — Validate timeouts retries backoff and rate limits** — `░░░░░░░░░░ 0.0%`

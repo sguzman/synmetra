@@ -3397,7 +3397,7 @@
               "id": "T173",
               "emoji": "🛰️",
               "name": "Exercise protected Streamable HTTP end-to-end",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Valid and invalid sessions checked over loopback",
               "checks": [
                 {
@@ -3407,7 +3407,8 @@
                 },
                 {
                   "text": "Valid and invalid sessions checked over loopback",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/http.rs authenticated_http_session_lists_and_calls_tools_but_rejects_invalid_sessions verifies a real Axum loopback HTTP server with rmcp legacy sessions, returned Mcp-Session-Id, initialized notification, authenticated tools/list (20 default read-only tools), successful ga4_get_started tools/call and structured payload, and rejection of unknown session, wrong bearer and wrong origin. mcp_json_response handles legacy SSE transport safely. GitHub Actions 40245367526 core and DuckDB passed. No live Google property was accessed; session termination/lifetime and modern stateless performance are separate hardening gates."
                 }
               ]
             },
