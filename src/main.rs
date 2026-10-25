@@ -1977,9 +1977,11 @@ mod tests {
         let historic: ScratchIngestReportArgs = serde_json::from_value(data.clone()).unwrap();
         assert!(historic.return_property_quota);
         let mut realtime_request = data;
-        realtime_request.as_object_mut().unwrap().remove("date_ranges");
-        let realtime: ScratchIngestRealtimeArgs =
-            serde_json::from_value(realtime_request).unwrap();
+        realtime_request
+            .as_object_mut()
+            .unwrap()
+            .remove("date_ranges");
+        let realtime: ScratchIngestRealtimeArgs = serde_json::from_value(realtime_request).unwrap();
         assert!(realtime.return_property_quota);
     }
 
