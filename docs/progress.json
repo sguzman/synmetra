@@ -2039,16 +2039,18 @@
               "id": "T105",
               "emoji": "💵",
               "name": "Preserve currency timezone and numeric precision",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "Typed metrics and currency metadata retained",
               "checks": [
                 {
                   "text": "Deliver preserve currency timezone and numeric precision as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs forwards caller-supplied currency_code as Google currencyCode in native standard, conversion and pivot requests, and forwards time_zone to Admin access report requests; src/google.rs access_report_request validates IANA-style zone syntax and report_currency_request_remains_exact_and_numeric_filter_is_not_rounded checks currency request mapping. src/tabular.rs retains provider metadata including currencyCode/timeZone and exact TYPE_CURRENCY column header type. CI 40237637016 passed core+native DuckDB."
                 },
                 {
                   "text": "Typed metrics and currency metadata retained",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/tabular.rs numeric_metric_precision_and_currency_metadata_survive_text_clipping reproduces loss of precision with long decimal metric strings under max_cell_chars, then verifies metric values are now kept byte-for-byte while Unicode dimension labels are clipped and meta.ga4.metadata retains currencyCode MXN and timeZone America/Mexico_City; meta.columns[*].ga4_type preserves TYPE_CURRENCY. src/google.rs access_reports_use_admin_field_names_and_reject_invalid_ranges tests forwarded timeZone. GitHub Actions 40237637016 passed fmt, Rust tests, strict Clippy, progress validation and DuckDB. No licensed live GA property validation is inferred."
                 }
               ]
             },

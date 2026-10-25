@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `████░░░░░░ 35.7%` · **+35.68 percentage points from initial empty repo; +0.44 pp from lossless input validation and correct last-page metadata** · 56/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `████░░░░░░ 36.1%` · **+36.12 percentage points from initial empty repo; +0.44 pp from verified currency, timezone and metric-precision preservation** · 57/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -245,7 +245,7 @@
   - ✅ **Gate:** No stale cross-principal cache confusion
 
 
-## 📊 M4 — Reporting, preflight and Data API parity — `███████░░░ 65.0%`
+## 📊 M4 — Reporting, preflight and Data API parity — `███████░░░ 68.3%`
 
 **Scope:** MVP. **Acceptance gate:** All report tools return correct GA4 semantics, including documented alpha, pagination and response projections.
 
@@ -289,7 +289,7 @@
 - 📝 **T097 — Normalize input values without silent coercion** — `██████████ 100.0%`
   - ✅ **Gate:** Lossless valid requests and typed invalid results · **Evidence:** src/google.rs: canonical normalization of dates and typed invalid-request rejection before Google API calls; synthetic unit tests passed GitHub Actions core 40212316165. Full filter and pivot coercion and live API parity remain open.; src/google.rs normalized_report_body_preserves_valid_inputs_and_rejects_ambiguous_values round-trips relative and leap-day dates, nested dimension filters, exact signed-64 metric values, ordering, dimensions and decimal string limits without silent coercion; invalid overflow, non-finite numbers, nonnumeric filter inputs and ambiguous date aliases yield typed INVALID_REQUEST. numeric_metric_filter_preserves_i64_edges_and_rejects_overflow adds signed boundary coverage. GitHub Actions 40237203370 passed core Rust tests, fmt, strict Clippy and native DuckDB. This does not certify Google's semantic validity for arbitrary field names.
 
-### 📐 P12 — Data request fidelity and limits — `█████░░░░░ 46.7%`
+### 📐 P12 — Data request fidelity and limits — `█████░░░░░ 53.3%`
 
 **Feature:** Reporting correctness.
 
@@ -307,8 +307,8 @@
   - ✅ **Gate:** Complex v1alpha funnel shapes round-trip
 - 🛒 **T104 — Support conversion and attribution reporting v1alpha** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Eligible and ineligible properties/errors tested
-- 💵 **T105 — Preserve currency timezone and numeric precision** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Typed metrics and currency metadata retained
+- 💵 **T105 — Preserve currency timezone and numeric precision** — `██████████ 100.0%`
+  - ✅ **Gate:** Typed metrics and currency metadata retained · **Evidence:** src/main.rs forwards caller-supplied currency_code as Google currencyCode in native standard, conversion and pivot requests, and forwards time_zone to Admin access report requests; src/google.rs access_report_request validates IANA-style zone syntax and report_currency_request_remains_exact_and_numeric_filter_is_not_rounded checks currency request mapping. src/tabular.rs retains provider metadata including currencyCode/timeZone and exact TYPE_CURRENCY column header type. CI 40237637016 passed core+native DuckDB.; src/tabular.rs numeric_metric_precision_and_currency_metadata_survive_text_clipping reproduces loss of precision with long decimal metric strings under max_cell_chars, then verifies metric values are now kept byte-for-byte while Unicode dimension labels are clipped and meta.ga4.metadata retains currencyCode MXN and timeZone America/Mexico_City; meta.columns[*].ga4_type preserves TYPE_CURRENCY. src/google.rs access_reports_use_admin_field_names_and_reject_invalid_ranges tests forwarded timeZone. GitHub Actions 40237637016 passed fmt, Rust tests, strict Clippy, progress validation and DuckDB. No licensed live GA property validation is inferred.
 - 📊 **T106 — Support output modes rows tuples scalar compact** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** All compatible result projections are predictable
 - ✂️ **T107 — Support row cell and request-size clipping** — `░░░░░░░░░░ 0.0%`
