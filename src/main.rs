@@ -1122,7 +1122,10 @@ impl Synmetra {
         &self,
         Parameters(args): Parameters<ScratchIngestReportArgs>,
     ) -> CallToolResult {
-        let scratch = self.scratchpad.as_ref().expect("scratchpad capability required");
+        let scratch = self
+            .scratchpad
+            .as_ref()
+            .expect("scratchpad capability required");
         if let Err(reason) = scratch.require_session(&args.session_id) {
             return local_result(Err(reason));
         }
@@ -1130,7 +1133,9 @@ impl Synmetra {
             return local_result(Err("GA4 ingest limit must be 1-1000".into()));
         }
         let body = report_request(
-            Some(args.date_ranges), args.dimensions, args.metrics,
+            Some(args.date_ranges),
+            args.dimensions,
+            args.metrics,
             vec![
                 ("dimensionFilter", args.dimension_filter),
                 ("metricFilter", args.metric_filter),
@@ -1138,7 +1143,10 @@ impl Synmetra {
                 ("limit", Some(json!(args.limit.unwrap_or(1000).to_string()))),
                 ("offset", args.offset.map(|v| json!(v.to_string()))),
                 ("currencyCode", args.currency_code.map(|v| json!(v))),
-                ("returnPropertyQuota", Some(json!(args.return_property_quota))),
+                (
+                    "returnPropertyQuota",
+                    Some(json!(args.return_property_quota)),
+                ),
             ],
         );
         let body = match body {
@@ -1147,7 +1155,10 @@ impl Synmetra {
         };
         match self.api.report(&args.property_id, body, false).await {
             Ok(data) => local_result(scratch.ingest_ga_response(
-                &args.session_id, &args.table_name, &data, args.append,
+                &args.session_id,
+                &args.table_name,
+                &data,
+                args.append,
             )),
             Err(error) => result(Err(error)),
         }
@@ -1166,7 +1177,10 @@ impl Synmetra {
         &self,
         Parameters(args): Parameters<ScratchIngestRealtimeArgs>,
     ) -> CallToolResult {
-        let scratch = self.scratchpad.as_ref().expect("scratchpad capability required");
+        let scratch = self
+            .scratchpad
+            .as_ref()
+            .expect("scratchpad capability required");
         if let Err(reason) = scratch.require_session(&args.session_id) {
             return local_result(Err(reason));
         }
@@ -1174,14 +1188,19 @@ impl Synmetra {
             return local_result(Err("GA4 ingest limit must be 1-1000".into()));
         }
         let body = report_request(
-            None, args.dimensions, args.metrics,
+            None,
+            args.dimensions,
+            args.metrics,
             vec![
                 ("dimensionFilter", args.dimension_filter),
                 ("metricFilter", args.metric_filter),
                 ("orderBys", args.order_bys.map(|v| json!(v))),
                 ("limit", Some(json!(args.limit.unwrap_or(1000).to_string()))),
                 ("offset", args.offset.map(|v| json!(v.to_string()))),
-                ("returnPropertyQuota", Some(json!(args.return_property_quota))),
+                (
+                    "returnPropertyQuota",
+                    Some(json!(args.return_property_quota)),
+                ),
             ],
         );
         let body = match body {
@@ -1190,12 +1209,14 @@ impl Synmetra {
         };
         match self.api.report(&args.property_id, body, true).await {
             Ok(data) => local_result(scratch.ingest_ga_response(
-                &args.session_id, &args.table_name, &data, args.append,
+                &args.session_id,
+                &args.table_name,
+                &data,
+                args.append,
             )),
             Err(error) => result(Err(error)),
         }
     }
-
 }
 
 #[tool_handler(
@@ -1602,18 +1623,39 @@ mod tests {
         use std::collections::BTreeSet;
         let reference: Value = serde_json::from_str(include_str!(
             "../spec/upstream/sednalabs-tool-schema.v1.json"
-        )).unwrap();
+        ))
+        .unwrap();
         let enabled = Synmetra::new(GoogleClient::new(None), false).enable_scratchpad();
-        for name in ["scratchpad_ingest_report", "scratchpad_ingest_realtime_report"] {
-            let upstream = reference["tools"].as_array().unwrap().iter()
-                .find(|tool| tool["name"] == name).unwrap();
-            let tool = enabled.router.list_all().into_iter()
-                .find(|tool| tool.name == name).unwrap();
+        for name in [
+            "scratchpad_ingest_report",
+            "scratchpad_ingest_realtime_report",
+        ] {
+            let upstream = reference["tools"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|tool| tool["name"] == name)
+                .unwrap();
+            let tool = enabled
+                .router
+                .list_all()
+                .into_iter()
+                .find(|tool| tool.name == name)
+                .unwrap();
             let expected: BTreeSet<_> = upstream["inputSchema"]["required"]
-                .as_array().into_iter().flatten().filter_map(Value::as_str).collect();
-            let actual: BTreeSet<_> = tool.input_schema.get("required")
-                .and_then(Value::as_array).into_iter().flatten()
-                .filter_map(Value::as_str).collect();
+                .as_array()
+                .into_iter()
+                .flatten()
+                .filter_map(Value::as_str)
+                .collect();
+            let actual: BTreeSet<_> = tool
+                .input_schema
+                .get("required")
+                .and_then(Value::as_array)
+                .into_iter()
+                .flatten()
+                .filter_map(Value::as_str)
+                .collect();
             assert_eq!(actual, expected, "{name} required-field schema drift");
         }
     }
@@ -1622,17 +1664,28 @@ mod tests {
     #[tokio::test]
     async fn ingest_mcp_preflights_local_session_before_google_api() {
         let server = Synmetra::new(GoogleClient::new(None), false).enable_scratchpad();
-        let result = server.scratchpad_ingest_realtime_report(Parameters(
-            ScratchIngestRealtimeArgs {
-                session_id: "missing".into(), table_name: "events".into(),
-                property_id: "42".into(), dimensions: vec!["country".into()],
-                metrics: vec!["activeUsers".into()], append: false,
-                limit: Some(10), offset: None, dimension_filter: None,
-                metric_filter: None, order_bys: None, return_property_quota: false,
-            }
-        )).await;
+        let result = server
+            .scratchpad_ingest_realtime_report(Parameters(ScratchIngestRealtimeArgs {
+                session_id: "missing".into(),
+                table_name: "events".into(),
+                property_id: "42".into(),
+                dimensions: vec!["country".into()],
+                metrics: vec!["activeUsers".into()],
+                append: false,
+                limit: Some(10),
+                offset: None,
+                dimension_filter: None,
+                metric_filter: None,
+                order_bys: None,
+                return_property_quota: false,
+            }))
+            .await;
         assert_eq!(result.is_error, Some(true));
-        assert!(result.content[0].as_text().unwrap().text.contains("session not found"));
+        assert!(result.content[0]
+            .as_text()
+            .unwrap()
+            .text
+            .contains("session not found"));
     }
 
     #[test]
