@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `███░░░░░░░ 33.0%` · **+33.04 percentage points from initial empty repo; +0.22 pp from verified GA compatibility preflight** · 45/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `███░░░░░░░ 33.7%` · **+33.70 percentage points from initial empty repo; +0.66 pp from CI-verified standard, realtime and conversion report tools** · 48/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -245,22 +245,22 @@
   - ✅ **Gate:** No stale cross-principal cache confusion
 
 
-## 📊 M4 — Reporting, preflight and Data API parity — `█████░░░░░ 45.0%`
+## 📊 M4 — Reporting, preflight and Data API parity — `█████░░░░░ 50.0%`
 
 **Scope:** MVP. **Acceptance gate:** All report tools return correct GA4 semantics, including documented alpha, pagination and response projections.
 
-### 📈 P10 — Report MCP tools — `█████░░░░░ 50.0%`
+### 📈 P10 — Report MCP tools — `███████░░░ 68.8%`
 
 **Feature:** Eight report tools.
 
-- 📊 **T083 — Implement run_report** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** MCP schema, Google request, golden output and error cases for run_report
-- 🛒 **T084 — Implement run_conversions_report** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** MCP schema, Google request, golden output and error cases for run_conversions_report
+- 📊 **T083 — Implement run_report** — `██████████ 100.0%`
+  - ✅ **Gate:** MCP schema, Google request, golden output and error cases for run_report · **Evidence:** src/main.rs implemented run_report MCP handler plus src/google.rs request route/validation; Rust unit and in-memory MCP tests passed Actions 40202015488; full upstream schema/live GA parity remains open; src/main.rs core_reporting_inputs_cover_pinned_contract_without_untracked_fields validates declared pinned argument names/required sets and deliberate keep_empty_rows union; historical_report_opt_in_projection_preserves_metadata_and_previews_offline and historical_cursor_pages_remain_query_bound_and_never_repeat_rows validate Google request paths, golden row/metadata and cursor behavior; historical_and_realtime_report_denials_are_redacted_and_stable verifies HTTP 403/429 errors without bearer leaks. GitHub Actions 40234385460 core passed tests, fmt, strict Clippy, ledger. This does not certify live Google or every upstream field representation.
+- 🛒 **T084 — Implement run_conversions_report** — `██████████ 100.0%`
+  - ✅ **Gate:** MCP schema, Google request, golden output and error cases for run_conversions_report · **Evidence:** src/main.rs implemented run_conversions_report MCP handler plus src/google.rs request route/validation; Rust unit and in-memory MCP tests passed Actions 40202015488; full upstream schema/live GA parity remains open; src/main.rs conversion_spec_schema_advertises_pinned_action_and_attribution_fields and core_reporting_inputs_cover_pinned_contract_without_untracked_fields test typed conversion_spec/action and full pinned field inventory, required fields and quota default; conversion_report_opt_in_projection_uses_alpha_endpoint_and_bounded_response verifies the v1alpha request and golden projected response; conversion_report_denial_and_invalid_spec_fail_without_sensitive_output verifies offline malformed-action rejection and redacted HTTP 403. GitHub Actions 40234385460 core passed. Upstream field-format exactness and authorized live GA remain distinct gates.
 - 🚦 **T085 — Implement run_funnel_report** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** MCP schema, Google request, golden output and error cases for run_funnel_report
-- ⚡ **T086 — Implement run_realtime_report** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** MCP schema, Google request, golden output and error cases for run_realtime_report
+- ⚡ **T086 — Implement run_realtime_report** — `██████████ 100.0%`
+  - ✅ **Gate:** MCP schema, Google request, golden output and error cases for run_realtime_report · **Evidence:** src/main.rs implemented run_realtime_report MCP handler plus src/google.rs request route/validation; Rust unit and in-memory MCP tests passed Actions 40202015488; full upstream schema/live GA parity remains open; src/main.rs core_reporting_inputs_cover_pinned_contract_without_untracked_fields and realtime_official_optional_arguments_are_declared_and_ordering_is_forwarded verify MCP field inventories and ordering; realtime_mcp_retains_provider_quota_without_fabricating_a_next_cursor verifies golden Google response, quota and no fabricated cursor; realtime_nonzero_offset_has_stable_preflight_error plus historical_and_realtime_report_denials_are_redacted_and_stable verify unsupported offset and HTTP 403/429 category/status without secrets. GitHub Actions 40234385460 core passed. Official live Google and all-tool contract parity are separately unaccepted.
 - 🧩 **T087 — Implement run_pivot_report** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** MCP schema, Google request, golden output and error cases for run_pivot_report
 - 📦 **T088 — Implement batch_run_reports** — `█████░░░░░ 50.0%`

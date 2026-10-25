@@ -1616,7 +1616,7 @@
               "id": "T083",
               "emoji": "📊",
               "name": "Implement run_report",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "MCP schema, Google request, golden output and error cases for run_report",
               "checks": [
                 {
@@ -1626,7 +1626,8 @@
                 },
                 {
                   "text": "MCP schema, Google request, golden output and error cases for run_report",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs core_reporting_inputs_cover_pinned_contract_without_untracked_fields validates declared pinned argument names/required sets and deliberate keep_empty_rows union; historical_report_opt_in_projection_preserves_metadata_and_previews_offline and historical_cursor_pages_remain_query_bound_and_never_repeat_rows validate Google request paths, golden row/metadata and cursor behavior; historical_and_realtime_report_denials_are_redacted_and_stable verifies HTTP 403/429 errors without bearer leaks. GitHub Actions 40234385460 core passed tests, fmt, strict Clippy, ledger. This does not certify live Google or every upstream field representation."
                 }
               ]
             },
@@ -1634,7 +1635,7 @@
               "id": "T084",
               "emoji": "🛒",
               "name": "Implement run_conversions_report",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "MCP schema, Google request, golden output and error cases for run_conversions_report",
               "checks": [
                 {
@@ -1644,7 +1645,8 @@
                 },
                 {
                   "text": "MCP schema, Google request, golden output and error cases for run_conversions_report",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs conversion_spec_schema_advertises_pinned_action_and_attribution_fields and core_reporting_inputs_cover_pinned_contract_without_untracked_fields test typed conversion_spec/action and full pinned field inventory, required fields and quota default; conversion_report_opt_in_projection_uses_alpha_endpoint_and_bounded_response verifies the v1alpha request and golden projected response; conversion_report_denial_and_invalid_spec_fail_without_sensitive_output verifies offline malformed-action rejection and redacted HTTP 403. GitHub Actions 40234385460 core passed. Upstream field-format exactness and authorized live GA remain distinct gates."
                 }
               ]
             },
@@ -1670,7 +1672,7 @@
               "id": "T086",
               "emoji": "⚡",
               "name": "Implement run_realtime_report",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "MCP schema, Google request, golden output and error cases for run_realtime_report",
               "checks": [
                 {
@@ -1680,7 +1682,8 @@
                 },
                 {
                   "text": "MCP schema, Google request, golden output and error cases for run_realtime_report",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs core_reporting_inputs_cover_pinned_contract_without_untracked_fields and realtime_official_optional_arguments_are_declared_and_ordering_is_forwarded verify MCP field inventories and ordering; realtime_mcp_retains_provider_quota_without_fabricating_a_next_cursor verifies golden Google response, quota and no fabricated cursor; realtime_nonzero_offset_has_stable_preflight_error plus historical_and_realtime_report_denials_are_redacted_and_stable verify unsupported offset and HTTP 403/429 category/status without secrets. GitHub Actions 40234385460 core passed. Official live Google and all-tool contract parity are separately unaccepted."
                 }
               ]
             },
