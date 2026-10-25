@@ -61,7 +61,7 @@ impl Synmetra {
 }
 
 #[cfg(feature = "scratchpad")]
-const SCRATCHPAD_TOOL_NAMES: [&str; 13] = [
+const SCRATCHPAD_TOOL_NAMES: [&str; 14] = [
     "scratchpad_open_session",
     "scratchpad_close_session",
     "scratchpad_list_sessions",
@@ -75,6 +75,7 @@ const SCRATCHPAD_TOOL_NAMES: [&str; 13] = [
     "scratchpad_ingest_report",
     "scratchpad_ingest_realtime_report",
     "scratchpad_query",
+    "scratchpad_release_regression_report",
 ];
 
 #[cfg(feature = "scratchpad")]
@@ -190,6 +191,34 @@ struct ScratchQueryArgs {
     max_rows: Option<usize>,
     #[serde(default)]
     max_cell_chars: Option<usize>,
+    #[serde(default)]
+    summary_only: bool,
+    #[serde(default)]
+    output_mode: Option<String>,
+    #[serde(default)]
+    cursor: Option<String>,
+}
+
+#[cfg(feature = "scratchpad")]
+#[derive(Debug, Deserialize, JsonSchema)]
+struct ScratchReleaseArgs {
+    session_id: String,
+    table_name: String,
+    release_date: String,
+    anchor_event: String,
+    comparison_event: String,
+    #[serde(default)]
+    date_column: Option<String>,
+    #[serde(default)]
+    event_column: Option<String>,
+    #[serde(default)]
+    metric_column: Option<String>,
+    #[serde(default)]
+    pre_days: Option<u32>,
+    #[serde(default)]
+    transition_days: Option<u32>,
+    #[serde(default)]
+    post_days: Option<u32>,
     #[serde(default)]
     summary_only: bool,
     #[serde(default)]
@@ -1268,6 +1297,37 @@ impl Synmetra {
                 ),
         )
     }
+    #[tool(
+        description = "Compare pre/post release anchor and baseline event ratios from one private DuckDB table. Heuristic only; no causal claims.",
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = false
+        )
+    )]
+    fn scratchpad_release_regression_report(
+        &self,
+        Parameters(args): Parameters<ScratchReleaseArgs>,
+    ) -> CallToolResult {
+        if args.cursor.is_some() || args.output_mode.as_deref().is_some_and(|m| m != "rows") {
+            return local_result(Err("Release diagnostics do not yet support cursors or alternate output modes".into()));
+        }
+        let config = scratchpad::ReleaseRegressionConfig {
+            session_id: args.session_id, table_name: args.table_name,
+            release_date: args.release_date, anchor_event: args.anchor_event,
+            comparison_event: args.comparison_event, date_column: args.date_column,
+            event_column: args.event_column, metric_column: args.metric_column,
+            pre_days: args.pre_days, transition_days: args.transition_days,
+            post_days: args.post_days,
+        };
+        let _summary_only = args.summary_only;
+        local_result(
+            self.scratchpad.as_ref().expect("scratchpad capability required")
+                .release_regression(&config)
+        )
+    }
+
 }
 
 #[tool_handler(
@@ -1663,9 +1723,30 @@ mod tests {
         let base = Synmetra::new(GoogleClient::new(None), false);
         assert_eq!(base.router.list_all().len(), 20);
         let enabled = base.enable_scratchpad();
-        assert_eq!(enabled.router.list_all().len(), 33);
+        assert_eq!(enabled.router.list_all().len(), 34);
         assert!(enabled.router.has_route("scratchpad_drop_table"));
         assert!(!enabled.router.has_route("create_property_annotation"));
+    }
+
+    #[cfg(feature = "scratchpad")]
+    #[test]
+    fn release_regression_has_upstream_required_inputs_and_read_only_hint() {
+        use std::collections::BTreeSet;
+        let upstream: Value = serde_json::from_str(
+            include_str!("../spec/upstream/sednalabs-tool-schema.v1.json")
+        ).unwrap();
+        let reference = upstream["tools"].as_array().unwrap().iter()
+            .find(|x| x["name"]=="scratchpad_release_regression_report").unwrap();
+        let server = Synmetra::new(GoogleClient::new(None),false).enable_scratchpad();
+        let tool=server.router.list_all().into_iter()
+            .find(|x| x.name=="scratchpad_release_regression_report").unwrap();
+        let expected:BTreeSet<_>=reference["inputSchema"]["required"].as_array()
+            .into_iter().flatten().filter_map(Value::as_str).collect();
+        let actual:BTreeSet<_>=tool.input_schema.get("required")
+            .and_then(Value::as_array).into_iter().flatten()
+            .filter_map(Value::as_str).collect();
+        assert_eq!(expected,actual);
+        assert_eq!(tool.annotations.as_ref().unwrap().read_only_hint,Some(true));
     }
 
     #[cfg(feature = "scratchpad")]
