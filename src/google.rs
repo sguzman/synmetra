@@ -962,7 +962,7 @@ mod tests {
         assert_eq!(country["filter"]["fieldName"], "country");
         assert_eq!(country["filter"]["stringFilter"]["value"], "Mexico");
         let channel = normalize_report_filter(
-            json!("sessionDefaultChannelGroup==\\\"Paid Other\\\""), false
+            json!("sessionDefaultChannelGroup==\"Paid Other\""), false
         ).unwrap();
         assert_eq!(channel["filter"]["stringFilter"]["value"], "Paid Other");
         let count = normalize_report_filter(json!("sessions==7"), true).unwrap();
@@ -978,11 +978,11 @@ mod tests {
         for raw in [
             "country=Mexico", "country==Paid Other", "country==",
             "country-name==Mexico", "country==Mexico==US",
-            "country==\\\"unterminated", "country==\\\"x\\\"y",
+            "country==\"unterminated", "country==\"x\"y",
         ] {
             assert!(normalize_report_filter(json!(raw), false).is_err(), "{raw}");
         }
-        assert!(normalize_report_filter(json!("sessions==\\\"7\\\""), true).is_err());
+        assert!(normalize_report_filter(json!("sessions==\"7\""), true).is_err());
         assert!(normalize_report_filter(json!("sessions==NaN"), true).is_err());
         assert!(normalize_report_filter(json!("sessions==infinity"), true).is_err());
     }
