@@ -313,6 +313,28 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(bad_origin.status(), StatusCode::UNAUTHORIZED);
+
+        let terminated = client
+            .delete(&endpoint)
+            .header(header::AUTHORIZATION, format!("Bearer {token}"))
+            .header(header::ORIGIN, &origin)
+            .header("mcp-protocol-version", "2025-11-25")
+            .header("mcp-session-id", &session)
+            .send()
+            .await
+            .unwrap();
+        assert!(
+            terminated.status().is_success(),
+            "Authenticated legacy session DELETE must terminate its session"
+        );
+        let after_logout = request(
+            json!({"jsonrpc":"2.0","id":7,"method":"tools/list","params":{}}),
+            &session,
+        )
+        .send()
+        .await
+        .unwrap();
+        assert_eq!(after_logout.status(), StatusCode::NOT_FOUND);
         task.abort();
     }
 
