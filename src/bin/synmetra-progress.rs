@@ -27,6 +27,95 @@ fn bar(value: f64) -> String {
     )
 }
 
+/// Refresh only the bar on a uniquely matched Markdown line.
+fn update_bar(markdown: &mut String, marker: &str, progress: f64) -> Result<(), String> {
+    let mut count = 0;
+    let mut result = String::with_capacity(markdown.len());
+    for line in markdown.split_inclusive('\n') {
+        if !line.contains(marker) {
+            result.push_str(line);
+            continue;
+        }
+        count += 1;
+        let start = line.find('`').ok_or_else(|| format!("{marker}: missing opening bar"))?;
+        let suffix = &line[start + 1..];
+        let end = suffix.find('`').ok_or_else(|| format!("{marker}: missing closing bar"))?;
+        result.push_str(&line[..start + 1]);
+        result.push_str(&bar(progress));
+        result.push_str(&suffix[end..]);
+    }
+    if count != 1 {
+        return Err(format!("{marker}: expected one Markdown marker, found {count}"));
+    }
+    *markdown = result;
+    Ok(())
+}
+
+fn regenerate_bars(
+    ledger: &Value,
+    source_roadmap: &str,
+    source_readme: &str,
+) -> Result<(String, String), String> {
+    let mut roadmap = source_roadmap.to_owned();
+    let mut readme = source_readme.to_owned();
+    let mut overall = Vec::new();
+    for milestone in array(ledger, "milestones") {
+        let mut milestones = Vec::new();
+        for phase in array(milestone, "phases") {
+            let mut phases = Vec::new();
+            for task in array(phase, "tasks") {
+                let checks = array(task, "checks");
+                if checks.len() != 2 {
+                    return Err(format!("{}: expected two checks", field(task, "id")));
+                }
+                let mut accepted = 0;
+                for c in checks {
+                    let passed = c["passed"] == true;
+                    let evidenced = !field(c, "evidence").trim().is_empty();
+                    if passed != evidenced {
+                        return Err(format!("{}: evidence mismatch", field(task, "id")));
+                    }
+                    if passed {
+                        accepted += 1;
+                    }
+                }
+                let value = accepted as f64 * 50.0;
+                if (task["progress"].as_f64().unwrap_or(-1.0) - value).abs() > 0.005 {
+                    return Err(format!("{}: stored progress drift", field(task, "id")));
+                }
+                update_bar(
+                    &mut roadmap,
+                    &format!("**{} — {}** —", field(task, "id"), field(task, "name")),
+                    value,
+                )?;
+                phases.push(value);
+                milestones.push(value);
+                overall.push(value);
+            }
+            update_bar(
+                &mut roadmap,
+                &format!("{} — {} —", field(phase, "id"), field(phase, "name")),
+                round_two(phases.iter().sum::<f64>() / phases.len().max(1) as f64),
+            )?;
+        }
+        let value = round_two(milestones.iter().sum::<f64>() / milestones.len().max(1) as f64);
+        update_bar(
+            &mut roadmap,
+            &format!("{} — {} —", field(milestone, "id"), field(milestone, "name")),
+            value,
+        )?;
+        update_bar(
+            &mut readme,
+            &format!("{} {} |", field(milestone, "id"), field(milestone, "name")),
+            value,
+        )?;
+    }
+    let value = round_two(overall.iter().sum::<f64>() / overall.len().max(1) as f64);
+    update_bar(&mut roadmap, "**Overall:**", value)?;
+    update_bar(&mut readme, "**Overall:**", value)?;
+    Ok((roadmap, readme))
+}
+
 fn check(ok: bool, message: String, errors: &mut Vec<String>) {
     if !ok {
         errors.push(message);
@@ -40,8 +129,20 @@ fn main() -> Result<(), Box<dyn Error>> {
     let sedna_schema: Value = serde_json::from_str(&fs::read_to_string(
         "spec/upstream/sednalabs-tool-schema.v1.json",
     )?)?;
-    let roadmap = fs::read_to_string("docs/ROADMAP.md")?;
-    let readme = fs::read_to_string("README.md")?;
+    let mut roadmap = fs::read_to_string("docs/ROADMAP.md")?;
+    let mut readme = fs::read_to_string("README.md")?;
+    let args = std::env::args().skip(1).collect::<Vec<_>>();
+    if !args.is_empty() {
+        if args.as_slice() != ["--write-bars"] {
+            return Err("Usage: synmetra-progress [--write-bars]".into());
+        }
+        let (new_roadmap, new_readme) =
+            regenerate_bars(&ledger, &roadmap, &readme)?;
+        fs::write("docs/ROADMAP.md", &new_roadmap)?;
+        fs::write("README.md", &new_readme)?;
+        roadmap = new_roadmap;
+        readme = new_readme;
+    }
     let issue_index = fs::read_to_string("docs/ISSUES.md")?;
     let mut errors = Vec::<String>::new();
     let mut ids = HashSet::<String>::new();
