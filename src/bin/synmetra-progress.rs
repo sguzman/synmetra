@@ -37,6 +37,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     std::env::set_current_dir(env!("CARGO_MANIFEST_DIR"))?;
     let ledger: Value = serde_json::from_str(&fs::read_to_string("docs/progress.json")?)?;
     let catalog: Value = serde_json::from_str(&fs::read_to_string("docs/tool-inventory.json")?)?;
+    let sedna_schema: Value = serde_json::from_str(&fs::read_to_string("spec/upstream/sednalabs-tool-schema.v1.json")?)?;
     let roadmap = fs::read_to_string("docs/ROADMAP.md")?;
     let readme = fs::read_to_string("README.md")?;
     let issue_index = fs::read_to_string("docs/ISSUES.md")?;
@@ -139,6 +140,20 @@ fn main() -> Result<(), Box<dyn Error>> {
         .filter_map(Value::as_str)
         .map(str::to_owned)
         .collect();
+    let snapshot: HashSet<String> = array(&sedna_schema, "tools")
+        .iter()
+        .map(|tool| field(tool, "name").to_owned())
+        .collect();
+    check(
+        field(&sedna_schema, "schema") == "mcp_tool_schema_snapshot",
+        "Pinned SednaLabs schema fixture format drift".into(),
+        &mut errors,
+    );
+    check(
+        snapshot == sedna && array(&sedna_schema, "tools").len() == 35,
+        "Pinned SednaLabs input schemas do not match the audited 35-tool union".into(),
+        &mut errors,
+    );
     let wanted: HashSet<String> = official.union(&sedna).cloned().collect();
     let listed: HashSet<String> = array(&catalog["union"], "tools")
         .iter()
