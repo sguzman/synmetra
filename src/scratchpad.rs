@@ -367,9 +367,7 @@ impl ScratchState {
                 })
                 .collect::<Vec<_>>()
                 .join(", ");
-            let query = format!(
-                "SELECT {projection} FROM \"{name}\" LIMIT {sample_limit}"
-            );
+            let query = format!("SELECT {projection} FROM \"{name}\" LIMIT {sample_limit}");
             let samples: Vec<Value> = if sample_limit == 0 {
                 Vec::new()
             } else {
