@@ -510,6 +510,16 @@ struct PivotArgs {
     keep_empty_rows: Option<bool>,
     #[serde(default = "default_return_property_quota")]
     return_property_quota: bool,
+    #[serde(default)]
+    max_rows: Option<usize>,
+    #[serde(default)]
+    max_cell_chars: Option<usize>,
+    #[serde(default)]
+    summary_only: bool,
+    #[serde(default)]
+    output_mode: Option<tabular::OutputMode>,
+    #[serde(default)]
+    cursor: Option<String>,
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
@@ -1164,6 +1174,21 @@ impl Synmetra {
         )
     )]
     async fn run_pivot_report(&self, Parameters(args): Parameters<PivotArgs>) -> CallToolResult {
+        let controls = tabular::Controls {
+            output_mode: args.output_mode,
+            summary_only: args.summary_only,
+            max_rows: args.max_rows,
+            max_cell_chars: args.max_cell_chars,
+            cursor_supplied: args.cursor.is_some(),
+        };
+        // Google controls pivot offsets inside each pivot definition; never
+        // pretend a flat historical report cursor can resume the pivot axes.
+        if controls.cursor_supplied {
+            return result(Err(ApiError::InvalidRequest));
+        }
+        if let Err(error) = controls.validate() {
+            return result(Err(error));
+        }
         let body = if args.pivots.is_empty()
             || args.pivots.len() > 4
             || args
@@ -1191,14 +1216,19 @@ impl Synmetra {
                 ],
             )
         };
-        result(match body {
+        let response = match body {
             Ok(body) => {
                 self.api
                     .data_operation(&args.property_id, body, "runPivotReport")
                     .await
             }
             Err(error) => Err(error),
-        })
+        };
+        if controls.active() {
+            result_with_tabular_projection(response, controls, false, None)
+        } else {
+            result(response)
+        }
     }
 
     #[tool(
@@ -2764,6 +2794,71 @@ mod tests {
         assert_eq!(payload["meta"]["row_count_returned"], 1);
         assert!(payload["meta"]["next_cursor"].as_str().is_some());
         assert!(!payload.to_string().contains("mock-private-token"));
+    }
+
+    #[tokio::test]
+    async fn pivot_report_projection_keeps_pivot_header_metadata_without_fake_cursor() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        use tokio::net::TcpListener;
+
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let endpoint = format!("http://{}", listener.local_addr().unwrap());
+        let responder = tokio::spawn(async move {
+            let (mut stream, _) = listener.accept().await.unwrap();
+            let mut buffer = [0u8; 4096];
+            let n = stream.read(&mut buffer).await.unwrap();
+            let request = String::from_utf8_lossy(&buffer[..n]);
+            assert!(request.contains("properties/42:runPivotReport"));
+            assert!(request.contains(r#""pivots":[{"fieldNames":["country"],"limit":"2"}]"#));
+            let body = json!({
+                "dimensionHeaders":[{"name":"country"}],
+                "metricHeaders":[{"name":"activeUsers"}],
+                "pivotHeaders":[{"pivotDimensionHeaders":[],"rowCount":2}],
+                "rows":[{"dimensionValues":[{"value":"US"}],"metricValues":[{"value":"3"}]}],
+                "rowCount":2
+            })
+            .to_string();
+            let reply = format!(
+                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                body.len(),
+                body
+            );
+            stream.write_all(reply.as_bytes()).await.unwrap();
+        });
+        let server = Synmetra::new(
+            GoogleClient::with_endpoints(Some("pivot-fixture-token".into()), &endpoint, &endpoint),
+            false,
+        );
+        let base = json!({
+            "property_id":42,
+            "date_ranges":[{"start_date":"yesterday","end_date":"today"}],
+            "dimensions":["country"],
+            "metrics":["activeUsers"],
+            "pivots":[{"fieldNames":["country"],"limit":"2"}],
+            "max_rows":1,
+            "output_mode":"rows"
+        });
+        let args: PivotArgs = serde_json::from_value(base.clone()).unwrap();
+        let response = server.run_pivot_report(Parameters(args)).await;
+        responder.await.unwrap();
+        assert_eq!(response.is_error, Some(false));
+        let payload = response.structured_content.unwrap();
+        assert_eq!(payload["data"][0]["country"], "US");
+        assert_eq!(payload["meta"]["ga4"]["pivotHeaders"][0]["rowCount"], 2);
+        assert_eq!(payload["meta"]["row_count_total"], 2);
+        assert!(payload["meta"]["next_cursor"].is_null());
+        assert!(!payload.to_string().contains("pivot-fixture-token"));
+
+        let mut invalid = base;
+        invalid["cursor"] = json!("v1:wrong:1");
+        let rejected = Synmetra::new(GoogleClient::new(None), false)
+            .run_pivot_report(Parameters(serde_json::from_value(invalid).unwrap()))
+            .await;
+        assert_eq!(rejected.is_error, Some(true));
+        assert_eq!(
+            rejected.structured_content.unwrap()["error"]["code"],
+            "INVALID_REQUEST"
+        );
     }
 
     #[tokio::test]
