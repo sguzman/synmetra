@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `████░░░░░░ 35.2%` · **+35.24 percentage points from initial empty repo; +0.44 pp from verified provider aggregate and row-count preservation** · 54/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `████░░░░░░ 35.7%` · **+35.68 percentage points from initial empty repo; +0.44 pp from lossless input validation and correct last-page metadata** · 56/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -245,7 +245,7 @@
   - ✅ **Gate:** No stale cross-principal cache confusion
 
 
-## 📊 M4 — Reporting, preflight and Data API parity — `██████░░░░ 61.7%`
+## 📊 M4 — Reporting, preflight and Data API parity — `███████░░░ 65.0%`
 
 **Scope:** MVP. **Acceptance gate:** All report tools return correct GA4 semantics, including documented alpha, pagination and response projections.
 
@@ -270,7 +270,7 @@
 - 👥 **T090 — Implement run_account_access_report** — `██████████ 100.0%`
   - ✅ **Gate:** MCP schema, Google request, golden output and error cases for run_account_access_report · **Evidence:** src/main.rs implemented run_account_access_report MCP handler plus src/google.rs request route/validation; Rust unit and in-memory MCP tests passed Actions 40202015488; full upstream schema/live GA parity remains open; src/main.rs admin_access_mcp_inputs_cover_pinned_fields_and_required_sets verifies complete SednaLabs account access MCP input inventory, required set, and uint64 limit. admin_access_reports_project_named_fields_and_redact_google_denials uses local Admin API HTTP mocks for both resource types to test POST routing, GA dimensionName/metricName fields, stable golden rows, bounded totals and v1 continuation, and redacted HTTP 403 provider errors. src/tabular.rs admin_access_headers_and_resource_boundaries_have_distinct_cursors verifies account/property cursor fingerprints cannot be reused across resource types. GitHub Actions 40235752963 core passed formatting, tests, strict Clippy. Admin privileges and live Google acceptance remain separate.
 
-### 🧭 P11 — Preflight MCP tools — `██████░░░░ 57.1%`
+### 🧭 P11 — Preflight MCP tools — `██████░░░░ 64.3%`
 
 **Feature:** Preflight and metadata.
 
@@ -286,10 +286,10 @@
   - ✅ **Gate:** Multiple ranges and dates behave as Google expects · **Evidence:** src/google.rs: normalize_date_ranges validates ISO calendar dates and relative date forms, rejects reversed, unknown or invalid ranges and canonicalizes snake_case, used by historical, funnel and Admin report requests. Synthetic tests date_ranges_preserve_relative_dates_and_normalize_snake_case and date_ranges_reject_invalid_dates_and_unknown_fields passed GitHub Actions core run 40212316165; provider-wide acceptance remains open.; src/google.rs four_historical_date_ranges_round_trip_and_a_fifth_is_rejected verifies four independently named/relative/absolute/leap-day intervals normalize and round-trip correctly, fifth range and invalid/reversed/duplicate-alias/empty-name inputs fail with INVALID_REQUEST. Earlier date_ranges_preserve_relative_dates_and_normalize_snake_case and date_ranges_reject_invalid_dates_and_unknown_fields extend the cases; GitHub Actions 40228846409 core and DuckDB jobs passed. Authorized live Google Data API validation remains a separate acceptance gate.
 - 🧮 **T096 — Implement metric and dimension compatibility checks** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Invalid combinations handled before expensive calls
-- 📝 **T097 — Normalize input values without silent coercion** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Lossless valid requests and typed invalid results
+- 📝 **T097 — Normalize input values without silent coercion** — `██████████ 100.0%`
+  - ✅ **Gate:** Lossless valid requests and typed invalid results · **Evidence:** src/google.rs: canonical normalization of dates and typed invalid-request rejection before Google API calls; synthetic unit tests passed GitHub Actions core 40212316165. Full filter and pivot coercion and live API parity remain open.; src/google.rs normalized_report_body_preserves_valid_inputs_and_rejects_ambiguous_values round-trips relative and leap-day dates, nested dimension filters, exact signed-64 metric values, ordering, dimensions and decimal string limits without silent coercion; invalid overflow, non-finite numbers, nonnumeric filter inputs and ambiguous date aliases yield typed INVALID_REQUEST. numeric_metric_filter_preserves_i64_edges_and_rejects_overflow adds signed boundary coverage. GitHub Actions 40237203370 passed core Rust tests, fmt, strict Clippy and native DuckDB. This does not certify Google's semantic validity for arbitrary field names.
 
-### 📐 P12 — Data request fidelity and limits — `████░░░░░░ 43.3%`
+### 📐 P12 — Data request fidelity and limits — `█████░░░░░ 46.7%`
 
 **Feature:** Reporting correctness.
 
@@ -313,8 +313,8 @@
   - ✅ **Gate:** All compatible result projections are predictable
 - ✂️ **T107 — Support row cell and request-size clipping** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Limits protect context without hiding truncation metadata
-- 📋 **T108 — Support summary-only responses and total known flags** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Counts and partial results are never misrepresented · **Evidence (partial):** src/tabular.rs provides opt-in summary_only responses with data=null, explicit row_count_total_known flag, truthful row_count_returned/truncated and no fabricated next_cursor; src/main.rs wires this to run_report/run_realtime_report and preview. Tests projections_keep_true_counts_and_upstream_quota, summary_and_unicode_clipping_preserve_counts_without_row_payload, unknown_total_is_marked_unknown_and_metric_only_reports_are_valid plus mock integration passed GitHub Actions 40230044045 full CI. Remaining all-tool output controls and stable historical cursors are open.
+- 📋 **T108 — Support summary-only responses and total known flags** — `██████████ 100.0%`
+  - ✅ **Gate:** Counts and partial results are never misrepresented · **Evidence:** src/tabular.rs provides opt-in summary_only responses with data=null, explicit row_count_total_known flag, truthful row_count_returned/truncated and no fabricated next_cursor; src/main.rs wires this to run_report/run_realtime_report and preview. Tests projections_keep_true_counts_and_upstream_quota, summary_and_unicode_clipping_preserve_counts_without_row_payload, unknown_total_is_marked_unknown_and_metric_only_reports_are_valid plus mock integration passed GitHub Actions 40230044045 full CI. Remaining all-tool output controls and stable historical cursors are open.; src/tabular.rs historical_last_page_is_not_marked_truncated_and_accepts_string_totals fixes the verified last-page offset bug, distinguishes string provider rowCount from unknown totals, keeps returned-count honest and suppresses continuation only at true final page. summary_and_unicode_clipping_preserve_counts_without_row_payload verifies summary_only data null with accurate metadata, unknown_total_is_marked_unknown_and_metric_only_reports_are_valid marks uncertainty, and historical_cursor_pages_remain_query_bound_and_never_repeat_rows checks nonduplicating pages. GitHub Actions 40237203370 passed core+DuckDB. All 36 tools' complete Contract V1 projections remain a separate gate. · **Evidence (partial):** src/tabular.rs provides opt-in summary_only responses with data=null, explicit row_count_total_known flag, truthful row_count_returned/truncated and no fabricated next_cursor; src/main.rs wires this to run_report/run_realtime_report and preview. Tests projections_keep_true_counts_and_upstream_quota, summary_and_unicode_clipping_preserve_counts_without_row_payload, unknown_total_is_marked_unknown_and_metric_only_reports_are_valid plus mock integration passed GitHub Actions 40230044045 full CI. Remaining all-tool output controls and stable historical cursors are open.
 - 🌍 **T109 — Handle property-specific API permission and quota errors** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** 429 and 403 retry/backoff rules explicit
 - 🧱 **T110 — Bound oversized filter recursion and JSON arguments** — `██████████ 100.0%`

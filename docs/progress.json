@@ -1885,7 +1885,7 @@
               "id": "T097",
               "emoji": "📝",
               "name": "Normalize input values without silent coercion",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Lossless valid requests and typed invalid results",
               "checks": [
                 {
@@ -1895,7 +1895,8 @@
                 },
                 {
                   "text": "Lossless valid requests and typed invalid results",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs normalized_report_body_preserves_valid_inputs_and_rejects_ambiguous_values round-trips relative and leap-day dates, nested dimension filters, exact signed-64 metric values, ordering, dimensions and decimal string limits without silent coercion; invalid overflow, non-finite numbers, nonnumeric filter inputs and ambiguous date aliases yield typed INVALID_REQUEST. numeric_metric_filter_preserves_i64_edges_and_rejects_overflow adds signed boundary coverage. GitHub Actions 40237203370 passed core Rust tests, fmt, strict Clippy and native DuckDB. This does not certify Google's semantic validity for arbitrary field names."
                 }
               ]
             }
@@ -2089,7 +2090,7 @@
               "id": "T108",
               "emoji": "📋",
               "name": "Support summary-only responses and total known flags",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Counts and partial results are never misrepresented",
               "checks": [
                 {
@@ -2099,7 +2100,8 @@
                 },
                 {
                   "text": "Counts and partial results are never misrepresented",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/tabular.rs historical_last_page_is_not_marked_truncated_and_accepts_string_totals fixes the verified last-page offset bug, distinguishes string provider rowCount from unknown totals, keeps returned-count honest and suppresses continuation only at true final page. summary_and_unicode_clipping_preserve_counts_without_row_payload verifies summary_only data null with accurate metadata, unknown_total_is_marked_unknown_and_metric_only_reports_are_valid marks uncertainty, and historical_cursor_pages_remain_query_bound_and_never_repeat_rows checks nonduplicating pages. GitHub Actions 40237203370 passed core+DuckDB. All 36 tools' complete Contract V1 projections remain a separate gate."
                 }
               ]
             },
