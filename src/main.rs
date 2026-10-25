@@ -2411,6 +2411,71 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn historical_and_realtime_report_denials_are_redacted_and_stable() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        use tokio::net::TcpListener;
+
+        for realtime in [false, true] {
+            for (http_status, code) in [("403 Forbidden", 403), ("429 Too Many Requests", 429)] {
+                let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+                let endpoint = format!("http://{}", listener.local_addr().unwrap());
+                let responder = tokio::spawn(async move {
+                    let (mut stream, _) = listener.accept().await.unwrap();
+                    let mut buffer = [0_u8; 4096];
+                    let read = stream.read(&mut buffer).await.unwrap();
+                    let request = String::from_utf8_lossy(&buffer[..read]);
+                    if realtime {
+                        assert!(request.contains("properties/42:runRealtimeReport"));
+                    } else {
+                        assert!(request.contains("properties/42:runReport"));
+                    }
+                    let body = r#"{"error":{"code":403,"message":"private upstream secret"}}"#;
+                    let response = format!(
+                        "HTTP/1.1 {http_status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                        body.len(),
+                        body
+                    );
+                    stream.write_all(response.as_bytes()).await.unwrap();
+                });
+                let server = Synmetra::new(
+                    GoogleClient::with_endpoints(
+                        Some("private-report-access-token".into()),
+                        &endpoint,
+                        &endpoint,
+                    ),
+                    false,
+                );
+                let reply = if realtime {
+                    let args: RealtimeArgs = serde_json::from_value(json!({
+                        "property_id":42,
+                        "dimensions":["country"],
+                        "metrics":["activeUsers"]
+                    }))
+                    .unwrap();
+                    server.run_realtime_report(Parameters(args)).await
+                } else {
+                    let args: ReportArgs = serde_json::from_value(json!({
+                        "property_id":42,
+                        "date_ranges":[{"start_date":"yesterday","end_date":"today"}],
+                        "dimensions":["country"],
+                        "metrics":["activeUsers"]
+                    }))
+                    .unwrap();
+                    server.run_report(Parameters(args)).await
+                };
+                responder.await.unwrap();
+                assert_eq!(reply.is_error, Some(true));
+                let payload = reply.structured_content.unwrap();
+                assert_eq!(payload["error"]["code"], "GOOGLE_HTTP_ERROR");
+                assert_eq!(payload["error"]["category"], "upstream");
+                assert_eq!(payload["error"]["status_code"], code);
+                assert!(!payload.to_string().contains("private-report-access-token"));
+                assert!(!payload.to_string().contains("private upstream secret"));
+            }
+        }
+    }
+
+    #[tokio::test]
     async fn historical_cursor_pages_remain_query_bound_and_never_repeat_rows() {
         use tokio::io::{AsyncReadExt, AsyncWriteExt};
         use tokio::net::TcpListener;
