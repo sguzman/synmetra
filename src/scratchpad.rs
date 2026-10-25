@@ -478,7 +478,10 @@ mod tests {
         let empty = state
             .export_evidence_bundle("private_test", Some(vec!["quoted".into()]), Some(0))
             .unwrap();
-        assert_eq!(empty["tables"][0]["sample_rows"].as_array().unwrap().len(), 0);
+        assert_eq!(
+            empty["tables"][0]["sample_rows"].as_array().unwrap().len(),
+            0
+        );
     }
 
     #[test]

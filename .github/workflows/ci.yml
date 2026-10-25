@@ -22,13 +22,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      - name: Capture canonical hostile-fixture formatting
-        run: |
-          cargo fmt --all
-          echo SYNMETRA_FILE_BEGIN:src/scratchpad.rs
-          base64 -w0 src/scratchpad.rs
-          echo
-          echo SYNMETRA_FILE_END:src/scratchpad.rs
+      - name: Verify committed canonical formatting
+        run: cargo fmt --all -- --check
       - name: Run default Rust MCP tests
         run: cargo test --all-targets --locked
       - name: Strict Clippy on default features
