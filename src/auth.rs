@@ -372,8 +372,8 @@ async fn login(path: &str) -> Result<(), String> {
 }
 
 pub fn public_status() -> serde_json::Value {
-    let override_token = std::env::var("SYNMETRA_GOOGLE_ACCESS_TOKEN")
-        .is_ok_and(|value| !value.trim().is_empty());
+    let override_token =
+        std::env::var("SYNMETRA_GOOGLE_ACCESS_TOKEN").is_ok_and(|value| !value.trim().is_empty());
     match read_credentials() {
         Ok(Some(config)) => serde_json::json!({
             "local_oauth_configured": true, "override_token_present": override_token,

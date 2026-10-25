@@ -108,7 +108,9 @@ fn result(r: Result<Value, ApiError>) -> CallToolResult {
 
 #[tool_router]
 impl Synmetra {
-    #[tool(description = "Explain secure one-time setup for Synmetra with Google Analytics APIs and native OAuth.")]
+    #[tool(
+        description = "Explain secure one-time setup for Synmetra with Google Analytics APIs and native OAuth."
+    )]
     fn ga4_get_started(&self) -> CallToolResult {
         result(Ok(json!({
             "command": "synmetra auth login --client-id-file /path/to/desktop-oauth.json",
@@ -118,12 +120,16 @@ impl Synmetra {
         })))
     }
 
-    #[tool(description = "Report safe Google Analytics credential status without exposing secrets, IDs, or local paths.")]
+    #[tool(
+        description = "Report safe Google Analytics credential status without exposing secrets, IDs, or local paths."
+    )]
     fn ga4_auth_status(&self) -> CallToolResult {
         result(Ok(auth::public_status()))
     }
 
-    #[tool(description = "Return the native OAuth desktop login command; never perform interactive authorization inside an MCP tool.")]
+    #[tool(
+        description = "Return the native OAuth desktop login command; never perform interactive authorization inside an MCP tool."
+    )]
     fn ga4_auth_login_command(&self) -> CallToolResult {
         result(Ok(json!({
             "command": "synmetra auth login --client-id-file /path/to/desktop-oauth.json",
