@@ -75,11 +75,37 @@ struct ScratchSessionArgs { session_id: String }
 
 #[cfg(feature = "scratchpad")]
 #[derive(Debug, Deserialize, JsonSchema)]
-struct ScratchTableArgs { session_id: String, table: String }
+struct ScratchOpenArgs { session_id: String }
 
 #[cfg(feature = "scratchpad")]
 #[derive(Debug, Deserialize, JsonSchema)]
-struct ScratchLimitArgs { max_sessions: usize }
+struct ScratchListArgs { #[serde(default)] limit: Option<usize> }
+
+#[cfg(feature = "scratchpad")]
+#[derive(Debug, Deserialize, JsonSchema)]
+struct ScratchListTablesArgs {
+    session_id: String,
+    #[serde(default)]
+    limit: Option<usize>,
+}
+
+#[cfg(feature = "scratchpad")]
+#[derive(Debug, Deserialize, JsonSchema)]
+struct ScratchTableArgs {
+    session_id: String,
+    table_name: String,
+    #[serde(default)]
+    if_exists: bool,
+}
+
+#[cfg(feature = "scratchpad")]
+#[derive(Debug, Deserialize, JsonSchema)]
+struct ScratchLimitArgs {
+    #[serde(default)]
+    max_sessions: Option<usize>,
+    #[serde(default)]
+    max_tables_per_session: Option<usize>,
+}
 
 #[cfg(feature = "scratchpad")]
 fn local_result(value: Result<Value, String>) -> CallToolResult {
@@ -619,8 +645,8 @@ impl Synmetra {
 #[tool_router(router = scratch_tool_router)]
 impl Synmetra {
     #[tool(description = "Open a private in-memory DuckDB session.", annotations(read_only_hint = false, destructive_hint = false, idempotent_hint = false, open_world_hint = false))]
-    fn scratchpad_open_session(&self) -> CallToolResult {
-        local_result(self.scratchpad.as_ref().expect("scratchpad capability required").open())
+    fn scratchpad_open_session(&self, Parameters(args): Parameters<ScratchOpenArgs>) -> CallToolResult {
+        local_result(self.scratchpad.as_ref().expect("scratchpad capability required").open(&args.session_id))
     }
 
     #[tool(description = "Close a private DuckDB session and destroy its tables.", annotations(read_only_hint = false, destructive_hint = true, idempotent_hint = false, open_world_hint = false))]
@@ -629,8 +655,8 @@ impl Synmetra {
     }
 
     #[tool(description = "List currently active local scratchpad sessions.", annotations(read_only_hint = true, destructive_hint = false, idempotent_hint = true, open_world_hint = false))]
-    fn scratchpad_list_sessions(&self) -> CallToolResult {
-        local_result(self.scratchpad.as_ref().expect("scratchpad capability required").sessions())
+    fn scratchpad_list_sessions(&self, Parameters(args): Parameters<ScratchListArgs>) -> CallToolResult {
+        local_result(self.scratchpad.as_ref().expect("scratchpad capability required").sessions(args.limit))
     }
 
     #[tool(description = "Read hard-bounded scratchpad limits.", annotations(read_only_hint = true, destructive_hint = false, idempotent_hint = true, open_world_hint = false))]
@@ -640,17 +666,17 @@ impl Synmetra {
 
     #[tool(description = "Set the bounded local session quota.", annotations(read_only_hint = false, destructive_hint = false, idempotent_hint = true, open_world_hint = false))]
     fn scratchpad_set_runtime_limits(&self, Parameters(args): Parameters<ScratchLimitArgs>) -> CallToolResult {
-        local_result(self.scratchpad.as_ref().expect("scratchpad capability required").set_limits(args.max_sessions))
+        local_result(self.scratchpad.as_ref().expect("scratchpad capability required").set_limits(args.max_sessions, args.max_tables_per_session))
     }
 
     #[tool(description = "List DuckDB tables in one private session.", annotations(read_only_hint = true, destructive_hint = false, idempotent_hint = true, open_world_hint = false))]
-    fn scratchpad_list_tables(&self, Parameters(args): Parameters<ScratchSessionArgs>) -> CallToolResult {
-        local_result(self.scratchpad.as_ref().expect("scratchpad capability required").tables(&args.session_id))
+    fn scratchpad_list_tables(&self, Parameters(args): Parameters<ScratchListTablesArgs>) -> CallToolResult {
+        local_result(self.scratchpad.as_ref().expect("scratchpad capability required").tables(&args.session_id, args.limit))
     }
 
     #[tool(description = "Drop one validated local DuckDB table.", annotations(read_only_hint = false, destructive_hint = true, idempotent_hint = true, open_world_hint = false))]
     fn scratchpad_drop_table(&self, Parameters(args): Parameters<ScratchTableArgs>) -> CallToolResult {
-        local_result(self.scratchpad.as_ref().expect("scratchpad capability required").drop_table(&args.session_id, &args.table))
+        local_result(self.scratchpad.as_ref().expect("scratchpad capability required").drop_table(&args.session_id, &args.table_name, args.if_exists))
     }
 }
 
