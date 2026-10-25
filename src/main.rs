@@ -2616,7 +2616,11 @@ mod tests {
         ))
         .unwrap();
         let router = Synmetra::tool_router();
-        for name in ["run_report", "run_realtime_report", "run_conversions_report"] {
+        for name in [
+            "run_report",
+            "run_realtime_report",
+            "run_conversions_report",
+        ] {
             let upstream = pinned["tools"]
                 .as_array()
                 .unwrap()
@@ -2640,12 +2644,18 @@ mod tests {
                 .keys()
                 .map(String::as_str)
                 .collect();
-            assert!(expected.is_subset(&actual), "Missing pinned reporting fields: {name}");
+            assert!(
+                expected.is_subset(&actual),
+                "Missing pinned reporting fields: {name}"
+            );
             let extras: Vec<_> = actual.difference(&expected).copied().collect();
             if name == "run_report" {
                 assert_eq!(extras, ["keep_empty_rows"]);
             } else {
-                assert!(extras.is_empty(), "Unexpected reporting fields for {name}: {extras:?}");
+                assert!(
+                    extras.is_empty(),
+                    "Unexpected reporting fields for {name}: {extras:?}"
+                );
             }
 
             let expected_required: BTreeSet<_> = upstream["inputSchema"]["required"]
@@ -2660,8 +2670,14 @@ mod tests {
                 .iter()
                 .filter_map(Value::as_str)
                 .collect();
-            assert_eq!(actual_required, expected_required, "Required fields differ for {name}");
-            assert_eq!(local.input_schema["properties"]["limit"]["format"], "uint64");
+            assert_eq!(
+                actual_required, expected_required,
+                "Required fields differ for {name}"
+            );
+            assert_eq!(
+                local.input_schema["properties"]["limit"]["format"],
+                "uint64"
+            );
             assert_eq!(
                 local.input_schema["properties"]["return_property_quota"]["default"],
                 upstream["inputSchema"]["properties"]["return_property_quota"]["default"]
@@ -2768,7 +2784,10 @@ mod tests {
             .run_conversions_report(Parameters(serde_json::from_value(bad).unwrap()))
             .await;
         assert_eq!(offline.is_error, Some(true));
-        assert_eq!(offline.structured_content.unwrap()["error"]["code"], "INVALID_REQUEST");
+        assert_eq!(
+            offline.structured_content.unwrap()["error"]["code"],
+            "INVALID_REQUEST"
+        );
 
         let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
         let endpoint = format!("http://{}", listener.local_addr().unwrap());
@@ -2776,8 +2795,7 @@ mod tests {
             let (mut stream, _) = listener.accept().await.unwrap();
             let mut buffer = [0u8; 4096];
             let n = stream.read(&mut buffer).await.unwrap();
-            assert!(String::from_utf8_lossy(&buffer[..n])
-                .contains("properties/42:runReport"));
+            assert!(String::from_utf8_lossy(&buffer[..n]).contains("properties/42:runReport"));
             let body = r#"{"error":{"message":"sensitive-fixture-detail"}}"#;
             let response = format!(
                 "HTTP/1.1 403 Forbidden\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
