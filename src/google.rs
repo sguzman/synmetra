@@ -670,7 +670,8 @@ pub fn funnel_request(
                     | "within_duration_from_prior_step"
                     | "withinDurationFromPriorStep"
             )
-        }) || (object.contains_key("filter_expression") && object.contains_key("filterExpression"))
+        }) || (object.contains_key("filter_expression")
+            && object.contains_key("filterExpression"))
             || (object.contains_key("is_directly_followed_by")
                 && object.contains_key("isDirectlyFollowedBy"))
             || (object.contains_key("within_duration_from_prior_step")
@@ -760,7 +761,10 @@ pub fn funnel_request(
     if let Some(breakdown) = breakdown {
         let details = breakdown.as_object().ok_or(ApiError::InvalidRequest)?;
         if details.keys().any(|field| {
-            !matches!(field.as_str(), "breakdown_dimension" | "breakdownDimension" | "limit")
+            !matches!(
+                field.as_str(),
+                "breakdown_dimension" | "breakdownDimension" | "limit"
+            )
         }) || (details.contains_key("breakdown_dimension")
             && details.contains_key("breakdownDimension"))
         {
@@ -787,7 +791,10 @@ pub fn funnel_request(
     if let Some(next_action) = next_action {
         let details = next_action.as_object().ok_or(ApiError::InvalidRequest)?;
         if details.keys().any(|field| {
-            !matches!(field.as_str(), "next_action_dimension" | "nextActionDimension" | "limit")
+            !matches!(
+                field.as_str(),
+                "next_action_dimension" | "nextActionDimension" | "limit"
+            )
         }) || (details.contains_key("next_action_dimension")
             && details.contains_key("nextActionDimension"))
         {
@@ -1412,7 +1419,14 @@ mod tests {
             json!({"breakdown_dimension":"country","breakdownDimension":"deviceCategory"}),
         ] {
             assert_eq!(
-                funnel_request(vec![json!({"event":"page_view"})], None, Some(invalid), None, None, false),
+                funnel_request(
+                    vec![json!({"event":"page_view"})],
+                    None,
+                    Some(invalid),
+                    None,
+                    None,
+                    false
+                ),
                 Err(ApiError::InvalidRequest)
             );
         }
@@ -1421,7 +1435,14 @@ mod tests {
             json!({"next_action_dimension":"eventName","nextActionDimension":"pagePath"}),
         ] {
             assert_eq!(
-                funnel_request(vec![json!({"event":"page_view"})], None, None, Some(invalid), None, false),
+                funnel_request(
+                    vec![json!({"event":"page_view"})],
+                    None,
+                    None,
+                    Some(invalid),
+                    None,
+                    false
+                ),
                 Err(ApiError::InvalidRequest)
             );
         }
