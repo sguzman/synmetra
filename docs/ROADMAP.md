@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `████░░░░░░ 40.1%` · **+40.09 percentage points from initial empty repo; +0.22 pp from CI-verified native TLS and Python/OpenSSL linkage boundary** · 68/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `████░░░░░░ 40.5%` · **+40.53 percentage points from initial empty repo; +0.44 pp from tested annotation schema and public CI zero-write gates** · 70/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -325,16 +325,16 @@
   - ✅ **Gate:** Quotas accessible without leaking tokens · **Evidence:** src/main.rs result preserves the provider JSON data without dropping propertyQuota and never echoes the access token; realtime_mcp_retains_provider_quota_without_fabricating_a_next_cursor verifies quota remaining=9 and absence of the mock bearer token in MCP structured output. CI 40227043192 core passed. Structured warning metadata and full cross-tool quota/error behavior remain unaccepted.; src/main.rs default provider-shaped result retains Google propertyQuota; src/tabular.rs opt-in output retains provider propertyQuota and warnings inside meta.ga4, with source token excluded from structured/text content. Tests realtime_mcp_retains_provider_quota_without_fabricating_a_next_cursor, historical_report_opt_in_projection_preserves_metadata_and_previews_offline, projections_keep_true_counts_and_upstream_quota confirm quota counts and warnings. GitHub Actions 40230044045 both core and DuckDB jobs passed. This is metadata pass-through acceptance, not a claim of all 36 upstream response projections. · **Evidence (quota only):** src/main.rs result preserves the provider JSON data without dropping propertyQuota and never echoes the access token; realtime_mcp_retains_provider_quota_without_fabricating_a_next_cursor verifies quota remaining=9 and absence of the mock bearer token in MCP structured output. CI 40227043192 core passed. Structured warning metadata and full cross-tool quota/error behavior remain unaccepted.
 
 
-## ✍️ M5 — Explicitly gated GA mutation parity — `███████░░░ 65.4%`
+## ✍️ M5 — Explicitly gated GA mutation parity — `███████░░░ 73.1%`
 
 **Scope:** MVP. **Acceptance gate:** One official write tool operates with analytics.edit and explicit opt-in; ordinary mode cannot mutate GA.
 
-### 📝 P13 — Annotation creation parity — `██████░░░░ 62.5%`
+### 📝 P13 — Annotation creation parity — `████████░░ 75.0%`
 
 **Feature:** One opt-in Google write tool.
 
-- 🖊️ **T113 — Implement create_property_annotation** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Full official title description dates and color schema contract tested
+- 🖊️ **T113 — Implement create_property_annotation** — `██████████ 100.0%`
+  - ✅ **Gate:** Full official title description dates and color schema contract tested · **Evidence:** Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.; src/main.rs AnnotationColorInput exposes six valid user annotation colors, excluding reserved ORANGE. annotation_schema_and_payload_cover_default_color_and_single_or_range_dates validates required/optional MCP inputs, default BLUE, exact GA Admin reportingDataAnnotation single-date versus ranged-date objects, and description. src/google.rs annotation_payload enforces title/description length, valid date order and supported colors. GitHub Actions 40241002371 core + DuckDB jobs passed. Live write approval remains a separate M8 gate.
 - 📅 **T114 — Validate annotation date and range order** — `██████████ 100.0%`
   - ✅ **Gate:** Reject malformed dates and reversed ranges before Google call · **Evidence:** Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.; Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.
 - 🎨 **T115 — Reject reserved ORANGE and invalid enum colors** — `██████████ 100.0%`
@@ -347,8 +347,8 @@
   - ✅ **Gate:** Clear denial without escalating OAuth permissions
 - ✋ **T119 — Require user confirmation at client boundary when supported** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** High-impact writes annotated and host approval guidance explicit
-- 🧪 **T120 — Test write denial and optional live opt-in acceptance** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** No writes in automated public CI
+- 🧪 **T120 — Test write denial and optional live opt-in acceptance** — `██████████ 100.0%`
+  - ✅ **Gate:** No writes in automated public CI · **Evidence:** Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.; .github/workflows/ci.yml has contents:read and runs only cargo fmt, tests, Clippy, release checks and progress validator: no Google credentials/secrets, no allow-write live server, and no production POSTs. src/main.rs disables mutations by default; annotation mock tests use localhost Google endpoints, not live Google. GitHub Actions 40241002371 full core + DuckDB jobs passed. Authorized optional live annotations remain scoped to M8 T184.
 
 ### 🚦 P14 — Write safety policies — `███████░░░ 70.0%`
 

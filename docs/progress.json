@@ -2216,7 +2216,7 @@
               "id": "T113",
               "emoji": "🖊️",
               "name": "Implement create_property_annotation",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Full official title description dates and color schema contract tested",
               "checks": [
                 {
@@ -2226,7 +2226,8 @@
                 },
                 {
                   "text": "Full official title description dates and color schema contract tested",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs AnnotationColorInput exposes six valid user annotation colors, excluding reserved ORANGE. annotation_schema_and_payload_cover_default_color_and_single_or_range_dates validates required/optional MCP inputs, default BLUE, exact GA Admin reportingDataAnnotation single-date versus ranged-date objects, and description. src/google.rs annotation_payload enforces title/description length, valid date order and supported colors. GitHub Actions 40241002371 core + DuckDB jobs passed. Live write approval remains a separate M8 gate."
                 }
               ]
             },
@@ -2344,7 +2345,7 @@
               "id": "T120",
               "emoji": "🧪",
               "name": "Test write denial and optional live opt-in acceptance",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "No writes in automated public CI",
               "checks": [
                 {
@@ -2354,7 +2355,8 @@
                 },
                 {
                   "text": "No writes in automated public CI",
-                  "passed": false
+                  "passed": true,
+                  "evidence": ".github/workflows/ci.yml has contents:read and runs only cargo fmt, tests, Clippy, release checks and progress validator: no Google credentials/secrets, no allow-write live server, and no production POSTs. src/main.rs disables mutations by default; annotation mock tests use localhost Google endpoints, not live Google. GitHub Actions 40241002371 full core + DuckDB jobs passed. Authorized optional live annotations remain scoped to M8 T184."
                 }
               ]
             }
