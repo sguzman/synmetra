@@ -342,12 +342,6 @@ impl GoogleClient {
         self.send(self.http.post(url).json(&body)).await
     }
 
-    pub async fn annotations(&self, property: &str) -> Result<Value, ApiError> {
-        let path = format!("/{}/reportingDataAnnotations", property_name(property)?);
-        self.collection(&path, "reportingDataAnnotations", true)
-            .await
-    }
-
     pub async fn annotations_with_options(
         &self,
         property: &str,
