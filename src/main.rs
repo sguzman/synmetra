@@ -271,8 +271,18 @@ struct ScratchLimitArgs {
 fn local_result(value: Result<Value, String>) -> CallToolResult {
     match value {
         Ok(data) => result(Ok(data)),
-        Err(reason) => CallToolResult::error(vec![ContentBlock::text(
-            json!({"ok":false,"error":{"reason":reason}}).to_string(),
+        Err(message) => CallToolResult::error(vec![ContentBlock::text(
+            json!({
+                "ok":false,
+                "error":{
+                    "code":"SCRATCHPAD_ERROR",
+                    "reason":"scratchpad_error",
+                    "message":message,
+                    "category":"local"
+                },
+                "meta":{"elapsed_ms":0,"elapsed_ms_measured":false}
+            })
+            .to_string(),
         )]),
     }
 }
@@ -481,14 +491,47 @@ struct RealtimeArgs {
     limit: Option<u32>,
 }
 
+fn api_error_code(error: &ApiError) -> (&'static str, &'static str) {
+    match error {
+        ApiError::MissingCredentials => ("AUTH_NOT_CONFIGURED", "authentication"),
+        ApiError::AuthenticationFailed => ("AUTHENTICATION_FAILED", "authentication"),
+        ApiError::InvalidIdentifier => ("INVALID_IDENTIFIER", "validation"),
+        ApiError::InvalidRequest => ("INVALID_REQUEST", "validation"),
+        ApiError::InvalidAnnotation => ("INVALID_ANNOTATION", "validation"),
+        ApiError::RequestFailed => ("UPSTREAM_UNAVAILABLE", "transport"),
+        ApiError::Http(_) => ("GOOGLE_HTTP_ERROR", "upstream"),
+        ApiError::ResponseTooLarge => ("RESPONSE_TOO_LARGE", "limits"),
+        ApiError::CollectionTooLarge => ("COLLECTION_TOO_LARGE", "limits"),
+        ApiError::TooManyPages => ("PAGINATION_LIMIT", "limits"),
+        ApiError::InvalidResponse => ("INVALID_UPSTREAM_RESPONSE", "upstream"),
+    }
+}
+
 fn result(r: Result<Value, ApiError>) -> CallToolResult {
+    // elapsed_ms = 0 is an explicit *unmeasured* sentinel here, not a
+    // claim of zero tool latency. Per-tool timing is a separate parity gate.
+    let meta = json!({"elapsed_ms": 0, "elapsed_ms_measured": false});
     match r {
         Ok(v) => CallToolResult::success(vec![ContentBlock::text(
-            json!({"ok": true, "data": v}).to_string(),
+            json!({"ok": true, "data": v, "meta": meta}).to_string(),
         )]),
-        Err(error) => CallToolResult::error(vec![ContentBlock::text(
-            json!({"ok": false, "error": {"reason": error.to_string()}}).to_string(),
-        )]),
+        Err(error) => {
+            let (code, category) = api_error_code(&error);
+            let mut payload = json!({
+                "ok": false,
+                "error": {
+                    "code": code,
+                    "reason": code.to_ascii_lowercase(),
+                    "message": error.to_string(),
+                    "category": category
+                },
+                "meta": meta
+            });
+            if let ApiError::Http(status) = error {
+                payload["error"]["status_code"] = json!(status);
+            }
+            CallToolResult::error(vec![ContentBlock::text(payload.to_string())])
+        }
     }
 }
 
@@ -2116,6 +2159,41 @@ mod tests {
             .unwrap()
             .text
             .contains("session not found"));
+    }
+
+    #[test]
+    fn mcp_text_envelopes_have_stable_error_categories_and_explicit_unmeasured_timing() {
+        let success = result(Ok(json!({"rows":[]})));
+        let output: Value = serde_json::from_str(&success.content[0].as_text().unwrap().text)
+            .unwrap();
+        assert_eq!(output["ok"], true);
+        assert!(output["data"]["rows"].is_array());
+        assert_eq!(output["meta"]["elapsed_ms"], 0);
+        assert_eq!(output["meta"]["elapsed_ms_measured"], false);
+
+        let invalid = result(Err(ApiError::InvalidIdentifier));
+        let failure: Value = serde_json::from_str(
+            &invalid.content[0].as_text().unwrap().text
+        ).unwrap();
+        assert_eq!(invalid.is_error, Some(true));
+        assert_eq!(failure["error"]["code"], "INVALID_IDENTIFIER");
+        assert_eq!(failure["error"]["category"], "validation");
+        assert!(failure["error"]["message"].as_str().unwrap().contains("identifier"));
+        assert!(failure["error"].get("status_code").is_none());
+
+        let status = result(Err(ApiError::Http(429)));
+        let failure: Value = serde_json::from_str(
+            &status.content[0].as_text().unwrap().text
+        ).unwrap();
+        assert_eq!(failure["error"]["status_code"], 429);
+        assert_eq!(failure["error"]["code"], "GOOGLE_HTTP_ERROR");
+
+        let local = local_result(Err("Scratchpad session expired".into()));
+        let failure: Value = serde_json::from_str(
+            &local.content[0].as_text().unwrap().text
+        ).unwrap();
+        assert_eq!(failure["error"]["code"], "SCRATCHPAD_ERROR");
+        assert_eq!(failure["error"]["category"], "local");
     }
 
     #[test]
