@@ -2366,7 +2366,10 @@ mod tests {
             .into_iter()
             .find(|item| item.name == "ga4_get_started")
             .unwrap();
-        assert_eq!(tool.input_schema.get("properties"), reference["inputSchema"].get("properties"));
+        assert_eq!(
+            tool.input_schema.get("properties"),
+            reference["inputSchema"].get("properties")
+        );
         assert!(tool
             .input_schema
             .get("required")
@@ -2382,7 +2385,10 @@ mod tests {
             .as_str()
             .unwrap()
             .starts_with("synmetra auth login --client-id-file"));
-        assert_eq!(data["scope"], "https://www.googleapis.com/auth/analytics.readonly");
+        assert_eq!(
+            data["scope"],
+            "https://www.googleapis.com/auth/analytics.readonly"
+        );
         assert_eq!(data["python_required"], false);
         assert_eq!(data["npm_required"], false);
     }
