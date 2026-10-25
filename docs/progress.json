@@ -2599,12 +2599,13 @@
               "id": "T135",
               "emoji": "🔎",
               "name": "Implement scratchpad_query",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Synthetic GA payload and DuckDB query conformance for scratchpad_query",
               "checks": [
                 {
                   "text": "Deliver implement scratchpad_query as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/scratchpad.rs: bounded SQL-subset parser reconstructs a SELECT statement exclusively from validated table/column identifiers, rejects DML, DDL, joins, CTE, external scans, embedded statements, injection and excessive limits; src/main.rs exposes read-only MCP scratchpad_query with upstream-required session_id/sql fields. Synthetic query/security tests and strict core tests passed GitHub Actions 40219402080. Full upstream SQL dialect/output-mode parity and extensive fuzzing remain open."
                 },
                 {
                   "text": "Synthetic GA payload and DuckDB query conformance for scratchpad_query",
@@ -2773,12 +2774,13 @@
               "id": "T144",
               "emoji": "🪬",
               "name": "Implement SQL SELECT-only parser policy",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "DML DDL COPY INSTALL LOAD ATTACH and external scans rejected",
               "checks": [
                 {
                   "text": "Deliver implement sql select-only parser policy as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/scratchpad.rs: bounded SQL-subset parser reconstructs a SELECT statement exclusively from validated table/column identifiers, rejects DML, DDL, joins, CTE, external scans, embedded statements, injection and excessive limits; src/main.rs exposes read-only MCP scratchpad_query with upstream-required session_id/sql fields. Synthetic query/security tests and strict core tests passed GitHub Actions 40219402080. Full upstream SQL dialect/output-mode parity and extensive fuzzing remain open."
                 },
                 {
                   "text": "DML DDL COPY INSTALL LOAD ATTACH and external scans rejected",
