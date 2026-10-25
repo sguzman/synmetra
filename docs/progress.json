@@ -2108,7 +2108,7 @@
               "id": "T110",
               "emoji": "🧱",
               "name": "Bound oversized filter recursion and JSON arguments",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Worst-case requests rejected before Google API",
               "checks": [
                 {
@@ -2118,7 +2118,8 @@
                 },
                 {
                   "text": "Worst-case requests rejected before Google API",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs report_request validates the entire assembled body (64 KiB cap), plus existing bounded filter depth/nodes/breadth limits; src/main.rs offline_preview_rejects_oversized_report_options_with_a_typed_error confirms malformed options yield INVALID_REQUEST without requiring Google credentials or network access; google.rs historical_report_request_rejects_oversized_options_and_deep_filters verifies massive orderBy and recursive/wide filters. GitHub Actions 40228133861 core tests, rustfmt and Clippy passed. Independent live-Google and all-upstream schema acceptance remain separate."
                 }
               ]
             },

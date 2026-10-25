@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `███░░░░░░░ 31.3%` · **+31.28 percentage points from initial empty repo; +1.54 pp from seven CI-tested golden Admin MCP mock responses and denials** · 39/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `███░░░░░░░ 31.5%` · **+31.50 percentage points from initial empty repo; +0.22 pp from adversarial request-size and filter preflight acceptance** · 40/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -245,7 +245,7 @@
   - ✅ **Gate:** No stale cross-principal cache confusion
 
 
-## 📊 M4 — Reporting, preflight and Data API parity — `███░░░░░░░ 31.7%`
+## 📊 M4 — Reporting, preflight and Data API parity — `███░░░░░░░ 33.3%`
 
 **Scope:** MVP. **Acceptance gate:** All report tools return correct GA4 semantics, including documented alpha, pagination and response projections.
 
@@ -289,7 +289,7 @@
 - 📝 **T097 — Normalize input values without silent coercion** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Lossless valid requests and typed invalid results
 
-### 📐 P12 — Data request fidelity and limits — `██░░░░░░░░ 16.7%`
+### 📐 P12 — Data request fidelity and limits — `██░░░░░░░░ 20.0%`
 
 **Feature:** Reporting correctness.
 
@@ -317,8 +317,8 @@
   - ✅ **Gate:** Counts and partial results are never misrepresented
 - 🌍 **T109 — Handle property-specific API permission and quota errors** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** 429 and 403 retry/backoff rules explicit
-- 🧱 **T110 — Bound oversized filter recursion and JSON arguments** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Worst-case requests rejected before Google API
+- 🧱 **T110 — Bound oversized filter recursion and JSON arguments** — `██████████ 100.0%`
+  - ✅ **Gate:** Worst-case requests rejected before Google API · **Evidence:** src/google.rs validate_bounded_filter: 16 KiB encoded bound, max depth 12, max 256 nodes, 64 children, and 1024-byte strings. Test nested_ga_filter_preserved_and_excessive_structures_rejected passed 2026-10-25 GitHub Actions core job 121238774791 (run 40216536190), alongside default Rust MCP unit tests and Clippy. More hostile corpus and live API acceptance pending.; src/google.rs report_request validates the entire assembled body (64 KiB cap), plus existing bounded filter depth/nodes/breadth limits; src/main.rs offline_preview_rejects_oversized_report_options_with_a_typed_error confirms malformed options yield INVALID_REQUEST without requiring Google credentials or network access; google.rs historical_report_request_rejects_oversized_options_and_deep_filters verifies massive orderBy and recursive/wide filters. GitHub Actions 40228133861 core tests, rustfmt and Clippy passed. Independent live-Google and all-upstream schema acceptance remain separate.
 - ♻️ **T111 — Make repeated report retries safe and idempotent** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Retry-After respected with bounded jitter
 - 🧾 **T112 — Preserve GA response quota metadata and warnings** — `█████░░░░░ 50.0%`
