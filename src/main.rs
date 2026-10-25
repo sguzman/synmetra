@@ -2292,8 +2292,13 @@ mod tests {
         assert_eq!(payload["meta"]["row_count_returned"], 1);
         assert_eq!(payload["meta"]["truncated"], true);
         assert!(payload["meta"]["next_cursor"].is_null());
-        assert_eq!(payload["meta"]["ga4"]["propertyQuota"]["concurrentRequests"]["remaining"], 9);
-        assert!(!payload.to_string().contains("private-tabular-fixture-token"));
+        assert_eq!(
+            payload["meta"]["ga4"]["propertyQuota"]["concurrentRequests"]["remaining"],
+            9
+        );
+        assert!(!payload
+            .to_string()
+            .contains("private-tabular-fixture-token"));
 
         let unsupported_cursor = Synmetra::new(GoogleClient::new(None), false)
             .preview_report_request(Parameters(
