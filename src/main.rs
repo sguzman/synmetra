@@ -2862,6 +2862,54 @@ mod tests {
     }
 
     #[test]
+    fn all_compatible_ga_report_mcp_tools_advertise_four_tabular_output_modes() {
+        let upstream: Value = serde_json::from_str(include_str!(
+            "../spec/upstream/sednalabs-tool-schema.v1.json"
+        ))
+        .unwrap();
+        let router = Synmetra::tool_router();
+        for name in [
+            "run_report",
+            "run_realtime_report",
+            "run_conversions_report",
+            "run_pivot_report",
+            "run_funnel_report",
+            "run_property_access_report",
+            "run_account_access_report",
+        ] {
+            let original = upstream["tools"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|item| item["name"] == name)
+                .unwrap();
+            assert!(original["inputSchema"]["properties"]["output_mode"].is_object());
+            let tool = router
+                .list_all()
+                .into_iter()
+                .find(|item| item.name == name)
+                .unwrap();
+            assert!(
+                tool.input_schema["properties"]["output_mode"].is_object(),
+                "{name} is missing tabular output_mode"
+            );
+        }
+        for name in ["rows", "tuples", "scalar", "compact"] {
+            let mode: tabular::OutputMode = serde_json::from_value(json!(name)).unwrap();
+            assert!(matches!(
+                mode,
+                tabular::OutputMode::Rows
+                    | tabular::OutputMode::Tuples
+                    | tabular::OutputMode::Scalar
+                    | tabular::OutputMode::Compact
+            ));
+        }
+        for invalid in ["csv", "jsonl", "table", "scalar-list"] {
+            assert!(serde_json::from_value::<tabular::OutputMode>(json!(invalid)).is_err());
+        }
+    }
+
+    #[test]
     fn core_reporting_inputs_cover_pinned_contract_without_untracked_fields() {
         use std::collections::BTreeSet;
 
