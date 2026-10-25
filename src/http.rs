@@ -54,8 +54,10 @@ fn app(server: Synmetra, token: String, port: u16) -> Router {
         host: format!("127.0.0.1:{port}"),
         origin: format!("http://127.0.0.1:{port}"),
     };
+    // Preserve legacy 2025 clients' MCP sessions. The current 2026 protocol
+    // remains stateless by specification, independent of this legacy setting.
     let config = StreamableHttpServerConfig::default()
-        .with_legacy_session_mode(false)
+        .with_legacy_session_mode(true)
         .with_json_response(true);
     let service = StreamableHttpService::new(
         move || Ok(server.clone()),
