@@ -8,6 +8,11 @@ on:
 permissions:
   contents: read
 
+# Prevent several simultaneous bundled-DuckDB C++ builds competing for runner quotas.
+concurrency:
+  group: synmetra-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   quality:
     runs-on: ubuntu-latest
