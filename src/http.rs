@@ -100,6 +100,41 @@ mod tests {
     use super::*;
     use crate::google::GoogleClient;
 
+    /// Legacy MCP HTTP sessions may return JSON-RPC over SSE rather than a
+    /// single application/json body. Read one event, not an open SSE stream.
+    async fn mcp_json_response(mut response: reqwest::Response) -> serde_json::Value {
+        let content_type = response
+            .headers()
+            .get(header::CONTENT_TYPE)
+            .and_then(|value| value.to_str().ok())
+            .unwrap_or("")
+            .to_owned();
+        if content_type.starts_with("application/json") {
+            return response.json().await.unwrap();
+        }
+        assert!(
+            content_type.starts_with("text/event-stream"),
+            "Unexpected MCP response content type: {content_type}"
+        );
+        let mut stream = String::new();
+        loop {
+            let chunk = response
+                .chunk()
+                .await
+                .unwrap()
+                .expect("SSE stream ended before JSON-RPC result");
+            stream.push_str(&String::from_utf8_lossy(&chunk));
+            assert!(stream.len() <= 1_048_576, "Oversized synthetic SSE test response");
+            for line in stream.lines() {
+                if let Some(text) = line.strip_prefix("data: ") {
+                    if let Ok(payload) = serde_json::from_str::<serde_json::Value>(text) {
+                        return payload;
+                    }
+                }
+            }
+        }
+    }
+
     #[tokio::test]
     async fn loopback_http_rejects_unauthenticated_wrong_host_and_wrong_origin() {
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
@@ -189,7 +224,7 @@ mod tests {
             .to_str()
             .unwrap()
             .to_owned();
-        let negotiated: serde_json::Value = initialize.json().await.unwrap();
+        let negotiated = mcp_json_response(initialize).await;
         assert_eq!(negotiated["result"]["serverInfo"]["name"], "synmetra");
 
         let request = |payload: serde_json::Value, session_id: &str| {
@@ -219,7 +254,7 @@ mod tests {
         .await
         .unwrap();
         assert_eq!(discovered.status(), StatusCode::OK);
-        let listing: serde_json::Value = discovered.json().await.unwrap();
+        let listing = mcp_json_response(discovered).await;
         let tools = listing["result"]["tools"].as_array().unwrap();
         assert_eq!(tools.len(), 20);
         assert!(tools.iter().any(|item| item["name"] == "ga4_get_started"));
@@ -237,7 +272,7 @@ mod tests {
         .await
         .unwrap();
         assert_eq!(invoked.status(), StatusCode::OK);
-        let result: serde_json::Value = invoked.json().await.unwrap();
+        let result = mcp_json_response(invoked).await;
         assert_eq!(result["result"]["structuredContent"]["ok"], true);
         assert_eq!(
             result["result"]["structuredContent"]["data"]["scope"],
@@ -319,7 +354,7 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(response.status(), StatusCode::OK);
-        let payload: serde_json::Value = response.json().await.unwrap();
+        let payload = mcp_json_response(response).await;
         assert_eq!(payload["result"]["serverInfo"]["name"], "synmetra");
         assert!(payload["result"]["capabilities"]["tools"].is_object());
         task.abort();
