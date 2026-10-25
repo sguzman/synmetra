@@ -327,6 +327,40 @@ mod tests {
     }
 
     #[test]
+    fn bar_regeneration_is_idempotent_and_preserves_editorial_text() {
+        let fixture = serde_json::json!({
+            "milestones": [{
+                "id": "M0",
+                "name": "Baseline",
+                "phases": [{
+                    "id": "P00",
+                    "name": "Fixtures",
+                    "tasks": [{
+                        "id": "T001",
+                        "name": "Demo",
+                        "progress": 50,
+                        "checks": [
+                            {"passed": true, "evidence": "fixture evidence"},
+                            {"passed": false}
+                        ]
+                    }]
+                }]
+            }]
+        });
+        let roadmap = "**Overall:** `░░░░░░░░░░ 0.0%` · keep editorial text\n## M0 — Baseline — `░░░░░░░░░░ 0.0%`\n### P00 — Fixtures — `░░░░░░░░░░ 0.0%`\n- **T001 — Demo** — `░░░░░░░░░░ 0.0%`\n";
+        let readme = "**Overall:** `░░░░░░░░░░ 0.0%`\n| M0 Baseline | `░░░░░░░░░░ 0.0%` | MVP |\n";
+        let (r, d) = regenerate_bars(&fixture, roadmap, readme).unwrap();
+        assert!(r.contains("**Overall:** `█████░░░░░ 50.0%` · keep editorial text"));
+        assert!(d.contains("| M0 Baseline | `█████░░░░░ 50.0%` |"));
+        assert_eq!(regenerate_bars(&fixture, &r, &d).unwrap(), (r, d));
+        assert!(regenerate_bars(&fixture, "missing markers", readme).is_err());
+        let mut invalid = fixture.clone();
+        invalid["milestones"][0]["phases"][0]["tasks"][0]["checks"][0]["evidence"] =
+            serde_json::Value::Null;
+        assert!(regenerate_bars(&invalid, roadmap, readme).is_err());
+    }
+
+    #[test]
     fn numeric_rounding() {
         assert_eq!(round_two(100.0 / 3.0), 33.33);
     }
