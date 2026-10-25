@@ -376,10 +376,11 @@ async fn login(path: &str, allow_edit: bool) -> Result<(), String> {
         .scope
         .as_deref()
         .ok_or("Google did not report granted OAuth scopes")?;
-    if !requested_scope
-        .split_whitespace()
-        .all(|requested| granted_scope.split_whitespace().any(|scope| scope == requested))
-    {
+    if !requested_scope.split_whitespace().all(|requested| {
+        granted_scope
+            .split_whitespace()
+            .any(|scope| scope == requested)
+    }) {
         return Err("Google did not grant every explicitly requested Analytics scope".into());
     }
     let refresh_token = token
