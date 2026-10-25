@@ -1836,10 +1836,15 @@ mod tests {
                 }]
             });
             assert_eq!(
-                client.data_operation("42", request, "batchRunReports").await,
+                client
+                    .data_operation("42", request, "batchRunReports")
+                    .await,
                 Err(ApiError::InvalidResponse)
             );
-            assert!(handle.await.unwrap().contains("properties/42:batchRunReports"));
+            assert!(handle
+                .await
+                .unwrap()
+                .contains("properties/42:batchRunReports"));
         }
     }
 
