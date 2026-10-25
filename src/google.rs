@@ -1781,7 +1781,9 @@ mod tests {
         for method in ["runPivotReport", "checkCompatibility", "batchRunReports"] {
             let response = match method {
                 "runPivotReport" => r#"{"rowCount":0}"#,
-                "checkCompatibility" => r#"{"dimensionCompatibilities":[],"metricCompatibilities":[]}"#,
+                "checkCompatibility" => {
+                    r#"{"dimensionCompatibilities":[],"metricCompatibilities":[]}"#
+                }
                 "batchRunReports" => r#"{"reports":[{"rowCount":0}]}"#,
                 _ => unreachable!(),
             };
@@ -1792,7 +1794,10 @@ mod tests {
             } else {
                 json!({"metrics":[{"name":"activeUsers"}]})
             };
-            let parsed = c.data_operation("properties/77", body, method).await.unwrap();
+            let parsed = c
+                .data_operation("properties/77", body, method)
+                .await
+                .unwrap();
             match method {
                 "runPivotReport" => assert_eq!(parsed["rowCount"], 0),
                 "checkCompatibility" => assert!(parsed["metricCompatibilities"].is_array()),
