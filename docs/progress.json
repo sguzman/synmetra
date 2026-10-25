@@ -531,7 +531,7 @@
               "id": "T026",
               "emoji": "🏠",
               "name": "Default bind to loopback only",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Non-loopback starts are rejected unless policy configured",
               "checks": [
                 {
@@ -541,7 +541,8 @@
                 },
                 {
                   "text": "Non-loopback starts are rejected unless policy configured",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/http.rs serve_loopback binds exclusively to IPv4 127.0.0.1 using loopback_address; production_http_bind_is_always_ipv4_loopback asserts the invariant at multiple ports; .github/workflows/ci.yml launches an unsupported nonloopback override and requires CLI rejection without output. Synthetic wrong Host/Origin/unauthorized requests denied. GitHub Actions 40246360428 core and DuckDB jobs succeeded. Public/network bind is intentionally unsupported rather than enabled by policy."
                 }
               ]
             },

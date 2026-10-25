@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `████░░░░░░ 42.5%` · **+42.51 percentage points from initial empty repo; +0.22 pp from real authenticated HTTP session acceptance** · 79/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `████░░░░░░ 42.7%` · **+42.73 percentage points from initial empty repo; +0.22 pp from verified loopback-only MCP binding** · 80/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -60,7 +60,7 @@
   - ✅ **Gate:** Document semver and provenance gates
 
 
-## 🔌 M1 — MCP protocol and transport fidelity — `████░░░░░░ 39.1%`
+## 🔌 M1 — MCP protocol and transport fidelity — `████░░░░░░ 41.3%`
 
 **Scope:** MVP. **Acceptance gate:** Spec-conforming native MCP discovery and calls over stdio plus bounded Streamable HTTP; all transport safety tests pass.
 
@@ -83,14 +83,14 @@
 - ⌨️ **T024 — Integrate Codex stdio configuration smoke** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Codex recognizes locally built synmetra binary
 
-### 🌐 P03 — Streamable HTTP protocol — `████░░░░░░ 38.9%`
+### 🌐 P03 — Streamable HTTP protocol — `████░░░░░░ 44.4%`
 
 **Feature:** MCP Streamable HTTP.
 
 - 🌍 **T025 — Expose Streamable HTTP MCP endpoint** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Official MCP inspector connects and initializes
-- 🏠 **T026 — Default bind to loopback only** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Non-loopback starts are rejected unless policy configured
+- 🏠 **T026 — Default bind to loopback only** — `██████████ 100.0%`
+  - ✅ **Gate:** Non-loopback starts are rejected unless policy configured · **Evidence:** Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.; src/http.rs serve_loopback binds exclusively to IPv4 127.0.0.1 using loopback_address; production_http_bind_is_always_ipv4_loopback asserts the invariant at multiple ports; .github/workflows/ci.yml launches an unsupported nonloopback override and requires CLI rejection without output. Synthetic wrong Host/Origin/unauthorized requests denied. GitHub Actions 40246360428 core and DuckDB jobs succeeded. Public/network bind is intentionally unsupported rather than enabled by policy.
 - 🧿 **T027 — Validate Host Origin and DNS rebinding defenses** — `██████████ 100.0%`
   - ✅ **Gate:** Host header and Origin tests block inappropriate requests · **Evidence:** Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.; Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.
 - 🔐 **T028 — Add inbound bearer authorization policy** — `██████████ 100.0%`
