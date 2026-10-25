@@ -127,7 +127,7 @@ impl GoogleClient {
         Self::with_endpoints(bearer, ADMIN, DATA)
     }
 
-    fn with_endpoints(bearer: Option<String>, admin: &str, data: &str) -> Self {
+    pub(crate) fn with_endpoints(bearer: Option<String>, admin: &str, data: &str) -> Self {
         let http = reqwest::Client::builder()
             .timeout(Duration::from_secs(20))
             .connect_timeout(Duration::from_secs(8))

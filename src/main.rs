@@ -292,6 +292,7 @@ fn local_result(value: Result<Value, String>) -> CallToolResult {
 
 #[derive(Debug, Deserialize, JsonSchema)]
 struct AuthStatusArgs {
+    /// When true, acquire a Google access token and call GA account summaries. The token is never returned.
     #[serde(default)]
     verify_token: bool,
 }
@@ -2374,6 +2375,44 @@ mod tests {
         assert_eq!(payload["ok"], true);
         assert!(payload["data"].get("verification").is_none());
         assert!(payload["data"].get("access_token").is_none());
+    }
+
+    #[tokio::test]
+    async fn opt_in_auth_verification_excludes_google_account_data_and_tokens() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        use tokio::net::TcpListener;
+
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let endpoint = format!("http://{}", listener.local_addr().unwrap());
+        let api = GoogleClient::with_endpoints(Some("fixture-only-token".into()), &endpoint, &endpoint);
+        let responder = tokio::spawn(async move {
+            let (mut stream, _) = listener.accept().await.unwrap();
+            let mut buffer = [0_u8; 4096];
+            let received = stream.read(&mut buffer).await.unwrap();
+            let request = String::from_utf8_lossy(&buffer[..received]);
+            assert!(request.contains("accountSummaries"));
+            let body = r#"{"accountSummaries":[{"name":"accounts/fixture-private"}]}"#;
+            let reply = format!(
+                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                body.len(),
+                body
+            );
+            stream.write_all(reply.as_bytes()).await.unwrap();
+        });
+        let server = Synmetra::new(api, false);
+        let result = server
+            .ga4_auth_status(Parameters(AuthStatusArgs {
+                verify_token: true,
+            }))
+            .await;
+        responder.await.unwrap();
+        let payload = result.structured_content.unwrap();
+        assert_eq!(payload["ok"], true);
+        assert_eq!(payload["data"]["verification"]["attempted"], true);
+        assert_eq!(payload["data"]["verification"]["verified"], true);
+        let public = payload.to_string();
+        assert!(!public.contains("fixture-only-token"));
+        assert!(!public.contains("accounts/fixture-private"));
     }
 
     #[test]
