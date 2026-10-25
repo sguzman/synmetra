@@ -152,6 +152,22 @@ struct AccountArgs {
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
+struct FunnelArgs {
+    property_id: String,
+    funnel_steps: Vec<Value>,
+    #[serde(default)]
+    date_ranges: Option<Vec<Value>>,
+    #[serde(default)]
+    funnel_breakdown: Option<Value>,
+    #[serde(default)]
+    funnel_next_action: Option<Value>,
+    #[serde(default)]
+    segments: Option<Vec<Value>>,
+    #[serde(default)]
+    return_property_quota: bool,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
 struct ConversionArgs {
     property_id: String,
     date_ranges: Vec<Value>,
@@ -486,13 +502,16 @@ impl Synmetra {
     )]
     async fn run_funnel_report(
         &self,
-        Parameters(args): Parameters<RawPropertyRequestArgs>,
+        Parameters(args): Parameters<FunnelArgs>,
     ) -> CallToolResult {
-        result(
-            self.api
-                .alpha_report(&args.property_id, args.request, true)
-                .await,
-        )
+        let body = google::funnel_request(
+            args.funnel_steps, args.date_ranges, args.funnel_breakdown,
+            args.funnel_next_action, args.segments, args.return_property_quota,
+        );
+        result(match body {
+            Ok(body) => self.api.alpha_report(&args.property_id, body, true).await,
+            Err(error) => Err(error),
+        })
     }
 
     #[tool(

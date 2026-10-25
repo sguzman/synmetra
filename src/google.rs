@@ -447,6 +447,75 @@ pub fn conversion_spec(
     Ok(result)
 }
 
+
+/// Map official funnel step arguments into Google Data API v1alpha REST JSON.
+pub fn funnel_request(
+    steps: Vec<Value>, dates: Option<Vec<Value>>,
+    breakdown: Option<Value>, next_action: Option<Value>,
+    segments: Option<Vec<Value>>, quota: bool,
+) -> Result<Value, ApiError> {
+    if steps.is_empty() || steps.len() > 10 || dates.as_ref().is_some_and(|d| d.len() > 4)
+        || segments.as_ref().is_some_and(|s| s.len() > 4 || s.iter().any(|x| !x.is_object() || x.as_object().is_some_and(|obj| obj.is_empty())))
+    {
+        return Err(ApiError::InvalidRequest);
+    }
+    let mut mapped = Vec::new();
+    for (index, step) in steps.into_iter().enumerate() {
+        let object = step.as_object().ok_or(ApiError::InvalidRequest)?;
+        let event = object.get("event");
+        let filter = object.get("filter_expression").or_else(|| object.get("filterExpression"));
+        if event.is_some() == filter.is_some() {
+            return Err(ApiError::InvalidRequest);
+        }
+        let name = object.get("name").and_then(Value::as_str)
+            .unwrap_or("").trim().to_owned();
+        let name = if name.is_empty() { format!("Step {}", index + 1) } else { name };
+        if name.len() > 100 { return Err(ApiError::InvalidRequest); }
+        let expression = if let Some(event) = event {
+            let event = event.as_str().ok_or(ApiError::InvalidRequest)?;
+            if event.is_empty() || event.len() > 128 { return Err(ApiError::InvalidRequest); }
+            json!({"funnelEventFilter":{"eventName":event}})
+        } else {
+            let value = filter.ok_or(ApiError::InvalidRequest)?;
+            if !value.is_object() || value.as_object().is_some_and(|x|x.is_empty()) {
+                return Err(ApiError::InvalidRequest);
+            }
+            value.clone()
+        };
+        mapped.push(json!({"name":name,"filterExpression":expression}));
+    }
+    let mut request = json!({
+        "funnel":{"steps":mapped},
+        "dateRanges":dates.unwrap_or_default(),
+        "returnPropertyQuota":quota
+    });
+    if let Some(breakdown) = breakdown {
+        let field = breakdown.get("breakdown_dimension")
+            .or_else(|| breakdown.get("breakdownDimension"))
+            .and_then(Value::as_str).ok_or(ApiError::InvalidRequest)?;
+        if field.trim().is_empty() {return Err(ApiError::InvalidRequest);}
+        request["funnelBreakdown"] = json!({"breakdownDimension":{"name":field}});
+    }
+    if let Some(next_action) = next_action {
+        let field = next_action.get("next_action_dimension")
+            .or_else(|| next_action.get("nextActionDimension"))
+            .and_then(Value::as_str).ok_or(ApiError::InvalidRequest)?;
+        if field.trim().is_empty() {return Err(ApiError::InvalidRequest);}
+        let mut action = json!({"nextActionDimension":{"name":field}});
+        if let Some(limit) = next_action.get("limit") {
+            let amount = limit.as_u64().ok_or(ApiError::InvalidRequest)?;
+            if amount == 0 || amount > 1000 {return Err(ApiError::InvalidRequest);}
+            action["limit"] = json!(amount.to_string());
+        }
+        request["funnelNextAction"] = action;
+    }
+    if let Some(segments) = segments { request["segments"] = json!(segments); }
+    if serde_json::to_vec(&request).map_or(true, |bytes| bytes.len() > 64 * 1024) {
+        return Err(ApiError::InvalidRequest);
+    }
+    Ok(request)
+}
+
 /// Google REST APIs accept array entries as objects, not raw field names.
 pub fn report_request(
     dates: Option<Vec<Value>>,
@@ -520,6 +589,30 @@ mod tests {
         assert!(conversion_spec(&json!({"conversion_actions":["../unsafe"]}), &dim, &metric).is_err());
         assert!(conversion_spec(&json!({"conversion_actions":vec!["conversionActions/5";51]}), &dim, &metric).is_err());
         assert!(conversion_spec(&json!({"attribution_model":"NOT_A_MODEL"}), &dim, &metric).is_err());
+    }
+
+    #[test]
+    fn funnels_normalize_events_and_reject_unsafe_step_shapes() {
+        let request = funnel_request(
+            vec![json!({"event":"page_view"}), json!({"name":"Signup","event":"sign_up"})],
+            Some(vec![json!({"startDate":"7daysAgo","endDate":"today"})]),
+            Some(json!({"breakdown_dimension":"deviceCategory"})),
+            Some(json!({"next_action_dimension":"eventName","limit":5})),
+            None, false,
+        ).unwrap();
+        assert_eq!(request["funnel"]["steps"][0]["name"], "Step 1");
+        assert_eq!(request["funnel"]["steps"][0]["filterExpression"]["funnelEventFilter"]["eventName"], "page_view");
+        assert_eq!(request["funnelBreakdown"]["breakdownDimension"]["name"], "deviceCategory");
+        assert_eq!(request["funnelNextAction"]["limit"], "5");
+        for bad in [
+            vec![], vec![json!({})],
+            vec![json!({"event":"page_view","filter_expression":{}})],
+            vec![json!({"event":""})],
+            vec![json!({"filter_expression":{}})],
+            vec![json!({"event":"page_view"});11],
+        ] {
+            assert!(funnel_request(bad,None,None,None,None,false).is_err());
+        }
     }
 
     #[test]
