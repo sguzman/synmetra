@@ -2204,7 +2204,10 @@ mod tests {
         use tokio::net::TcpListener;
 
         let production = GoogleClient::new(Some("fixture-token".into()));
-        assert_eq!(production.admin_base, "https://analyticsadmin.googleapis.com");
+        assert_eq!(
+            production.admin_base,
+            "https://analyticsadmin.googleapis.com"
+        );
         assert_eq!(production.data_base, "https://analyticsdata.googleapis.com");
         for injected in [
             "https://attacker.example/properties/42",
@@ -2225,16 +2228,12 @@ mod tests {
             let (mut socket, _) = listener.accept().await.unwrap();
             let mut buffer = [0_u8; 4096];
             let count = socket.read(&mut buffer).await.unwrap();
-            assert!(String::from_utf8_lossy(&buffer[..count])
-                .contains("properties/42:runReport"));
+            assert!(String::from_utf8_lossy(&buffer[..count]).contains("properties/42:runReport"));
             let response = "HTTP/1.1 302 Found\r\nLocation: https://attacker.example/collect\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
             socket.write_all(response.as_bytes()).await.unwrap();
         });
-        let client = GoogleClient::with_endpoints(
-            Some("private-token".into()),
-            &endpoint,
-            &endpoint,
-        );
+        let client =
+            GoogleClient::with_endpoints(Some("private-token".into()), &endpoint, &endpoint);
         let body = report_request(
             Some(vec![json!({"startDate":"yesterday","endDate":"today"})]),
             vec![],
@@ -2242,7 +2241,10 @@ mod tests {
             vec![],
         )
         .unwrap();
-        assert_eq!(client.report("42", body, false).await, Err(ApiError::Http(302)));
+        assert_eq!(
+            client.report("42", body, false).await,
+            Err(ApiError::Http(302))
+        );
         responder.await.unwrap();
     }
 
