@@ -17,7 +17,7 @@
 | 🧭 M0 Reference baseline and project governance | `███████░░░ 67.7%` | MVP |
 | 🔌 M1 MCP protocol and transport fidelity | `███░░░░░░░ 32.6%` | MVP |
 | 🔑 M2 Google authentication and credential isolation | `██░░░░░░░░ 21.1%` | MVP |
-| 🏢 M3 Admin API information parity | `███░░░░░░░ 31.3%` | MVP |
+| 🏢 M3 Admin API information parity | `███░░░░░░░ 31.2%` | MVP |
 | 📊 M4 Reporting, preflight and Data API parity | `███░░░░░░░ 26.7%` | MVP |
 | ✍️ M5 Explicitly gated GA mutation parity | `██████░░░░ 61.5%` | MVP |
 | 🗃️ M6 DuckDB scratchpad and advanced analytics parity | `███░░░░░░░ 28.0%` | MVP |
