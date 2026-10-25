@@ -5,6 +5,7 @@ use crate::google::ApiError;
 use rmcp::schemars::JsonSchema;
 use serde::Deserialize;
 use serde_json::{json, Map, Value};
+use std::collections::HashSet;
 
 const DEFAULT_ROWS: usize = 100;
 const MAX_ROWS: usize = 1000;
@@ -61,6 +62,9 @@ impl Controls {
 
     pub fn request_limit(self, existing: Option<u32>) -> Result<Option<u32>, ApiError> {
         self.validate()?;
+        if existing == Some(0) {
+            return Err(ApiError::InvalidRequest);
+        }
         if !self.active() {
             return Ok(existing);
         }
@@ -83,6 +87,9 @@ fn columns(response: &Value, header: &str, fallback: &str) -> Result<Vec<Value>,
         .iter()
         .enumerate()
         .map(|(index, item)| {
+            if !item.is_object() {
+                return Err(ApiError::InvalidResponse);
+            }
             let name = item
                 .get("name")
                 .and_then(Value::as_str)
@@ -134,6 +141,9 @@ pub fn project(
                     .map(ToOwned::to_owned)
             }),
     );
+    if names.iter().collect::<HashSet<_>>().len() != names.len() {
+        return Err(ApiError::InvalidResponse);
+    }
     let mut columns = dimensions;
     columns.extend(metrics);
     let raw_rows = provider.get("rows").and_then(Value::as_array);
@@ -144,6 +154,7 @@ pub fn project(
     if !raw_rows.is_empty() && names.is_empty() {
         return Err(ApiError::InvalidResponse);
     }
+    let row_count_total_known = provider.contains_key("rowCount");
     let row_count_total = if let Some(value) = provider.get("rowCount") {
         let count = value.as_u64().ok_or(ApiError::InvalidResponse)?;
         usize::try_from(count).map_err(|_| ApiError::InvalidResponse)?
@@ -158,14 +169,20 @@ pub fn project(
     let mut tuples = Vec::new();
     let mut clipped = 0usize;
     for row in raw_rows.iter().take(cap) {
-        let dimension_values = row
-            .get("dimensionValues")
-            .and_then(Value::as_array)
-            .ok_or(ApiError::InvalidResponse)?;
-        let metric_values = row
-            .get("metricValues")
-            .and_then(Value::as_array)
-            .ok_or(ApiError::InvalidResponse)?;
+        let dimension_values: &[Value] = match row.get("dimensionValues") {
+            Some(values) => values
+                .as_array()
+                .map(Vec::as_slice)
+                .ok_or(ApiError::InvalidResponse)?,
+            None => &[],
+        };
+        let metric_values: &[Value] = match row.get("metricValues") {
+            Some(values) => values
+                .as_array()
+                .map(Vec::as_slice)
+                .ok_or(ApiError::InvalidResponse)?,
+            None => &[],
+        };
         if dimension_values.len() + metric_values.len() != names.len() {
             return Err(ApiError::InvalidResponse);
         }
@@ -229,6 +246,7 @@ pub fn project(
         "output_mode": mode.label(),
         "summary_only": controls.summary_only,
         "row_count_total": row_count_total,
+        "row_count_total_known": row_count_total_known,
         "row_count_returned": returned,
         "truncated": truncated,
         "next_cursor": null,
@@ -329,10 +347,30 @@ mod tests {
     }
 
     #[test]
+    fn unknown_total_is_marked_unknown_and_metric_only_reports_are_valid() {
+        let response = json!({
+            "metricHeaders":[{"name":"activeUsers"}],
+            "rows":[{"metricValues":[{"value":"12"}]}]
+        });
+        let projected = project(&response, controls(), false).unwrap();
+        assert_eq!(projected.data[0]["activeUsers"], "12");
+        assert_eq!(projected.meta["row_count_total"], 1);
+        assert_eq!(projected.meta["row_count_total_known"], false);
+
+        let duplicate = json!({
+            "dimensionHeaders":[{"name":"activeUsers"}],
+            "metricHeaders":[{"name":"activeUsers"}],
+            "rows":[{"dimensionValues":[{"value":"US"}],"metricValues":[{"value":"12"}]}]
+        });
+        assert!(project(&duplicate, controls(), false).is_err());
+    }
+
+    #[test]
     fn rejects_invalid_controls_and_malformed_provider_shapes() {
         let mut options = controls();
         options.max_rows = Some(0);
         assert_eq!(options.validate(), Err(ApiError::InvalidRequest));
+        assert_eq!(options.request_limit(Some(0)), Err(ApiError::InvalidRequest));
         options.max_rows = Some(1);
         options.cursor_supplied = true;
         assert_eq!(options.validate(), Err(ApiError::InvalidRequest));
