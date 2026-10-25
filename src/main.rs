@@ -2350,6 +2350,44 @@ mod tests {
     }
 
     #[test]
+    fn get_started_matches_pinned_empty_input_schema_and_native_login_guidance() {
+        let pinned: Value = serde_json::from_str(include_str!(
+            "../spec/upstream/sednalabs-tool-schema.v1.json"
+        ))
+        .unwrap();
+        let reference = pinned["tools"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|item| item["name"] == "ga4_get_started")
+            .unwrap();
+        let tool = Synmetra::tool_router()
+            .list_all()
+            .into_iter()
+            .find(|item| item.name == "ga4_get_started")
+            .unwrap();
+        assert_eq!(tool.input_schema.get("properties"), reference["inputSchema"].get("properties"));
+        assert!(tool
+            .input_schema
+            .get("required")
+            .and_then(Value::as_array)
+            .is_none_or(Vec::is_empty));
+
+        let server = Synmetra::new(GoogleClient::new(None), false);
+        let result = server.ga4_get_started();
+        let payload = result.structured_content.unwrap();
+        assert_eq!(payload["ok"], true);
+        let data = &payload["data"];
+        assert!(data["command"]
+            .as_str()
+            .unwrap()
+            .starts_with("synmetra auth login --client-id-file"));
+        assert_eq!(data["scope"], "https://www.googleapis.com/auth/analytics.readonly");
+        assert_eq!(data["python_required"], false);
+        assert_eq!(data["npm_required"], false);
+    }
+
+    #[test]
     fn auth_status_schema_advertises_optional_upstream_verification_flag() {
         let tool = Synmetra::tool_router()
             .list_all()
