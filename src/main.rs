@@ -1890,17 +1890,24 @@ mod tests {
             .map(|tool| tool.name.to_string())
             .collect();
 
-        assert_eq!(actual, expected, "Full tool union drifted from pinned inventory");
+        assert_eq!(
+            actual, expected,
+            "Full tool union drifted from pinned inventory"
+        );
         assert_eq!(actual.len(), 36);
         assert!(all_enabled.router.has_route("create_property_annotation"));
-        assert!(all_enabled.router.has_route("scratchpad_landing_param_shift_report"));
+        assert!(all_enabled
+            .router
+            .has_route("scratchpad_landing_param_shift_report"));
 
         // Without explicit write capability, the same process must never advertise
         // the official mutation tool even when local DuckDB analysis is enabled.
         let read_only = Synmetra::new(GoogleClient::new(None), false).enable_scratchpad();
         let tools = read_only.router.list_all();
         assert_eq!(tools.len(), 35);
-        assert!(!tools.iter().any(|tool| tool.name == "create_property_annotation"));
+        assert!(!tools
+            .iter()
+            .any(|tool| tool.name == "create_property_annotation"));
     }
 
     #[cfg(feature = "scratchpad")]
