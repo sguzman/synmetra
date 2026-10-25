@@ -2418,6 +2418,62 @@ mod tests {
     }
 
     #[test]
+    fn adversarial_report_filter_corpus_is_bounded_before_google_network_access() {
+        // Deterministic corpus checks the exact depth, node-count, breadth,
+        // byte-size, key-size and cell-size preflight boundaries.
+        let mut deep = json!({"filter":{"fieldName":"country"}});
+        for _ in 0..15 {
+            deep = json!({"notExpression":deep});
+        }
+        let mut large_object = Map::new();
+        large_object.insert("x".repeat(129), json!(1));
+        let high_node_count = json!({
+            "andGroup": {
+                "expressions": (0..60).map(|index| {
+                    json!({"filter":{
+                        "fieldName":format!("country{index}"),
+                        "stringFilter":{"value":"US"}
+                    }})
+                }).collect::<Vec<_>>()
+            }
+        });
+        let corpus = vec![
+            json!(null),
+            json!(true),
+            json!([]),
+            json!("not a filter"),
+            json!({}),
+            json!({"filter":{}}),
+            json!({"andGroup":{"expressions":vec![false;65]}}),
+            json!({"longValue":"x".repeat(1025)}),
+            json!({"bigJSON":"x".repeat(17_000)}),
+            Value::Object(large_object),
+            high_node_count,
+            deep,
+        ];
+        for (index, payload) in corpus.into_iter().enumerate() {
+            assert_eq!(
+                validate_bounded_filter(&payload),
+                Err(ApiError::InvalidRequest),
+                "filter corpus item {index} was accepted"
+            );
+            let request = report_request(
+                Some(vec![json!({"startDate":"yesterday","endDate":"today"})]),
+                vec!["country".into()],
+                vec!["activeUsers".into()],
+                vec![("dimensionFilter", Some(payload))],
+            );
+            // A syntax-invalid object may still be Google-validatable; this
+            // particular corpus must always hit a local resource boundary.
+            assert_eq!(
+                request,
+                Err(ApiError::InvalidRequest),
+                "network-boundary corpus item {index} was accepted"
+            );
+        }
+    }
+
+    #[test]
     fn historical_report_request_rejects_oversized_options_and_deep_filters() {
         // This check must run *before* network access, including offline previews.
         let huge_order_bys = (0..5000)
