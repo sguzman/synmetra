@@ -124,7 +124,10 @@ mod tests {
                 .unwrap()
                 .expect("SSE stream ended before JSON-RPC result");
             stream.push_str(&String::from_utf8_lossy(&chunk));
-            assert!(stream.len() <= 1_048_576, "Oversized synthetic SSE test response");
+            assert!(
+                stream.len() <= 1_048_576,
+                "Oversized synthetic SSE test response"
+            );
             for line in stream.lines() {
                 if let Some(text) = line.strip_prefix("data: ") {
                     if let Ok(payload) = serde_json::from_str::<serde_json::Value>(text) {
