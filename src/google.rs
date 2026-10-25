@@ -1303,6 +1303,17 @@ mod tests {
         let client = GoogleClient::with_endpoints(Some("mock".into()), &url, &url);
         assert_eq!(client.account_summaries().await.unwrap_err(), ApiError::InvalidResponse);
         assert_eq!(handle.await.unwrap().len(), 2);
+
+        let (url, handle) = serve(vec![
+            r#"{"googleAdsLinks":[{"name":"properties/42/googleAdsLinks/1"}],"nextPageToken":"next"}"#,
+            r#"{"googleAdsLinks":[{"name":"properties/42/googleAdsLinks/2"}]}"#,
+        ]).await;
+        let client = GoogleClient::with_endpoints(Some("mock".into()), &url, &url);
+        assert_eq!(client.ads_links("42").await.unwrap()["googleAdsLinks"]
+            .as_array().unwrap().len(), 2);
+        let requests = handle.await.unwrap();
+        assert!(requests[0].starts_with("GET /v1beta/properties/42/googleAdsLinks HTTP/1.1"));
+        assert!(requests[1].contains("pageToken=next"));
     }
 
     #[tokio::test]
