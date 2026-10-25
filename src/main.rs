@@ -2300,9 +2300,20 @@ mod tests {
                 .into_iter()
                 .find(|item| item.name == tool_name)
                 .unwrap();
-            let schema = &tool.input_schema["properties"][field_name];
+            let all = serde_json::to_value(&tool.input_schema).unwrap();
+            let raw = &all["properties"][field_name];
+            let schema = if let Some(key) = raw["$ref"]
+                .as_str()
+                .and_then(|path| path.strip_prefix("#/$defs/"))
+            {
+                &all["$defs"][key]
+            } else {
+                raw
+            };
             assert!(
-                schema.get("anyOf").is_some() || schema.get("oneOf").is_some(),
+                schema.get("anyOf").is_some()
+                    || schema.get("oneOf").is_some()
+                    || schema["type"].as_array().is_some_and(|types| types.len() >= 2),
                 "{tool_name} must advertise numeric or text IDs"
             );
         }
