@@ -242,7 +242,10 @@ pub fn project(
     }
     let row_count_total_known = provider.contains_key("rowCount");
     let row_count_total = if let Some(value) = provider.get("rowCount") {
-        let count = value.as_u64().ok_or(ApiError::InvalidResponse)?;
+        let count = value
+            .as_u64()
+            .or_else(|| value.as_str().and_then(|text| text.parse::<u64>().ok()))
+            .ok_or(ApiError::InvalidResponse)?;
         usize::try_from(count).map_err(|_| ApiError::InvalidResponse)?
     } else {
         raw_rows.len()
@@ -290,7 +293,20 @@ pub fn project(
         tuples.push(Value::Array(tuple));
     }
     let returned = rows.len();
-    let truncated = row_count_total > returned;
+    // A provider total counts from offset zero, not from the current page.
+    // Never report a final historical page as truncated merely because prior
+    // pages accounted for most of the provider's rows.
+    let truncated = if let Some(page) = pagination {
+        if row_count_total_known {
+            page.offset
+                .checked_add(returned as u64)
+                .is_some_and(|end| end < row_count_total as u64)
+        } else {
+            raw_rows.len() > returned
+        }
+    } else {
+        row_count_total > returned
+    };
     let mode = controls.output_mode.unwrap_or(OutputMode::Rows);
     let data = if controls.summary_only {
         Value::Null
@@ -433,6 +449,44 @@ mod tests {
             project(&fixture(), tuples, false, None).unwrap().data["row_count"],
             2
         );
+    }
+
+    #[test]
+    fn historical_last_page_is_not_marked_truncated_and_accepts_string_totals() {
+        let response = json!({
+            "dimensionHeaders":[{"name":"country"}],
+            "metricHeaders":[{"name":"activeUsers"}],
+            "rows":[
+                {"dimensionValues":[{"value":"Canada"}],"metricValues":[{"value":"2"}]}
+            ],
+            "rowCount":"3"
+        });
+        let last = Pagination {
+            query_hash: "fixture-query".into(),
+            offset: 2,
+        };
+        let projected = project(&response, controls(), false, Some(&last)).unwrap();
+        assert_eq!(projected.data[0]["country"], "Canada");
+        assert_eq!(projected.meta["row_count_total"], 3);
+        assert_eq!(projected.meta["row_count_total_known"], true);
+        assert_eq!(projected.meta["row_count_returned"], 1);
+        assert_eq!(projected.meta["truncated"], false);
+        assert!(projected.meta["next_cursor"].is_null());
+
+        let middle = Pagination {
+            query_hash: "fixture-query".into(),
+            offset: 1,
+        };
+        let result = project(&response, controls(), false, Some(&middle)).unwrap();
+        assert_eq!(result.meta["truncated"], true);
+        assert_eq!(result.meta["next_cursor"], "v1:fixture-query:2");
+
+        let mut unknown = response;
+        unknown.as_object_mut().unwrap().remove("rowCount");
+        let no_total = project(&unknown, controls(), false, Some(&middle)).unwrap();
+        assert_eq!(no_total.meta["row_count_total_known"], false);
+        assert_eq!(no_total.meta["truncated"], false);
+        assert!(no_total.meta["next_cursor"].is_null());
     }
 
     #[test]
