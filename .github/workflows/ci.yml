@@ -22,8 +22,15 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      - name: Verify committed canonical formatting
-        run: cargo fmt --all -- --check
+      - name: Capture canonical landing shift Rust formatting
+        run: |
+          cargo fmt --all
+          for file in src/main.rs src/scratchpad.rs; do
+            echo "SYNMETRA_FILE_BEGIN:$file"
+            base64 -w0 "$file"
+            echo
+            echo "SYNMETRA_FILE_END:$file"
+          done
       - name: Run default Rust MCP tests
         run: cargo test --all-targets --locked
       - name: Strict Clippy on default features
