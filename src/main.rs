@@ -2106,7 +2106,9 @@ mod tests {
         );
         assert!(structured["meta"].get("next_cursor").is_none());
         assert!(structured["data"].get("next_cursor").is_none());
-        assert!(!structured.to_string().contains("private-realtime-fixture-token"));
+        assert!(!structured
+            .to_string()
+            .contains("private-realtime-fixture-token"));
     }
 
     #[test]
