@@ -436,6 +436,69 @@ mod tests {
     }
 
     #[test]
+    fn provider_aggregate_rows_survive_all_projection_modes_without_recomputation() {
+        let original = json!({
+            "dimensionHeaders": [{"name":"country"}],
+            "metricHeaders": [{"name":"purchaseRevenue","type":"TYPE_CURRENCY"}],
+            "rows": [
+                {"dimensionValues":[{"value":"Mexico"}],"metricValues":[{"value":"12.75"}]}
+            ],
+            "rowCount": 18,
+            "totals": [{"metricValues":[{"value":"125.50"}]}],
+            "minimums": [{"metricValues":[{"value":"0.00"}]}],
+            "maximums": [{"metricValues":[{"value":"105.75"}]}],
+            "aggregates": [{"type":"TOTAL","value":"125.50"}],
+            "propertyQuota": {"concurrentRequests":{"remaining":7}}
+        });
+        for output_mode in [
+            OutputMode::Rows,
+            OutputMode::Tuples,
+            OutputMode::Scalar,
+            OutputMode::Compact,
+        ] {
+            for summary_only in [false, true] {
+                let options = Controls {
+                    output_mode: Some(output_mode),
+                    summary_only,
+                    max_rows: Some(1),
+                    max_cell_chars: None,
+                    cursor_supplied: false,
+                };
+                let result = project(&original, options, false, None).unwrap();
+                assert_eq!(result.meta["ga4"]["totals"], original["totals"]);
+                assert_eq!(result.meta["ga4"]["minimums"], original["minimums"]);
+                assert_eq!(result.meta["ga4"]["maximums"], original["maximums"]);
+                assert_eq!(result.meta["ga4"]["aggregates"], original["aggregates"]);
+                assert_eq!(
+                    result.meta["ga4"]["propertyQuota"],
+                    original["propertyQuota"]
+                );
+                assert_eq!(result.meta["row_count_total"], 18);
+                assert_eq!(result.meta["row_count_total_known"], true);
+                assert_eq!(result.meta["row_count_returned"], 1);
+                assert_eq!(result.meta["truncated"], true);
+                if summary_only {
+                    assert!(result.data.is_null());
+                } else {
+                    assert!(!result.data.is_null());
+                }
+            }
+        }
+        // Projection must not mutate the provider response or fold aggregates
+        // into ordinary rows where they would distort counts or double count.
+        assert_eq!(original["rows"].as_array().unwrap().len(), 1);
+        assert_eq!(original["totals"][0]["metricValues"][0]["value"], "125.50");
+
+        let no_aggregate = json!({
+            "metricHeaders":[{"name":"activeUsers"}],
+            "rows":[{"metricValues":[{"value":"3"}]}]
+        });
+        let output = project(&no_aggregate, controls(), false, None).unwrap();
+        assert!(output.meta["ga4"].as_object().unwrap().is_empty());
+        assert_eq!(output.meta["row_count_total_known"], false);
+    }
+
+    #[test]
     fn summary_and_unicode_clipping_preserve_counts_without_row_payload() {
         let mut options = controls();
         options.max_cell_chars = Some(3);
