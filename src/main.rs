@@ -2059,6 +2059,56 @@ mod tests {
         assert!(body.get("offset").is_none());
     }
 
+    #[tokio::test]
+    async fn realtime_mcp_retains_provider_quota_without_fabricating_a_next_cursor() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        use tokio::net::TcpListener;
+
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let endpoint = format!("http://{}", listener.local_addr().unwrap());
+        let api = GoogleClient::with_endpoints(
+            Some("private-realtime-fixture-token".into()),
+            &endpoint,
+            &endpoint,
+        );
+        let responder = tokio::spawn(async move {
+            let (mut stream, _) = listener.accept().await.unwrap();
+            let mut buffer = [0_u8; 4096];
+            let count = stream.read(&mut buffer).await.unwrap();
+            let request = String::from_utf8_lossy(&buffer[..count]);
+            assert!(request.contains("runRealtimeReport"));
+            let body = r#"{"rowCount":154,"rows":[{"dimensionValues":[{"value":"US"}],"metricValues":[{"value":"42"}]}],"propertyQuota":{"concurrentRequests":{"consumed":1,"remaining":9}}}"#;
+            let response = format!(
+                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                body.len(),
+                body
+            );
+            stream.write_all(response.as_bytes()).await.unwrap();
+        });
+        let server = Synmetra::new(api, false);
+        let args: RealtimeArgs = serde_json::from_value(json!({
+            "property_id": "42",
+            "dimensions": ["country"],
+            "metrics": ["activeUsers"],
+            "limit": 1,
+            "return_property_quota": true
+        }))
+        .unwrap();
+        let response = server.run_realtime_report(Parameters(args)).await;
+        responder.await.unwrap();
+        assert_eq!(response.is_error, Some(false));
+        let structured = response.structured_content.unwrap();
+        assert_eq!(structured["data"]["rowCount"], 154);
+        assert_eq!(structured["data"]["rows"].as_array().unwrap().len(), 1);
+        assert_eq!(
+            structured["data"]["propertyQuota"]["concurrentRequests"]["remaining"],
+            9
+        );
+        assert!(structured["meta"].get("next_cursor").is_none());
+        assert!(structured["data"].get("next_cursor").is_none());
+        assert!(!structured.to_string().contains("private-realtime-fixture-token"));
+    }
+
     #[test]
     fn realtime_nonzero_offset_has_stable_preflight_error() {
         let args: RealtimeArgs = serde_json::from_value(json!({
