@@ -287,7 +287,75 @@ pub async fn access_token() -> Result<Option<String>, String> {
     Ok(Some(stored.access_token))
 }
 
-async fn login(path: &str, allow_edit: bool) -> Result<(), String> {
+#[derive(Debug, Default)]
+struct LoginOptions {
+    client_id_file: String,
+    allow_edit: bool,
+    headless: bool,
+    account: Option<String>,
+    callback_port: Option<u16>,
+}
+
+fn parse_login_options(args: &[String]) -> Result<LoginOptions, String> {
+    let mut options = LoginOptions::default();
+    let mut seen = std::collections::HashSet::new();
+    let mut index = 0;
+    while index < args.len() {
+        let flag = args[index].as_str();
+        if !seen.insert(flag) {
+            return Err("Duplicate OAuth login option".into());
+        }
+        match flag {
+            "--client-id-file" | "--account" | "--callback-port" => {
+                let value = args.get(index + 1).ok_or("Missing OAuth login option value")?;
+                if value.is_empty() || value.starts_with("--") || value.chars().any(char::is_control) {
+                    return Err("Invalid OAuth login option value".into());
+                }
+                match flag {
+                    "--client-id-file" => {
+                        if value.len() > 4096 {
+                            return Err("OAuth client path too long".into());
+                        }
+                        options.client_id_file = value.clone();
+                    }
+                    "--account" => {
+                        if value.len() > 254 {
+                            return Err("Google account hint too long".into());
+                        }
+                        options.account = Some(value.clone());
+                    }
+                    "--callback-port" => {
+                        if !value.bytes().all(|byte| byte.is_ascii_digit()) {
+                            return Err("Invalid OAuth callback port".into());
+                        }
+                        options.callback_port = Some(
+                            value.parse::<u16>().map_err(|_| "Invalid OAuth callback port")?,
+                        );
+                    }
+                    _ => unreachable!(),
+                }
+                index += 2;
+            }
+            "--headless" => {
+                options.headless = true;
+                index += 1;
+            }
+            "--allow-edit" => {
+                options.allow_edit = true;
+                index += 1;
+            }
+            _ => return Err("Unsupported OAuth login option".into()),
+        }
+    }
+    if options.client_id_file.is_empty() {
+        return Err("OAuth login requires --client-id-file".into());
+    }
+    Ok(options)
+}
+
+async fn login(options: &LoginOptions) -> Result<(), String> {
+    let path = &options.client_id_file;
+    let allow_edit = options.allow_edit;
     let file = fs::read(path).map_err(|_| "Cannot read Google OAuth Desktop client JSON")?;
     if file.len() > 128 * 1024 {
         return Err("OAuth client JSON too large".into());
@@ -302,7 +370,7 @@ async fn login(path: &str, allow_edit: bool) -> Result<(), String> {
     {
         return Err("Invalid Google Desktop OAuth client ID".into());
     }
-    let listener = TcpListener::bind("127.0.0.1:0")
+    let listener = TcpListener::bind(format!("127.0.0.1:{}", options.callback_port.unwrap_or(0)))
         .await
         .map_err(|_| "Could not bind local OAuth callback")?;
     let redirect = format!(
@@ -319,21 +387,25 @@ async fn login(path: &str, allow_edit: bool) -> Result<(), String> {
     } else {
         SCOPE.to_owned()
     };
-    let url = authorization_url(
+    let mut url = authorization_url(
         &client.installed.client_id,
         &redirect,
         &state,
         &verifier,
         &requested_scope,
     );
+    if let Some(account) = options.account.as_deref() {
+        url.query_pairs_mut().append_pair("login_hint", account);
+    }
     eprintln!("Open this Google login URL in your browser:\n{url}\n");
-    // Optional desktop browser invocation; the printed URL supports headless use.
-    let _ = std::process::Command::new("xdg-open")
-        .arg(url.as_str())
-        .stdin(std::process::Stdio::null())
-        .stdout(std::process::Stdio::null())
-        .stderr(std::process::Stdio::null())
-        .spawn();
+    if !options.headless {
+        let _ = std::process::Command::new("xdg-open")
+            .arg(url.as_str())
+            .stdin(std::process::Stdio::null())
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .spawn();
+    }
     let code = loop {
         let (mut socket, _) = timeout(Duration::from_secs(300), listener.accept())
             .await
@@ -427,13 +499,9 @@ pub fn public_status() -> serde_json::Value {
 
 pub async fn command(args: &[String]) -> Result<(), String> {
     match args {
-        [mode, flag, path] if mode == "login" && flag == "--client-id-file" => {
-            login(path, false).await
-        }
-        [mode, flag, path, write_flag]
-            if mode == "login" && flag == "--client-id-file" && write_flag == "--allow-edit" =>
-        {
-            login(path, true).await
+        [mode, rest @ ..] if mode == "login" => {
+            let options = parse_login_options(rest)?;
+            login(&options).await
         }
         [mode] if mode == "status" => {
             match read_credentials()? {
@@ -483,7 +551,7 @@ pub async fn command(args: &[String]) -> Result<(), String> {
             Ok(())
         }
         _ => Err(
-            "Usage: synmetra auth login --client-id-file /path/to/desktop.json | status | doctor | command | logout"
+            "Usage: synmetra auth login --client-id-file PATH [--account EMAIL] [--callback-port PORT] [--headless] [--allow-edit] | status | doctor | command | logout"
                 .into(),
         ),
     }
@@ -492,6 +560,39 @@ pub async fn command(args: &[String]) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn login_flags_are_opt_in_and_reject_malformed_arguments() {
+        let parse = |input: &[&str]| {
+            parse_login_options(&input.iter().map(|s| (*s).to_owned()).collect::<Vec<_>>())
+        };
+        let default = parse(&["--client-id-file", "/home/user/oauth.json"]).unwrap();
+        assert!(!default.allow_edit);
+        assert!(!default.headless);
+        assert_eq!(default.callback_port, None);
+        assert_eq!(default.account, None);
+
+        let opts = parse(&[
+            "--headless", "--account", "user@example.com", "--callback-port", "39721",
+            "--client-id-file", "/home/user/My OAuth.json", "--allow-edit",
+        ])
+        .unwrap();
+        assert!(opts.headless);
+        assert!(opts.allow_edit);
+        assert_eq!(opts.callback_port, Some(39721));
+        assert_eq!(opts.account.as_deref(), Some("user@example.com"));
+
+        for bad in [
+            vec!["--client-id-file", "file", "--headless", "--headless"],
+            vec!["--client-id-file", "file", "--callback-port", "-1"],
+            vec!["--client-id-file", "file", "--callback-port", "65536"],
+            vec!["--client-id-file", "file", "--account", "bad\nhint"],
+            vec!["--client-id-file", "file", "--quota-project", "abc"],
+            vec!["--allow-edit"],
+        ] {
+            assert!(parse(&bad).is_err(), "{bad:?}");
+        }
+    }
 
     #[test]
     fn status_has_no_token_or_client_secret_fields() {
