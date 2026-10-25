@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `██░░░░░░░░ 17.8%` · **+17.84 percentage points from initial empty repo; +6.39 pp in this implementation round** · 8/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `██░░░░░░░░ 18.7%` · **+18.72 percentage points from initial empty repo; +0.88 pp in this annotation-safety round** · 8/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -60,7 +60,7 @@
   - ✅ **Gate:** Document semver and provenance gates
 
 
-## 🔌 M1 — MCP protocol and transport fidelity — `███░░░░░░░ 28.3%`
+## 🔌 M1 — MCP protocol and transport fidelity — `███░░░░░░░ 32.6%`
 
 **Scope:** MVP. **Acceptance gate:** Spec-conforming native MCP discovery and calls over stdio plus bounded Streamable HTTP; all transport safety tests pass.
 
@@ -106,14 +106,14 @@
 - 🧫 **T033 — Test MCP HTTP inspector interoperability** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** End-to-end tool invocation under loopback and protected remote modes
 
-### 🧾 P04 — MCP schema semantics — `█░░░░░░░░░ 14.3%`
+### 🧾 P04 — MCP schema semantics — `███░░░░░░░ 28.6%`
 
 **Feature:** MCP contract.
 
 - 📐 **T034 — Validate structured input against exported schemas** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Tool arguments validated with stable user-facing errors
-- 🧩 **T035 — Declare read-only versus mutating tool annotations** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Annotation write differs accurately from read tools
+- 🧩 **T035 — Declare read-only versus mutating tool annotations** — `██████████ 100.0%`
+  - ✅ **Gate:** Annotation write differs accurately from read tools · **Evidence:** src/main.rs: 21 #[tool] annotations including additive non-idempotent GA write; explicit in-memory metadata assertions. GitHub Actions run 40205211110 passed tests, strict rustfmt and Clippy.; src/main.rs: 21 #[tool] annotations including additive non-idempotent GA write; explicit in-memory metadata assertions. GitHub Actions run 40205211110 passed tests, strict rustfmt and Clippy.
 - 🎛️ **T036 — Expose capability-profile filtered tool lists** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Default read-only excludes writes and scratchpad effects
 - ♻️ **T037 — Honor deterministic pagination and tool list consistency** — `░░░░░░░░░░ 0.0%`
@@ -325,7 +325,7 @@
   - ✅ **Gate:** Quotas accessible without leaking tokens
 
 
-## ✍️ M5 — Explicitly gated GA mutation parity — `█████░░░░░ 53.9%`
+## ✍️ M5 — Explicitly gated GA mutation parity — `██████░░░░ 61.5%`
 
 **Scope:** MVP. **Acceptance gate:** One official write tool operates with analytics.edit and explicit opt-in; ordinary mode cannot mutate GA.
 
@@ -350,12 +350,12 @@
 - 🧪 **T120 — Test write denial and optional live opt-in acceptance** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** No writes in automated public CI
 
-### 🚦 P14 — Write safety policies — `████░░░░░░ 40.0%`
+### 🚦 P14 — Write safety policies — `██████░░░░ 60.0%`
 
 **Feature:** Write gating.
 
-- 🏷️ **T121 — Annotate mutating MCP tools correctly** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** ReadOnly and idempotence hints match effects
+- 🏷️ **T121 — Annotate mutating MCP tools correctly** — `██████████ 100.0%`
+  - ✅ **Gate:** ReadOnly and idempotence hints match effects · **Evidence:** src/main.rs: 21 #[tool] annotations including additive non-idempotent GA write; explicit in-memory metadata assertions. GitHub Actions run 40205211110 passed tests, strict rustfmt and Clippy.; src/main.rs: 21 #[tool] annotations including additive non-idempotent GA write; explicit in-memory metadata assertions. GitHub Actions run 40205211110 passed tests, strict rustfmt and Clippy.
 - 🛡️ **T122 — Keep write tool hidden under read-only profiles** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Bypass attempts fail regardless of tool visibility
 - 🧾 **T123 — Produce redacted audit events for writes** — `░░░░░░░░░░ 0.0%`

@@ -689,16 +689,18 @@
               "id": "T035",
               "emoji": "🧩",
               "name": "Declare read-only versus mutating tool annotations",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "Annotation write differs accurately from read tools",
               "checks": [
                 {
                   "text": "Deliver declare read-only versus mutating tool annotations as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs: 21 #[tool] annotations including additive non-idempotent GA write; explicit in-memory metadata assertions. GitHub Actions run 40205211110 passed tests, strict rustfmt and Clippy."
                 },
                 {
                   "text": "Annotation write differs accurately from read tools",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs: 21 #[tool] annotations including additive non-idempotent GA write; explicit in-memory metadata assertions. GitHub Actions run 40205211110 passed tests, strict rustfmt and Clippy."
                 }
               ]
             },
@@ -2307,16 +2309,18 @@
               "id": "T121",
               "emoji": "🏷️",
               "name": "Annotate mutating MCP tools correctly",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "ReadOnly and idempotence hints match effects",
               "checks": [
                 {
                   "text": "Deliver annotate mutating mcp tools correctly as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs: 21 #[tool] annotations including additive non-idempotent GA write; explicit in-memory metadata assertions. GitHub Actions run 40205211110 passed tests, strict rustfmt and Clippy."
                 },
                 {
                   "text": "ReadOnly and idempotence hints match effects",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs: 21 #[tool] annotations including additive non-idempotent GA write; explicit in-memory metadata assertions. GitHub Actions run 40205211110 passed tests, strict rustfmt and Clippy."
                 }
               ]
             },
