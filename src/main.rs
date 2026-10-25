@@ -2225,7 +2225,9 @@ mod tests {
     async fn auth_status_only_contacts_google_when_explicitly_requested() {
         let server = Synmetra::new(GoogleClient::new(None), false);
         let reply = server
-            .ga4_auth_status(Parameters(AuthStatusArgs { verify_token: false }))
+            .ga4_auth_status(Parameters(AuthStatusArgs {
+                verify_token: false,
+            }))
             .await;
         let payload = reply.structured_content.expect("structured auth status");
         assert_eq!(payload["ok"], true);
