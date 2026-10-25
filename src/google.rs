@@ -738,10 +738,14 @@ pub fn normalize_report_filter(input: Value, metric: bool) -> Result<Value, ApiE
                 let (field, raw_value) = raw.split_once("==").ok_or(ApiError::InvalidRequest)?;
                 let field = field.trim();
                 let raw_value = raw_value.trim();
-                if field.is_empty() || field.len() > 64
+                if field.is_empty()
+                    || field.len() > 64
                     || !field.as_bytes()[0].is_ascii_alphabetic()
-                    || !field.bytes().all(|c| c.is_ascii_alphanumeric() || c == b'_')
-                    || raw_value.is_empty() || raw_value.len() > 256
+                    || !field
+                        .bytes()
+                        .all(|c| c.is_ascii_alphanumeric() || c == b'_')
+                    || raw_value.is_empty()
+                    || raw_value.len() > 256
                 {
                     return Err(ApiError::InvalidRequest);
                 }
@@ -754,7 +758,9 @@ pub fn normalize_report_filter(input: Value, metric: bool) -> Result<Value, ApiE
                     let numeric = if let Ok(value) = raw_value.parse::<i64>() {
                         json!({"int64Value":value.to_string()})
                     } else {
-                        let value = raw_value.parse::<f64>().map_err(|_| ApiError::InvalidRequest)?;
+                        let value = raw_value
+                            .parse::<f64>()
+                            .map_err(|_| ApiError::InvalidRequest)?;
                         if !value.is_finite() {
                             return Err(ApiError::InvalidRequest);
                         }
@@ -766,8 +772,11 @@ pub fn normalize_report_filter(input: Value, metric: bool) -> Result<Value, ApiE
                         serde_json::from_str::<String>(raw_value)
                             .map_err(|_| ApiError::InvalidRequest)?
                     } else {
-                        if raw_value.chars().any(|c| c.is_whitespace() || c.is_control())
-                            || raw_value.contains("==") || raw_value.contains('"')
+                        if raw_value
+                            .chars()
+                            .any(|c| c.is_whitespace() || c.is_control())
+                            || raw_value.contains("==")
+                            || raw_value.contains('"')
                         {
                             return Err(ApiError::InvalidRequest);
                         }
@@ -961,9 +970,9 @@ mod tests {
         let country = normalize_report_filter(json!("country==Mexico"), false).unwrap();
         assert_eq!(country["filter"]["fieldName"], "country");
         assert_eq!(country["filter"]["stringFilter"]["value"], "Mexico");
-        let channel = normalize_report_filter(
-            json!("sessionDefaultChannelGroup==\"Paid Other\""), false
-        ).unwrap();
+        let channel =
+            normalize_report_filter(json!("sessionDefaultChannelGroup==\"Paid Other\""), false)
+                .unwrap();
         assert_eq!(channel["filter"]["stringFilter"]["value"], "Paid Other");
         let count = normalize_report_filter(json!("sessions==7"), true).unwrap();
         assert_eq!(count["filter"]["numericFilter"]["value"]["int64Value"], "7");
@@ -976,9 +985,13 @@ mod tests {
         assert_eq!(json_encoded["filter"]["stringFilter"]["value"], "MX");
 
         for raw in [
-            "country=Mexico", "country==Paid Other", "country==",
-            "country-name==Mexico", "country==Mexico==US",
-            "country==\"unterminated", "country==\"x\"y",
+            "country=Mexico",
+            "country==Paid Other",
+            "country==",
+            "country-name==Mexico",
+            "country==Mexico==US",
+            "country==\"unterminated",
+            "country==\"x\"y",
         ] {
             assert!(normalize_report_filter(json!(raw), false).is_err(), "{raw}");
         }
