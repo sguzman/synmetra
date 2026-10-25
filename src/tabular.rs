@@ -695,6 +695,55 @@ mod tests {
     }
 
     #[test]
+    fn multi_axis_pivot_groups_preserve_headers_and_never_claim_flat_cursors() {
+        let pivot_headers = json!([
+            {"pivotDimensionHeaders":[{"dimensionValues":[{"value":"US"}]}],"rowCount":2},
+            {"pivotDimensionHeaders":[{"dimensionValues":[{"value":"Chrome"}]}],"rowCount":3}
+        ]);
+        let response = json!({
+            "dimensionHeaders":[{"name":"country"},{"name":"browser"}],
+            "metricHeaders":[{"name":"sessions","type":"TYPE_INTEGER"}],
+            "pivotHeaders":pivot_headers,
+            "rows":[
+                {"dimensionValues":[{"value":"US"},{"value":"Chrome"}],
+                 "metricValues":[{"value":"17"}]},
+                {"dimensionValues":[{"value":"CA"},{"value":"Firefox"}],
+                 "metricValues":[{"value":"5"}]}
+            ],
+            "rowCount":5
+        });
+        let options = Controls {
+            output_mode: Some(OutputMode::Rows),
+            summary_only: false,
+            max_rows: Some(2),
+            max_cell_chars: None,
+            cursor_supplied: false,
+        };
+        let projected = project(&response, options, false, None).unwrap();
+        assert_eq!(projected.data[0]["country"], "US");
+        assert_eq!(projected.data[0]["browser"], "Chrome");
+        assert_eq!(projected.data[1]["sessions"], "5");
+        assert_eq!(projected.meta["ga4"]["pivotHeaders"], pivot_headers);
+        assert_eq!(projected.meta["row_count_total"], 5);
+        assert_eq!(projected.meta["row_count_returned"], 2);
+        assert_eq!(projected.meta["truncated"], true);
+        assert!(projected.meta["next_cursor"].is_null());
+
+        let summary = project(
+            &response,
+            Controls {
+                summary_only: true,
+                ..options
+            },
+            false,
+            None,
+        )
+        .unwrap();
+        assert!(summary.data.is_null());
+        assert_eq!(summary.meta["ga4"]["pivotHeaders"], pivot_headers);
+    }
+
+    #[test]
     fn admin_access_headers_and_resource_boundaries_have_distinct_cursors() {
         let response = json!({
             "dimensionHeaders":[{"dimensionName":"userEmail"}],
