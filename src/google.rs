@@ -1269,6 +1269,79 @@ mod tests {
     }
 
     #[test]
+    fn normalized_report_body_preserves_valid_inputs_and_rejects_ambiguous_values() {
+        let nested = json!({
+            "andGroup": {
+                "expressions": [
+                    {"filter":{"fieldName":"country","stringFilter":{"matchType":"EXACT","value":"MX"}}},
+                    {"notExpression":{"filter":{"fieldName":"deviceCategory","stringFilter":{"value":"tablet"}}}}
+                ]
+            }
+        });
+        let ordering = json!([{"dimension":{"dimensionName":"country"},"desc":true}]);
+        let normalized = report_request(
+            Some(vec![
+                json!({"start_date":"7daysAgo","end_date":"yesterday","name":"Week"}),
+                json!({"startDate":"2024-02-29","endDate":"2024-03-01"})
+            ]),
+            vec!["country".into()],
+            vec!["sessions".into()],
+            vec![
+                ("dimensionFilter", Some(nested.clone())),
+                ("metricFilter", Some(json!("sessions==9223372036854775807"))),
+                ("orderBys", Some(ordering.clone())),
+                ("limit", Some(json!("250000"))),
+                ("offset", Some(json!("0")))
+            ],
+        )
+        .unwrap();
+        assert_eq!(normalized["dateRanges"][0]["startDate"], "7daysAgo");
+        assert_eq!(normalized["dateRanges"][0]["name"], "Week");
+        assert_eq!(normalized["dateRanges"][1]["startDate"], "2024-02-29");
+        assert_eq!(normalized["dimensions"], json!([{"name":"country"}]));
+        assert_eq!(normalized["metrics"], json!([{"name":"sessions"}]));
+        assert_eq!(normalized["dimensionFilter"], nested);
+        assert_eq!(normalized["orderBys"], ordering);
+        assert_eq!(
+            normalized["metricFilter"]["filter"]["numericFilter"]["value"]["int64Value"],
+            "9223372036854775807"
+        );
+        assert_eq!(normalized["limit"], "250000");
+        assert_eq!(normalized["offset"], "0");
+
+        for invalid in [
+            json!("sessions==9223372036854775808"),
+            json!("sessions==NaN"),
+            json!("sessions==1e309"),
+            json!(true),
+            Value::Null
+        ] {
+            assert_eq!(
+                report_request(
+                    Some(vec![json!({"startDate":"today","endDate":"today"})]),
+                    vec![],
+                    vec!["sessions".into()],
+                    vec![("metricFilter", Some(invalid))]
+                ),
+                Err(ApiError::InvalidRequest)
+            );
+        }
+        assert_eq!(
+            report_request(
+                Some(vec![json!({
+                    "startDate":"today",
+                    "start_date":"today",
+                    "endDate":"today"
+                })]),
+                vec![],
+                vec!["sessions".into()],
+                vec![]
+            ),
+            Err(ApiError::InvalidRequest)
+        );
+    }
+
+    #[test]
     fn numeric_metric_filter_preserves_i64_edges_and_rejects_overflow() {
         for (literal, canonical) in [
             ("9223372036854775807", "9223372036854775807"),
