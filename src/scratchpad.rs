@@ -419,6 +419,147 @@ impl ScratchState {
         Ok(result)
     }
 
+    /// Ingest a single bounded GA4 Data API response with parameter-bound values.
+    /// Existing tables are never silently overwritten; append requires identical schema.
+    pub fn ingest_ga_response(
+        &self,
+        raw: &str,
+        target: &str,
+        response: &Value,
+        append: bool,
+    ) -> Result<Value, String> {
+        use std::collections::HashSet;
+        let id = session_id(raw)?;
+        let table = table_name(target)?;
+        if serde_json::to_vec(response).map_or(true, |data| data.len() > 2 * 1024 * 1024) {
+            return Err("GA4 response exceeds 2 MiB ingest policy".into());
+        }
+        let dim = response["dimensionHeaders"].as_array().ok_or("Missing dimension headers")?;
+        let met = response["metricHeaders"].as_array().ok_or("Missing metric headers")?;
+        let headers = dim.iter().chain(met.iter()).map(|v| {
+            v["name"].as_str().ok_or_else(|| "Invalid GA4 header".to_owned())
+        }).collect::<Result<Vec<_>, _>>()?;
+        if headers.is_empty() || headers.len() > 16 {
+            return Err("GA4 ingest supports 1-16 columns".into());
+        }
+        let mut unique = HashSet::new();
+        for name in &headers {
+            table_name(name)?;
+            if !unique.insert(name.to_ascii_lowercase()) {
+                return Err("GA4 headers must be unique, ignoring case".into());
+            }
+        }
+        let response_rows = response["rows"].as_array().ok_or("GA4 response is missing rows")?;
+        if response_rows.len() > 1_000 {
+            return Err("GA4 ingest accepts at most 1000 rows per request".into());
+        }
+        let mut parsed_rows = Vec::with_capacity(response_rows.len());
+        for row in response_rows {
+            let dimensions = row["dimensionValues"].as_array().ok_or("Missing dimension values")?;
+            let metrics = row["metricValues"].as_array().ok_or("Missing metric values")?;
+            if dimensions.len() != dim.len() || metrics.len() != met.len() {
+                return Err("GA4 values do not match response headers".into());
+            }
+            let values = dimensions.iter().chain(metrics.iter()).map(|v| {
+                let text = v["value"].as_str().ok_or("Invalid GA4 cell value")?;
+                if text.len() > 2_048 {
+                    return Err("GA4 cell exceeds 2048-byte limit");
+                }
+                Ok(text.to_owned())
+            }).collect::<Result<Vec<_>, &str>>()?;
+            parsed_rows.push(values);
+        }
+
+        let mut inner = self.guard()?;
+        Self::expire(&mut inner);
+        let max_tables = inner.max_tables_per_session;
+        let db = &inner.sessions.get(id).ok_or("Scratchpad session not found or expired")?.db;
+        let mut existing = db.prepare(
+            "SELECT table_name FROM information_schema.tables
+             WHERE table_schema='main' AND table_type='BASE TABLE' ORDER BY table_name"
+        ).map_err(|_| "DuckDB catalog inspection failed")?;
+        let table_names = existing.query_map([], |r| r.get::<_, String>(0))
+            .map_err(|_| "DuckDB catalog inspection failed")?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|_| "DuckDB catalog inspection failed")?;
+        drop(existing);
+        let exists = table_names.iter().any(|name| name.eq_ignore_ascii_case(table));
+        if exists && !append {
+            return Err("Table already exists; append=true is required".into());
+        }
+        if !exists && table_names.len() >= max_tables {
+            return Err("Scratchpad table quota exceeded".into());
+        }
+        let mut total_rows: i64 = 0;
+        for name in &table_names {
+            let safe = name.replace('"', "\"\"");
+            let count: i64 = db.query_row(
+                &format!("SELECT COUNT(*) FROM \"{safe}\""),
+                [], |row| row.get(0)
+            ).map_err(|_| "Scratchpad row quota inspection failed")?;
+            total_rows = total_rows.saturating_add(count);
+        }
+        if total_rows.saturating_add(parsed_rows.len() as i64) > 20_000 {
+            return Err("Scratchpad session row cap of 20000 would be exceeded".into());
+        }
+        if exists {
+            let mut stmt = db.prepare(
+                "SELECT column_name, data_type FROM information_schema.columns
+                 WHERE table_schema='main' AND table_name=?1 ORDER BY ordinal_position"
+            ).map_err(|_| "DuckDB schema validation failed")?;
+            let actual = stmt.query_map([table], |row| {
+                Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+            }).map_err(|_| "DuckDB schema validation failed")?
+                .collect::<Result<Vec<_>, _>>()
+                .map_err(|_| "DuckDB schema validation failed")?;
+            if actual.len() != headers.len() || actual.iter().zip(&headers)
+                .any(|((name, ty), want)| !name.eq_ignore_ascii_case(want) || ty != "VARCHAR")
+            {
+                return Err("Append requires exactly matching column names and VARCHAR types".into());
+            }
+        }
+        let columns = headers.iter().map(|x| format!("\"{x}\"")).collect::<Vec<_>>().join(", ");
+        let create = format!(
+            "CREATE TABLE \"{table}\" ({})",
+            headers.iter().map(|x| format!("\"{x}\" VARCHAR")).collect::<Vec<_>>().join(", ")
+        );
+        let placeholders = vec!["?"; headers.len()].join(", ");
+        let insert = format!("INSERT INTO \"{table}\" ({columns}) VALUES ({placeholders})");
+        db.execute_batch("BEGIN TRANSACTION").map_err(|_| "DuckDB transaction failed")?;
+        let action = (|| -> Result<(), String> {
+            if !exists {
+                db.execute_batch(&create).map_err(|_| "DuckDB table creation failed")?;
+            }
+            {
+                let mut stmt = db.prepare(&insert).map_err(|_| "DuckDB insert prepare failed")?;
+                for row in &parsed_rows {
+                    stmt.execute(duckdb::params_from_iter(row.iter()))
+                        .map_err(|_| "DuckDB parameterized insert failed")?;
+                }
+            }
+            db.execute_batch("COMMIT").map_err(|_| "DuckDB ingest commit failed")?;
+            Ok(())
+        })();
+        if action.is_err() {
+            let _ = db.execute_batch("ROLLBACK");
+        }
+        action?;
+        Ok(json!({
+            "session_id":id, "table_name":table,
+            "rows_ingested":parsed_rows.len(),"columns":headers,
+            "append":append,"provider_result_rows":response_rows.len()
+        }))
+    }
+
+    /// Preflight local-session existence before issuing any Google API request.
+    pub fn require_session(&self, raw: &str) -> Result<(), String> {
+        let id = session_id(raw)?;
+        let mut inner = self.guard()?;
+        Self::expire(&mut inner);
+        if inner.sessions.contains_key(id) { Ok(()) }
+        else { Err("Scratchpad session not found or expired".into()) }
+    }
+
     pub fn summarize_table(&self, raw: &str, table: &str) -> Result<Value, String> {
         // Catalog validation precedes the only dynamically constructed SQL statement.
         let schema = self.describe_table(raw, table)?;
@@ -498,6 +639,41 @@ mod tests {
         assert!(state.open("another").is_err());
         assert_eq!(state.close("project_1").unwrap()["closed"], true);
         assert!(state.close("project_1").is_err());
+    }
+
+    #[test]
+    fn ingest_ga4_response_is_transactional_bounded_and_sql_safe() {
+        let state = ScratchState::new();
+        state.open("ga4_ingest").unwrap();
+        let response = json!({
+            "dimensionHeaders":[{"name":"country"}],
+            "metricHeaders":[{"name":"activeUsers"}],
+            "rows":[
+                {"dimensionValues":[{"value":"Mexico"}],"metricValues":[{"value":"42"}]},
+                {"dimensionValues":[{"value":"O'Brien'); DROP TABLE metrics;--"}],
+                 "metricValues":[{"value":"1"}]}
+            ]
+        });
+        assert_eq!(state.ingest_ga_response("ga4_ingest","metrics",&response,false)
+            .unwrap()["rows_ingested"], 2);
+        assert_eq!(state.summarize_table("ga4_ingest","metrics").unwrap()["row_count"],2);
+        assert!(state.ingest_ga_response("ga4_ingest","metrics",&response,false).is_err());
+        assert_eq!(state.ingest_ga_response("ga4_ingest","metrics",&response,true)
+            .unwrap()["rows_ingested"],2);
+        assert_eq!(state.summarize_table("ga4_ingest","metrics").unwrap()["row_count"],4);
+        let bad = json!({
+            "dimensionHeaders":[{"name":"country"}], "metricHeaders":[{"name":"activeUsers"}],
+            "rows":[{"dimensionValues":[{"value":"Mexico"}], "metricValues":[]}]
+        });
+        assert!(state.ingest_ga_response("ga4_ingest","another",&bad,false).is_err());
+        assert_eq!(state.tables("ga4_ingest",None).unwrap()["total_tables"],1);
+        let malicious = json!({
+            "dimensionHeaders":[{"name":"x\"; DROP TABLE metrics;--"}],
+            "metricHeaders":[], "rows":[]
+        });
+        assert!(state.ingest_ga_response("ga4_ingest","bad",&malicious,false).is_err());
+        assert_eq!(state.summarize_table("ga4_ingest","metrics").unwrap()["row_count"],4);
+        assert!(state.ingest_ga_response("missing","new",&response,false).is_err());
     }
 
     #[test]
