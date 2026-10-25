@@ -522,9 +522,7 @@ pub fn funnel_request(
             json!({"funnelEventFilter":{"eventName":event}})
         } else {
             let value = filter.ok_or(ApiError::InvalidRequest)?;
-            if !value.is_object() || value.as_object().is_some_and(|x| x.is_empty()) {
-                return Err(ApiError::InvalidRequest);
-            }
+            validate_bounded_filter(value)?;
             value.clone()
         };
         mapped.push(json!({"name":name,"filterExpression":expression}));
@@ -623,9 +621,11 @@ pub fn access_report_request(spec: AccessReportSpec) -> Result<Value, ApiError> 
         "metrics":metrics.iter().map(|name| json!({"metricName":name})).collect::<Vec<_>>()
     });
     if let Some(filter) = dimension_filter {
+        validate_bounded_filter(&filter)?;
         req["dimensionFilter"] = filter;
     }
     if let Some(filter) = metric_filter {
+        validate_bounded_filter(&filter)?;
         req["metricFilter"] = filter;
     }
     if let Some(order_bys) = order_bys {
@@ -722,6 +722,50 @@ pub fn normalize_date_ranges(dates: Vec<Value>) -> Result<Vec<Value>, ApiError> 
         .collect()
 }
 
+/// Validate bounded, structured GA4 FilterExpression input without coercing values.
+/// The Google API remains responsible for deciding valid field/operator semantics.
+pub fn validate_bounded_filter(filter: &Value) -> Result<(), ApiError> {
+    if !filter.is_object()
+        || serde_json::to_vec(filter).map_or(true, |bytes| bytes.len() > 16 * 1024)
+    {
+        return Err(ApiError::InvalidRequest);
+    }
+    let mut nodes = 0usize;
+    let mut stack = vec![(filter, 0usize)];
+    while let Some((value, depth)) = stack.pop() {
+        nodes += 1;
+        if nodes > 256 || depth > 12 {
+            return Err(ApiError::InvalidRequest);
+        }
+        match value {
+            Value::Object(map) => {
+                if map.is_empty() || map.len() > 64 {
+                    return Err(ApiError::InvalidRequest);
+                }
+                for (name, nested) in map {
+                    if name.len() > 128 {
+                        return Err(ApiError::InvalidRequest);
+                    }
+                    stack.push((nested, depth + 1));
+                }
+            }
+            Value::Array(items) => {
+                if items.len() > 64 {
+                    return Err(ApiError::InvalidRequest);
+                }
+                for nested in items {
+                    stack.push((nested, depth + 1));
+                }
+            }
+            Value::String(value) if value.len() > 1024 => {
+                return Err(ApiError::InvalidRequest);
+            }
+            _ => {}
+        }
+    }
+    Ok(())
+}
+
 /// Google REST APIs accept array entries as objects, not raw field names.
 pub fn report_request(
     dates: Option<Vec<Value>>,
@@ -767,6 +811,9 @@ pub fn report_request(
     );
     for (name, val) in extras {
         if let Some(val) = val {
+            if name == "dimensionFilter" || name == "metricFilter" {
+                validate_bounded_filter(&val)?;
+            }
             request.insert(name.to_owned(), val);
         }
     }
@@ -841,6 +888,38 @@ mod tests {
         ] {
             assert!(funnel_request(bad, None, None, None, None, false).is_err());
         }
+    }
+
+    #[test]
+    fn nested_ga_filter_preserved_and_excessive_structures_rejected() {
+        let valid = json!({
+            "andGroup": { "expressions": [
+                { "filter": { "fieldName": "country", "stringFilter": {
+                    "matchType": "EXACT", "value": "Mexico"
+                }}},
+                { "notExpression": { "filter": { "fieldName": "eventName", "stringFilter": {
+                    "matchType": "EXACT", "value": "test_event"
+                }}}}
+            ]}
+        });
+        assert!(validate_bounded_filter(&valid).is_ok());
+        let request = report_request(
+            Some(vec![json!({"startDate":"7daysAgo","endDate":"today"})]),
+            vec!["country".into()], vec!["activeUsers".into()],
+            vec![("dimensionFilter", Some(valid.clone()))],
+        ).unwrap();
+        assert_eq!(request["dimensionFilter"], valid);
+
+        let mut deep = json!({"filter":{"fieldName":"country"}});
+        for _ in 0..14 {
+            deep = json!({"notExpression":deep});
+        }
+        assert!(validate_bounded_filter(&deep).is_err());
+        assert!(validate_bounded_filter(&json!("country==Mexico")).is_err());
+        assert!(validate_bounded_filter(&json!({"value":"x".repeat(1025)})).is_err());
+        assert!(validate_bounded_filter(&json!({"expressions":vec![true;65]})).is_err());
+        assert!(report_request(None, vec![], vec!["activeUsers".into()],
+            vec![("metricFilter", Some(deep))]).is_err());
     }
 
     #[test]
