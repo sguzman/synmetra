@@ -47,3 +47,9 @@ Account summaries and Google Ads links follow Google Admin API `nextPageToken` a
 See the [Contract V1 compatibility policy](CONTRACT.md) for the current dual structured/text envelope, stable error codes, and outstanding response-parity gates.
 
 Explicit edit-scoped OAuth for optional annotation creation: `synmetra auth login --client-id-file /path/to/desktop-oauth.json --allow-edit`. This requests both `analytics.readonly` and `analytics.edit`, verifies that both scopes were granted, and stores the permission tier privately. Default login remains read-only, and all write tools remain hidden without a separately explicit `synmetra serve --allow-write`. No real Google consent has been verified yet.
+
+## 📊 Explicit tabular response projection
+
+`run_report` and `run_realtime_report` preserve raw Google response shapes by default. They now accept optional `output_mode` (`rows`, `tuples`, `scalar`, or `compact`), `summary_only`, `max_rows` (1–1000), and `max_cell_chars` (1–2048). Supplying one of these opts into a bounded Contract V1-shaped response. Projected metadata includes the actual number of returned rows, the provider's row count when known, `row_count_total_known`, truncation, columns, and available quota/warning metadata. Strings are clipped by Unicode scalar values instead of cutting UTF-8 bytes.
+
+The projected response is **not complete SednaLabs compatibility**. Cursors are explicitly rejected for now; even a truncated projected report does not advertise a fabricated continuation cursor. Default provider-shaped responses with explicit `offset`/`limit` remain the supported historical pagination mechanism. This policy preserves official Google response behavior by default while allowing explicit tabular formatting, and keeps the remaining cursor/query-hash, all-tool projection, and authorized live acceptance gates open.
