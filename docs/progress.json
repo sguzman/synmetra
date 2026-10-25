@@ -1654,7 +1654,7 @@
               "id": "T085",
               "emoji": "🚦",
               "name": "Implement run_funnel_report",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "MCP schema, Google request, golden output and error cases for run_funnel_report",
               "checks": [
                 {
@@ -1664,7 +1664,8 @@
                 },
                 {
                   "text": "MCP schema, Google request, golden output and error cases for run_funnel_report",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs run_funnel_report forwards pinned optional arguments with typed step, breakdown, next-action and visualization schemas; src/google.rs funnel_request/funnel_request_options enforce bounded, read-only Google v1alpha request normalization including open/trended settings and timing. funnel_subreports_are_projected_independently_with_open_funnel_options covers local golden table/visualization, quota, summary/row limits; funnel_invalid_arguments_and_google_permission_denials_are_redacted confirms invalid preflight and HTTP 403 redaction; typed funnel schema assertion confirms declared fields. GitHub Actions 40236619627 core Rust tests, fmt, strict Clippy, ledger passed. No claim of authorized live Google or complete SednaLabs projection parity."
                 }
               ]
             },
