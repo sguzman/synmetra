@@ -53,3 +53,8 @@ Raw attribute types: `description` 115; `type` 23; `items` 10; `format` 8; `anyO
 - [Captured 36-tool native input schemas](../spec/audits/native-tool-input-schemas-40224261534.json).
 - [Complete per-tool input-schema differences](../spec/audits/input-schema-differences-40224261534.json), including both pinned upstream references, required-field comparisons, and field-attribute differences.
 - Do not mark individual tool parity as accepted from this audit alone. This records what remains to implement or justify; behavior, output envelopes, security and authorized live Google tests are separate gates.
+
+## Post-capture remediation (not reflected in baseline counts)
+
+- [Realtime compatibility correction](https://github.com/sguzman/synmetra/commit/2d74a1493d60cf2cc92ac7472febf0961d527910): native `run_realtime_report` now accepts official `order_bys` and `offset` arguments, forwards `orderBys`, and rejects nonzero `offset` instead of silently ignoring it. Google's [current v1beta request schema](https://developers.google.com/analytics/devguides/reporting/data/v1/rest/v1beta/properties/runRealtimeReport) supports `orderBys` but not `offset`. The official Python function still declares `offset`; the semantic discrepancy is explicitly documented rather than counted as achieved parity.
+- [Realtime envelope regression](https://github.com/sguzman/synmetra/commit/c24502b6fe5d882eae2503eabddfc9a8838562fa): synthetic provider response retains row count and quota with no fabricated continuation token. GitHub Actions 40227043192 core tests passed; native DuckDB job is a separate acceptance gate.

@@ -1928,16 +1928,18 @@
               "id": "T100",
               "emoji": "⚡",
               "name": "Honor realtime non-paginated semantics",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "No fake continuation token when GA realtime lacks offset",
               "checks": [
                 {
                   "text": "Deliver honor realtime non-paginated semantics as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs RealtimeArgs supports ordering and official offset input; realtime_report_request rejects nonzero offset with a stable UNSUPPORTED_REALTIME_OFFSET before contacting Google because the current Google Data API v1beta RunRealtimeReportRequest has no offset field. Test realtime_nonzero_offset_has_stable_preflight_error passed GitHub Actions 40227043192 core Rust checks."
                 },
                 {
                   "text": "No fake continuation token when GA realtime lacks offset",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs realtime_mcp_retains_provider_quota_without_fabricating_a_next_cursor uses local synthetic Google HTTP response of rowCount=154 and limit=1; tests verify both data and meta have no fabricated next_cursor while retaining original rowCount. GitHub Actions 40227043192 core job passed. This task is narrow: general historical report cursors and live GA parity remain separate."
                 }
               ]
             },
@@ -2134,12 +2136,13 @@
               "id": "T112",
               "emoji": "🧾",
               "name": "Preserve GA response quota metadata and warnings",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Quotas accessible without leaking tokens",
               "checks": [
                 {
                   "text": "Deliver preserve ga response quota metadata and warnings as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs result preserves the provider JSON data without dropping propertyQuota and never echoes the access token; realtime_mcp_retains_provider_quota_without_fabricating_a_next_cursor verifies quota remaining=9 and absence of the mock bearer token in MCP structured output. CI 40227043192 core passed. Structured warning metadata and full cross-tool quota/error behavior remain unaccepted."
                 },
                 {
                   "text": "Quotas accessible without leaking tokens",
