@@ -2984,6 +2984,135 @@ mod tests {
         assert!(!content.to_string().contains("private-pivot-bearer"));
     }
 
+    #[test]
+    fn admin_access_mcp_inputs_cover_pinned_fields_and_required_sets() {
+        use std::collections::BTreeSet;
+
+        let pinned: Value = serde_json::from_str(include_str!(
+            "../spec/upstream/sednalabs-tool-schema.v1.json"
+        ))
+        .unwrap();
+        let router = Synmetra::tool_router();
+        for name in ["run_property_access_report", "run_account_access_report"] {
+            let upstream = pinned["tools"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|tool| tool["name"] == name)
+                .unwrap();
+            let local = router
+                .list_all()
+                .into_iter()
+                .find(|tool| tool.name == name)
+                .unwrap();
+            for field in ["properties", "required"] {
+                let collect = |value: &Value| -> BTreeSet<String> {
+                    if field == "required" {
+                        value["required"]
+                            .as_array()
+                            .unwrap()
+                            .iter()
+                            .filter_map(Value::as_str)
+                            .map(ToOwned::to_owned)
+                            .collect()
+                    } else {
+                        value["properties"]
+                            .as_object()
+                            .unwrap()
+                            .keys()
+                            .cloned()
+                            .collect()
+                    }
+                };
+                let native = serde_json::to_value(&local.input_schema).unwrap();
+                assert_eq!(collect(&native), collect(&upstream["inputSchema"]), "{name} {field}");
+            }
+            assert_eq!(local.input_schema["properties"]["limit"]["format"], "uint64");
+        }
+    }
+
+    #[tokio::test]
+    async fn admin_access_reports_project_named_fields_and_redact_google_denials() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        use tokio::net::TcpListener;
+
+        for account in [false, true] {
+            for denied in [false, true] {
+                let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+                let endpoint = format!("http://{}", listener.local_addr().unwrap());
+                let responder = tokio::spawn(async move {
+                    let (mut stream, _) = listener.accept().await.unwrap();
+                    let mut buffer = [0u8; 4096];
+                    let read = stream.read(&mut buffer).await.unwrap();
+                    let request = String::from_utf8_lossy(&buffer[..read]);
+                    let resource = if account { "accounts" } else { "properties" };
+                    assert!(request.contains(&format!("{resource}/42:runAccessReport")));
+                    assert!(request.contains(r#""dimensionName":"userEmail""#));
+                    assert!(request.contains(r#""metricName":"accessCount""#));
+                    assert!(request.contains(r#""limit":"1""#));
+                    let status = if denied { "403 Forbidden" } else { "200 OK" };
+                    let body = if denied {
+                        json!({"error":{"message":"private-access-body"}})
+                    } else {
+                        json!({
+                            "dimensionHeaders":[{"dimensionName":"userEmail"}],
+                            "metricHeaders":[{"metricName":"accessCount"}],
+                            "rows":[{"dimensionValues":[{"value":"test@example.invalid"}],
+                                     "metricValues":[{"value":"3"}]}],
+                            "rowCount":2
+                        })
+                    }
+                    .to_string();
+                    let response = format!(
+                        "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                        body.len(),
+                        body
+                    );
+                    stream.write_all(response.as_bytes()).await.unwrap();
+                });
+                let server = Synmetra::new(
+                    GoogleClient::with_endpoints(
+                        Some("private-access-token".into()),
+                        &endpoint,
+                        &endpoint,
+                    ),
+                    false,
+                );
+                let mut request = json!({
+                    "date_ranges":[{"start_date":"yesterday","end_date":"today"}],
+                    "dimensions":["userEmail"],
+                    "metrics":["accessCount"],
+                    "max_rows":1,
+                    "output_mode":"rows"
+                });
+                request[if account { "account_id" } else { "property_id" }] = json!(42);
+                let reply = if account {
+                    server
+                        .run_account_access_report(Parameters(serde_json::from_value(request).unwrap()))
+                        .await
+                } else {
+                    server
+                        .run_property_access_report(Parameters(serde_json::from_value(request).unwrap()))
+                        .await
+                };
+                responder.await.unwrap();
+                assert_eq!(reply.is_error, Some(denied));
+                let payload = reply.structured_content.unwrap();
+                assert!(!payload.to_string().contains("private-access-token"));
+                assert!(!payload.to_string().contains("private-access-body"));
+                if denied {
+                    assert_eq!(payload["error"]["code"], "GOOGLE_HTTP_ERROR");
+                    assert_eq!(payload["error"]["status_code"], 403);
+                } else {
+                    assert_eq!(payload["data"][0]["userEmail"], "test@example.invalid");
+                    assert_eq!(payload["data"][0]["accessCount"], "3");
+                    assert_eq!(payload["meta"]["row_count_total"], 2);
+                    assert!(payload["meta"]["next_cursor"].as_str().is_some());
+                }
+            }
+        }
+    }
+
     #[tokio::test]
     async fn pivot_report_projection_keeps_pivot_header_metadata_without_fake_cursor() {
         use tokio::io::{AsyncReadExt, AsyncWriteExt};
