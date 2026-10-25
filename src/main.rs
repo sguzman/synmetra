@@ -1597,6 +1597,28 @@ mod tests {
     }
 
     #[cfg(feature = "scratchpad")]
+    #[test]
+    fn historical_and_realtime_ingest_have_upstream_required_mcp_fields() {
+        use std::collections::BTreeSet;
+        let reference: Value = serde_json::from_str(include_str!(
+            "../spec/upstream/sednalabs-tool-schema.v1.json"
+        )).unwrap();
+        let enabled = Synmetra::new(GoogleClient::new(None), false).enable_scratchpad();
+        for name in ["scratchpad_ingest_report", "scratchpad_ingest_realtime_report"] {
+            let upstream = reference["tools"].as_array().unwrap().iter()
+                .find(|tool| tool["name"] == name).unwrap();
+            let tool = enabled.router.list_all().into_iter()
+                .find(|tool| tool.name == name).unwrap();
+            let expected: BTreeSet<_> = upstream["inputSchema"]["required"]
+                .as_array().into_iter().flatten().filter_map(Value::as_str).collect();
+            let actual: BTreeSet<_> = tool.input_schema.get("required")
+                .and_then(Value::as_array).into_iter().flatten()
+                .filter_map(Value::as_str).collect();
+            assert_eq!(actual, expected, "{name} required-field schema drift");
+        }
+    }
+
+    #[cfg(feature = "scratchpad")]
     #[tokio::test]
     async fn ingest_mcp_preflights_local_session_before_google_api() {
         let server = Synmetra::new(GoogleClient::new(None), false).enable_scratchpad();
