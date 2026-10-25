@@ -659,7 +659,8 @@ fn result_with_tabular_projection(
     realtime: bool,
     pagination: Option<&tabular::Pagination>,
 ) -> CallToolResult {
-    match response.and_then(|provider| tabular::project(&provider, controls, realtime, pagination)) {
+    match response.and_then(|provider| tabular::project(&provider, controls, realtime, pagination))
+    {
         Ok(projection) => {
             let payload = json!({"ok":true,"data":projection.data,"meta":projection.meta});
             let mut result = CallToolResult::success(vec![ContentBlock::text(payload.to_string())]);

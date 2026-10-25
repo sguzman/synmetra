@@ -114,7 +114,9 @@ pub fn prepare_historical(
         {
             return Err(ApiError::InvalidRequest);
         }
-        parts[2].parse::<u64>().map_err(|_| ApiError::InvalidRequest)?
+        parts[2]
+            .parse::<u64>()
+            .map_err(|_| ApiError::InvalidRequest)?
     } else {
         explicit_offset.unwrap_or(0)
     };
@@ -128,7 +130,6 @@ pub fn prepare_historical(
     }
     Ok(Pagination { query_hash, offset })
 }
-
 
 fn columns(response: &Value, header: &str, fallback: &str) -> Result<Vec<Value>, ApiError> {
     let headers = match response.get(header) {
@@ -383,10 +384,16 @@ mod tests {
         let mut tuples = controls();
         tuples.output_mode = Some(OutputMode::Tuples);
         tuples.max_rows = Some(2);
-        assert_eq!(project(&fixture(), tuples, false, None).unwrap().data[1][1], "23");
+        assert_eq!(
+            project(&fixture(), tuples, false, None).unwrap().data[1][1],
+            "23"
+        );
 
         tuples.output_mode = Some(OutputMode::Scalar);
-        assert_eq!(project(&fixture(), tuples, false, None).unwrap().data, "México");
+        assert_eq!(
+            project(&fixture(), tuples, false, None).unwrap().data,
+            "México"
+        );
 
         tuples.output_mode = Some(OutputMode::Compact);
         assert_eq!(
