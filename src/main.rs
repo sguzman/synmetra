@@ -1,6 +1,7 @@
 //! Native MCP stdio server. Only implemented tools are advertised.
 mod auth;
 mod google;
+mod http;
 
 use google::{report_request, ApiError, GoogleClient};
 use rmcp::{
@@ -251,13 +252,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("synmetra 0.0.1 (experimental read-only MCP)");
         return Ok(());
     }
-    if args.len() != 1 && !(args.len() == 2 && args[1] == "serve") {
-        eprintln!("Usage: synmetra [serve|--version|auth login --client-id-file PATH|auth status|auth logout]\nStarts an experimental read-only MCP stdio server.\nUse synmetra auth login for native read-only OAuth, or SYNMETRA_GOOGLE_ACCESS_TOKEN for a short-lived token.");
+    let loopback = args.len() == 3 && args[1] == "serve" && args[2] == "--http-loopback";
+    if args.len() != 1 && !(args.len() == 2 && args[1] == "serve") && !loopback {
+        eprintln!("Usage: synmetra [serve [--http-loopback]|--version|auth login --client-id-file PATH|auth status|auth logout]\nStarts an experimental read-only MCP stdio server.\nUse synmetra auth login for native read-only OAuth, or SYNMETRA_GOOGLE_ACCESS_TOKEN for a short-lived token.");
         std::process::exit(2);
     }
     let server = Synmetra {
         api: GoogleClient::new(std::env::var("SYNMETRA_GOOGLE_ACCESS_TOKEN").ok()),
     };
+    if loopback {
+        return http::serve_loopback(server).await;
+    }
     server.serve(stdio()).await?.waiting().await?;
     Ok(())
 }
