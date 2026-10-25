@@ -416,6 +416,109 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn json_rpc_protocol_errors_remain_separate_from_ga_validation_results() {
+        use serde_json::json;
+
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let token = "synthetic-protocol-vs-google-errors-token-1234";
+        let server = Synmetra::new(GoogleClient::new(None), false);
+        let task = tokio::spawn(async move {
+            axum::serve(listener, app(server, token.to_owned(), port))
+                .await
+                .unwrap();
+        });
+        let client = reqwest::Client::new();
+        let endpoint = format!("http://127.0.0.1:{port}/mcp");
+        let request = |value: serde_json::Value, session: Option<&str>| {
+            let mut req = client
+                .post(&endpoint)
+                .header(header::AUTHORIZATION, format!("Bearer {token}"))
+                .header(header::ACCEPT, "application/json, text/event-stream")
+                .json(&value);
+            if let Some(session) = session {
+                req = req.header("mcp-session-id", session);
+                req = req.header("mcp-protocol-version", "2025-11-25");
+            }
+            req
+        };
+        let initialized = request(
+            json!({
+                "jsonrpc":"2.0",
+                "id":1,
+                "method":"initialize",
+                "params":{
+                    "protocolVersion":"2025-11-25",
+                    "capabilities":{},
+                    "clientInfo":{"name":"error-separation-regression","version":"1"}
+                }
+            }),
+            None,
+        )
+        .send()
+        .await
+        .unwrap();
+        assert_eq!(initialized.status(), StatusCode::OK);
+        let session = initialized
+            .headers()
+            .get("mcp-session-id")
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_owned();
+        assert_eq!(
+            mcp_json_response(initialized).await["result"]["serverInfo"]["name"],
+            "synmetra"
+        );
+        request(
+            json!({"jsonrpc":"2.0","method":"notifications/initialized"}),
+            Some(&session),
+        )
+        .send()
+        .await
+        .unwrap();
+
+        let unknown = request(
+            json!({"jsonrpc":"2.0","id":2,"method":"not/a/real-method"}),
+            Some(&session),
+        )
+        .send()
+        .await
+        .unwrap();
+        assert_eq!(unknown.status(), StatusCode::OK);
+        let rpc_error = mcp_json_response(unknown).await;
+        assert_eq!(rpc_error["error"]["code"], -32601);
+        assert!(rpc_error.get("result").is_none());
+
+        let malformed_ga = request(
+            json!({
+                "jsonrpc":"2.0","id":3,"method":"tools/call",
+                "params":{"name":"run_report","arguments":{
+                    "property_id":"invalid property",
+                    "date_ranges":[{"start_date":"yesterday","end_date":"today"}],
+                    "dimensions":[],
+                    "metrics":["activeUsers"]
+                }}
+            }),
+            Some(&session),
+        )
+        .send()
+        .await
+        .unwrap();
+        assert_eq!(malformed_ga.status(), StatusCode::OK);
+        let tool_error = mcp_json_response(malformed_ga).await;
+        assert_eq!(tool_error["result"]["isError"], true);
+        assert_eq!(tool_error["result"]["structuredContent"]["ok"], false);
+        assert_eq!(
+            tool_error["result"]["structuredContent"]["error"]["category"],
+            "validation"
+        );
+        assert!(tool_error.get("error").is_none());
+        assert!(!tool_error.to_string().contains(token));
+        task.abort();
+    }
+
+    #[tokio::test]
     async fn authenticated_http_rejects_oversize_slow_and_overloaded_requests() {
         use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
