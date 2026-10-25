@@ -16,7 +16,7 @@ concurrency:
 jobs:
   quality:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 70
     env:
       CARGO_BUILD_JOBS: 2
     steps:
@@ -49,6 +49,8 @@ jobs:
       - name: Test feature-gated native DuckDB scratchpad
         if: steps.native.outputs.changed == 'true'
         run: cargo test --all-targets --locked --features scratchpad
+      - name: Strict Clippy for default Rust MCP
+        run: cargo clippy --all-targets --locked -- -D warnings
       - name: Strict Clippy with DuckDB feature
         if: steps.native.outputs.changed == 'true'
         run: cargo clippy --all-targets --locked --features scratchpad -- -D warnings
