@@ -2954,12 +2954,13 @@
               "id": "T153",
               "emoji": "🗝️",
               "name": "Implement ga4_auth_login_command",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Native CLI guidance and MCP schema parity for ga4_auth_login_command",
               "checks": [
                 {
                   "text": "Deliver implement ga4_auth_login_command as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs AuthLoginCommandArgs advertises all six pinned optional inputs, compares input schema types/defaults/descriptions/formats to pinned SednaLabs, POSIX-quotes generated commands, and rejects unsupported shared ADC/quota-project options explicitly; src/auth.rs implements CLI --account OAuth login hint, --callback-port, --headless with bounds/duplication tests. GitHub Actions 40225871288 core job passed fmt, tests, strict Clippy, ledger. Runtime parity for shared ADC/quota-project and live auth still pending."
                 },
                 {
                   "text": "Native CLI guidance and MCP schema parity for ga4_auth_login_command",
