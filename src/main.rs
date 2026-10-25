@@ -697,6 +697,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         eprintln!("Usage: synmetra [serve [--http-loopback] [--allow-write] [--scratchpad]|--version|auth login --client-id-file PATH|auth status|auth logout]\nStarts an experimental read-only MCP stdio server.\nUse synmetra auth login for native read-only OAuth, or SYNMETRA_GOOGLE_ACCESS_TOKEN for a short-lived token.");
         std::process::exit(2);
     }
+    // Scratchpad state is process-shared, so allowing multiple HTTP callers would
+    // cross the session trust boundary. Restrict this early slice to one stdio client.
+    if scratchpad_requested && loopback {
+        return Err("Scratchpad cannot run over HTTP until per-client session isolation is implemented".into());
+    }
     let server = Synmetra::new(
         GoogleClient::new(std::env::var("SYNMETRA_GOOGLE_ACCESS_TOKEN").ok()),
         allow_write,
