@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `███░░░░░░░ 32.4%` · **+32.38 percentage points from initial empty repo; +0.44 pp from CI-tested tabular summary and GA quota/warning preservation** · 43/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `███░░░░░░░ 32.8%` · **+32.82 percentage points from initial empty repo; +0.44 pp from CI-tested query-bound historical pagination** · 44/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -245,7 +245,7 @@
   - ✅ **Gate:** No stale cross-principal cache confusion
 
 
-## 📊 M4 — Reporting, preflight and Data API parity — `████░░░░░░ 40.0%`
+## 📊 M4 — Reporting, preflight and Data API parity — `████░░░░░░ 43.3%`
 
 **Scope:** MVP. **Acceptance gate:** All report tools return correct GA4 semantics, including documented alpha, pagination and response projections.
 
@@ -289,14 +289,14 @@
 - 📝 **T097 — Normalize input values without silent coercion** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Lossless valid requests and typed invalid results
 
-### 📐 P12 — Data request fidelity and limits — `███░░░░░░░ 30.0%`
+### 📐 P12 — Data request fidelity and limits — `████░░░░░░ 36.7%`
 
 **Feature:** Reporting correctness.
 
 - 🧮 **T098 — Support metric aggregates and row counts** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Totals minimum maximum and aggregate fields preserved
-- 📎 **T099 — Support pagination offsets and opaque cursors** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Continuation is stable with bounded row limits
+- 📎 **T099 — Support pagination offsets and opaque cursors** — `██████████ 100.0%`
+  - ✅ **Gate:** Continuation is stable with bounded row limits · **Evidence:** src/tabular.rs implements bounded SHA-256 query-bound v1 continuation cursor codec, normalized property, canonical report query without pagination parameters, offset bound of 10 million, and cursor+offset conflict/mismatch rejection; src/main.rs uses it in run_report and offline preview, realtime cursor remains explicitly rejected. Tests historical_cursor_round_trip_enforces_query_hash_and_bounded_offset passed GitHub Actions 40231599082 core Rust CI.; src/main.rs historical_cursor_pages_remain_query_bound_and_never_repeat_rows runs sequential local mock Google pages, verifies the first report returns v1 next_cursor, the next request sends Google offset=1, second report returns a distinct row with no further token, and changed query with reused cursor fails before network access. Core GitHub Actions 40231599082 passed formatting, tests, strict Clippy, ledger. This does not guarantee snapshot isolation if Google data changes, nor establish full SednaLabs parity or live Google acceptance.
 - ⚡ **T100 — Honor realtime non-paginated semantics** — `██████████ 100.0%`
   - ✅ **Gate:** No fake continuation token when GA realtime lacks offset · **Evidence:** src/main.rs RealtimeArgs supports ordering and official offset input; realtime_report_request rejects nonzero offset with a stable UNSUPPORTED_REALTIME_OFFSET before contacting Google because the current Google Data API v1beta RunRealtimeReportRequest has no offset field. Test realtime_nonzero_offset_has_stable_preflight_error passed GitHub Actions 40227043192 core Rust checks.; src/main.rs realtime_mcp_retains_provider_quota_without_fabricating_a_next_cursor uses local synthetic Google HTTP response of rowCount=154 and limit=1; tests verify both data and meta have no fabricated next_cursor while retaining original rowCount. GitHub Actions 40227043192 core job passed. This task is narrow: general historical report cursors and live GA parity remain separate.
 - 🗂️ **T101 — Support pivot report ordering and groups** — `░░░░░░░░░░ 0.0%`

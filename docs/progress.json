@@ -1919,16 +1919,18 @@
               "id": "T099",
               "emoji": "📎",
               "name": "Support pagination offsets and opaque cursors",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "Continuation is stable with bounded row limits",
               "checks": [
                 {
                   "text": "Deliver support pagination offsets and opaque cursors as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/tabular.rs implements bounded SHA-256 query-bound v1 continuation cursor codec, normalized property, canonical report query without pagination parameters, offset bound of 10 million, and cursor+offset conflict/mismatch rejection; src/main.rs uses it in run_report and offline preview, realtime cursor remains explicitly rejected. Tests historical_cursor_round_trip_enforces_query_hash_and_bounded_offset passed GitHub Actions 40231599082 core Rust CI."
                 },
                 {
                   "text": "Continuation is stable with bounded row limits",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs historical_cursor_pages_remain_query_bound_and_never_repeat_rows runs sequential local mock Google pages, verifies the first report returns v1 next_cursor, the next request sends Google offset=1, second report returns a distinct row with no further token, and changed query with reused cursor fails before network access. Core GitHub Actions 40231599082 passed formatting, tests, strict Clippy, ledger. This does not guarantee snapshot isolation if Google data changes, nor establish full SednaLabs parity or live Google acceptance."
                 }
               ]
             },
