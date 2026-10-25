@@ -16,5 +16,16 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - name: Test Rust project
         run: cargo test --all-targets
+      - name: Emit one-time canonical Rust formatting and dependency lock snapshot
+        run: |
+          cargo fmt --all
+          for file in src/auth.rs src/google.rs src/http.rs src/main.rs src/bin/synmetra-progress.rs Cargo.lock; do
+            echo "SYNMETRA_FILE_BEGIN:$file"
+            base64 -w0 "$file"
+            echo
+            echo "SYNMETRA_FILE_END:$file"
+          done
+      - name: Check Clippy strictly
+        run: cargo clippy --all-targets -- -D warnings
       - name: Verify task evidence and pinned MCP union
         run: cargo run --bin synmetra-progress
