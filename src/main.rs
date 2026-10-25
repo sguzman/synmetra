@@ -1338,8 +1338,8 @@ impl Synmetra {
         if let Err(error) = controls.validate() {
             return result(Err(error));
         }
-        let body = google::normalize_pivots(args.pivots, &args.dimensions, &args.metrics)
-            .and_then(|pivots| {
+        let body = google::normalize_pivots(args.pivots, &args.dimensions, &args.metrics).and_then(
+            |pivots| {
                 report_request(
                     Some(args.date_ranges),
                     args.dimensions,
@@ -1357,7 +1357,8 @@ impl Synmetra {
                         ),
                     ],
                 )
-            });
+            },
+        );
         let response = match body {
             Ok(body) => {
                 self.api

@@ -1360,7 +1360,10 @@ mod tests {
             normalized[0]["orderBys"][0]["dimension"]["dimensionName"],
             "country"
         );
-        assert_eq!(normalized[1]["orderBys"][0]["metric"]["metricName"], "sessions");
+        assert_eq!(
+            normalized[1]["orderBys"][0]["metric"]["metricName"],
+            "sessions"
+        );
         let mut too_many = pivots;
         too_many[1]["limit"] = json!(501);
         assert_eq!(
@@ -1379,7 +1382,7 @@ mod tests {
             json!({"fieldNames":["country"],"limit":2,
                    "orderBys":[{"metric":{"metricName":"notRequested"}}]}),
             json!({"fieldNames":["country"],"limit":2,
-                   "orderBys":[{"metric":{},"dimension":{}}]})
+                   "orderBys":[{"metric":{},"dimension":{}}]}),
         ] {
             assert_eq!(
                 normalize_pivots(vec![invalid], &dims, &metrics),
