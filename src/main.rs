@@ -2490,9 +2490,17 @@ mod tests {
         for field in expected {
             let pinned = &upstream["inputSchema"]["properties"][field];
             let native = &route.input_schema["properties"][field];
-            for attribute in ["type", "default", "description", "format", "minimum", "maximum"] {
+            for attribute in [
+                "type",
+                "default",
+                "description",
+                "format",
+                "minimum",
+                "maximum",
+            ] {
                 assert_eq!(
-                    native.get(attribute), pinned.get(attribute),
+                    native.get(attribute),
+                    pinned.get(attribute),
                     "{field} {attribute} differs from pinned input schema"
                 );
             }
