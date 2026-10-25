@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `███░░░░░░░ 31.7%` · **+31.72 percentage points from initial empty repo; +0.22 pp from verified five-item batch limit and isolated report results** · 41/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `███░░░░░░░ 31.9%` · **+31.94 percentage points from initial empty repo; +0.22 pp from tested four-range date normalization** · 42/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -245,7 +245,7 @@
   - ✅ **Gate:** No stale cross-principal cache confusion
 
 
-## 📊 M4 — Reporting, preflight and Data API parity — `████░░░░░░ 35.0%`
+## 📊 M4 — Reporting, preflight and Data API parity — `████░░░░░░ 36.7%`
 
 **Scope:** MVP. **Acceptance gate:** All report tools return correct GA4 semantics, including documented alpha, pagination and response projections.
 
@@ -270,7 +270,7 @@
 - 👥 **T090 — Implement run_account_access_report** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** MCP schema, Google request, golden output and error cases for run_account_access_report
 
-### 🧭 P11 — Preflight MCP tools — `████░░░░░░ 42.9%`
+### 🧭 P11 — Preflight MCP tools — `█████░░░░░ 50.0%`
 
 **Feature:** Preflight and metadata.
 
@@ -282,8 +282,8 @@
   - ✅ **Gate:** Metadata cache keys include property and caller
 - 🔤 **T094 — Support flexible dimension and metric filters** — `██████████ 100.0%`
   - ✅ **Gate:** FilterExpression nested JSON and shorthand cases validated · **Evidence:** src/google.rs: structured nested dimensionFilter and metricFilter pass unchanged through report_request; bounded recursive validation and valid nested AND/NOT fixture passed 2026-10-25 GitHub Actions core job 121238774791 (run 40216536190). Shorthand filters and live GA4 contract parity still unverified.; src/google.rs; GitHub Actions core job 121240177425 passed nested and shorthand FilterExpression fixtures, 2026-10-25.
-- 📅 **T095 — Validate date ranges and reserved dates** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Multiple ranges and dates behave as Google expects
+- 📅 **T095 — Validate date ranges and reserved dates** — `██████████ 100.0%`
+  - ✅ **Gate:** Multiple ranges and dates behave as Google expects · **Evidence:** src/google.rs: normalize_date_ranges validates ISO calendar dates and relative date forms, rejects reversed, unknown or invalid ranges and canonicalizes snake_case, used by historical, funnel and Admin report requests. Synthetic tests date_ranges_preserve_relative_dates_and_normalize_snake_case and date_ranges_reject_invalid_dates_and_unknown_fields passed GitHub Actions core run 40212316165; provider-wide acceptance remains open.; src/google.rs four_historical_date_ranges_round_trip_and_a_fifth_is_rejected verifies four independently named/relative/absolute/leap-day intervals normalize and round-trip correctly, fifth range and invalid/reversed/duplicate-alias/empty-name inputs fail with INVALID_REQUEST. Earlier date_ranges_preserve_relative_dates_and_normalize_snake_case and date_ranges_reject_invalid_dates_and_unknown_fields extend the cases; GitHub Actions 40228846409 core and DuckDB jobs passed. Authorized live Google Data API validation remains a separate acceptance gate.
 - 🧮 **T096 — Implement metric and dimension compatibility checks** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Invalid combinations handled before expensive calls
 - 📝 **T097 — Normalize input values without silent coercion** — `█████░░░░░ 50.0%`

@@ -1840,7 +1840,7 @@
               "id": "T095",
               "emoji": "📅",
               "name": "Validate date ranges and reserved dates",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Multiple ranges and dates behave as Google expects",
               "checks": [
                 {
@@ -1850,7 +1850,8 @@
                 },
                 {
                   "text": "Multiple ranges and dates behave as Google expects",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs four_historical_date_ranges_round_trip_and_a_fifth_is_rejected verifies four independently named/relative/absolute/leap-day intervals normalize and round-trip correctly, fifth range and invalid/reversed/duplicate-alias/empty-name inputs fail with INVALID_REQUEST. Earlier date_ranges_preserve_relative_dates_and_normalize_snake_case and date_ranges_reject_invalid_dates_and_unknown_fields extend the cases; GitHub Actions 40228846409 core and DuckDB jobs passed. Authorized live Google Data API validation remains a separate acceptance gate."
                 }
               ]
             },
