@@ -2447,10 +2447,14 @@ mod tests {
             &input.color,
         )
         .unwrap();
-        assert_eq!(single["reportingDataAnnotation"]["annotationDate"],
-            json!({"year":2026,"month":10,"day":25}));
+        assert_eq!(
+            single["reportingDataAnnotation"]["annotationDate"],
+            json!({"year":2026,"month":10,"day":25})
+        );
         assert_eq!(single["reportingDataAnnotation"]["color"], "BLUE");
-        assert!(single["reportingDataAnnotation"].get("annotationDateRange").is_none());
+        assert!(single["reportingDataAnnotation"]
+            .get("annotationDateRange")
+            .is_none());
         let ranged = annotation_payload(
             "Release notes",
             "2026-10-20",
@@ -2459,13 +2463,21 @@ mod tests {
             "PURPLE",
         )
         .unwrap();
-        assert_eq!(ranged["reportingDataAnnotation"]["annotationDateRange"]["startDate"],
-            json!({"year":2026,"month":10,"day":20}));
-        assert_eq!(ranged["reportingDataAnnotation"]["annotationDateRange"]["endDate"],
-            json!({"year":2026,"month":10,"day":25}));
-        assert_eq!(ranged["reportingDataAnnotation"]["description"],
-            "Private internal description");
-        assert!(ranged["reportingDataAnnotation"].get("annotationDate").is_none());
+        assert_eq!(
+            ranged["reportingDataAnnotation"]["annotationDateRange"]["startDate"],
+            json!({"year":2026,"month":10,"day":20})
+        );
+        assert_eq!(
+            ranged["reportingDataAnnotation"]["annotationDateRange"]["endDate"],
+            json!({"year":2026,"month":10,"day":25})
+        );
+        assert_eq!(
+            ranged["reportingDataAnnotation"]["description"],
+            "Private internal description"
+        );
+        assert!(ranged["reportingDataAnnotation"]
+            .get("annotationDate")
+            .is_none());
     }
 
     #[test]
