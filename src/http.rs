@@ -143,6 +143,138 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn authenticated_http_session_lists_and_calls_tools_but_rejects_invalid_sessions() {
+        use serde_json::json;
+
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let token = "http-session-synthetic-private-token-4736";
+        let server = Synmetra::new(GoogleClient::new(None), false);
+        let task = tokio::spawn(async move {
+            axum::serve(listener, app(server, token.to_owned(), port))
+                .await
+                .unwrap();
+        });
+        let client = reqwest::Client::builder()
+            .timeout(std::time::Duration::from_secs(5))
+            .build()
+            .unwrap();
+        let endpoint = format!("http://127.0.0.1:{port}/mcp");
+        let origin = format!("http://127.0.0.1:{port}");
+        let initialize = client
+            .post(&endpoint)
+            .header(header::AUTHORIZATION, format!("Bearer {token}"))
+            .header(header::ORIGIN, &origin)
+            .header(header::ACCEPT, "application/json, text/event-stream")
+            .json(&json!({
+                "jsonrpc":"2.0",
+                "id":1,
+                "method":"initialize",
+                "params":{
+                    "protocolVersion":"2025-11-25",
+                    "capabilities":{},
+                    "clientInfo":{"name":"synthetic-native-http-client","version":"1"}
+                }
+            }))
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(initialize.status(), StatusCode::OK);
+        let session = initialize
+            .headers()
+            .get("mcp-session-id")
+            .expect("MCP HTTP initialization must return a session identifier")
+            .to_str()
+            .unwrap()
+            .to_owned();
+        let negotiated: serde_json::Value = initialize.json().await.unwrap();
+        assert_eq!(negotiated["result"]["serverInfo"]["name"], "synmetra");
+
+        let request = |payload: serde_json::Value, session_id: &str| {
+            client
+                .post(&endpoint)
+                .header(header::AUTHORIZATION, format!("Bearer {token}"))
+                .header(header::ORIGIN, &origin)
+                .header(header::ACCEPT, "application/json, text/event-stream")
+                .header("mcp-protocol-version", "2025-11-25")
+                .header("mcp-session-id", session_id)
+                .json(&payload)
+        };
+        let notification = request(
+            json!({"jsonrpc":"2.0","method":"notifications/initialized"}),
+            &session,
+        )
+        .send()
+        .await
+        .unwrap();
+        assert!(notification.status().is_success());
+
+        let discovered = request(
+            json!({"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}),
+            &session,
+        )
+        .send()
+        .await
+        .unwrap();
+        assert_eq!(discovered.status(), StatusCode::OK);
+        let listing: serde_json::Value = discovered.json().await.unwrap();
+        let tools = listing["result"]["tools"].as_array().unwrap();
+        assert_eq!(tools.len(), 20);
+        assert!(tools.iter().any(|item| item["name"] == "ga4_get_started"));
+        assert!(tools.iter().all(|item| item["name"] != "create_property_annotation"));
+
+        let invoked = request(
+            json!({"jsonrpc":"2.0","id":3,"method":"tools/call","params":{
+                "name":"ga4_get_started","arguments":{}
+            }}),
+            &session,
+        )
+        .send()
+        .await
+        .unwrap();
+        assert_eq!(invoked.status(), StatusCode::OK);
+        let result: serde_json::Value = invoked.json().await.unwrap();
+        assert_eq!(result["result"]["structuredContent"]["ok"], true);
+        assert_eq!(
+            result["result"]["structuredContent"]["data"]["scope"],
+            "https://www.googleapis.com/auth/analytics.readonly"
+        );
+        assert!(!result.to_string().contains(token));
+
+        let unknown = request(
+            json!({"jsonrpc":"2.0","id":4,"method":"tools/list","params":{}}),
+            "invalid-synmetra-session-000",
+        )
+        .send()
+        .await
+        .unwrap();
+        assert!(!unknown.status().is_success());
+
+        let bad_token = client
+            .post(&endpoint)
+            .header(header::AUTHORIZATION, "Bearer invalid-credential")
+            .header(header::ORIGIN, &origin)
+            .header("mcp-session-id", &session)
+            .json(&json!({"jsonrpc":"2.0","id":5,"method":"tools/list"}))
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(bad_token.status(), StatusCode::UNAUTHORIZED);
+
+        let bad_origin = client
+            .post(&endpoint)
+            .header(header::AUTHORIZATION, format!("Bearer {token}"))
+            .header(header::ORIGIN, "https://example.invalid")
+            .header("mcp-session-id", &session)
+            .json(&json!({"jsonrpc":"2.0","id":6,"method":"tools/list"}))
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(bad_origin.status(), StatusCode::UNAUTHORIZED);
+        task.abort();
+    }
+
+    #[tokio::test]
     async fn authorized_loopback_http_initializes_real_mcp() {
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let port = listener.local_addr().unwrap().port();
