@@ -3661,7 +3661,7 @@ mod tests {
                     }
                     let body = r#"{"error":{"code":403,"message":"private upstream secret"}}"#;
                     let response = format!(
-                        "HTTP/1.1 {http_status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                        "HTTP/1.1 {http_status}\r\nContent-Type: application/json\r\nRetry-After: 99\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
                         body.len(),
                         body
                     );
@@ -4008,7 +4008,7 @@ mod tests {
                 );
                 let body = r#"{"error":{"message":"provider-private-error"}}"#;
                 let reply = format!(
-                    "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                    "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nRetry-After: 99\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
                     body.len(),
                     body
                 );

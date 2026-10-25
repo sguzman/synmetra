@@ -2130,7 +2130,7 @@ mod tests {
                     ("200 OK", r#"{"rowCount":0}"#)
                 };
                 let reply = format!(
-                    "HTTP/1.1 {status}\\r\\nRetry-After: 0\\r\\nContent-Type: application/json\\r\\nContent-Length: {}\\r\\nConnection: close\\r\\n\\r\\n{}",
+                    "HTTP/1.1 {status}\r\nRetry-After: 0\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
                     body.len(),
                     body
                 );
