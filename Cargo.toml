@@ -1,15 +1,25 @@
 [package]
 name = "synmetra"
-version = "0.0.0"
+version = "0.0.1"
 edition = "2021"
 license = "MIT"
-description = "Native Google Analytics MCP server, currently in bootstrap"
+description = "Native Rust Google Analytics MCP server"
 repository = "https://github.com/sguzman/synmetra"
 publish = false
+
+[[bin]]
+name = "synmetra"
+path = "src/main.rs"
 
 [[bin]]
 name = "synmetra-progress"
 path = "src/bin/synmetra-progress.rs"
 
 [dependencies]
+futures-util = "0.3"
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls", "stream"] }
+rmcp = { version = "=3.5.1", default-features = false, features = ["server", "macros", "schemars", "transport-io"] }
+schemars = "1"
+serde = { version = "1", features = ["derive"] }
 serde_json = "1.0"
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "net", "io-util"] }
