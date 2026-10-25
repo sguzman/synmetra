@@ -2400,7 +2400,9 @@ mod tests {
         assert_eq!(payload["meta"]["row_count_total"], 3);
         assert_eq!(payload["meta"]["row_count_returned"], 1);
         assert_eq!(payload["meta"]["truncated"], true);
-        assert!(payload["meta"]["next_cursor"].is_null());
+        let cursor = payload["meta"]["next_cursor"].as_str().unwrap();
+        assert!(cursor.starts_with("v1:"));
+        assert!(cursor.ends_with(":1"));
         assert_eq!(
             payload["meta"]["ga4"]["propertyQuota"]["concurrentRequests"]["remaining"],
             9
