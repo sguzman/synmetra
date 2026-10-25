@@ -205,14 +205,40 @@ impl GoogleClient {
         field: &str,
         alpha: bool,
     ) -> Result<Value, ApiError> {
+        self.collection_with_options(path, field, alpha, None, None).await
+    }
+
+    pub async fn collection_with_options(
+        &self,
+        path: &str,
+        field: &str,
+        alpha: bool,
+        page_size: Option<u32>,
+        max_pages: Option<u32>,
+    ) -> Result<Value, ApiError> {
+        if page_size.is_some_and(|n| n == 0 || n > 200)
+            || max_pages.is_some_and(|n| n == 0 || n > MAX_PAGES as u32)
+        {
+            return Err(ApiError::InvalidRequest);
+        }
         let base = &self.admin_base;
         let path = format!("/{}{path}", if alpha { "v1alpha" } else { "v1beta" });
         let mut output = Vec::new();
         let mut next: Option<String> = None;
         let mut tokens = HashSet::new();
         let mut payload_bytes = 0usize;
-        for _ in 0..MAX_PAGES {
-            let page = self.get(base, &path, next.as_deref()).await?;
+        let page_cap = max_pages.map_or(MAX_PAGES, |n| n as usize);
+        for page_number in 0..page_cap {
+            let page = if let Some(size) = page_size {
+                let mut req = self.http.get(format!("{base}{path}"))
+                    .query(&[("pageSize", size.to_string())]);
+                if let Some(token) = next.as_deref() {
+                    req = req.query(&[("pageToken", token)]);
+                }
+                self.send(req).await?
+            } else {
+                self.get(base, &path, next.as_deref()).await?
+            };
             if let Some(items) = page.get(field) {
                 let items = items.as_array().ok_or(ApiError::InvalidResponse)?;
                 let bytes = serde_json::to_vec(items)
@@ -238,6 +264,13 @@ impl GoogleClient {
             } else {
                 return Ok(json!({field: output}));
             }
+            if max_pages.is_some() && page_number + 1 == page_cap {
+                let mut response = serde_json::Map::new();
+                response.insert(field.to_owned(), json!(output));
+                response.insert("nextPageToken".into(), json!(next));
+                response.insert("truncated".into(), json!(true));
+                return Ok(Value::Object(response));
+            }
         }
         Err(ApiError::TooManyPages)
     }
@@ -245,6 +278,14 @@ impl GoogleClient {
     pub async fn account_summaries(&self) -> Result<Value, ApiError> {
         self.collection("/accountSummaries", "accountSummaries", false)
             .await
+    }
+
+    pub async fn account_summaries_with_options(
+        &self, page_size: Option<u32>, max_pages: Option<u32>
+    ) -> Result<Value, ApiError> {
+        self.collection_with_options(
+            "/accountSummaries","accountSummaries",false,page_size,max_pages
+        ).await
     }
 
     pub async fn property(&self, property: &str) -> Result<Value, ApiError> {
@@ -267,6 +308,13 @@ impl GoogleClient {
         self.collection(&path, "googleAdsLinks", false).await
     }
 
+    pub async fn ads_links_with_options(
+        &self, property: &str, page_size: Option<u32>, max_pages: Option<u32>
+    ) -> Result<Value, ApiError> {
+        let path = format!("/{}/googleAdsLinks", property_name(property)?);
+        self.collection_with_options(&path,"googleAdsLinks",false,page_size,max_pages).await
+    }
+
     pub async fn create_annotation(&self, property: &str, body: Value) -> Result<Value, ApiError> {
         let path = property_name(property)?;
         if !body.is_object() || body["reportingDataAnnotation"].is_null() {
@@ -284,6 +332,15 @@ impl GoogleClient {
         let path = format!("/{}/reportingDataAnnotations", property_name(property)?);
         self.collection(&path, "reportingDataAnnotations", true)
             .await
+    }
+
+    pub async fn annotations_with_options(
+        &self, property: &str, page_size: Option<u32>, max_pages: Option<u32>
+    ) -> Result<Value, ApiError> {
+        let path = format!("/{}/reportingDataAnnotations", property_name(property)?);
+        self.collection_with_options(
+            &path,"reportingDataAnnotations",true,page_size,max_pages
+        ).await
     }
 
     pub async fn custom_definitions(&self, property: &str) -> Result<Value, ApiError> {
@@ -1263,6 +1320,23 @@ mod tests {
             received
         });
         (format!("http://{addr}"), handle)
+    }
+
+    #[tokio::test]
+    async fn collection_page_size_and_explicit_page_cap_are_bounded() {
+        let (url, handle) = once(
+            r#"{"accountSummaries":[{"name":"accounts/1"}],"nextPageToken":"next-page"}"#
+        ).await;
+        let client=GoogleClient::with_endpoints(Some("mock".into()),&url,&url);
+        let result=client.account_summaries_with_options(Some(25),Some(1)).await.unwrap();
+        assert_eq!(result["accountSummaries"][0]["name"],"accounts/1");
+        assert_eq!(result["nextPageToken"],"next-page");
+        assert_eq!(result["truncated"],true);
+        let request=handle.await.unwrap();
+        assert!(request.starts_with("GET /v1beta/accountSummaries?pageSize=25 HTTP/1.1"));
+        assert!(client.account_summaries_with_options(Some(0),Some(1)).await.is_err());
+        assert!(client.account_summaries_with_options(Some(201),Some(1)).await.is_err());
+        assert!(client.account_summaries_with_options(Some(25),Some(101)).await.is_err());
     }
 
     #[tokio::test]
