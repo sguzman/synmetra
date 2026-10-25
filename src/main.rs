@@ -142,7 +142,15 @@ fn result(r: Result<Value, ApiError>) -> CallToolResult {
 
 #[tool_router]
 impl Synmetra {
-    #[tool(description = "Explain secure one-time setup for Synmetra with Google Analytics APIs and native OAuth.", annotations(read_only_hint = true, destructive_hint = false, idempotent_hint = true, open_world_hint = true))]
+    #[tool(
+        description = "Explain secure one-time setup for Synmetra with Google Analytics APIs and native OAuth.",
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = true
+        )
+    )]
     fn ga4_get_started(&self) -> CallToolResult {
         result(Ok(json!({
             "command": "synmetra auth login --client-id-file /path/to/desktop-oauth.json",
@@ -152,12 +160,28 @@ impl Synmetra {
         })))
     }
 
-    #[tool(description = "Report safe Google Analytics credential status without exposing secrets, IDs, or local paths.", annotations(read_only_hint = true, destructive_hint = false, idempotent_hint = true, open_world_hint = true))]
+    #[tool(
+        description = "Report safe Google Analytics credential status without exposing secrets, IDs, or local paths.",
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = true
+        )
+    )]
     fn ga4_auth_status(&self) -> CallToolResult {
         result(Ok(auth::public_status()))
     }
 
-    #[tool(description = "Return the native OAuth desktop login command; never perform interactive authorization inside an MCP tool.", annotations(read_only_hint = true, destructive_hint = false, idempotent_hint = true, open_world_hint = true))]
+    #[tool(
+        description = "Return the native OAuth desktop login command; never perform interactive authorization inside an MCP tool.",
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = true
+        )
+    )]
     fn ga4_auth_login_command(&self) -> CallToolResult {
         result(Ok(json!({
             "command": "synmetra auth login --client-id-file /path/to/desktop-oauth.json",
@@ -166,7 +190,15 @@ impl Synmetra {
         })))
     }
 
-    #[tool(description = "WRITE: Create a GA4 reporting annotation. Hidden and blocked unless server starts with --allow-write and Google token has analytics.edit scope. Never retry automatically.", annotations(read_only_hint = false, destructive_hint = false, idempotent_hint = false, open_world_hint = true))]
+    #[tool(
+        description = "WRITE: Create a GA4 reporting annotation. Hidden and blocked unless server starts with --allow-write and Google token has analytics.edit scope. Never retry automatically.",
+        annotations(
+            read_only_hint = false,
+            destructive_hint = false,
+            idempotent_hint = false,
+            open_world_hint = true
+        )
+    )]
     async fn create_property_annotation(
         &self,
         Parameters(args): Parameters<CreateAnnotationArgs>,
@@ -187,12 +219,28 @@ impl Synmetra {
         })
     }
 
-    #[tool(description = "List the Google Analytics accounts and properties accessible with the configured Google token.", annotations(read_only_hint = true, destructive_hint = false, idempotent_hint = true, open_world_hint = true))]
+    #[tool(
+        description = "List the Google Analytics accounts and properties accessible with the configured Google token.",
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = true
+        )
+    )]
     async fn get_account_summaries(&self) -> CallToolResult {
         result(self.api.account_summaries().await)
     }
 
-    #[tool(description = "Read one Google Analytics 4 property, by numeric property ID or properties/<id>.", annotations(read_only_hint = true, destructive_hint = false, idempotent_hint = true, open_world_hint = true))]
+    #[tool(
+        description = "Read one Google Analytics 4 property, by numeric property ID or properties/<id>.",
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = true
+        )
+    )]
     async fn get_property_details(
         &self,
         Parameters(args): Parameters<PropertyArgs>,
@@ -200,7 +248,15 @@ impl Synmetra {
         result(self.api.property(&args.property_id).await)
     }
 
-    #[tool(description = "Get an Analytics account's data-sharing settings.", annotations(read_only_hint = true, destructive_hint = false, idempotent_hint = true, open_world_hint = true))]
+    #[tool(
+        description = "Get an Analytics account's data-sharing settings.",
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = true
+        )
+    )]
     async fn get_account_data_sharing_settings(
         &self,
         Parameters(args): Parameters<AccountArgs>,
@@ -208,7 +264,15 @@ impl Synmetra {
         result(self.api.account_sharing(&args.account_id).await)
     }
 
-    #[tool(description = "Get a GA4 property's event and user data retention settings.", annotations(read_only_hint = true, destructive_hint = false, idempotent_hint = true, open_world_hint = true))]
+    #[tool(
+        description = "Get a GA4 property's event and user data retention settings.",
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = true
+        )
+    )]
     async fn get_property_data_retention_settings(
         &self,
         Parameters(args): Parameters<PropertyArgs>,
@@ -216,7 +280,15 @@ impl Synmetra {
         result(self.api.retention_settings(&args.property_id).await)
     }
 
-    #[tool(description = "List Google Ads account links for one GA4 property.", annotations(read_only_hint = true, destructive_hint = false, idempotent_hint = true, open_world_hint = true))]
+    #[tool(
+        description = "List Google Ads account links for one GA4 property.",
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = true
+        )
+    )]
     async fn list_google_ads_links(
         &self,
         Parameters(args): Parameters<PropertyArgs>,
@@ -224,7 +296,15 @@ impl Synmetra {
         result(self.api.ads_links(&args.property_id).await)
     }
 
-    #[tool(description = "List reporting annotations attached to one GA4 property (read-only).", annotations(read_only_hint = true, destructive_hint = false, idempotent_hint = true, open_world_hint = true))]
+    #[tool(
+        description = "List reporting annotations attached to one GA4 property (read-only).",
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = true
+        )
+    )]
     async fn list_property_annotations(
         &self,
         Parameters(args): Parameters<PropertyArgs>,
@@ -232,7 +312,15 @@ impl Synmetra {
         result(self.api.annotations(&args.property_id).await)
     }
 
-    #[tool(description = "List property-specific custom dimensions and metrics.", annotations(read_only_hint = true, destructive_hint = false, idempotent_hint = true, open_world_hint = true))]
+    #[tool(
+        description = "List property-specific custom dimensions and metrics.",
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = true
+        )
+    )]
     async fn get_custom_dimensions_and_metrics(
         &self,
         Parameters(args): Parameters<PropertyArgs>,
@@ -240,7 +328,15 @@ impl Synmetra {
         result(self.api.custom_definitions(&args.property_id).await)
     }
 
-    #[tool(description = "Run Google Analytics Data API v1alpha conversion reporting with conversionSpec or conversion metrics. Requires an eligible property.", annotations(read_only_hint = true, destructive_hint = false, idempotent_hint = true, open_world_hint = true))]
+    #[tool(
+        description = "Run Google Analytics Data API v1alpha conversion reporting with conversionSpec or conversion metrics. Requires an eligible property.",
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = true
+        )
+    )]
     async fn run_conversions_report(
         &self,
         Parameters(args): Parameters<RawPropertyRequestArgs>,
@@ -252,7 +348,15 @@ impl Synmetra {
         )
     }
 
-    #[tool(description = "Run Google Analytics Data API v1alpha funnel reporting with 1-10 funnel steps.", annotations(read_only_hint = true, destructive_hint = false, idempotent_hint = true, open_world_hint = true))]
+    #[tool(
+        description = "Run Google Analytics Data API v1alpha funnel reporting with 1-10 funnel steps.",
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = true
+        )
+    )]
     async fn run_funnel_report(
         &self,
         Parameters(args): Parameters<RawPropertyRequestArgs>,
@@ -264,7 +368,15 @@ impl Synmetra {
         )
     }
 
-    #[tool(description = "Run a GA4 pivot report using the provider's RunPivotReportRequest JSON.", annotations(read_only_hint = true, destructive_hint = false, idempotent_hint = true, open_world_hint = true))]
+    #[tool(
+        description = "Run a GA4 pivot report using the provider's RunPivotReportRequest JSON.",
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = true
+        )
+    )]
     async fn run_pivot_report(
         &self,
         Parameters(args): Parameters<RawPropertyRequestArgs>,
@@ -276,7 +388,15 @@ impl Synmetra {
         )
     }
 
-    #[tool(description = "Execute one to five GA4 historical reports in a single batch using a requests JSON array.", annotations(read_only_hint = true, destructive_hint = false, idempotent_hint = true, open_world_hint = true))]
+    #[tool(
+        description = "Execute one to five GA4 historical reports in a single batch using a requests JSON array.",
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = true
+        )
+    )]
     async fn batch_run_reports(
         &self,
         Parameters(args): Parameters<RawPropertyRequestArgs>,
@@ -288,7 +408,15 @@ impl Synmetra {
         )
     }
 
-    #[tool(description = "Check GA4 Core Data API metric/dimension compatibility using CheckCompatibilityRequest JSON.", annotations(read_only_hint = true, destructive_hint = false, idempotent_hint = true, open_world_hint = true))]
+    #[tool(
+        description = "Check GA4 Core Data API metric/dimension compatibility using CheckCompatibilityRequest JSON.",
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = true
+        )
+    )]
     async fn check_report_compatibility(
         &self,
         Parameters(args): Parameters<RawPropertyRequestArgs>,
@@ -300,7 +428,15 @@ impl Synmetra {
         )
     }
 
-    #[tool(description = "Run a GA4 property-level data access report (requires Google Analytics Administrator privileges).", annotations(read_only_hint = true, destructive_hint = false, idempotent_hint = true, open_world_hint = true))]
+    #[tool(
+        description = "Run a GA4 property-level data access report (requires Google Analytics Administrator privileges).",
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = true
+        )
+    )]
     async fn run_property_access_report(
         &self,
         Parameters(args): Parameters<RawPropertyRequestArgs>,
@@ -312,7 +448,15 @@ impl Synmetra {
         )
     }
 
-    #[tool(description = "Run an account-level data access report (requires Google Analytics Administrator privileges).", annotations(read_only_hint = true, destructive_hint = false, idempotent_hint = true, open_world_hint = true))]
+    #[tool(
+        description = "Run an account-level data access report (requires Google Analytics Administrator privileges).",
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = true
+        )
+    )]
     async fn run_account_access_report(
         &self,
         Parameters(args): Parameters<RawAccountRequestArgs>,
@@ -324,7 +468,15 @@ impl Synmetra {
         )
     }
 
-    #[tool(description = "Preview normalized historical report JSON offline without sending data to Google.", annotations(read_only_hint = true, destructive_hint = false, idempotent_hint = true, open_world_hint = true))]
+    #[tool(
+        description = "Preview normalized historical report JSON offline without sending data to Google.",
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = true
+        )
+    )]
     async fn preview_report_request(
         &self,
         Parameters(args): Parameters<ReportArgs>,
@@ -348,7 +500,15 @@ impl Synmetra {
         result(validation.map(|body| json!({"request":body, "provider_called":false})))
     }
 
-    #[tool(description = "Run a historical Google Analytics Data API report with metric and dimension names.", annotations(read_only_hint = true, destructive_hint = false, idempotent_hint = true, open_world_hint = true))]
+    #[tool(
+        description = "Run a historical Google Analytics Data API report with metric and dimension names.",
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = true
+        )
+    )]
     async fn run_report(&self, Parameters(args): Parameters<ReportArgs>) -> CallToolResult {
         let body = report_request(
             Some(args.date_ranges),
@@ -370,7 +530,15 @@ impl Synmetra {
         })
     }
 
-    #[tool(description = "Run a realtime GA4 report. Realtime reports cannot use offsets or page cursors.", annotations(read_only_hint = true, destructive_hint = false, idempotent_hint = true, open_world_hint = true))]
+    #[tool(
+        description = "Run a realtime GA4 report. Realtime reports cannot use offsets or page cursors.",
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = true
+        )
+    )]
     async fn run_realtime_report(
         &self,
         Parameters(args): Parameters<RealtimeArgs>,
@@ -492,7 +660,10 @@ mod tests {
     #[test]
     fn mcp_tool_annotations_match_read_only_and_opt_in_write_effects() {
         for tool in Synmetra::tool_router().list_all() {
-            let hints = tool.annotations.as_ref().expect("tool annotations required");
+            let hints = tool
+                .annotations
+                .as_ref()
+                .expect("tool annotations required");
             if tool.name == "create_property_annotation" {
                 assert_eq!(hints.read_only_hint, Some(false));
                 assert_eq!(hints.destructive_hint, Some(false));
