@@ -2198,6 +2198,54 @@ mod tests {
         }
     }
 
+    #[tokio::test]
+    async fn production_google_hosts_are_pinned_and_http_redirects_never_followed() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        use tokio::net::TcpListener;
+
+        let production = GoogleClient::new(Some("fixture-token".into()));
+        assert_eq!(production.admin_base, "https://analyticsadmin.googleapis.com");
+        assert_eq!(production.data_base, "https://analyticsdata.googleapis.com");
+        for injected in [
+            "https://attacker.example/properties/42",
+            "42@attacker.example",
+            "42%2f..%2f",
+            "properties/42?next=https://attacker.example",
+            "//attacker.example/42",
+        ] {
+            assert_eq!(property_name(injected), Err(ApiError::InvalidIdentifier));
+            assert_eq!(account_name(injected), Err(ApiError::InvalidIdentifier));
+        }
+
+        // Test-only origin substitution exercises redirect handling without
+        // contacting Google. Redirect policy must not forward OAuth credentials.
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let endpoint = format!("http://{}", listener.local_addr().unwrap());
+        let responder = tokio::spawn(async move {
+            let (mut socket, _) = listener.accept().await.unwrap();
+            let mut buffer = [0_u8; 4096];
+            let count = socket.read(&mut buffer).await.unwrap();
+            assert!(String::from_utf8_lossy(&buffer[..count])
+                .contains("properties/42:runReport"));
+            let response = "HTTP/1.1 302 Found\r\nLocation: https://attacker.example/collect\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+            socket.write_all(response.as_bytes()).await.unwrap();
+        });
+        let client = GoogleClient::with_endpoints(
+            Some("private-token".into()),
+            &endpoint,
+            &endpoint,
+        );
+        let body = report_request(
+            Some(vec![json!({"startDate":"yesterday","endDate":"today"})]),
+            vec![],
+            vec!["activeUsers".into()],
+            vec![],
+        )
+        .unwrap();
+        assert_eq!(client.report("42", body, false).await, Err(ApiError::Http(302)));
+        responder.await.unwrap();
+    }
+
     #[test]
     fn rejects_property_path_and_zero() {
         for bad in [
