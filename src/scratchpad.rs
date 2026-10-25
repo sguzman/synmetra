@@ -177,18 +177,24 @@ impl ScratchState {
         let mut inner = self.guard()?;
         Self::expire(&mut inner);
         let db = &inner.sessions.get(id).ok_or("Scratchpad session not found or expired")?.db;
-        // The identifier grammar cannot contain quotes, semicolons or whitespace.
-        let statement = if if_exists {
-            format!("DROP TABLE IF EXISTS \"{name}\"")
-        } else {
-            format!("DROP TABLE \"{name}\"")
-        };
-        let status = db.execute_batch(&statement);
-        match status {
-            Ok(()) => Ok(json!({"table_name":name,"dropped":true})),
-            Err(_) if if_exists => Err("DuckDB table removal failed".into()),
-            Err(_) => Err("Scratchpad table does not exist or could not be dropped".into()),
+        // Parameter binding protects the catalog lookup; the identifier grammar
+        // independently prohibits quotes, semicolons, whitespace and path syntax.
+        let count: i64 = db.query_row(
+            "SELECT count(*) FROM information_schema.tables
+             WHERE table_schema='main' AND table_type='BASE TABLE' AND table_name=?1",
+            [name],
+            |row| row.get(0),
+        ).map_err(|_| "DuckDB table inventory query failed")?;
+        if count == 0 {
+            return if if_exists {
+                Ok(json!({"table_name":name,"dropped":false,"rows_removed":0}))
+            } else {
+                Err("Scratchpad table not found".into())
+            };
         }
+        db.execute_batch(&format!("DROP TABLE \"{name}\""))
+            .map_err(|_| "DuckDB table deletion failed")?;
+        Ok(json!({"table_name":name,"dropped":true}))
     }
 }
 
@@ -228,6 +234,9 @@ mod tests {
         assert_eq!(state.tables("session_1", Some(1)).unwrap()["count"], 1);
         state.drop_table("session_1", "synthetic_events", false).unwrap();
         assert_eq!(state.tables("session_1", None).unwrap()["total_tables"], 0);
-        state.drop_table("session_1", "synthetic_events", true).unwrap();
+        assert_eq!(
+            state.drop_table("session_1", "synthetic_events", true).unwrap()["dropped"],
+            false
+        );
     }
 }
