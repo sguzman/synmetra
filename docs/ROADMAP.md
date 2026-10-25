@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `████░░░░░░ 42.1%` · **+42.07 percentage points from initial empty repo; +0.22 pp from CI-verified private native auth diagnostics** · 77/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `████░░░░░░ 42.3%` · **+42.29 percentage points from initial empty repo; +0.22 pp from CI-tested isolated OAuth logout safety** · 78/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -126,7 +126,7 @@
   - ✅ **Gate:** Protocol wire fixtures pass multiple clients
 
 
-## 🔑 M2 — Google authentication and credential isolation — `███░░░░░░░ 25.0%`
+## 🔑 M2 — Google authentication and credential isolation — `███░░░░░░░ 26.9%`
 
 **Scope:** MVP. **Acceptance gate:** Secure, least-privilege, non-Python auth across interactive, local and service configurations; no secret leaks.
 
@@ -174,7 +174,7 @@
 - ⏳ **T057 — Guard clock skew and rotation races** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Expiring secrets renew safely during concurrent calls
 
-### 🛡️ P07 — Inbound versus upstream trust — `███░░░░░░░ 27.8%`
+### 🛡️ P07 — Inbound versus upstream trust — `███░░░░░░░ 33.3%`
 
 **Feature:** Identity security.
 
@@ -194,8 +194,8 @@
   - ✅ **Gate:** All modes fail safely with stable errors
 - 📦 **T065 — Ensure no auth dependency on gcloud installation** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Native test environment lacks gcloud Python and npm
-- 🧯 **T066 — Implement safe logout and credential revocation guidance** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** State cleared without touching unrelated Google apps
+- 🧯 **T066 — Implement safe logout and credential revocation guidance** — `██████████ 100.0%`
+  - ✅ **Gate:** State cleared without touching unrelated Google apps · **Evidence:** src/auth.rs logout removes only Synmetra credential file after private-file check; Actions 40202015488 compiled; src/auth.rs clear_credentials_at deletes only private Synmetra credentials in a non-symlinked private auth directory, treats a missing file idempotently, refuses symlinked credentials/directories or world-readable credentials, and distinguishes unexpected filesystem errors. Unit test logout_removes_only_private_synmetra_credentials_without_touching_neighbors verifies removal, idempotence, no unrelated Google app data changes, and adversarial symlink/insecure-file rejection. Native CLI auth logout provides explicit Google-account revocation guidance without claiming server-side revocation. GitHub Actions 40244722883 core and DuckDB passed; no live Google session was accessed.
 
 
 ## 🏢 M3 — Admin API information parity — `██████░░░░ 56.2%`
