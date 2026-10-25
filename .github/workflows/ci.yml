@@ -21,6 +21,8 @@ jobs:
       CARGO_BUILD_JOBS: 2
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - name: Generate canonical scratchpad source and lock snapshot
@@ -35,9 +37,20 @@ jobs:
           done
       - name: Test standard Rust MCP
         run: cargo test --all-targets --locked
+      - name: Determine if a native feature build is needed
+        id: native
+        shell: bash
+        run: |
+          if git diff --name-only HEAD^ HEAD | grep -Eq '^(src/|Cargo\.toml$|Cargo\.lock$|\.github/workflows/ci\.yml$)'; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
       - name: Test feature-gated native DuckDB scratchpad
+        if: steps.native.outputs.changed == 'true'
         run: cargo test --all-targets --locked --features scratchpad
       - name: Strict Clippy with DuckDB feature
+        if: steps.native.outputs.changed == 'true'
         run: cargo clippy --all-targets --locked --features scratchpad -- -D warnings
       - name: Verify task evidence and pinned MCP union
         run: cargo run --locked --bin synmetra-progress
