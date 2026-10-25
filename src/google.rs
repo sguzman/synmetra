@@ -1897,6 +1897,56 @@ mod tests {
         );
     }
 
+    #[tokio::test]
+    async fn annotation_writes_do_not_retry_429_500_or_503_responses() {
+        for (status, code) in [
+            ("429 Too Many Requests", 429),
+            ("500 Internal Server Error", 500),
+            ("503 Service Unavailable", 503),
+        ] {
+            let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+            let endpoint = format!("http://{}", listener.local_addr().unwrap());
+            let responder = tokio::spawn(async move {
+                let (mut socket, _) = listener.accept().await.unwrap();
+                let mut buffer = [0_u8; 4096];
+                let length = socket.read(&mut buffer).await.unwrap();
+                let request = String::from_utf8_lossy(&buffer[..length]).into_owned();
+                assert!(request.starts_with(
+                    "POST /v1alpha/properties/42/reportingDataAnnotations HTTP/1.1"
+                ));
+                let body = r#"{"error":{"message":"private upstream detail"}}"#;
+                let response = format!(
+                    "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nRetry-After: 1\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                    body.len(),
+                    body
+                );
+                socket.write_all(response.as_bytes()).await.unwrap();
+                request
+            });
+            let client = GoogleClient::with_endpoints(
+                Some("private-annotation-token".into()),
+                &endpoint,
+                &endpoint,
+            );
+            let body = annotation_payload(
+                "Release",
+                "2026-10-25",
+                None,
+                None,
+                "BLUE",
+            )
+            .unwrap();
+            assert_eq!(
+                client.create_annotation("42", body).await,
+                Err(ApiError::Http(code))
+            );
+            let request = responder.await.unwrap();
+            assert!(!format!("{:?}", ApiError::Http(code)).contains("private"));
+            assert!(request.contains("authorization: Bearer private-annotation-token")
+                || request.to_ascii_lowercase().contains("authorization: bearer private-annotation-token"));
+        }
+    }
+
     #[test]
     fn rejects_property_path_and_zero() {
         for bad in [
