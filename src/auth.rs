@@ -408,6 +408,24 @@ pub async fn command(args: &[String]) -> Result<(), String> {
             }
             Ok(())
         }
+        [mode] if mode == "doctor" => {
+            let status = public_status();
+            println!("Synmetra local authentication diagnostic (no Google network call):");
+            println!("{}", serde_json::to_string_pretty(&status).map_err(|_| "Cannot render auth status")?);
+            if status["local_oauth_configured"] != true
+                && status["override_token_present"] != true
+            {
+                println!("To configure native OAuth: synmetra auth login --client-id-file /path/to/desktop-client.json");
+            } else if status["cached_token_fresh"] == false {
+                println!("Cached access token may be stale; the next MCP request attempts a refresh.");
+            }
+            println!("Google Analytics Admin and Data APIs must be enabled in your Google Cloud project.");
+            Ok(())
+        }
+        [mode] if mode == "command" => {
+            println!("synmetra auth login --client-id-file /path/to/desktop-client.json");
+            Ok(())
+        }
         [mode] if mode == "logout" => {
             let path = credentials_path()?;
             if fs::symlink_metadata(&path).is_ok() {
@@ -418,7 +436,7 @@ pub async fn command(args: &[String]) -> Result<(), String> {
             Ok(())
         }
         _ => Err(
-            "Usage: synmetra auth login --client-id-file /path/to/desktop.json | status | logout"
+            "Usage: synmetra auth login --client-id-file /path/to/desktop.json | status | doctor | command | logout"
                 .into(),
         ),
     }
@@ -427,6 +445,16 @@ pub async fn command(args: &[String]) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn status_has_no_token_or_client_secret_fields() {
+        let status = public_status();
+        let object = status.as_object().unwrap();
+        assert!(!object.contains_key("access_token"));
+        assert!(!object.contains_key("refresh_token"));
+        assert!(!object.contains_key("client_secret"));
+        assert!(!object.contains_key("client_id"));
+    }
 
     #[test]
     fn state_callback_rejects_errors_and_wrong_paths() {
