@@ -1,10 +1,10 @@
-# 📐 SednaLabs MCP parameter parity audit
+# 📐 Synmetra MCP signature audit against pinned SednaLabs
 
-**Reference:** pinned SednaLabs GA4 MCP commit `039fd4620064fc4b76dc6bca641945aba52c14bc`, [verbatim JSON schema](../spec/upstream/sednalabs-tool-schema.v1.json). Native source inspected: `src/main.rs` at `12fc60a4ae6b5b498ca9c9eb02a8a84a7f6f2dd5`.
+Pinned reference: `sednalabs/ga4-mcp@039fd4620064fc4b76dc6bca641945aba52c14bc`. Native source: `src/main.rs` at `5e781197fdbe94b8206ec303a18a90bfadbecbd1`.
 
-**Static counts:** 35 upstream tools; 29 have a native handler and 6 are not yet implemented. Among the 29 handlers, 2 still lack one or more upstream **required parameter names**. This improves on the previous static audit (nine such gaps) after typing conversion, funnel, pivot, batch and compatibility requests and correcting lifecycle signatures. **This is not runtime signature/behavior parity.** Optional controls, input types/defaults and output projections still differ, and most tools lack live Google acceptance.
+**Static field-name assessment:** **29/35 upstream tools have provisional Rust handlers; 6 remain unimplemented.** All 29 named handlers now declare their upstream **required input field names** (down from nine requiring fixes at the start of this continuation). This **does not mean JSON schema or behavioral parity**: optional controls, input types/defaults, actual Google API execution, response envelopes, pagination and security acceptance still require verification.
 
-| Upstream tool | Native status | Rust argument type | Missing required fields | Missing optional count |
+| Upstream tool | Status | Native argument type | Missing required | Missing optional count |
 |---|---|---|---|---:|
 | `batch_run_reports` | ⚠️ Provisional | `BatchArgs` | — | 0 |
 | `check_report_compatibility` | ⚠️ Provisional | `CompatibilityArgs` | — | 0 |
@@ -19,11 +19,11 @@
 | `list_google_ads_links` | ⚠️ Provisional | `PropertyArgs` | — | 2 |
 | `list_property_annotations` | ⚠️ Provisional | `PropertyArgs` | — | 2 |
 | `preview_report_request` | ⚠️ Provisional | `ReportArgs` | — | 6 |
-| `run_account_access_report` | ⚠️ Provisional | `RawAccountRequestArgs` | `date_ranges`, `dimensions`, `metrics` | 11 |
+| `run_account_access_report` | ⚠️ Provisional | `AccountAccessArgs` | — | 5 |
 | `run_conversions_report` | ⚠️ Provisional | `ConversionArgs` | — | 5 |
 | `run_funnel_report` | ⚠️ Provisional | `FunnelArgs` | — | 8 |
 | `run_pivot_report` | ⚠️ Provisional | `PivotArgs` | — | 5 |
-| `run_property_access_report` | ⚠️ Provisional | `RawPropertyRequestArgs` | `date_ranges`, `dimensions`, `metrics` | 11 |
+| `run_property_access_report` | ⚠️ Provisional | `PropertyAccessArgs` | — | 5 |
 | `run_realtime_report` | ⚠️ Provisional | `RealtimeArgs` | — | 8 |
 | `run_report` | ⚠️ Provisional | `ReportArgs` | — | 6 |
 | `scratchpad_close_session` | ⚠️ Provisional | `ScratchSessionArgs` | — | 0 |
@@ -42,12 +42,11 @@
 | `scratchpad_set_runtime_limits` | ⚠️ Provisional | `ScratchLimitArgs` | — | 0 |
 | `scratchpad_summarize_table` | ⚠️ Provisional | `ScratchReadTableArgs` | — | 5 |
 
-## 🧪 Remaining acceptance work
+## 🎯 Next parity gates
 
-- Replace raw `request` wrappers on the two access-report tools with explicit fields; correctly handle property/account privileges and provider request validation.
-- Complete missing optional request controls, especially pagination, `output_mode`, `summary_only`, `max_cell_chars`, quota flags, metadata and source-side bounded filters.
-- Implement the six remaining DuckDB tools (report/realtime ingestion, restricted SQL query, release comparison, landing-parameter shift, evidence exports) and finish analysis tool output contracts.
-- Compare actual Rust `tools/list` JSON schemas with both pinned upstream references, not only source-declared parameter field names, then run synthetic fixtures for all 36 union tools.
-- Require allowed-scope live Google API acceptance before claiming any of the 36 tools fully parity-complete.
+1. Implement six missing scratchpad tools: historical/realtime ingestion, policy-restricted SQL query, release regression, landing-parameter shift, and evidence export.
+2. Support optional pagination, bounded output modes, date/filter validation and accurate Contract V1 success/error metadata.
+3. Generate actual Rust MCP tools/list JSON schemas and compare field types, defaults, required lists and descriptions against pinned upstream fixtures.
+4. Exercise every tool against synthetic provider fixtures and then authorized live Google Analytics test properties.
 
-**Method:** This document is derived from the pinned upstream inputSchema `properties`/`required` fields and review of named native Rust request structs. A field listed as present does not establish equivalent type, default, validation, quota handling, or output behavior. A provisional tool might still reject legitimate upstream inputs. The accompanying [machine-readable JSON](../spec/contract-gaps.json) records the exact comparison for follow-on tests.
+The official Google implementation contains a separately gated annotation-write tool outside SednaLabs' 35-name inventory. **0/36 full tool-parity acceptance** remains the current evidence status.
