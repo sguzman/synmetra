@@ -194,16 +194,18 @@
               "id": "T009",
               "emoji": "📦",
               "name": "Initialize single-crate Rust executable synmetra",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "Cargo metadata and CLI build on stable Rust x86-64 Linux",
               "checks": [
                 {
                   "text": "Deliver initialize single-crate rust executable synmetra as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "Cargo.toml; src/main.rs; Actions 40202015488 compiled Synmetra native Rust binary and passed unit tests"
                 },
                 {
                   "text": "Cargo metadata and CLI build on stable Rust x86-64 Linux",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "Cargo.toml; src/main.rs; Actions 40202015488 compiled Synmetra native Rust binary and passed unit tests"
                 }
               ]
             },
@@ -211,12 +213,13 @@
               "id": "T010",
               "emoji": "🔌",
               "name": "Integrate rmcp server SDK foundation",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Protocol version pin plus compile-time registration tests",
               "checks": [
                 {
                   "text": "Deliver integrate rmcp server sdk foundation as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs rmcp 3.5.1 tool router and 17 registered MCP handlers; Actions 40202015488 passed"
                 },
                 {
                   "text": "Protocol version pin plus compile-time registration tests",
@@ -228,12 +231,13 @@
               "id": "T011",
               "emoji": "🌐",
               "name": "Add reqwest rustls API client skeleton",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "No OpenSSL or Python runtime dependency",
               "checks": [
                 {
                   "text": "Deliver add reqwest rustls api client skeleton as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs reqwest/rustls fixed-host Admin/Data HTTP transport; Actions 40202015488 passed"
                 },
                 {
                   "text": "No OpenSSL or Python runtime dependency",
@@ -279,16 +283,18 @@
               "id": "T014",
               "emoji": "🧰",
               "name": "Create deterministic offline fixtures and mock server",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "No secrets or real analytics identifiers in fixtures",
               "checks": [
                 {
                   "text": "Deliver create deterministic offline fixtures and mock server as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs synthetic tokio TcpListener Google API mock tests; Actions 40202015488 passed without real credentials"
                 },
                 {
                   "text": "No secrets or real analytics identifiers in fixtures",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs synthetic tokio TcpListener Google API mock tests; Actions 40202015488 passed without real credentials"
                 }
               ]
             },
@@ -364,12 +370,13 @@
               "id": "T018",
               "emoji": "📥",
               "name": "Support MCP initialize and capability negotiation",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Inspector negotiates compatible protocol version and identity",
               "checks": [
                 {
                   "text": "Deliver support mcp initialize and capability negotiation as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs official rmcp initialize/serve(stdio) integration, in-memory client negotiates; Actions 40202015488 passed"
                 },
                 {
                   "text": "Inspector negotiates compatible protocol version and identity",
@@ -381,12 +388,13 @@
               "id": "T019",
               "emoji": "📋",
               "name": "Support tools/list with exact declared JSON schemas",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "All available tools discoverable by MCP clients",
               "checks": [
                 {
                   "text": "Deliver support tools/list with exact declared json schemas as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs typed schemars tool metadata; in-memory client lists 17 handlers in Actions 40202015488"
                 },
                 {
                   "text": "All available tools discoverable by MCP clients",
@@ -398,12 +406,13 @@
               "id": "T020",
               "emoji": "⚙️",
               "name": "Support tools/call dispatch and structured content",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Call requests resolve to tools with valid response envelopes",
               "checks": [
                 {
                   "text": "Deliver support tools/call dispatch and structured content as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs actual rmcp tools/call of get_account_summaries via in-memory client; Actions 40202015488 passed"
                 },
                 {
                   "text": "Call requests resolve to tools with valid response envelopes",
@@ -432,12 +441,13 @@
               "id": "T022",
               "emoji": "🚧",
               "name": "Separate stdout protocol from stderr diagnostics",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "No banners or logging contaminate JSON-RPC stdout",
               "checks": [
                 {
                   "text": "Deliver separate stdout protocol from stderr diagnostics as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs stdio transport only on serve path; application diagnostic output uses stderr; Actions 40202015488 passed"
                 },
                 {
                   "text": "No banners or logging contaminate JSON-RPC stdout",
@@ -652,12 +662,13 @@
               "id": "T034",
               "emoji": "📐",
               "name": "Validate structured input against exported schemas",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Tool arguments validated with stable user-facing errors",
               "checks": [
                 {
                   "text": "Deliver validate structured input against exported schemas as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs typed Deserialize/JsonSchema request parameters with per-handler MCP validation; Actions 40202015488 passed"
                 },
                 {
                   "text": "Tool arguments validated with stable user-facing errors",
@@ -788,12 +799,13 @@
               "id": "T041",
               "emoji": "🧭",
               "name": "Implement auth login and auth status CLI",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "One-time login and status work without invoking Python or npm",
               "checks": [
                 {
                   "text": "Deliver implement auth login and auth status cli as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/auth.rs native auth login/status/logout CLI backed by private credentials; Actions 40202015488 compiled; live Google login pending"
                 },
                 {
                   "text": "One-time login and status work without invoking Python or npm",
@@ -822,12 +834,13 @@
               "id": "T043",
               "emoji": "🌐",
               "name": "Implement browser OAuth PKCE loopback flow",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "CSRF state, PKCE, timeout and redirect checks pass",
               "checks": [
                 {
                   "text": "Deliver implement browser oauth pkce loopback flow as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/auth.rs native OAuth authorization URL with PKCE S256, random state and loopback listener; callback/PKCE unit tests pass Actions 40202015488"
                 },
                 {
                   "text": "CSRF state, PKCE, timeout and redirect checks pass",
@@ -856,12 +869,13 @@
               "id": "T045",
               "emoji": "🔐",
               "name": "Store tokens in GA4-specific user config storage",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Private file permissions and no shared ADC clobbering",
               "checks": [
                 {
                   "text": "Deliver store tokens in ga4-specific user config storage as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/auth.rs isolated XDG credential path and atomic mode-0600 persistence; Actions 40202015488 compiled; file-mode tests pending"
                 },
                 {
                   "text": "Private file permissions and no shared ADC clobbering",
@@ -873,12 +887,13 @@
               "id": "T046",
               "emoji": "♻️",
               "name": "Implement expiry-aware access-token refresh",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Refresh honors expiry and avoids parallel stampedes",
               "checks": [
                 {
                   "text": "Deliver implement expiry-aware access-token refresh as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/auth.rs access_token() expiry check, serialized refresh lock and Google token exchange; Actions 40202015488 compiled; live refresh pending"
                 },
                 {
                   "text": "Refresh honors expiry and avoids parallel stampedes",
@@ -890,12 +905,13 @@
               "id": "T047",
               "emoji": "📛",
               "name": "Validate requested OAuth scopes per capability",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Read-only uses analytics.readonly; writes demand analytics.edit",
               "checks": [
                 {
                   "text": "Deliver validate requested oauth scopes per capability as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/auth.rs authorization_url() requests only analytics.readonly; scope tests pass Actions 40202015488; write scope policy pending"
                 },
                 {
                   "text": "Read-only uses analytics.readonly; writes demand analytics.edit",
@@ -1034,12 +1050,13 @@
               "id": "T055",
               "emoji": "🧮",
               "name": "Support configured refresh-token credentials",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Explicit credentials refresh without CLI gcloud dependency",
               "checks": [
                 {
                   "text": "Deliver support configured refresh-token credentials as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/auth.rs configured refresh token persisted without Python/gcloud dependency; Actions 40202015488 compiled; live token renewal pending"
                 },
                 {
                   "text": "Explicit credentials refresh without CLI gcloud dependency",
@@ -1161,12 +1178,13 @@
               "id": "T062",
               "emoji": "🔐",
               "name": "Protect local credential files from symlink attacks",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "No world-readable files and atomic writes",
               "checks": [
                 {
                   "text": "Deliver protect local credential files from symlink attacks as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/auth.rs private_file/read_credentials/persist_credentials reject symlinks and world-readable files; CI 40202015488 compilation; security tests pending"
                 },
                 {
                   "text": "No world-readable files and atomic writes",
@@ -1178,12 +1196,13 @@
               "id": "T063",
               "emoji": "🚫",
               "name": "Block SSRF via URLs in config or request arguments",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Only pinned Google API hosts are contacted by default",
               "checks": [
                 {
                   "text": "Deliver block ssrf via urls in config or request arguments as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs hardcoded HTTPS Google API origins; property/account resource name sanitation; CI 40202015488 tests and fixed-host synthetic requests"
                 },
                 {
                   "text": "Only pinned Google API hosts are contacted by default",
@@ -1229,12 +1248,13 @@
               "id": "T066",
               "emoji": "🧯",
               "name": "Implement safe logout and credential revocation guidance",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "State cleared without touching unrelated Google apps",
               "checks": [
                 {
                   "text": "Deliver implement safe logout and credential revocation guidance as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/auth.rs logout removes only Synmetra credential file after private-file check; Actions 40202015488 compiled"
                 },
                 {
                   "text": "State cleared without touching unrelated Google apps",
@@ -1263,12 +1283,13 @@
               "id": "T067",
               "emoji": "🧾",
               "name": "Implement get_account_summaries",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Golden Admin API mock response and auth-denial case for get_account_summaries",
               "checks": [
                 {
                   "text": "Deliver implement get_account_summaries as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs implemented get_account_summaries MCP handler plus src/google.rs request route/validation; Rust unit and in-memory MCP tests passed Actions 40202015488; full upstream schema/live GA parity remains open"
                 },
                 {
                   "text": "Golden Admin API mock response and auth-denial case for get_account_summaries",
@@ -1280,12 +1301,13 @@
               "id": "T068",
               "emoji": "📃",
               "name": "Implement get_account_data_sharing_settings",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Golden Admin API mock response and auth-denial case for get_account_data_sharing_settings",
               "checks": [
                 {
                   "text": "Deliver implement get_account_data_sharing_settings as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs implemented get_account_data_sharing_settings MCP handler plus src/google.rs request route/validation; Rust unit and in-memory MCP tests passed Actions 40202015488; full upstream schema/live GA parity remains open"
                 },
                 {
                   "text": "Golden Admin API mock response and auth-denial case for get_account_data_sharing_settings",
@@ -1297,12 +1319,13 @@
               "id": "T069",
               "emoji": "🏠",
               "name": "Implement get_property_details",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Golden Admin API mock response and auth-denial case for get_property_details",
               "checks": [
                 {
                   "text": "Deliver implement get_property_details as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs implemented get_property_details MCP handler plus src/google.rs request route/validation; Rust unit and in-memory MCP tests passed Actions 40202015488; full upstream schema/live GA parity remains open"
                 },
                 {
                   "text": "Golden Admin API mock response and auth-denial case for get_property_details",
@@ -1314,12 +1337,13 @@
               "id": "T070",
               "emoji": "⏳",
               "name": "Implement get_property_data_retention_settings",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Golden Admin API mock response and auth-denial case for get_property_data_retention_settings",
               "checks": [
                 {
                   "text": "Deliver implement get_property_data_retention_settings as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs implemented get_property_data_retention_settings MCP handler plus src/google.rs request route/validation; Rust unit and in-memory MCP tests passed Actions 40202015488; full upstream schema/live GA parity remains open"
                 },
                 {
                   "text": "Golden Admin API mock response and auth-denial case for get_property_data_retention_settings",
@@ -1331,12 +1355,13 @@
               "id": "T071",
               "emoji": "🔗",
               "name": "Implement list_google_ads_links",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Golden Admin API mock response and auth-denial case for list_google_ads_links",
               "checks": [
                 {
                   "text": "Deliver implement list_google_ads_links as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs implemented list_google_ads_links MCP handler plus src/google.rs request route/validation; Rust unit and in-memory MCP tests passed Actions 40202015488; full upstream schema/live GA parity remains open"
                 },
                 {
                   "text": "Golden Admin API mock response and auth-denial case for list_google_ads_links",
@@ -1348,12 +1373,13 @@
               "id": "T072",
               "emoji": "📌",
               "name": "Implement list_property_annotations",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Golden Admin API mock response and auth-denial case for list_property_annotations",
               "checks": [
                 {
                   "text": "Deliver implement list_property_annotations as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs implemented list_property_annotations MCP handler plus src/google.rs request route/validation; Rust unit and in-memory MCP tests passed Actions 40202015488; full upstream schema/live GA parity remains open"
                 },
                 {
                   "text": "Golden Admin API mock response and auth-denial case for list_property_annotations",
@@ -1365,12 +1391,13 @@
               "id": "T073",
               "emoji": "🧬",
               "name": "Implement get_custom_dimensions_and_metrics",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Golden Admin API mock response and auth-denial case for get_custom_dimensions_and_metrics",
               "checks": [
                 {
                   "text": "Deliver implement get_custom_dimensions_and_metrics as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs implemented get_custom_dimensions_and_metrics MCP handler plus src/google.rs request route/validation; Rust unit and in-memory MCP tests passed Actions 40202015488; full upstream schema/live GA parity remains open"
                 },
                 {
                   "text": "Golden Admin API mock response and auth-denial case for get_custom_dimensions_and_metrics",
@@ -1560,12 +1587,13 @@
               "id": "T083",
               "emoji": "📊",
               "name": "Implement run_report",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "MCP schema, Google request, golden output and error cases for run_report",
               "checks": [
                 {
                   "text": "Deliver implement run_report as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs implemented run_report MCP handler plus src/google.rs request route/validation; Rust unit and in-memory MCP tests passed Actions 40202015488; full upstream schema/live GA parity remains open"
                 },
                 {
                   "text": "MCP schema, Google request, golden output and error cases for run_report",
@@ -1577,12 +1605,13 @@
               "id": "T084",
               "emoji": "🛒",
               "name": "Implement run_conversions_report",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "MCP schema, Google request, golden output and error cases for run_conversions_report",
               "checks": [
                 {
                   "text": "Deliver implement run_conversions_report as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs implemented run_conversions_report MCP handler plus src/google.rs request route/validation; Rust unit and in-memory MCP tests passed Actions 40202015488; full upstream schema/live GA parity remains open"
                 },
                 {
                   "text": "MCP schema, Google request, golden output and error cases for run_conversions_report",
@@ -1594,12 +1623,13 @@
               "id": "T085",
               "emoji": "🚦",
               "name": "Implement run_funnel_report",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "MCP schema, Google request, golden output and error cases for run_funnel_report",
               "checks": [
                 {
                   "text": "Deliver implement run_funnel_report as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs implemented run_funnel_report MCP handler plus src/google.rs request route/validation; Rust unit and in-memory MCP tests passed Actions 40202015488; full upstream schema/live GA parity remains open"
                 },
                 {
                   "text": "MCP schema, Google request, golden output and error cases for run_funnel_report",
@@ -1611,12 +1641,13 @@
               "id": "T086",
               "emoji": "⚡",
               "name": "Implement run_realtime_report",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "MCP schema, Google request, golden output and error cases for run_realtime_report",
               "checks": [
                 {
                   "text": "Deliver implement run_realtime_report as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs implemented run_realtime_report MCP handler plus src/google.rs request route/validation; Rust unit and in-memory MCP tests passed Actions 40202015488; full upstream schema/live GA parity remains open"
                 },
                 {
                   "text": "MCP schema, Google request, golden output and error cases for run_realtime_report",
@@ -1628,12 +1659,13 @@
               "id": "T087",
               "emoji": "🧩",
               "name": "Implement run_pivot_report",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "MCP schema, Google request, golden output and error cases for run_pivot_report",
               "checks": [
                 {
                   "text": "Deliver implement run_pivot_report as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs implemented run_pivot_report MCP handler plus src/google.rs request route/validation; Rust unit and in-memory MCP tests passed Actions 40202015488; full upstream schema/live GA parity remains open"
                 },
                 {
                   "text": "MCP schema, Google request, golden output and error cases for run_pivot_report",
@@ -1645,12 +1677,13 @@
               "id": "T088",
               "emoji": "📦",
               "name": "Implement batch_run_reports",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "MCP schema, Google request, golden output and error cases for batch_run_reports",
               "checks": [
                 {
                   "text": "Deliver implement batch_run_reports as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs implemented batch_run_reports MCP handler plus src/google.rs request route/validation; Rust unit and in-memory MCP tests passed Actions 40202015488; full upstream schema/live GA parity remains open"
                 },
                 {
                   "text": "MCP schema, Google request, golden output and error cases for batch_run_reports",
@@ -1662,12 +1695,13 @@
               "id": "T089",
               "emoji": "🔎",
               "name": "Implement run_property_access_report",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "MCP schema, Google request, golden output and error cases for run_property_access_report",
               "checks": [
                 {
                   "text": "Deliver implement run_property_access_report as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs implemented run_property_access_report MCP handler plus src/google.rs request route/validation; Rust unit and in-memory MCP tests passed Actions 40202015488; full upstream schema/live GA parity remains open"
                 },
                 {
                   "text": "MCP schema, Google request, golden output and error cases for run_property_access_report",
@@ -1679,12 +1713,13 @@
               "id": "T090",
               "emoji": "👥",
               "name": "Implement run_account_access_report",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "MCP schema, Google request, golden output and error cases for run_account_access_report",
               "checks": [
                 {
                   "text": "Deliver implement run_account_access_report as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs implemented run_account_access_report MCP handler plus src/google.rs request route/validation; Rust unit and in-memory MCP tests passed Actions 40202015488; full upstream schema/live GA parity remains open"
                 },
                 {
                   "text": "MCP schema, Google request, golden output and error cases for run_account_access_report",
@@ -1704,12 +1739,13 @@
               "id": "T091",
               "emoji": "🧭",
               "name": "Implement preview_report_request",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Validate its contract and unsupported metrics without wasteful report requests",
               "checks": [
                 {
                   "text": "Deliver implement preview_report_request as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs implemented preview_report_request MCP handler plus src/google.rs request route/validation; Rust unit and in-memory MCP tests passed Actions 40202015488; full upstream schema/live GA parity remains open"
                 },
                 {
                   "text": "Validate its contract and unsupported metrics without wasteful report requests",
@@ -1721,12 +1757,13 @@
               "id": "T092",
               "emoji": "✅",
               "name": "Implement check_report_compatibility",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Validate its contract and unsupported metrics without wasteful report requests",
               "checks": [
                 {
                   "text": "Deliver implement check_report_compatibility as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs implemented check_report_compatibility MCP handler plus src/google.rs request route/validation; Rust unit and in-memory MCP tests passed Actions 40202015488; full upstream schema/live GA parity remains open"
                 },
                 {
                   "text": "Validate its contract and unsupported metrics without wasteful report requests",
@@ -1899,12 +1936,13 @@
               "id": "T102",
               "emoji": "📦",
               "name": "Enforce batch report maximums and isolation",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Five-report constraint and distinct report results preserved",
               "checks": [
                 {
                   "text": "Deliver enforce batch report maximums and isolation as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs data_operation rejects batches with 0 or >5 requests; Actions 40202015488 passed guards"
                 },
                 {
                   "text": "Five-report constraint and distinct report results preserved",
@@ -3137,12 +3175,13 @@
               "id": "T168",
               "emoji": "🧪",
               "name": "Create offline GA Admin and Data endpoint mocks",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Representative success empty error and pagination fixtures",
               "checks": [
                 {
                   "text": "Deliver create offline ga admin and data endpoint mocks as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs deterministic HTTP mock harness and numerous no-secrets synthetic route/auth tests; Actions 40202015488 passed"
                 },
                 {
                   "text": "Representative success empty error and pagination fixtures",

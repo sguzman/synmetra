@@ -1,8 +1,8 @@
 # 🗺️ Synmetra exhaustive roadmap
 
-**Status:** bootstrap planning, **0/36 runtime tools accepted**. This project is not yet an MCP server. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
+**Status:** experimental Rust MCP stdio server, 17/36 handlers implemented provisionally; **0/36 fully parity-accepted**. This project is not yet an MCP server. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `░░░░░░░░░░ 2.9%` · **+2.86 percentage points since initial empty repo (+0.22 points in this CI validation round)** · 6/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `█░░░░░░░░░ 11.4%` · **+11.45 percentage points from initial empty repo; +8.59 pp since the previous accepted ledger** · 8/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -11,7 +11,7 @@
 - On each stewardship round, report total and actively worked milestone/phase/task bars plus the **signed delta in percentage points** against the previous verified committed ledger; completed 100% tasks can be omitted in ongoing status updates.
 - **No progress padding.** Upstream feature inventory, planning and brand assets count only for their specific documentation tasks; GA4 functionality starts at 0% until tests establish otherwise. Real Google access, credentials and live tests are separate explicit gates.
 
-## 🧭 M0 — Reference baseline and project governance — `████░░░░░░ 35.3%`
+## 🧭 M0 — Reference baseline and project governance — `█████░░░░░ 52.9%`
 
 **Scope:** MVP. **Acceptance gate:** Audited pinned feature-union inventory, color identity, public-safe policies and reproducible plan. Foundation is not runtime parity.
 
@@ -36,22 +36,22 @@
 - 🔁 **T008 — Set up upstream drift tracking and version pin policy** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** CI alerts on name/signature deltas without silent breaking changes
 
-### 🦀 P01 — Native scaffold and quality gates — `░░░░░░░░░░ 0.0%`
+### 🦀 P01 — Native scaffold and quality gates — `███░░░░░░░ 33.3%`
 
 **Feature:** Rust foundation.
 
-- 📦 **T009 — Initialize single-crate Rust executable synmetra** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Cargo metadata and CLI build on stable Rust x86-64 Linux
-- 🔌 **T010 — Integrate rmcp server SDK foundation** — `░░░░░░░░░░ 0.0%`
+- 📦 **T009 — Initialize single-crate Rust executable synmetra** — `██████████ 100.0%`
+  - ✅ **Gate:** Cargo metadata and CLI build on stable Rust x86-64 Linux · **Evidence:** Cargo.toml; src/main.rs; Actions 40202015488 compiled Synmetra native Rust binary and passed unit tests; Cargo.toml; src/main.rs; Actions 40202015488 compiled Synmetra native Rust binary and passed unit tests
+- 🔌 **T010 — Integrate rmcp server SDK foundation** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Protocol version pin plus compile-time registration tests
-- 🌐 **T011 — Add reqwest rustls API client skeleton** — `░░░░░░░░░░ 0.0%`
+- 🌐 **T011 — Add reqwest rustls API client skeleton** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** No OpenSSL or Python runtime dependency
 - 🧪 **T012 — Add fmt clippy unit tests and CI jobs** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Green push checks with pinned toolchain and dependency cache
 - 🧷 **T013 — Add lockfile dependency audits and license checks** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Dependencies auditable with deny or equivalent process
-- 🧰 **T014 — Create deterministic offline fixtures and mock server** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** No secrets or real analytics identifiers in fixtures
+- 🧰 **T014 — Create deterministic offline fixtures and mock server** — `██████████ 100.0%`
+  - ✅ **Gate:** No secrets or real analytics identifiers in fixtures · **Evidence:** src/google.rs synthetic tokio TcpListener Google API mock tests; Actions 40202015488 passed without real credentials; src/google.rs synthetic tokio TcpListener Google API mock tests; Actions 40202015488 passed without real credentials
 - 🧭 **T015 — Implement CLI config parsing and doctor subcommands** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Actionable diagnostics and typed failures without exposing secrets
 - 🔏 **T016 — Threat-model local execution and its credential boundary** — `░░░░░░░░░░ 0.0%`
@@ -60,23 +60,23 @@
   - ✅ **Gate:** Document semver and provenance gates
 
 
-## 🔌 M1 — MCP protocol and transport fidelity — `░░░░░░░░░░ 0.0%`
+## 🔌 M1 — MCP protocol and transport fidelity — `█░░░░░░░░░ 10.9%`
 
 **Scope:** MVP. **Acceptance gate:** Spec-conforming native MCP discovery and calls over stdio plus bounded Streamable HTTP; all transport safety tests pass.
 
-### 📨 P02 — Stdio protocol — `░░░░░░░░░░ 0.0%`
+### 📨 P02 — Stdio protocol — `███░░░░░░░ 28.6%`
 
 **Feature:** MCP stdio.
 
-- 📥 **T018 — Support MCP initialize and capability negotiation** — `░░░░░░░░░░ 0.0%`
+- 📥 **T018 — Support MCP initialize and capability negotiation** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Inspector negotiates compatible protocol version and identity
-- 📋 **T019 — Support tools/list with exact declared JSON schemas** — `░░░░░░░░░░ 0.0%`
+- 📋 **T019 — Support tools/list with exact declared JSON schemas** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** All available tools discoverable by MCP clients
-- ⚙️ **T020 — Support tools/call dispatch and structured content** — `░░░░░░░░░░ 0.0%`
+- ⚙️ **T020 — Support tools/call dispatch and structured content** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Call requests resolve to tools with valid response envelopes
 - 📣 **T021 — Implement JSON-RPC notifications and cancellation** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Cancelled requests do not spawn orphan Google calls
-- 🚧 **T022 — Separate stdout protocol from stderr diagnostics** — `░░░░░░░░░░ 0.0%`
+- 🚧 **T022 — Separate stdout protocol from stderr diagnostics** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** No banners or logging contaminate JSON-RPC stdout
 - 📏 **T023 — Bound request sizes concurrency and timeouts** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Malformed and oversize frames rejected deterministically
@@ -106,11 +106,11 @@
 - 🧫 **T033 — Test MCP HTTP inspector interoperability** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** End-to-end tool invocation under loopback and protected remote modes
 
-### 🧾 P04 — MCP schema semantics — `░░░░░░░░░░ 0.0%`
+### 🧾 P04 — MCP schema semantics — `█░░░░░░░░░ 7.1%`
 
 **Feature:** MCP contract.
 
-- 📐 **T034 — Validate structured input against exported schemas** — `░░░░░░░░░░ 0.0%`
+- 📐 **T034 — Validate structured input against exported schemas** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Tool arguments validated with stable user-facing errors
 - 🧩 **T035 — Declare read-only versus mutating tool annotations** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Annotation write differs accurately from read tools
@@ -126,32 +126,32 @@
   - ✅ **Gate:** Protocol wire fixtures pass multiple clients
 
 
-## 🔑 M2 — Google authentication and credential isolation — `░░░░░░░░░░ 0.0%`
+## 🔑 M2 — Google authentication and credential isolation — `██░░░░░░░░ 17.3%`
 
 **Scope:** MVP. **Acceptance gate:** Secure, least-privilege, non-Python auth across interactive, local and service configurations; no secret leaks.
 
-### 🪪 P05 — Native OAuth login and operators — `░░░░░░░░░░ 0.0%`
+### 🪪 P05 — Native OAuth login and operators — `███░░░░░░░ 31.3%`
 
 **Feature:** Native OAuth.
 
-- 🧭 **T041 — Implement auth login and auth status CLI** — `░░░░░░░░░░ 0.0%`
+- 🧭 **T041 — Implement auth login and auth status CLI** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** One-time login and status work without invoking Python or npm
 - 🧰 **T042 — Implement auth doctor and login-command helper** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Operator gets actionable non-secret diagnostics
-- 🌐 **T043 — Implement browser OAuth PKCE loopback flow** — `░░░░░░░░░░ 0.0%`
+- 🌐 **T043 — Implement browser OAuth PKCE loopback flow** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** CSRF state, PKCE, timeout and redirect checks pass
 - 🖥️ **T044 — Support headless copy-back OAuth setup** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Headless flow completes and rejects replayed callbacks
-- 🔐 **T045 — Store tokens in GA4-specific user config storage** — `░░░░░░░░░░ 0.0%`
+- 🔐 **T045 — Store tokens in GA4-specific user config storage** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Private file permissions and no shared ADC clobbering
-- ♻️ **T046 — Implement expiry-aware access-token refresh** — `░░░░░░░░░░ 0.0%`
+- ♻️ **T046 — Implement expiry-aware access-token refresh** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Refresh honors expiry and avoids parallel stampedes
-- 📛 **T047 — Validate requested OAuth scopes per capability** — `░░░░░░░░░░ 0.0%`
+- 📛 **T047 — Validate requested OAuth scopes per capability** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Read-only uses analytics.readonly; writes demand analytics.edit
 - 🔎 **T048 — Validate live token and quota-project configuration** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** API-enabled project and quota errors are distinguishable
 
-### 📂 P06 — ADC, service account and token policy — `░░░░░░░░░░ 0.0%`
+### 📂 P06 — ADC, service account and token policy — `█░░░░░░░░░ 5.6%`
 
 **Feature:** Google identities.
 
@@ -167,14 +167,14 @@
   - ✅ **Gate:** Client token is never persisted in server config
 - 🔀 **T054 — Support request-header-or-config only on loopback** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Hosted fallback to server-held identity fails closed
-- 🧮 **T055 — Support configured refresh-token credentials** — `░░░░░░░░░░ 0.0%`
+- 🧮 **T055 — Support configured refresh-token credentials** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Explicit credentials refresh without CLI gcloud dependency
 - 🏷️ **T056 — Support quota project and billing headers** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Expected Google quota routing preserved
 - ⏳ **T057 — Guard clock skew and rotation races** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Expiring secrets renew safely during concurrent calls
 
-### 🛡️ P07 — Inbound versus upstream trust — `░░░░░░░░░░ 0.0%`
+### 🛡️ P07 — Inbound versus upstream trust — `██░░░░░░░░ 16.7%`
 
 **Feature:** Identity security.
 
@@ -186,39 +186,39 @@
   - ✅ **Gate:** Secret scanner fixtures remain clean
 - 🔍 **T061 — Validate Google scope and role errors distinctly** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** No broad-scope silent escalation on 403
-- 🔐 **T062 — Protect local credential files from symlink attacks** — `░░░░░░░░░░ 0.0%`
+- 🔐 **T062 — Protect local credential files from symlink attacks** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** No world-readable files and atomic writes
-- 🚫 **T063 — Block SSRF via URLs in config or request arguments** — `░░░░░░░░░░ 0.0%`
+- 🚫 **T063 — Block SSRF via URLs in config or request arguments** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Only pinned Google API hosts are contacted by default
 - 🧪 **T064 — Exercise expired revoked and invalid credentials** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** All modes fail safely with stable errors
 - 📦 **T065 — Ensure no auth dependency on gcloud installation** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Native test environment lacks gcloud Python and npm
-- 🧯 **T066 — Implement safe logout and credential revocation guidance** — `░░░░░░░░░░ 0.0%`
+- 🧯 **T066 — Implement safe logout and credential revocation guidance** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** State cleared without touching unrelated Google apps
 
 
-## 🏢 M3 — Admin API information parity — `░░░░░░░░░░ 0.0%`
+## 🏢 M3 — Admin API information parity — `██░░░░░░░░ 21.9%`
 
 **Scope:** MVP. **Acceptance gate:** All administrative read tools and metadata endpoints match pinned signatures and response behavior.
 
-### 🗂️ P08 — Admin MCP tools — `░░░░░░░░░░ 0.0%`
+### 🗂️ P08 — Admin MCP tools — `█████░░░░░ 50.0%`
 
 **Feature:** Seven Admin read tools.
 
-- 🧾 **T067 — Implement get_account_summaries** — `░░░░░░░░░░ 0.0%`
+- 🧾 **T067 — Implement get_account_summaries** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Golden Admin API mock response and auth-denial case for get_account_summaries
-- 📃 **T068 — Implement get_account_data_sharing_settings** — `░░░░░░░░░░ 0.0%`
+- 📃 **T068 — Implement get_account_data_sharing_settings** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Golden Admin API mock response and auth-denial case for get_account_data_sharing_settings
-- 🏠 **T069 — Implement get_property_details** — `░░░░░░░░░░ 0.0%`
+- 🏠 **T069 — Implement get_property_details** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Golden Admin API mock response and auth-denial case for get_property_details
-- ⏳ **T070 — Implement get_property_data_retention_settings** — `░░░░░░░░░░ 0.0%`
+- ⏳ **T070 — Implement get_property_data_retention_settings** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Golden Admin API mock response and auth-denial case for get_property_data_retention_settings
-- 🔗 **T071 — Implement list_google_ads_links** — `░░░░░░░░░░ 0.0%`
+- 🔗 **T071 — Implement list_google_ads_links** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Golden Admin API mock response and auth-denial case for list_google_ads_links
-- 📌 **T072 — Implement list_property_annotations** — `░░░░░░░░░░ 0.0%`
+- 📌 **T072 — Implement list_property_annotations** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Golden Admin API mock response and auth-denial case for list_property_annotations
-- 🧬 **T073 — Implement get_custom_dimensions_and_metrics** — `░░░░░░░░░░ 0.0%`
+- 🧬 **T073 — Implement get_custom_dimensions_and_metrics** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Golden Admin API mock response and auth-denial case for get_custom_dimensions_and_metrics
 
 ### 🏷️ P09 — Administrative edge cases — `░░░░░░░░░░ 0.0%`
@@ -245,38 +245,38 @@
   - ✅ **Gate:** No stale cross-principal cache confusion
 
 
-## 📊 M4 — Reporting, preflight and Data API parity — `░░░░░░░░░░ 0.0%`
+## 📊 M4 — Reporting, preflight and Data API parity — `██░░░░░░░░ 18.3%`
 
 **Scope:** MVP. **Acceptance gate:** All report tools return correct GA4 semantics, including documented alpha, pagination and response projections.
 
-### 📈 P10 — Report MCP tools — `░░░░░░░░░░ 0.0%`
+### 📈 P10 — Report MCP tools — `█████░░░░░ 50.0%`
 
 **Feature:** Eight report tools.
 
-- 📊 **T083 — Implement run_report** — `░░░░░░░░░░ 0.0%`
+- 📊 **T083 — Implement run_report** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** MCP schema, Google request, golden output and error cases for run_report
-- 🛒 **T084 — Implement run_conversions_report** — `░░░░░░░░░░ 0.0%`
+- 🛒 **T084 — Implement run_conversions_report** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** MCP schema, Google request, golden output and error cases for run_conversions_report
-- 🚦 **T085 — Implement run_funnel_report** — `░░░░░░░░░░ 0.0%`
+- 🚦 **T085 — Implement run_funnel_report** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** MCP schema, Google request, golden output and error cases for run_funnel_report
-- ⚡ **T086 — Implement run_realtime_report** — `░░░░░░░░░░ 0.0%`
+- ⚡ **T086 — Implement run_realtime_report** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** MCP schema, Google request, golden output and error cases for run_realtime_report
-- 🧩 **T087 — Implement run_pivot_report** — `░░░░░░░░░░ 0.0%`
+- 🧩 **T087 — Implement run_pivot_report** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** MCP schema, Google request, golden output and error cases for run_pivot_report
-- 📦 **T088 — Implement batch_run_reports** — `░░░░░░░░░░ 0.0%`
+- 📦 **T088 — Implement batch_run_reports** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** MCP schema, Google request, golden output and error cases for batch_run_reports
-- 🔎 **T089 — Implement run_property_access_report** — `░░░░░░░░░░ 0.0%`
+- 🔎 **T089 — Implement run_property_access_report** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** MCP schema, Google request, golden output and error cases for run_property_access_report
-- 👥 **T090 — Implement run_account_access_report** — `░░░░░░░░░░ 0.0%`
+- 👥 **T090 — Implement run_account_access_report** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** MCP schema, Google request, golden output and error cases for run_account_access_report
 
-### 🧭 P11 — Preflight MCP tools — `░░░░░░░░░░ 0.0%`
+### 🧭 P11 — Preflight MCP tools — `█░░░░░░░░░ 14.3%`
 
 **Feature:** Preflight and metadata.
 
-- 🧭 **T091 — Implement preview_report_request** — `░░░░░░░░░░ 0.0%`
+- 🧭 **T091 — Implement preview_report_request** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Validate its contract and unsupported metrics without wasteful report requests
-- ✅ **T092 — Implement check_report_compatibility** — `░░░░░░░░░░ 0.0%`
+- ✅ **T092 — Implement check_report_compatibility** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Validate its contract and unsupported metrics without wasteful report requests
 - 🧬 **T093 — Cache and refresh Data API metadata safely** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Metadata cache keys include property and caller
@@ -289,7 +289,7 @@
 - 📝 **T097 — Normalize input values without silent coercion** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Lossless valid requests and typed invalid results
 
-### 📐 P12 — Data request fidelity and limits — `░░░░░░░░░░ 0.0%`
+### 📐 P12 — Data request fidelity and limits — `░░░░░░░░░░ 3.3%`
 
 **Feature:** Reporting correctness.
 
@@ -301,7 +301,7 @@
   - ✅ **Gate:** No fake continuation token when GA realtime lacks offset
 - 🗂️ **T101 — Support pivot report ordering and groups** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Nested pivots and row groups validated by fixtures
-- 📦 **T102 — Enforce batch report maximums and isolation** — `░░░░░░░░░░ 0.0%`
+- 📦 **T102 — Enforce batch report maximums and isolation** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Five-report constraint and distinct report results preserved
 - 🧪 **T103 — Support funnel steps segments trended and breakdown** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Complex v1alpha funnel shapes round-trip
@@ -495,15 +495,15 @@
   - ✅ **Gate:** Changes open maintenance work rather than silently inflate parity
 
 
-## 🧪 M8 — Verification, resilience and security acceptance — `░░░░░░░░░░ 1.8%`
+## 🧪 M8 — Verification, resilience and security acceptance — `░░░░░░░░░░ 3.6%`
 
 **Scope:** MVP. **Acceptance gate:** Full offline and authorized live verification including malformed inputs, MCP interoperability and threat model.
 
-### 🧫 P22 — Deterministic tests — `█░░░░░░░░░ 5.0%`
+### 🧫 P22 — Deterministic tests — `█░░░░░░░░░ 10.0%`
 
 **Feature:** Offline QA.
 
-- 🧪 **T168 — Create offline GA Admin and Data endpoint mocks** — `░░░░░░░░░░ 0.0%`
+- 🧪 **T168 — Create offline GA Admin and Data endpoint mocks** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Representative success empty error and pagination fixtures
 - 📦 **T169 — Exercise all 36 tool names through MCP dispatch** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Tool-by-tool tests verify tool catalog and call behavior
