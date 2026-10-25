@@ -1948,6 +1948,17 @@ mod tests {
             "Full tool union drifted from pinned inventory"
         );
         assert_eq!(actual.len(), 36);
+        if std::env::var_os("SYNMETRA_CAPTURE_INPUT_SCHEMAS").is_some() {
+            let mut native = all_enabled.router.list_all();
+            native.sort_by(|left, right| left.name.cmp(&right.name));
+            for tool in native {
+                let snapshot = json!({
+                    "name": tool.name.to_string(),
+                    "inputSchema": &*tool.input_schema,
+                });
+                println!("SYNMETRA_NATIVE_TOOL_SCHEMA {}", snapshot);
+            }
+        }
         assert!(all_enabled.router.has_route("create_property_annotation"));
         assert!(all_enabled
             .router

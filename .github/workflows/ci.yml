@@ -56,7 +56,9 @@ jobs:
           fi
       - name: Test bounded DuckDB scratchpad
         if: steps.native.outputs.changed == 'true' || startsWith(github.ref, 'refs/tags/v')
-        run: cargo test --all-targets --locked --features scratchpad
+        env:
+          SYNMETRA_CAPTURE_INPUT_SCHEMAS: "1"
+        run: cargo test --all-targets --locked --features scratchpad -- --nocapture
       - name: Release-gate strict Clippy with DuckDB
         if: startsWith(github.ref, 'refs/tags/v')
         run: cargo clippy --all-targets --locked --features scratchpad -- -D warnings
