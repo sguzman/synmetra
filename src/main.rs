@@ -291,6 +291,32 @@ fn local_result(value: Result<Value, String>) -> CallToolResult {
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
+struct AuthLoginCommandArgs {
+    /// Optional Google account hint for browser login.
+    #[serde(default)]
+    account: Option<String>,
+    /// Optional fixed loopback callback port for direct browser OAuth.
+    #[serde(default)]
+    callback_port: Option<u16>,
+    /// Optional Google OAuth client id file for direct browser OAuth.
+    #[serde(default)]
+    client_id_file: Option<String>,
+    /// Include the headless browser flag for SSH or remote environments.
+    #[serde(default)]
+    headless: bool,
+    /// Optional quota project to include as a follow-up command.
+    #[serde(default)]
+    quota_project: Option<String>,
+    /// Use the conventional shared gcloud ADC file instead of the server-specific file.
+    #[serde(default)]
+    shared_adc: Option<bool>,
+}
+
+fn shell_quote(value: &str) -> String {
+    format!("'{}'", value.replace('\'', "'\"'\"'"))
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
 struct AuthStatusArgs {
     /// When true, acquire a Google access token and call GA account summaries. The token is never returned.
     #[serde(default)]
@@ -516,6 +542,7 @@ fn api_error_code(error: &ApiError) -> (&'static str, &'static str) {
         ApiError::AuthenticationFailed => ("AUTHENTICATION_FAILED", "authentication"),
         ApiError::InvalidIdentifier => ("INVALID_IDENTIFIER", "validation"),
         ApiError::InvalidRequest => ("INVALID_REQUEST", "validation"),
+        ApiError::UnsupportedAuthOption => ("UNSUPPORTED_AUTH_OPTION", "validation"),
         ApiError::InvalidAnnotation => ("INVALID_ANNOTATION", "validation"),
         ApiError::RequestFailed => ("UPSTREAM_UNAVAILABLE", "transport"),
         ApiError::Http(_) => ("GOOGLE_HTTP_ERROR", "upstream"),
@@ -622,11 +649,41 @@ impl Synmetra {
             open_world_hint = true
         )
     )]
-    fn ga4_auth_login_command(&self) -> CallToolResult {
+    fn ga4_auth_login_command(
+        &self,
+        Parameters(args): Parameters<AuthLoginCommandArgs>,
+    ) -> CallToolResult {
+        // Native Synmetra never writes shared gcloud ADC credentials.
+        // Quota-project routing requires the separate verified Google header policy.
+        if args.quota_project.is_some() || args.shared_adc == Some(true) {
+            return result(Err(ApiError::UnsupportedAuthOption));
+        }
+        let path = args
+            .client_id_file
+            .as_deref()
+            .unwrap_or("/path/to/desktop-oauth.json");
+        if path.is_empty() || path.len() > 4096 || path.chars().any(char::is_control) {
+            return result(Err(ApiError::InvalidRequest));
+        }
+        let mut command = format!("synmetra auth login --client-id-file {}", shell_quote(path));
+        if let Some(account) = args.account {
+            if account.is_empty() || account.len() > 254 || account.chars().any(char::is_control) {
+                return result(Err(ApiError::InvalidRequest));
+            }
+            command.push_str(" --account ");
+            command.push_str(&shell_quote(&account));
+        }
+        if let Some(port) = args.callback_port {
+            command.push_str(&format!(" --callback-port {port}"));
+        }
+        if args.headless {
+            command.push_str(" --headless");
+        }
         result(Ok(json!({
-            "command": "synmetra auth login --client-id-file /path/to/desktop-oauth.json",
+            "command": command,
             "interactive_authorization_required": true,
-            "scope": "https://www.googleapis.com/auth/analytics.readonly"
+            "scope": "https://www.googleapis.com/auth/analytics.readonly",
+            "credential_store": "synmetra-private"
         })))
     }
 
@@ -2391,6 +2448,82 @@ mod tests {
         );
         assert_eq!(data["python_required"], false);
         assert_eq!(data["npm_required"], false);
+    }
+
+    #[test]
+    fn auth_login_command_supports_pinned_optional_fields_without_shell_injection() {
+        use std::collections::BTreeSet;
+
+        let pinned: Value = serde_json::from_str(include_str!(
+            "../spec/upstream/sednalabs-tool-schema.v1.json"
+        ))
+        .unwrap();
+        let upstream = pinned["tools"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|item| item["name"] == "ga4_auth_login_command")
+            .unwrap();
+        let route = Synmetra::tool_router()
+            .list_all()
+            .into_iter()
+            .find(|item| item.name == "ga4_auth_login_command")
+            .unwrap();
+        let expected: BTreeSet<_> = upstream["inputSchema"]["properties"]
+            .as_object()
+            .unwrap()
+            .keys()
+            .map(String::as_str)
+            .collect();
+        let actual: BTreeSet<_> = route.input_schema["properties"]
+            .as_object()
+            .unwrap()
+            .keys()
+            .map(String::as_str)
+            .collect();
+        assert_eq!(expected, actual);
+        assert!(route.input_schema.get("required").and_then(Value::as_array).is_none_or(Vec::is_empty));
+        assert_eq!(route.input_schema["properties"]["headless"]["default"], false);
+        assert_eq!(
+            shell_quote("/tmp/it's an OAuth file.json"),
+            "'/tmp/it'\"'\"'s an OAuth file.json'"
+        );
+    }
+
+    #[test]
+    fn auth_login_command_refuses_shared_adc_and_unimplemented_quota_routing() {
+        let server = Synmetra::new(GoogleClient::new(None), false);
+        for options in [
+            json!({"shared_adc": true}),
+            json!({"quota_project": "project-fixture"}),
+        ] {
+            let args: AuthLoginCommandArgs = serde_json::from_value(options).unwrap();
+            let reply = server.ga4_auth_login_command(Parameters(args));
+            assert_eq!(reply.is_error, Some(true));
+            assert_eq!(
+                reply.structured_content.unwrap()["error"]["code"],
+                "UNSUPPORTED_AUTH_OPTION"
+            );
+        }
+    }
+
+    #[test]
+    fn auth_login_command_renders_supported_safe_native_flags() {
+        let server = Synmetra::new(GoogleClient::new(None), false);
+        let args: AuthLoginCommandArgs = serde_json::from_value(json!({
+            "client_id_file": "/home/user/My OAuth's client.json",
+            "account": "sample@example.com",
+            "callback_port": 39900,
+            "headless": true
+        }))
+        .unwrap();
+        let result = server.ga4_auth_login_command(Parameters(args));
+        assert_eq!(result.is_error, Some(false));
+        let payload = result.structured_content.unwrap();
+        let cmd = payload["data"]["command"].as_str().unwrap();
+        assert!(cmd.contains("--client-id-file '/home/user/My OAuth'\"'\"'s client.json'"));
+        assert!(cmd.contains("--account 'sample@example.com'"));
+        assert!(cmd.contains("--callback-port 39900 --headless"));
     }
 
     #[test]
