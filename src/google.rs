@@ -749,7 +749,7 @@ pub struct AccessReportSpec {
     pub dimension_filter: Option<Value>,
     pub metric_filter: Option<Value>,
     pub order_bys: Option<Vec<Value>>,
-    pub limit: Option<u32>,
+    pub limit: Option<u64>,
     pub offset: Option<u64>,
     pub time_zone: Option<String>,
 }
