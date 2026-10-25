@@ -1,0 +1,11 @@
+# 🗃️ Optional DuckDB scratchpad, first vertical slice
+
+Synmetra now contains an **experimental feature-gated native DuckDB** in-memory session manager. DuckDB is compiled from bundled native code through Rust bindings; the MCP executable does not use Python or npm.
+
+Compile with `cargo build --release --features scratchpad`, then opt in using `synmetra serve --scratchpad`. A default read-only Synmetra process does **not** expose scratchpad tools, even when compiled with this feature.
+
+**Seven provisional MCP tools:** `scratchpad_open_session`, `scratchpad_close_session`, `scratchpad_list_sessions`, `scratchpad_get_runtime_limits`, `scratchpad_set_runtime_limits`, `scratchpad_list_tables`, `scratchpad_drop_table`. This slice covers local session creation, lifecycle, table enumeration and safe deletion. The other eight scratchpad tools are not yet implemented: report/realtime ingestion, SQL query, description, summary, release regression, landing shift, and evidence export.
+
+Sessions have random 144-bit identifiers, expire after 30 minutes, and default to a quota of four concurrent sessions, with a hard cap of eight. DuckDB is configured to disallow external file access and automatic extension installation/loading. Drop-table names are constrained to bounded ASCII identifiers to block SQL injection; there is no exposed SQL execution tool yet.
+
+**Security limitations:** this is single-user local state with partial runtime-limit compatibility. Quotas for stored rows and table size still require implementation before ingestion can be enabled. Do not treat this as full SednaLabs scratchpad parity or enable it on publicly reachable HTTP services. No live GA4 data is used in tests.
