@@ -196,6 +196,62 @@ impl ScratchState {
             .map_err(|_| "DuckDB table deletion failed")?;
         Ok(json!({"table_name":name,"dropped":true}))
     }
+
+    pub fn describe_table(&self, raw: &str, table: &str) -> Result<Value, String> {
+        let id = session_id(raw)?;
+        let table = table_name(table)?;
+        let mut inner = self.guard()?;
+        Self::expire(&mut inner);
+        let db = &inner.sessions.get(id)
+            .ok_or("Scratchpad session not found or expired")?.db;
+        let mut stmt = db.prepare(
+            "SELECT column_name, data_type, is_nullable
+             FROM information_schema.columns
+             WHERE table_schema='main' AND table_name=?1
+             ORDER BY ordinal_position LIMIT 33",
+        ).map_err(|_| "Could not prepare DuckDB schema inspection")?;
+        let mut columns = stmt.query_map([table], |row| {
+            Ok(json!({
+                "name": row.get::<_, String>(0)?,
+                "data_type": row.get::<_, String>(1)?,
+                "nullable": row.get::<_, String>(2)? == "YES"
+            }))
+        }).map_err(|_| "DuckDB schema lookup failed")?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|_| "DuckDB schema inspection failed")?;
+        if columns.is_empty() {
+            return Err("Scratchpad table not found".into());
+        }
+        let truncated = columns.len() > 32;
+        columns.truncate(32);
+        Ok(json!({
+            "session_id":id, "table_name":table,
+            "columns":columns,"column_count_returned":columns.len(),
+            "columns_truncated":truncated
+        }))
+    }
+
+    pub fn summarize_table(&self, raw: &str, table: &str) -> Result<Value, String> {
+        // Catalog validation precedes the only dynamically constructed SQL statement.
+        let schema = self.describe_table(raw, table)?;
+        let id = session_id(raw)?;
+        let table = table_name(table)?;
+        let mut inner = self.guard()?;
+        Self::expire(&mut inner);
+        let db = &inner.sessions.get(id)
+            .ok_or("Scratchpad session not found or expired")?.db;
+        let row_count: i64 = db.query_row(
+            &format!("SELECT COUNT(*) FROM \"{table}\""),
+            [], |row| row.get(0)
+        ).map_err(|_| "DuckDB table summary failed")?;
+        Ok(json!({
+            "session_id":id,"table_name":table,"row_count":row_count,
+            "columns":schema["columns"],
+            "column_count_returned":schema["column_count_returned"],
+            "columns_truncated":schema["columns_truncated"]
+        }))
+    }
+
 }
 
 #[cfg(test)]
@@ -216,6 +272,27 @@ mod tests {
         assert!(state.open("another").is_err());
         assert_eq!(state.close("project_1").unwrap()["closed"], true);
         assert!(state.close("project_1").is_err());
+    }
+
+    #[test]
+    fn describes_and_summarizes_bounded_local_tables() {
+        let state = ScratchState::new();
+        state.open("test_analysis").unwrap();
+        {
+            let mut inner = state.guard().unwrap();
+            let db = &inner.sessions.get_mut("test_analysis").unwrap().db;
+            db.execute_batch(
+                "CREATE TABLE sample (id INTEGER, event_name VARCHAR);
+                 INSERT INTO sample VALUES (1,'page_view'),(2,'login');"
+            ).unwrap();
+        }
+        let desc = state.describe_table("test_analysis","sample").unwrap();
+        assert_eq!(desc["columns"][0]["name"], "id");
+        assert_eq!(desc["column_count_returned"], 2);
+        assert_eq!(state.summarize_table("test_analysis","sample").unwrap()["row_count"], 2);
+        assert!(state.describe_table("test_analysis","unknown").is_err());
+        assert!(state.summarize_table("test_analysis","x\";DROP TABLE sample;--").is_err());
+        assert_eq!(state.summarize_table("test_analysis","sample").unwrap()["row_count"], 2);
     }
 
     #[test]
