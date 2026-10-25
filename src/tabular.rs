@@ -62,15 +62,15 @@ impl Controls {
         Ok(())
     }
 
-    pub fn request_limit(self, existing: Option<u32>) -> Result<Option<u32>, ApiError> {
+    pub fn request_limit(self, existing: Option<u64>) -> Result<Option<u64>, ApiError> {
         self.validate()?;
-        if existing == Some(0) {
+        if existing.is_some_and(|n| n == 0 || n > 250_000) {
             return Err(ApiError::InvalidRequest);
         }
         if !self.active() {
             return Ok(existing);
         }
-        let local = self.max_rows.unwrap_or(DEFAULT_ROWS) as u32;
+        let local = self.max_rows.unwrap_or(DEFAULT_ROWS) as u64;
         Ok(Some(existing.map_or(local, |n| n.min(local))))
     }
 }
@@ -433,6 +433,27 @@ mod tests {
             "rows":[{"dimensionValues":[{"value":"US"}],"metricValues":[{"value":"12"}]}]
         });
         assert!(project(&duplicate, controls(), false, None).is_err());
+    }
+
+    #[test]
+    fn ga64_limit_accepts_provider_integer_width_but_bounds_outbound_rows() {
+        let options = controls();
+        assert_eq!(options.request_limit(Some(250_000)).unwrap(), Some(1));
+        assert_eq!(options.request_limit(Some(1)).unwrap(), Some(1));
+        for invalid in [0, 250_001, u64::from(u32::MAX) + 1, u64::MAX] {
+            assert_eq!(
+                options.request_limit(Some(invalid)),
+                Err(ApiError::InvalidRequest)
+            );
+        }
+        let default = Controls {
+            output_mode: None,
+            summary_only: false,
+            max_rows: None,
+            max_cell_chars: None,
+            cursor_supplied: false,
+        };
+        assert_eq!(default.request_limit(Some(250_000)).unwrap(), Some(250_000));
     }
 
     #[test]

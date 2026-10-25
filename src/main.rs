@@ -558,7 +558,7 @@ struct ReportArgs {
     order_bys: Option<Vec<Value>>,
     /// Limit rows returned.
     #[serde(default)]
-    limit: Option<u32>,
+    limit: Option<u64>,
     /// Pagination offset.
     #[serde(default)]
     offset: Option<u64>,
@@ -595,7 +595,7 @@ struct RealtimeArgs {
     #[serde(default)]
     order_bys: Option<Vec<Value>>,
     #[serde(default)]
-    limit: Option<u32>,
+    limit: Option<u64>,
     /// Present for official Python signature compatibility. A nonzero value is
     /// rejected: Google's current v1beta realtime request has no offset field.
     #[serde(default)]
