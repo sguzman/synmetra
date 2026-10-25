@@ -1869,6 +1869,42 @@ mod tests {
 
     #[cfg(feature = "scratchpad")]
     #[test]
+    fn full_capability_profile_matches_exact_pinned_36_tool_union() {
+        use std::collections::BTreeSet;
+
+        let inventory: Value =
+            serde_json::from_str(include_str!("../docs/tool-inventory.json")).unwrap();
+        let expected: BTreeSet<_> = inventory["union"]["tools"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|item| item["name"].as_str().unwrap().to_owned())
+            .collect();
+        assert_eq!(expected.len(), 36);
+
+        let all_enabled = Synmetra::new(GoogleClient::new(None), true).enable_scratchpad();
+        let actual: BTreeSet<_> = all_enabled
+            .router
+            .list_all()
+            .into_iter()
+            .map(|tool| tool.name.to_string())
+            .collect();
+
+        assert_eq!(actual, expected, "Full tool union drifted from pinned inventory");
+        assert_eq!(actual.len(), 36);
+        assert!(all_enabled.router.has_route("create_property_annotation"));
+        assert!(all_enabled.router.has_route("scratchpad_landing_param_shift_report"));
+
+        // Without explicit write capability, the same process must never advertise
+        // the official mutation tool even when local DuckDB analysis is enabled.
+        let read_only = Synmetra::new(GoogleClient::new(None), false).enable_scratchpad();
+        let tools = read_only.router.list_all();
+        assert_eq!(tools.len(), 35);
+        assert!(!tools.iter().any(|tool| tool.name == "create_property_annotation"));
+    }
+
+    #[cfg(feature = "scratchpad")]
+    #[test]
     fn scratchpad_tools_are_hidden_without_explicit_capability() {
         let base = Synmetra::new(GoogleClient::new(None), false);
         assert_eq!(base.router.list_all().len(), 20);
