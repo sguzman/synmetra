@@ -15,7 +15,12 @@ path = "src/main.rs"
 name = "synmetra-progress"
 path = "src/bin/synmetra-progress.rs"
 
+[features]
+default = []
+scratchpad = ["dep:duckdb"]
+
 [dependencies]
+duckdb = { version = "1.4.2", default-features = false, features = ["bundled"], optional = true }
 chrono = { version = "0.4", default-features = false, features = ["std"] }
 axum = "0.8"
 subtle = "2"
