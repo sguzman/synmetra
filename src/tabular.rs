@@ -50,7 +50,9 @@ impl Controls {
     pub fn validate(self) -> Result<(), ApiError> {
         if self.cursor_supplied
             || self.max_rows.is_some_and(|n| n == 0 || n > MAX_ROWS)
-            || self.max_cell_chars.is_some_and(|n| n == 0 || n > MAX_CELL_CHARS)
+            || self
+                .max_cell_chars
+                .is_some_and(|n| n == 0 || n > MAX_CELL_CHARS)
         {
             return Err(ApiError::InvalidRequest);
         }
@@ -114,12 +116,24 @@ pub fn project(
 ) -> Result<Projection, ApiError> {
     controls.validate()?;
     let provider = provider.as_object().ok_or(ApiError::InvalidResponse)?;
-    let dimensions = columns(&Value::Object(provider.clone()), "dimensionHeaders", "dimension_")?;
+    let dimensions = columns(
+        &Value::Object(provider.clone()),
+        "dimensionHeaders",
+        "dimension_",
+    )?;
     let metrics = columns(&Value::Object(provider.clone()), "metricHeaders", "metric_")?;
     let mut names = Vec::new();
-    names.extend(dimensions.iter().chain(metrics.iter()).filter_map(|column| {
-        column.get("name").and_then(Value::as_str).map(ToOwned::to_owned)
-    }));
+    names.extend(
+        dimensions
+            .iter()
+            .chain(metrics.iter())
+            .filter_map(|column| {
+                column
+                    .get("name")
+                    .and_then(Value::as_str)
+                    .map(ToOwned::to_owned)
+            }),
+    );
     let mut columns = dimensions;
     columns.extend(metrics);
     let raw_rows = provider.get("rows").and_then(Value::as_array);
@@ -161,7 +175,10 @@ pub fn project(
             .iter()
             .zip(dimension_values.iter().chain(metric_values.iter()))
         {
-            let value = cell.get("value").cloned().ok_or(ApiError::InvalidResponse)?;
+            let value = cell
+                .get("value")
+                .cloned()
+                .ok_or(ApiError::InvalidResponse)?;
             let clipped_value = clip_value(value, controls.max_cell_chars, &mut clipped);
             object.insert(name.clone(), clipped_value.clone());
             tuple.push(clipped_value);
@@ -193,8 +210,14 @@ pub fn project(
     };
     let mut ga4 = Map::new();
     for field in [
-        "metadata", "propertyQuota", "quota", "totals", "maximums",
-        "minimums", "aggregates", "warnings",
+        "metadata",
+        "propertyQuota",
+        "quota",
+        "totals",
+        "maximums",
+        "minimums",
+        "aggregates",
+        "warnings",
     ] {
         if let Some(value) = provider.get(field) {
             ga4.insert(field.to_owned(), value.clone());
@@ -267,8 +290,14 @@ mod tests {
         assert_eq!(rows.meta["row_count_returned"], 1);
         assert_eq!(rows.meta["truncated"], true);
         assert!(rows.meta["next_cursor"].is_null());
-        assert_eq!(rows.meta["ga4"]["propertyQuota"]["concurrentRequests"]["remaining"], 9);
-        assert_eq!(rows.meta["ga4"]["warnings"][0], "synthetic upstream warning");
+        assert_eq!(
+            rows.meta["ga4"]["propertyQuota"]["concurrentRequests"]["remaining"],
+            9
+        );
+        assert_eq!(
+            rows.meta["ga4"]["warnings"][0],
+            "synthetic upstream warning"
+        );
 
         let mut tuples = controls();
         tuples.output_mode = Some(OutputMode::Tuples);
@@ -279,7 +308,10 @@ mod tests {
         assert_eq!(project(&fixture(), tuples, false).unwrap().data, "México");
 
         tuples.output_mode = Some(OutputMode::Compact);
-        assert_eq!(project(&fixture(), tuples, false).unwrap().data["row_count"], 2);
+        assert_eq!(
+            project(&fixture(), tuples, false).unwrap().data["row_count"],
+            2
+        );
     }
 
     #[test]

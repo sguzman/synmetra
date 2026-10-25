@@ -2,9 +2,9 @@
 mod auth;
 mod google;
 mod http;
-mod tabular;
 #[cfg(feature = "scratchpad")]
 mod scratchpad;
+mod tabular;
 
 use google::{annotation_payload, report_request, ApiError, GoogleClient};
 use rmcp::handler::server::router::tool::ToolRouter;
@@ -661,8 +661,7 @@ fn result_with_tabular_projection(
     match response.and_then(|provider| tabular::project(&provider, controls, realtime)) {
         Ok(projection) => {
             let payload = json!({"ok":true,"data":projection.data,"meta":projection.meta});
-            let mut result =
-                CallToolResult::success(vec![ContentBlock::text(payload.to_string())]);
+            let mut result = CallToolResult::success(vec![ContentBlock::text(payload.to_string())]);
             result.structured_content = Some(payload);
             result
         }
@@ -1207,28 +1206,30 @@ impl Synmetra {
             max_cell_chars: args.max_cell_chars,
             cursor_supplied: args.cursor.is_some(),
         };
-        let validation = controls.request_limit(args.limit).and_then(|effective_limit| {
-            google::property_name(&args.property_id)?;
-            let args_limit = effective_limit;
-            report_request(
-                Some(args.date_ranges),
-                args.dimensions,
-                args.metrics,
-                vec![
-                    ("dimensionFilter", args.dimension_filter),
-                    ("metricFilter", args.metric_filter),
-                    ("orderBys", args.order_bys.map(|x| json!(x))),
-                    ("limit", args_limit.map(|x| json!(x.to_string()))),
-                    ("offset", args.offset.map(|x| json!(x.to_string()))),
-                    ("currencyCode", args.currency_code.map(|x| json!(x))),
-                    ("keepEmptyRows", args.keep_empty_rows.map(|x| json!(x))),
-                    (
-                        "returnPropertyQuota",
-                        Some(json!(args.return_property_quota)),
-                    ),
-                ],
-            )
-        });
+        let validation = controls
+            .request_limit(args.limit)
+            .and_then(|effective_limit| {
+                google::property_name(&args.property_id)?;
+                let args_limit = effective_limit;
+                report_request(
+                    Some(args.date_ranges),
+                    args.dimensions,
+                    args.metrics,
+                    vec![
+                        ("dimensionFilter", args.dimension_filter),
+                        ("metricFilter", args.metric_filter),
+                        ("orderBys", args.order_bys.map(|x| json!(x))),
+                        ("limit", args_limit.map(|x| json!(x.to_string()))),
+                        ("offset", args.offset.map(|x| json!(x.to_string()))),
+                        ("currencyCode", args.currency_code.map(|x| json!(x))),
+                        ("keepEmptyRows", args.keep_empty_rows.map(|x| json!(x))),
+                        (
+                            "returnPropertyQuota",
+                            Some(json!(args.return_property_quota)),
+                        ),
+                    ],
+                )
+            });
         result(validation.map(|body| json!({"request":body, "provider_called":false})))
     }
 
