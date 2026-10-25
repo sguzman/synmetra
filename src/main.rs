@@ -61,11 +61,12 @@ impl Synmetra {
 }
 
 #[cfg(feature = "scratchpad")]
-const SCRATCHPAD_TOOL_NAMES: [&str; 7] = [
+const SCRATCHPAD_TOOL_NAMES: [&str; 9] = [
     "scratchpad_open_session", "scratchpad_close_session",
     "scratchpad_list_sessions", "scratchpad_get_runtime_limits",
     "scratchpad_set_runtime_limits", "scratchpad_list_tables",
-    "scratchpad_drop_table",
+    "scratchpad_drop_table", "scratchpad_describe_table",
+    "scratchpad_summarize_table",
 ];
 
 
@@ -97,6 +98,10 @@ struct ScratchTableArgs {
     #[serde(default)]
     if_exists: bool,
 }
+
+#[cfg(feature = "scratchpad")]
+#[derive(Debug, Deserialize, JsonSchema)]
+struct ScratchReadTableArgs { session_id: String, table_name: String }
 
 #[cfg(feature = "scratchpad")]
 #[derive(Debug, Deserialize, JsonSchema)]
@@ -678,6 +683,16 @@ impl Synmetra {
     fn scratchpad_drop_table(&self, Parameters(args): Parameters<ScratchTableArgs>) -> CallToolResult {
         local_result(self.scratchpad.as_ref().expect("scratchpad capability required").drop_table(&args.session_id, &args.table_name, args.if_exists))
     }
+
+    #[tool(description = "Inspect a validated local DuckDB table's schema (first 32 columns).", annotations(read_only_hint = true, destructive_hint = false, idempotent_hint = true, open_world_hint = false))]
+    fn scratchpad_describe_table(&self, Parameters(args): Parameters<ScratchReadTableArgs>) -> CallToolResult {
+        local_result(self.scratchpad.as_ref().expect("scratchpad capability required").describe_table(&args.session_id, &args.table_name))
+    }
+
+    #[tool(description = "Summarize one validated local table with bounded column metadata and a row count.", annotations(read_only_hint = true, destructive_hint = false, idempotent_hint = true, open_world_hint = false))]
+    fn scratchpad_summarize_table(&self, Parameters(args): Parameters<ScratchReadTableArgs>) -> CallToolResult {
+        local_result(self.scratchpad.as_ref().expect("scratchpad capability required").summarize_table(&args.session_id, &args.table_name))
+    }
 }
 
 #[tool_handler(
@@ -904,7 +919,7 @@ mod tests {
         ).unwrap();
         let server = Synmetra::new(GoogleClient::new(None), false).enable_scratchpad();
         let advertised = server.router.list_all();
-        for name in SCRATCHPAD_TOOL_NAMES {
+        for name in SCRATCHPAD_TOOL_NAMES.iter().take(7).copied() {
             let reference = fixture["tools"].as_array().unwrap().iter()
                 .find(|tool| tool["name"].as_str() == Some(name)).unwrap();
             let native = advertised.iter().find(|tool| tool.name == name).unwrap();
@@ -929,7 +944,7 @@ mod tests {
         let base = Synmetra::new(GoogleClient::new(None), false);
         assert_eq!(base.router.list_all().len(), 20);
         let enabled = base.enable_scratchpad();
-        assert_eq!(enabled.router.list_all().len(), 27);
+        assert_eq!(enabled.router.list_all().len(), 29);
         assert!(enabled.router.has_route("scratchpad_drop_table"));
         assert!(!enabled.router.has_route("create_property_annotation"));
     }
