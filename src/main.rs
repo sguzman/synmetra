@@ -152,7 +152,7 @@ struct ScratchIngestReportArgs {
     metric_filter: Option<Value>,
     #[serde(default)]
     order_bys: Option<Vec<Value>>,
-    #[serde(default)]
+    #[serde(default = "default_return_property_quota")]
     return_property_quota: bool,
     date_ranges: Vec<Value>,
     #[serde(default)]
@@ -179,7 +179,7 @@ struct ScratchIngestRealtimeArgs {
     metric_filter: Option<Value>,
     #[serde(default)]
     order_bys: Option<Vec<Value>>,
-    #[serde(default)]
+    #[serde(default = "default_return_property_quota")]
     return_property_quota: bool,
 }
 
@@ -398,7 +398,7 @@ struct PivotArgs {
     currency_code: Option<String>,
     #[serde(default)]
     keep_empty_rows: Option<bool>,
-    #[serde(default)]
+    #[serde(default = "default_return_property_quota")]
     return_property_quota: bool,
 }
 
@@ -505,6 +505,8 @@ struct RealtimeArgs {
     metric_filter: Option<Value>,
     #[serde(default)]
     limit: Option<u32>,
+    #[serde(default = "default_return_property_quota")]
+    return_property_quota: bool,
 }
 
 fn api_error_code(error: &ApiError) -> (&'static str, &'static str) {
@@ -1090,6 +1092,10 @@ impl Synmetra {
                 ("dimensionFilter", args.dimension_filter),
                 ("metricFilter", args.metric_filter),
                 ("limit", args.limit.map(|x| json!(x.to_string()))),
+                (
+                    "returnPropertyQuota",
+                    Some(json!(args.return_property_quota)),
+                ),
             ],
         );
         result(match body {
@@ -1935,6 +1941,46 @@ mod tests {
             response.structured_content.unwrap()["data"]["request"]["returnPropertyQuota"],
             false
         );
+    }
+
+    #[test]
+    fn pivot_and_realtime_default_to_upstream_property_quota_reporting() {
+        let pivot: PivotArgs = serde_json::from_value(json!({
+            "property_id": "42",
+            "date_ranges": [{"startDate": "2026-10-01", "endDate": "2026-10-02"}],
+            "dimensions": [],
+            "metrics": ["activeUsers"],
+            "pivots": [{"fieldNames": ["country"], "limit": 10}]
+        }))
+        .unwrap();
+        assert!(pivot.return_property_quota);
+        let realtime: RealtimeArgs = serde_json::from_value(json!({
+            "property_id": "42",
+            "dimensions": [],
+            "metrics": ["activeUsers"]
+        }))
+        .unwrap();
+        assert!(realtime.return_property_quota);
+    }
+
+    #[cfg(feature = "scratchpad")]
+    #[test]
+    fn scratchpad_ingestion_defaults_to_upstream_property_quota_reporting() {
+        let data = json!({
+            "session_id": "safe-session",
+            "table_name": "events",
+            "property_id": "42",
+            "date_ranges": [{"startDate": "2026-10-01", "endDate": "2026-10-02"}],
+            "dimensions": [],
+            "metrics": ["activeUsers"]
+        });
+        let historic: ScratchIngestReportArgs = serde_json::from_value(data.clone()).unwrap();
+        assert!(historic.return_property_quota);
+        let mut realtime_request = data;
+        realtime_request.as_object_mut().unwrap().remove("date_ranges");
+        let realtime: ScratchIngestRealtimeArgs =
+            serde_json::from_value(realtime_request).unwrap();
+        assert!(realtime.return_property_quota);
     }
 
     #[cfg(feature = "scratchpad")]
