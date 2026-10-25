@@ -2218,6 +2218,55 @@ mod tests {
         );
     }
 
+    #[tokio::test]
+    async fn report_limit_width_matches_pinned_schema_and_rejects_over_limit_offline() {
+        let server = Synmetra::new(GoogleClient::new(None), false);
+        let pinned: Value = serde_json::from_str(include_str!(
+            "../spec/upstream/sednalabs-tool-schema.v1.json"
+        ))
+        .unwrap();
+        let router = Synmetra::tool_router();
+        for name in ["run_report", "run_realtime_report"] {
+            let expected = pinned["tools"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|entry| entry["name"] == name)
+                .unwrap();
+            let actual = router.list_all().into_iter().find(|tool| tool.name == name).unwrap();
+            assert_eq!(
+                actual.input_schema["properties"]["limit"]["format"],
+                expected["inputSchema"]["properties"]["limit"]["format"],
+                "{name}"
+            );
+            assert_eq!(actual.input_schema["properties"]["limit"]["format"], "uint64");
+        }
+
+        let huge = json!({
+            "property_id":"42",
+            "date_ranges":[{"start_date":"yesterday","end_date":"today"}],
+            "dimensions":["country"],
+            "metrics":["activeUsers"],
+            "limit":4294967296_u64
+        });
+        let preview = server
+            .preview_report_request(Parameters(serde_json::from_value(huge.clone()).unwrap()))
+            .await;
+        assert_eq!(preview.is_error, Some(true));
+        assert_eq!(preview.structured_content.unwrap()["error"]["code"], "INVALID_REQUEST");
+
+        let realtime: RealtimeArgs = serde_json::from_value(json!({
+            "property_id":"42",
+            "dimensions":[],
+            "metrics":["activeUsers"],
+            "limit":4294967296_u64
+        }))
+        .unwrap();
+        let result = server.run_realtime_report(Parameters(realtime)).await;
+        assert_eq!(result.is_error, Some(true));
+        assert_eq!(result.structured_content.unwrap()["error"]["code"], "INVALID_REQUEST");
+    }
+
     #[test]
     fn realtime_official_optional_arguments_are_declared_and_ordering_is_forwarded() {
         let official: Value = serde_json::from_str(include_str!(
