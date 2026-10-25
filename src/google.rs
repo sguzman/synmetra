@@ -1106,6 +1106,106 @@ pub fn compatibility_request(
 }
 
 /// Google REST APIs accept array entries as objects, not raw field names.
+/// Normalize Google v1beta Pivot objects without accepting unbounded pivot
+/// cardinality. The product of pivot limits must be at most 250,000.
+pub fn normalize_pivots(
+    pivots: Vec<Value>,
+    dimensions: &[String],
+    metrics: &[String],
+) -> Result<Vec<Value>, ApiError> {
+    if pivots.is_empty() || pivots.len() > 4 {
+        return Err(ApiError::InvalidRequest);
+    }
+    let mut cardinality = 1_u64;
+    let mut result = Vec::with_capacity(pivots.len());
+    for pivot in pivots {
+        let mut object = pivot.as_object().ok_or(ApiError::InvalidRequest)?.clone();
+        let fields = object
+            .get("fieldNames")
+            .and_then(Value::as_array)
+            .ok_or(ApiError::InvalidRequest)?;
+        if fields.is_empty() || fields.len() > 9 {
+            return Err(ApiError::InvalidRequest);
+        }
+        let mut seen = HashSet::new();
+        for field in fields {
+            let field = field.as_str().ok_or(ApiError::InvalidRequest)?;
+            if !seen.insert(field)
+                || (field != "dateRange" && !dimensions.iter().any(|name| name == field))
+            {
+                return Err(ApiError::InvalidRequest);
+            }
+        }
+        let number = |value: &Value, allow_zero: bool| -> Result<u64, ApiError> {
+            let integer = if let Some(number) = value.as_u64() {
+                number
+            } else if let Some(raw) = value.as_str() {
+                if raw.is_empty() || !raw.bytes().all(|byte| byte.is_ascii_digit()) {
+                    return Err(ApiError::InvalidRequest);
+                }
+                raw.parse::<u64>().map_err(|_| ApiError::InvalidRequest)?
+            } else {
+                return Err(ApiError::InvalidRequest);
+            };
+            if !allow_zero && integer == 0 {
+                return Err(ApiError::InvalidRequest);
+            }
+            Ok(integer)
+        };
+        let limit = number(object.get("limit").ok_or(ApiError::InvalidRequest)?, false)?;
+        cardinality = cardinality
+            .checked_mul(limit)
+            .ok_or(ApiError::InvalidRequest)?;
+        if cardinality > 250_000 {
+            return Err(ApiError::InvalidRequest);
+        }
+        object.insert("limit".to_owned(), json!(limit.to_string()));
+        if let Some(offset) = object.get("offset") {
+            let offset = number(offset, true)?;
+            if offset > 10_000_000 {
+                return Err(ApiError::InvalidRequest);
+            }
+            object.insert("offset".to_owned(), json!(offset.to_string()));
+        }
+        if let Some(order_bys) = object.get("orderBys") {
+            let order_bys = order_bys.as_array().ok_or(ApiError::InvalidRequest)?;
+            if order_bys.len() > 10 {
+                return Err(ApiError::InvalidRequest);
+            }
+            for order in order_bys {
+                let order = order.as_object().ok_or(ApiError::InvalidRequest)?;
+                let selectors = ["dimension", "metric", "pivot"]
+                    .iter()
+                    .filter(|selector| order.contains_key(**selector))
+                    .count();
+                if selectors != 1 {
+                    return Err(ApiError::InvalidRequest);
+                }
+                if let Some(dimension) = order.get("dimension") {
+                    let field = dimension
+                        .get("dimensionName")
+                        .and_then(Value::as_str)
+                        .ok_or(ApiError::InvalidRequest)?;
+                    if !seen.contains(field) {
+                        return Err(ApiError::InvalidRequest);
+                    }
+                }
+                if let Some(metric) = order.get("metric") {
+                    let field = metric
+                        .get("metricName")
+                        .and_then(Value::as_str)
+                        .ok_or(ApiError::InvalidRequest)?;
+                    if !metrics.iter().any(|name| name == field) {
+                        return Err(ApiError::InvalidRequest);
+                    }
+                }
+            }
+        }
+        result.push(Value::Object(object));
+    }
+    Ok(result)
+}
+
 pub fn report_request(
     dates: Option<Vec<Value>>,
     dimensions: Vec<String>,
@@ -1230,6 +1330,61 @@ mod tests {
             vec![json!({"event":"page_view"}); 11],
         ] {
             assert!(funnel_request(bad, None, None, None, None, false).is_err());
+        }
+    }
+
+    #[test]
+    fn multi_axis_pivot_ordering_and_cardinality_are_bounded() {
+        let dims = vec!["country".into(), "browser".into()];
+        let metrics = vec!["sessions".into()];
+        let pivots = vec![
+            json!({
+                "fieldNames":["country"],
+                "limit":500,
+                "offset":0,
+                "orderBys":[{"dimension":{"dimensionName":"country"},"desc":true}]
+            }),
+            json!({
+                "fieldNames":["browser"],
+                "limit":"500",
+                "offset":"10",
+                "orderBys":[{"metric":{"metricName":"sessions"},"desc":true}]
+            }),
+        ];
+        let normalized = normalize_pivots(pivots.clone(), &dims, &metrics).unwrap();
+        assert_eq!(normalized[0]["limit"], "500");
+        assert_eq!(normalized[0]["offset"], "0");
+        assert_eq!(normalized[1]["limit"], "500");
+        assert_eq!(normalized[1]["offset"], "10");
+        assert_eq!(
+            normalized[0]["orderBys"][0]["dimension"]["dimensionName"],
+            "country"
+        );
+        assert_eq!(normalized[1]["orderBys"][0]["metric"]["metricName"], "sessions");
+        let mut too_many = pivots;
+        too_many[1]["limit"] = json!(501);
+        assert_eq!(
+            normalize_pivots(too_many, &dims, &metrics),
+            Err(ApiError::InvalidRequest)
+        );
+        for invalid in [
+            json!({"fieldNames":["country"]}),
+            json!({"fieldNames":["country"],"limit":0}),
+            json!({"fieldNames":["notRequested"],"limit":2}),
+            json!({"fieldNames":["country","country"],"limit":2}),
+            json!({"fieldNames":["country"],"limit":2,"offset":-1}),
+            json!({"fieldNames":["country"],"limit":2,"offset":"1.5"}),
+            json!({"fieldNames":["country"],"limit":2,
+                   "orderBys":[{"dimension":{"dimensionName":"browser"}}]}),
+            json!({"fieldNames":["country"],"limit":2,
+                   "orderBys":[{"metric":{"metricName":"notRequested"}}]}),
+            json!({"fieldNames":["country"],"limit":2,
+                   "orderBys":[{"metric":{},"dimension":{}}]})
+        ] {
+            assert_eq!(
+                normalize_pivots(vec![invalid], &dims, &metrics),
+                Err(ApiError::InvalidRequest)
+            );
         }
     }
 

@@ -1338,33 +1338,26 @@ impl Synmetra {
         if let Err(error) = controls.validate() {
             return result(Err(error));
         }
-        let body = if args.pivots.is_empty()
-            || args.pivots.len() > 4
-            || args
-                .pivots
-                .iter()
-                .any(|p| !p.is_object() || p.as_object().is_some_and(|x| x.is_empty()))
-        {
-            Err(ApiError::InvalidRequest)
-        } else {
-            report_request(
-                Some(args.date_ranges),
-                args.dimensions,
-                args.metrics,
-                vec![
-                    ("pivots", Some(json!(args.pivots))),
-                    ("dimensionFilter", args.dimension_filter),
-                    ("metricFilter", args.metric_filter),
-                    ("orderBys", args.order_bys.map(|x| json!(x))),
-                    ("currencyCode", args.currency_code.map(|x| json!(x))),
-                    ("keepEmptyRows", args.keep_empty_rows.map(|x| json!(x))),
-                    (
-                        "returnPropertyQuota",
-                        Some(json!(args.return_property_quota)),
-                    ),
-                ],
-            )
-        };
+        let body = google::normalize_pivots(args.pivots, &args.dimensions, &args.metrics)
+            .and_then(|pivots| {
+                report_request(
+                    Some(args.date_ranges),
+                    args.dimensions,
+                    args.metrics,
+                    vec![
+                        ("pivots", Some(json!(pivots))),
+                        ("dimensionFilter", args.dimension_filter),
+                        ("metricFilter", args.metric_filter),
+                        ("orderBys", args.order_bys.map(|x| json!(x))),
+                        ("currencyCode", args.currency_code.map(|x| json!(x))),
+                        ("keepEmptyRows", args.keep_empty_rows.map(|x| json!(x))),
+                        (
+                            "returnPropertyQuota",
+                            Some(json!(args.return_property_quota)),
+                        ),
+                    ],
+                )
+            });
         let response = match body {
             Ok(body) => {
                 self.api
