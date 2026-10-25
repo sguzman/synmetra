@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `████░░░░░░ 39.6%` · **+39.65 percentage points from initial empty repo; +0.44 pp from CI-tested v1alpha conversion eligibility and denial fixtures** · 66/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `████░░░░░░ 39.9%` · **+39.87 percentage points from initial empty repo; +0.22 pp from CI-proven adversarial filter validation** · 67/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -495,11 +495,11 @@
   - ✅ **Gate:** Changes open maintenance work rather than silently inflate parity
 
 
-## 🧪 M8 — Verification, resilience and security acceptance — `█░░░░░░░░░ 12.5%`
+## 🧪 M8 — Verification, resilience and security acceptance — `█░░░░░░░░░ 14.3%`
 
 **Scope:** MVP. **Acceptance gate:** Full offline and authorized live verification including malformed inputs, MCP interoperability and threat model.
 
-### 🧫 P22 — Deterministic tests — `████░░░░░░ 35.0%`
+### 🧫 P22 — Deterministic tests — `████░░░░░░ 40.0%`
 
 **Feature:** Offline QA.
 
@@ -507,8 +507,8 @@
   - ✅ **Gate:** Representative success empty error and pagination fixtures · **Evidence:** src/google.rs deterministic HTTP mock harness and numerous no-secrets synthetic route/auth tests; Actions 40202015488 passed; src/google.rs in-memory Admin/Data server tests cover successful, empty, invalid response/replayed token and oversized collection cases; GitHub Actions core 40218035242 passed the mock suite.
 - 📦 **T169 — Exercise all 36 tool names through MCP dispatch** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Tool-by-tool tests verify tool catalog and call behavior
-- 🧿 **T170 — Test JSON schema rejection and nested depth caps** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Adversarial payload corpus is bounded and rejected
+- 🧿 **T170 — Test JSON schema rejection and nested depth caps** — `██████████ 100.0%`
+  - ✅ **Gate:** Adversarial payload corpus is bounded and rejected · **Evidence:** src/google.rs: exhaustive bounded filter tests reject excess nesting, too many nodes, long strings, oversize JSON, and invalid filter shapes; GitHub Actions core 40218035242. Full adversarial fuzz corpus remains unaccepted.; src/google.rs adversarial_report_filter_corpus_is_bounded_before_google_network_access tests deterministic invalid JSON and filter corpus: empty/primitive roots, empty nested filters, breadth 65, 1025-byte strings, 17-kibibyte serialized inputs, 129-byte keys, over 256 nested nodes, and depth over 12. Both bounded filter validation and report_request reject the corpus with INVALID_REQUEST before Google credentials/network access. Supplements existing historic/complex filter tests; GitHub Actions 40240559437 core fmt, Rust tests, Clippy succeeded. This is deterministic corpus coverage, not a stochastic fuzzing or live Google claim.
 - 📚 **T171 — Differentially compare upstream response projections** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Normalized golden fixtures generated from pinned baseline
 - 🪟 **T172 — Exercise stdio tools under an MCP inspector** — `░░░░░░░░░░ 0.0%`

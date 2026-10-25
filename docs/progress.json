@@ -3334,7 +3334,7 @@
               "id": "T170",
               "emoji": "🧿",
               "name": "Test JSON schema rejection and nested depth caps",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Adversarial payload corpus is bounded and rejected",
               "checks": [
                 {
@@ -3344,7 +3344,8 @@
                 },
                 {
                   "text": "Adversarial payload corpus is bounded and rejected",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs adversarial_report_filter_corpus_is_bounded_before_google_network_access tests deterministic invalid JSON and filter corpus: empty/primitive roots, empty nested filters, breadth 65, 1025-byte strings, 17-kibibyte serialized inputs, 129-byte keys, over 256 nested nodes, and depth over 12. Both bounded filter validation and report_request reject the corpus with INVALID_REQUEST before Google credentials/network access. Supplements existing historic/complex filter tests; GitHub Actions 40240559437 core fmt, Rust tests, Clippy succeeded. This is deterministic corpus coverage, not a stochastic fuzzing or live Google claim."
                 }
               ]
             },
