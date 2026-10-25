@@ -341,8 +341,34 @@ impl ScratchState {
                     row.get(0)
                 })
                 .map_err(|_| "Evidence row count query failed")?;
+            // No DuckDB JSON extension: gather a bounded, escaped SQL projection
+            // and encode preview cells in Rust. Column names come from DuckDB's
+            // catalog, but must still be identifier-quoted to prevent injection.
+            let mut schema_stmt = db
+                .prepare(
+                    "SELECT column_name FROM information_schema.columns
+                     WHERE table_schema='main' AND table_name=?1
+                     ORDER BY ordinal_position LIMIT 33",
+                )
+                .map_err(|_| "Evidence schema lookup failed")?;
+            let columns = schema_stmt
+                .query_map([name], |row| row.get::<_, String>(0))
+                .map_err(|_| "Evidence schema lookup failed")?
+                .collect::<Result<Vec<_>, _>>()
+                .map_err(|_| "Evidence schema read failed")?;
+            if columns.is_empty() || columns.len() > 32 {
+                return Err("Evidence preview requires between one and 32 columns".into());
+            }
+            let projection = columns
+                .iter()
+                .map(|column| {
+                    let quoted = column.replace('"', "\"\"");
+                    format!("substr(CAST(\"{quoted}\" AS VARCHAR), 1, 2049)")
+                })
+                .collect::<Vec<_>>()
+                .join(", ");
             let query = format!(
-                "SELECT substr(row_to_json(t)::VARCHAR, 1, 2049) FROM \"{name}\" AS t LIMIT {sample_limit}"
+                "SELECT {projection} FROM \"{name}\" LIMIT {sample_limit}"
             );
             let samples: Vec<Value> = if sample_limit == 0 {
                 Vec::new()
@@ -350,19 +376,25 @@ impl ScratchState {
                 let mut statement = db
                     .prepare(&query)
                     .map_err(|_| "Evidence sampling query failed")?;
-                let raw_samples = statement
-                    .query_map([], |row| row.get::<_, String>(0))
+                statement
+                    .query_map([], |row| {
+                        let mut map = serde_json::Map::new();
+                        for (index, column) in columns.iter().enumerate() {
+                            let cell: Option<String> = row.get(index)?;
+                            map.insert(column.clone(), cell.map_or(Value::Null, |s| json!(s)));
+                        }
+                        Ok(Value::Object(map))
+                    })
                     .map_err(|_| "Evidence sampling query failed")?
                     .collect::<Result<Vec<_>, _>>()
-                    .map_err(|_| "Evidence sampling returned invalid rows")?;
-                raw_samples
+                    .map_err(|_| "Evidence sampling returned invalid rows")?
                     .into_iter()
                     .map(|row| {
-                        if row.len() > 2048 {
-                            return Err("An evidence sample row exceeds 2048 bytes".to_owned());
+                        if serde_json::to_vec(&row).map_or(true, |bytes| bytes.len() > 2048) {
+                            Err("An evidence sample row exceeds 2048 bytes".to_owned())
+                        } else {
+                            Ok(row)
                         }
-                        serde_json::from_str(&row)
-                            .map_err(|_| "Invalid evidence JSON sample".into())
                     })
                     .collect::<Result<Vec<_>, String>>()?
             };
@@ -381,6 +413,7 @@ impl ScratchState {
             "markdown":markdown,
             "source":"local_scratchpad",
             "provider_called":false,
+            "sample_cell_encoding":"bounded_text",
         });
         if serde_json::to_vec(&result).map_or(true, |data| data.len() > 256 * 1024) {
             return Err("Evidence bundle exceeds 256 KiB output policy".into());
