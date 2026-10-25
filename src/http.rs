@@ -13,9 +13,9 @@ use axum::{
 use rmcp::transport::streamable_http_server::{
     session::local::LocalSessionManager, StreamableHttpServerConfig, StreamableHttpService,
 };
+use serde_json::json;
 use std::sync::Arc;
 use subtle::ConstantTimeEq;
-use serde_json::json;
 
 #[derive(Clone)]
 struct Access {
