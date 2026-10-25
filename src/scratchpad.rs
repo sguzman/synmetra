@@ -12,6 +12,50 @@ const HARD_SESSIONS: usize = 8;
 const HARD_TABLES: usize = 16;
 const MAX_LIST_ITEMS: usize = 1024;
 
+
+/// Strict bounded release-window analysis inputs. Every SQL identifier is checked
+/// against DuckDB's main schema before a generated read-only projection is used.
+pub struct ReleaseRegressionConfig {
+    pub session_id: String,
+    pub table_name: String,
+    pub release_date: String,
+    pub anchor_event: String,
+    pub comparison_event: String,
+    pub date_column: Option<String>,
+    pub event_column: Option<String>,
+    pub metric_column: Option<String>,
+    pub pre_days: Option<u32>,
+    pub transition_days: Option<u32>,
+    pub post_days: Option<u32>,
+}
+
+fn release_windows(
+    date: &str, pre: Option<u32>, transition: Option<u32>, post: Option<u32>,
+) -> Result<(chrono::NaiveDate, chrono::NaiveDate, chrono::NaiveDate, chrono::NaiveDate), String> {
+    use chrono::{NaiveDate, Duration};
+    let release = NaiveDate::parse_from_str(date, "%Y-%m-%d")
+        .map_err(|_| "release_date must be YYYY-MM-DD")?;
+    let pre = pre.unwrap_or(7);
+    let transition = transition.unwrap_or(1);
+    let post = post.unwrap_or(7);
+    if !(1..=90).contains(&pre) || transition > 30 || !(1..=90).contains(&post) {
+        return Err("Release windows require pre/post 1-90 days and transition 0-30".into());
+    }
+    let baseline = release.checked_sub_signed(Duration::days(i64::from(pre)))
+        .ok_or("Invalid pre-release date")?;
+    let follow = release.checked_add_signed(Duration::days(i64::from(transition)))
+        .ok_or("Invalid transition window")?;
+    let end = follow.checked_add_signed(Duration::days(i64::from(post)))
+        .ok_or("Invalid post-release date")?;
+    Ok((baseline, release, follow, end))
+}
+
+fn parse_event_date(value: &str) -> Option<chrono::NaiveDate> {
+    chrono::NaiveDate::parse_from_str(value, "%Y-%m-%d")
+        .or_else(|_| chrono::NaiveDate::parse_from_str(value, "%Y%m%d"))
+        .ok()
+}
+
 #[derive(Clone)]
 pub struct ScratchState(Arc<Mutex<Inner>>);
 
@@ -819,6 +863,122 @@ impl ScratchState {
         Ok(output)
     }
 
+    /// Aggregate bounded pre/post event ratios with conservative confidence flags.
+    pub fn release_regression(
+        &self,
+        config: &ReleaseRegressionConfig,
+    ) -> Result<Value, String> {
+        let id = session_id(&config.session_id)?;
+        let table = table_name(&config.table_name)?;
+        let date_column = table_name(config.date_column.as_deref().unwrap_or("date"))?;
+        let event_column = table_name(config.event_column.as_deref().unwrap_or("event_name"))?;
+        let metric_column = match config.metric_column.as_deref() {
+            Some(name) => Some(table_name(name)?),
+            None => None,
+        };
+        let anchor = config.anchor_event.trim();
+        let comparison = config.comparison_event.trim();
+        if anchor.is_empty() || comparison.is_empty() || anchor == comparison
+            || anchor.len() > 128 || comparison.len() > 128
+        {
+            return Err("Anchor and comparison events must be distinct bounded names".into());
+        }
+        let (start,release,post_start,end) = release_windows(
+            &config.release_date, config.pre_days,
+            config.transition_days,config.post_days
+        )?;
+        let mut inner = self.guard()?;
+        Self::expire(&mut inner);
+        let db = &inner.sessions.get(id).ok_or("Scratchpad session not found or expired")?.db;
+        let mut schema = db.prepare(
+            "SELECT column_name FROM information_schema.columns
+             WHERE table_schema='main' AND table_name=?1
+             ORDER BY ordinal_position LIMIT 33",
+        ).map_err(|_| "Release schema lookup failed")?;
+        let actual = schema.query_map([table], |row| row.get::<_, String>(0))
+            .map_err(|_| "Release schema lookup failed")?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|_| "Release schema lookup failed")?;
+        let check = |name: &str| actual.iter().any(|a| a.eq_ignore_ascii_case(name));
+        if actual.is_empty() || actual.len() > 32 || !check(date_column)
+            || !check(event_column) || metric_column.is_some_and(|name| !check(name))
+        {
+            return Err("Release diagnostic columns are absent from local table".into());
+        }
+        let metric_expr = metric_column.map_or("'1'".to_owned(), |name| {
+            format!("substr(CAST(\"{name}\" AS VARCHAR),1,65)")
+        });
+        let sql = format!(
+            "SELECT substr(CAST(\"{date_column}\" AS VARCHAR),1,33),
+             substr(CAST(\"{event_column}\" AS VARCHAR),1,513),
+             {metric_expr} FROM \"{table}\" LIMIT 20001"
+        );
+        let mut stmt = db.prepare(&sql).map_err(|_| "Release SELECT preparation failed")?;
+        let samples = stmt.query_map([], |row| {
+            Ok((
+                row.get::<_, Option<String>>(0)?,
+                row.get::<_, Option<String>>(1)?,
+                row.get::<_, Option<String>>(2)?,
+            ))
+        }).map_err(|_| "Release SELECT failed")?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|_| "Release SELECT result invalid")?;
+        if samples.len() > 20000 {
+            return Err("Release diagnostic scan exceeds 20000 rows".into());
+        }
+        let mut pre_anchor = 0.0f64;
+        let mut pre_comparison = 0.0f64;
+        let mut post_anchor = 0.0f64;
+        let mut post_comparison = 0.0f64;
+        let mut ignored = 0usize;
+        for (date,event,weight) in samples {
+            let Some(date) = date.as_deref().and_then(parse_event_date) else {
+                ignored += 1;continue;
+            };
+            let Some(event) = event else { ignored += 1;continue; };
+            if date < start || date >= end || (date>=release && date<post_start) {
+                continue;
+            }
+            let weight: f64 = weight.as_deref().unwrap_or("1").parse()
+                .map_err(|_| "Metric values must be finite nonnegative numbers")?;
+            if !weight.is_finite() || weight<0.0 || weight>1e12 {
+                return Err("Metric values must be finite nonnegative numbers".into());
+            }
+            if date < release {
+                if event == anchor { pre_anchor += weight; }
+                if event == comparison { pre_comparison += weight; }
+            } else {
+                if event == anchor { post_anchor += weight; }
+                if event == comparison { post_comparison += weight; }
+            }
+        }
+        let pre_ratio = if pre_comparison>0.0 {Some(pre_anchor/pre_comparison)} else {None};
+        let post_ratio = if post_comparison>0.0 {Some(post_anchor/post_comparison)} else {None};
+        let relative = match (pre_ratio,post_ratio) {
+            (Some(a),Some(b)) if a>0.0 => Some((b/a-1.0)*100.0),
+            _=>None,
+        };
+        let confidence = match relative {
+            None => "insufficient_baseline",
+            Some(_) if pre_anchor<10.0 || pre_comparison<10.0 || post_comparison<10.0 => "low_sample",
+            Some(change) if change <= -30.0 => "possible_instrumentation_regression",
+            Some(_) => "no_large_ratio_drop_detected",
+        };
+        Ok(json!({
+            "session_id":id,"table_name":table,
+            "release_date":config.release_date,
+            "baseline_start":start.to_string(),
+            "post_start":post_start.to_string(),
+            "post_end_exclusive":end.to_string(),
+            "pre_anchor":pre_anchor,"pre_comparison":pre_comparison,
+            "post_anchor":post_anchor,"post_comparison":post_comparison,
+            "pre_ratio":pre_ratio,"post_ratio":post_ratio,
+            "relative_ratio_change_pct":relative,
+            "assessment":confidence,"ignored_invalid_date_rows":ignored,
+            "caution":"Heuristic association only; cannot establish causality or a definite instrumentation fault."
+        }))
+    }
+
     pub fn summarize_table(&self, raw: &str, table: &str) -> Result<Value, String> {
         // Catalog validation precedes the only dynamically constructed SQL statement.
         let schema = self.describe_table(raw, table)?;
@@ -898,6 +1058,42 @@ mod tests {
         assert!(state.open("another").is_err());
         assert_eq!(state.close("project_1").unwrap()["closed"], true);
         assert!(state.close("project_1").is_err());
+    }
+
+    #[test]
+    fn release_diagnostic_distinguishes_ratio_drop_and_low_sample() {
+        let state = ScratchState::new();
+        state.open("release_test").unwrap();
+        {
+            let mut inner = state.guard().unwrap();
+            let db = &inner.sessions.get_mut("release_test").unwrap().db;
+            db.execute_batch(
+                "CREATE TABLE events(date VARCHAR,event_name VARCHAR,weight VARCHAR);
+                 INSERT INTO events VALUES
+                 ('2026-10-15','anchor','80'),('2026-10-15','comparison','100'),
+                 ('2026-10-27','anchor','10'),('2026-10-27','comparison','100');"
+            ).unwrap();
+        }
+        let mut config = ReleaseRegressionConfig {
+            session_id:"release_test".into(),table_name:"events".into(),
+            release_date:"2026-10-25".into(),anchor_event:"anchor".into(),
+            comparison_event:"comparison".into(),date_column:None,event_column:None,
+            metric_column:Some("weight".into()),pre_days:Some(14),
+            transition_days:Some(1),post_days:Some(7),
+        };
+        let report=state.release_regression(&config).unwrap();
+        assert_eq!(report["pre_anchor"],80.0);
+        assert_eq!(report["post_comparison"],100.0);
+        assert_eq!(report["assessment"],"possible_instrumentation_regression");
+        config.anchor_event="comparison".into();
+        assert!(state.release_regression(&config).is_err());
+        config.anchor_event="anchor".into();
+        config.date_column=Some("bad\";DROP TABLE events;--".into());
+        assert!(state.release_regression(&config).is_err());
+        config.date_column=None;
+        config.pre_days=Some(0);
+        assert!(state.release_regression(&config).is_err());
+        assert_eq!(state.summarize_table("release_test","events").unwrap()["row_count"],4);
     }
 
     #[test]
