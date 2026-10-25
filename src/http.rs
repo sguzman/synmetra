@@ -7,13 +7,15 @@ use axum::{
     http::{header, StatusCode},
     middleware::{self, Next},
     response::{IntoResponse, Response},
-    Router,
+    routing::get,
+    Json, Router,
 };
 use rmcp::transport::streamable_http_server::{
     session::local::LocalSessionManager, StreamableHttpServerConfig, StreamableHttpService,
 };
 use std::sync::Arc;
 use subtle::ConstantTimeEq;
+use serde_json::json;
 
 #[derive(Clone)]
 struct Access {
@@ -65,6 +67,10 @@ fn app(server: Synmetra, token: String, port: u16) -> Router {
         config,
     );
     Router::new()
+        .route("/health", get(|| async { Json(json!({"status":"ok"})) }))
+        .route("/metadata", get(|| async {
+            Json(json!({"name":"synmetra","transport":"streamable-http","authentication":"bearer","network":"loopback-only"}))
+        }))
         .nest_service("/mcp", service)
         .layer(middleware::from_fn_with_state(access, require_local_auth))
 }
@@ -351,6 +357,61 @@ mod tests {
         .await
         .unwrap();
         assert_eq!(after_logout.status(), StatusCode::NOT_FOUND);
+        task.abort();
+    }
+
+    #[tokio::test]
+    async fn metadata_and_health_are_authenticated_and_never_contain_credentials() {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let token = "synthetic-private-metadata-token-32-chars";
+        let server = Synmetra::new(GoogleClient::new(None), false);
+        let task = tokio::spawn(async move {
+            axum::serve(listener, app(server, token.to_owned(), port))
+                .await
+                .unwrap();
+        });
+        let client = reqwest::Client::new();
+        for path in ["health", "metadata"] {
+            let endpoint = format!("http://127.0.0.1:{port}/{path}");
+            let anonymous = client.get(&endpoint).send().await.unwrap();
+            assert_eq!(anonymous.status(), StatusCode::UNAUTHORIZED);
+            let bad = client
+                .get(&endpoint)
+                .header(header::AUTHORIZATION, "Bearer wrong-token")
+                .send()
+                .await
+                .unwrap();
+            assert_eq!(bad.status(), StatusCode::UNAUTHORIZED);
+            let bad_origin = client
+                .get(&endpoint)
+                .header(header::AUTHORIZATION, format!("Bearer {token}"))
+                .header(header::ORIGIN, "https://remote.example")
+                .send()
+                .await
+                .unwrap();
+            assert_eq!(bad_origin.status(), StatusCode::UNAUTHORIZED);
+
+            let authorized = client
+                .get(endpoint)
+                .header(header::AUTHORIZATION, format!("Bearer {token}"))
+                .send()
+                .await
+                .unwrap();
+            assert_eq!(authorized.status(), StatusCode::OK);
+            let data: serde_json::Value = authorized.json().await.unwrap();
+            assert!(data.is_object());
+            assert!(!data.to_string().contains(token));
+            assert!(!data.to_string().contains("access_token"));
+            assert!(!data.to_string().contains("refresh_token"));
+            if path == "health" {
+                assert_eq!(data["status"], "ok");
+                assert!(data.get("tools").is_none());
+            } else {
+                assert_eq!(data["transport"], "streamable-http");
+                assert_eq!(data["network"], "loopback-only");
+            }
+        }
         task.abort();
     }
 
