@@ -2933,12 +2933,13 @@
               "id": "T152",
               "emoji": "🩺",
               "name": "Implement ga4_auth_status",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Native CLI guidance and MCP schema parity for ga4_auth_status",
               "checks": [
                 {
                   "text": "Deliver implement ga4_auth_status as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs AuthStatusArgs and opt-in ga4_auth_status verify_token request with bounded Google account lookup and credential-free status; native schema and explicit-opt-in tests passed GitHub Actions 40223667547 core job (fmt, tests, strict Clippy). Live Google verification and exact upstream response parity remain open."
                 },
                 {
                   "text": "Native CLI guidance and MCP schema parity for ga4_auth_status",
