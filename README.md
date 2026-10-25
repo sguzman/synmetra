@@ -10,7 +10,7 @@
 
 ## 📊 Evidence-backed progress
 
-**Overall:** `██░░░░░░░░ 18.7%` · **overall delta: +18.72 percentage points** from initial 0% (**latest verified round: +0.88 pp**). **20/36 read-only provisional handlers and 1 opt-in annotation handler; 0/36 fully accepted upstream parity.** Real Google account acceptance and full tool schemas remain pending.
+**Overall:** `██░░░░░░░░ 21.4%` · **overall delta: +21.37 percentage points** from initial 0% (**latest verified round: +2.65 pp**). **20/36 read-only provisional handlers and 1 opt-in annotation handler; 0/36 fully accepted upstream parity.** Real Google account acceptance and full tool schemas remain pending.
 
 | Milestone | Progress | Gate |
 | --- | --- | --- |
@@ -20,7 +20,7 @@
 | 🏢 M3 Admin API information parity | `██░░░░░░░░ 21.9%` | MVP |
 | 📊 M4 Reporting, preflight and Data API parity | `██░░░░░░░░ 18.3%` | MVP |
 | ✍️ M5 Explicitly gated GA mutation parity | `██████░░░░ 61.5%` | MVP |
-| 🗃️ M6 DuckDB scratchpad and advanced analytics parity | `░░░░░░░░░░ 0.0%` | MVP |
+| 🗃️ M6 DuckDB scratchpad and advanced analytics parity | `██░░░░░░░░ 24.0%` | MVP |
 | 🧬 M7 Tool contract interoperability and parity audits | `░░░░░░░░░░ 0.0%` | MVP |
 | 🧪 M8 Verification, resilience and security acceptance | `█░░░░░░░░░ 8.9%` | MVP |
 | 🚀 M9 Linux release and Codex-ready inauguration | `░░░░░░░░░░ 0.0%` | MVP |
@@ -51,3 +51,5 @@ Build and launch the MCP stdio server with `cargo run --bin synmetra -- serve`. 
 **Optional annotation writes:** `synmetra serve --allow-write` exposes `create_property_annotation` only when explicitly requested. The native OAuth flow currently requests read-only access; an authorized `analytics.edit` token and Google property permission are still required. [Write-gating and validation](docs/ANNOTATIONS.md). Remote public deployment is not implemented.
 
 **Optional scratchpad (experimental):** `cargo build --features scratchpad` and `synmetra serve --scratchpad` expose seven provisional in-memory DuckDB lifecycle operations. They are blocked on Streamable HTTP because per-client isolation is unfinished. Feature-enabled native compilation and contract verification remain pending. [Scratchpad limitations](docs/SCRATCHPAD.md) · [Upstream schema gaps](docs/SCHEMA_GAPS.md).
+
+**Native DuckDB feature testing:** The initial seven lifecycle tool implementations passed an optional bundled-DuckDB feature test in [GitHub Actions run 40206168306](https://github.com/sguzman/synmetra/actions/runs/40206168306). Later schema refinements and full strict Clippy/Google integration are not yet accepted. The 7 lifecycle tasks remain partial (50%) rather than falsely marking full upstream parity.

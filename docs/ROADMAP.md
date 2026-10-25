@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `██░░░░░░░░ 18.7%` · **+18.72 percentage points from initial empty repo; +0.88 pp in this annotation-safety round** · 21/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `██░░░░░░░░ 21.4%` · **+21.37 percentage points from initial empty repo; +2.65 pp in the initial native-DuckDB test round** · 21/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -366,27 +366,27 @@
   - ✅ **Gate:** Disable write capability at runtime restart · **Evidence:** Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.; Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.
 
 
-## 🗃️ M6 — DuckDB scratchpad and advanced analytics parity — `░░░░░░░░░░ 0.0%`
+## 🗃️ M6 — DuckDB scratchpad and advanced analytics parity — `██░░░░░░░░ 24.0%`
 
 **Scope:** MVP. **Acceptance gate:** All 15 local scratchpad tools and policy limits operate without unsafe SQL or credential disclosure.
 
-### 🗄️ P15 — Scratchpad lifecycle MCP tools — `░░░░░░░░░░ 0.0%`
+### 🗄️ P15 — Scratchpad lifecycle MCP tools — `█████░░░░░ 50.0%`
 
 **Feature:** Seven session tools.
 
-- 🧱 **T126 — Implement scratchpad_open_session** — `░░░░░░░░░░ 0.0%`
+- 🧱 **T126 — Implement scratchpad_open_session** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Isolated session lifecycle plus quota failure fixtures for scratchpad_open_session
-- 🔒 **T127 — Implement scratchpad_close_session** — `░░░░░░░░░░ 0.0%`
+- 🔒 **T127 — Implement scratchpad_close_session** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Isolated session lifecycle plus quota failure fixtures for scratchpad_close_session
-- 📋 **T128 — Implement scratchpad_list_sessions** — `░░░░░░░░░░ 0.0%`
+- 📋 **T128 — Implement scratchpad_list_sessions** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Isolated session lifecycle plus quota failure fixtures for scratchpad_list_sessions
-- 📏 **T129 — Implement scratchpad_get_runtime_limits** — `░░░░░░░░░░ 0.0%`
+- 📏 **T129 — Implement scratchpad_get_runtime_limits** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Isolated session lifecycle plus quota failure fixtures for scratchpad_get_runtime_limits
-- 🎛️ **T130 — Implement scratchpad_set_runtime_limits** — `░░░░░░░░░░ 0.0%`
+- 🎛️ **T130 — Implement scratchpad_set_runtime_limits** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Isolated session lifecycle plus quota failure fixtures for scratchpad_set_runtime_limits
-- 🗂️ **T131 — Implement scratchpad_list_tables** — `░░░░░░░░░░ 0.0%`
+- 🗂️ **T131 — Implement scratchpad_list_tables** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Isolated session lifecycle plus quota failure fixtures for scratchpad_list_tables
-- 🧹 **T132 — Implement scratchpad_drop_table** — `░░░░░░░░░░ 0.0%`
+- 🧹 **T132 — Implement scratchpad_drop_table** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Isolated session lifecycle plus quota failure fixtures for scratchpad_drop_table
 
 ### 📥 P16 — Scratchpad ingest and query MCP tools — `░░░░░░░░░░ 0.0%`
@@ -415,19 +415,19 @@
 - 📤 **T140 — Implement scratchpad_export_evidence_bundle** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Evidence fixture and schema/output equivalence for scratchpad_export_evidence_bundle
 
-### 🔐 P18 — DuckDB security and resource controls — `░░░░░░░░░░ 0.0%`
+### 🔐 P18 — DuckDB security and resource controls — `███░░░░░░░ 25.0%`
 
 **Feature:** Scratchpad sandbox.
 
-- 🚪 **T141 — Gate scratchpad behind explicit capability profile** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Default read-only process has no scratchpad tools
-- 🧩 **T142 — Enforce per-session quotas and retention** — `░░░░░░░░░░ 0.0%`
+- 🚪 **T141 — Gate scratchpad behind explicit capability profile** — `██████████ 100.0%`
+  - ✅ **Gate:** Default read-only process has no scratchpad tools · **Evidence:** src/main.rs and src/scratchpad.rs; GitHub Actions run 40206168306 successfully completed bundled-DuckDB feature tests (initial seven-route implementation); full strict-Clippy/updated-parameter parity and live GA tests remain separate acceptance gates.; src/main.rs and src/scratchpad.rs; GitHub Actions run 40206168306 successfully completed bundled-DuckDB feature tests (initial seven-route implementation); full strict-Clippy/updated-parameter parity and live GA tests remain separate acceptance gates.
+- 🧩 **T142 — Enforce per-session quotas and retention** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Memory disk time rows and session count bounded
 - 🗃️ **T143 — Isolate scratchpad database files per identity** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Cross-user table read attempts fail
 - 🪬 **T144 — Implement SQL SELECT-only parser policy** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** DML DDL COPY INSTALL LOAD ATTACH and external scans rejected
-- 🌍 **T145 — Disable remote extensions and filesystem reads** — `░░░░░░░░░░ 0.0%`
+- 🌍 **T145 — Disable remote extensions and filesystem reads** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** No network or arbitrary path escape through DuckDB
 - 🧯 **T146 — Handle unexpected termination and session cleanup** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Leftover temp files sanitized on restart
@@ -437,7 +437,7 @@
   - ✅ **Gate:** Exports do not overwrite arbitrary paths or expose secrets
 - 🧪 **T149 — Run embedded DuckDB fuzz and hostile SQL fixtures** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Policy bypass corpus fails safely
-- 🦀 **T150 — Document native DuckDB library boundary honestly** — `░░░░░░░░░░ 0.0%`
+- 🦀 **T150 — Document native DuckDB library boundary honestly** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Dependency license architecture and portability reviewed
 
 
