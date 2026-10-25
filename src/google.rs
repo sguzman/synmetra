@@ -658,10 +658,32 @@ pub fn funnel_request(
     let mut mapped = Vec::new();
     for (index, step) in steps.into_iter().enumerate() {
         let object = step.as_object().ok_or(ApiError::InvalidRequest)?;
-        let event = object.get("event");
+        if object.keys().any(|field| {
+            !matches!(
+                field.as_str(),
+                "event"
+                    | "filter_expression"
+                    | "filterExpression"
+                    | "name"
+                    | "is_directly_followed_by"
+                    | "isDirectlyFollowedBy"
+                    | "within_duration_from_prior_step"
+                    | "withinDurationFromPriorStep"
+            )
+        }) || (object.contains_key("filter_expression") && object.contains_key("filterExpression"))
+            || (object.contains_key("is_directly_followed_by")
+                && object.contains_key("isDirectlyFollowedBy"))
+            || (object.contains_key("within_duration_from_prior_step")
+                && object.contains_key("withinDurationFromPriorStep"))
+        {
+            return Err(ApiError::InvalidRequest);
+        }
+        // The pinned schema permits null for optional event and filter fields.
+        let event = object.get("event").filter(|value| !value.is_null());
         let filter = object
             .get("filter_expression")
-            .or_else(|| object.get("filterExpression"));
+            .or_else(|| object.get("filterExpression"))
+            .filter(|value| !value.is_null());
         if event.is_some() == filter.is_some() {
             return Err(ApiError::InvalidRequest);
         }
@@ -736,6 +758,14 @@ pub fn funnel_request(
         "returnPropertyQuota":quota
     });
     if let Some(breakdown) = breakdown {
+        let details = breakdown.as_object().ok_or(ApiError::InvalidRequest)?;
+        if details.keys().any(|field| {
+            !matches!(field.as_str(), "breakdown_dimension" | "breakdownDimension" | "limit")
+        }) || (details.contains_key("breakdown_dimension")
+            && details.contains_key("breakdownDimension"))
+        {
+            return Err(ApiError::InvalidRequest);
+        }
         let field = breakdown
             .get("breakdown_dimension")
             .or_else(|| breakdown.get("breakdownDimension"))
@@ -755,6 +785,14 @@ pub fn funnel_request(
         request["funnelBreakdown"] = spec;
     }
     if let Some(next_action) = next_action {
+        let details = next_action.as_object().ok_or(ApiError::InvalidRequest)?;
+        if details.keys().any(|field| {
+            !matches!(field.as_str(), "next_action_dimension" | "nextActionDimension" | "limit")
+        }) || (details.contains_key("next_action_dimension")
+            && details.contains_key("nextActionDimension"))
+        {
+            return Err(ApiError::InvalidRequest);
+        }
         let field = next_action
             .get("next_action_dimension")
             .or_else(|| next_action.get("nextActionDimension"))
@@ -1336,6 +1374,56 @@ mod tests {
             vec![json!({"event":"page_view"}); 11],
         ] {
             assert!(funnel_request(bad, None, None, None, None, false).is_err());
+        }
+    }
+
+    #[test]
+    fn funnel_nullable_optionals_and_unknown_fields_have_explicit_semantics() {
+        let request = funnel_request(
+            vec![
+                json!({"name":null,"event":"page_view","filter_expression":null}),
+                json!({"event":null,"filter_expression":{"funnelEventFilter":{"eventName":"purchase"}}}),
+            ],
+            None,
+            None,
+            None,
+            None,
+            false,
+        )
+        .unwrap();
+        assert_eq!(request["funnel"]["steps"][0]["name"], "Step 1");
+        assert_eq!(
+            request["funnel"]["steps"][1]["filterExpression"]["funnelEventFilter"]["eventName"],
+            "purchase"
+        );
+        for invalid_step in [
+            json!({"event":"page_view","limit":50}),
+            json!({"event":"page_view","filterExpression":null,"filter_expression":null}),
+            json!({"event":"page_view","isDirectlyFollowedBy":false,"is_directly_followed_by":false}),
+            json!({"event":null,"filter_expression":null}),
+        ] {
+            assert_eq!(
+                funnel_request(vec![invalid_step], None, None, None, None, false),
+                Err(ApiError::InvalidRequest)
+            );
+        }
+        for invalid in [
+            json!({"breakdown_dimension":"country","limt":3}),
+            json!({"breakdown_dimension":"country","breakdownDimension":"deviceCategory"}),
+        ] {
+            assert_eq!(
+                funnel_request(vec![json!({"event":"page_view"})], None, Some(invalid), None, None, false),
+                Err(ApiError::InvalidRequest)
+            );
+        }
+        for invalid in [
+            json!({"next_action_dimension":"eventName","unknown":true}),
+            json!({"next_action_dimension":"eventName","nextActionDimension":"pagePath"}),
+        ] {
+            assert_eq!(
+                funnel_request(vec![json!({"event":"page_view"})], None, None, Some(invalid), None, false),
+                Err(ApiError::InvalidRequest)
+            );
         }
     }
 
