@@ -2120,16 +2120,18 @@
               "id": "T109",
               "emoji": "🌍",
               "name": "Handle property-specific API permission and quota errors",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "429 and 403 retry/backoff rules explicit",
               "checks": [
                 {
                   "text": "Deliver handle property-specific api permission and quota errors as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs readonly_retry_delay rejects 403 and ordinary 4xx, supports bounded idempotent 429/500/502/503/504 retries; src/main.rs batch_report_permission_and_quota_denials_do_not_leak_provider_details and historical_and_realtime_report_denials_are_redacted_and_stable verify redacted 403/429 HTTP codes. docs/NATIVE_MCP.md explicitly states rules. GitHub Actions 40240180552 full core and DuckDB CI passed."
                 },
                 {
                   "text": "429 and 403 retry/backoff rules explicit",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs readonly_retry_policy_honors_backoff_limits_and_never_retries_forbidden checks 403 terminal, numeric Retry-After minimum and excessive/malformed Retry-After terminal; readonly_report_retry_is_bounded_and_never_replays_writes validates 429 then 200, and annotation_writes_do_not_retry_429_500_or_503_responses verifies no write replay. Does not claim live Google quota validation."
                 }
               ]
             },
@@ -2156,16 +2158,18 @@
               "id": "T111",
               "emoji": "♻️",
               "name": "Make repeated report retries safe and idempotent",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "Retry-After respected with bounded jitter",
               "checks": [
                 {
                   "text": "Deliver make repeated report retries safe and idempotent as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs send_readonly supports at most three attempts for clonable idempotent GA read requests, while send uses exactly one attempt for annotation mutations. readonly_retry_delay uses 200/400ms exponential backoff, 0–100ms jitter, numeric Retry-After minimum up to 5 seconds, with over-budget delays ending in an HTTP error. docs/NATIVE_MCP.md documents limitations. Full GitHub Actions 40240180552 green."
                 },
                 {
                   "text": "Retry-After respected with bounded jitter",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs readonly_report_retry_is_bounded_and_never_replays_writes confirms an authenticated historical report recovers from HTTP 429 Retry-After:0 using exactly a second successful mock request; readonly_retry_policy_honors_backoff_limits_and_never_retries_forbidden tests bounded jitter, long delay skip and HTTP 403 no retry. Annotation tests guard non-idempotent writes. Full CI 40240180552 passed."
                 }
               ]
             },
