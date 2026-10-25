@@ -3,7 +3,8 @@ mod auth;
 mod google;
 mod http;
 
-use google::{report_request, ApiError, GoogleClient};
+use google::{annotation_payload, report_request, ApiError, GoogleClient};
+use rmcp::handler::server::router::tool::ToolRouter;
 use rmcp::{
     handler::server::wrapper::Parameters,
     model::{CallToolResult, ContentBlock},
@@ -18,12 +19,41 @@ use serde_json::{json, Value};
 #[derive(Clone)]
 struct Synmetra {
     api: GoogleClient,
+    router: ToolRouter<Self>,
+    writes_allowed: bool,
+}
+
+impl Synmetra {
+    fn new(api: GoogleClient, writes_allowed: bool) -> Self {
+        let mut router = Self::tool_router();
+        if !writes_allowed {
+            router.disable_route("create_property_annotation");
+        }
+        Self { api, router, writes_allowed }
+    }
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
 struct PropertyArgs {
     /// Positive numeric GA4 property ID or canonical properties/<id>.
     property_id: String,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+struct CreateAnnotationArgs {
+    property_id: String,
+    title: String,
+    start_date: String,
+    #[serde(default)]
+    end_date: Option<String>,
+    #[serde(default)]
+    description: Option<String>,
+    #[serde(default = "default_annotation_color")]
+    color: String,
+}
+
+fn default_annotation_color() -> String {
+    "BLUE".into()
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
@@ -136,6 +166,27 @@ impl Synmetra {
             "interactive_authorization_required": true,
             "scope": "https://www.googleapis.com/auth/analytics.readonly"
         })))
+    }
+
+    #[tool(description = "WRITE: Create a GA4 reporting annotation. Hidden and blocked unless server starts with --allow-write and Google token has analytics.edit scope. Never retry automatically.")]
+    async fn create_property_annotation(
+        &self,
+        Parameters(args): Parameters<CreateAnnotationArgs>,
+    ) -> CallToolResult {
+        if !self.writes_allowed {
+            return result(Err(ApiError::InvalidRequest));
+        }
+        let body = annotation_payload(
+            &args.title,
+            &args.start_date,
+            args.end_date.as_deref(),
+            args.description.as_deref(),
+            &args.color,
+        );
+        result(match body {
+            Ok(body) => self.api.create_annotation(&args.property_id, body).await,
+            Err(error) => Err(error),
+        })
     }
 
     #[tool(
@@ -366,6 +417,7 @@ impl Synmetra {
 }
 
 #[tool_handler(
+    router = self.router,
     name = "synmetra",
     version = "0.0.1",
     instructions = "Read-only Google Analytics MCP server. Use synmetra auth login for native OAuth token refresh, or SYNMETRA_GOOGLE_ACCESS_TOKEN for a short-lived analytics.readonly token. Only implemented tools are listed; no write or scratchpad tools are enabled."
@@ -382,14 +434,33 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("synmetra 0.0.1 (experimental read-only MCP)");
         return Ok(());
     }
-    let loopback = args.len() == 3 && args[1] == "serve" && args[2] == "--http-loopback";
-    if args.len() != 1 && !(args.len() == 2 && args[1] == "serve") && !loopback {
-        eprintln!("Usage: synmetra [serve [--http-loopback]|--version|auth login --client-id-file PATH|auth status|auth logout]\nStarts an experimental read-only MCP stdio server.\nUse synmetra auth login for native read-only OAuth, or SYNMETRA_GOOGLE_ACCESS_TOKEN for a short-lived token.");
+    let flags = if args.len() == 1 {
+        &[][..]
+    } else if args.get(1).is_some_and(|arg| arg == "serve") {
+        &args[2..]
+    } else {
+        &args[1..]
+    };
+    let mut loopback = false;
+    let mut allow_write = false;
+    for flag in flags {
+        match flag.as_str() {
+            "--http-loopback" => loopback = true,
+            "--allow-write" => allow_write = true,
+            _ => {
+                eprintln!("Usage: synmetra serve [--http-loopback] [--allow-write]");
+                std::process::exit(2);
+            }
+        }
+    }
+    if args.len() > 1 && args[1] != "serve" {
+        eprintln!("Usage: synmetra [serve [--http-loopback] [--allow-write]|--version|auth login --client-id-file PATH|auth status|auth logout]\nStarts an experimental read-only MCP stdio server.\nUse synmetra auth login for native read-only OAuth, or SYNMETRA_GOOGLE_ACCESS_TOKEN for a short-lived token.");
         std::process::exit(2);
     }
-    let server = Synmetra {
-        api: GoogleClient::new(std::env::var("SYNMETRA_GOOGLE_ACCESS_TOKEN").ok()),
-    };
+    let server = Synmetra::new(
+        GoogleClient::new(std::env::var("SYNMETRA_GOOGLE_ACCESS_TOKEN").ok()),
+        allow_write,
+    );
     if loopback {
         return http::serve_loopback(server).await;
     }
@@ -409,7 +480,7 @@ mod tests {
             .into_iter()
             .map(|tool| tool.name.to_string())
             .collect();
-        assert_eq!(names.len(), 20);
+        assert_eq!(names.len(), 21);
         for name in [
             "ga4_get_started",
             "ga4_auth_status",
@@ -434,7 +505,8 @@ mod tests {
         ] {
             assert!(names.contains(name), "missing {name}");
         }
-        assert!(!names.contains("create_property_annotation"));
+        assert!(!Synmetra::new(GoogleClient::new(None), false).router.has_route("create_property_annotation"));
+        assert!(Synmetra::new(GoogleClient::new(None), true).router.has_route("create_property_annotation"));
     }
 
     #[tokio::test]
@@ -442,9 +514,7 @@ mod tests {
         use rmcp::model::CallToolRequestParams;
         let (server_stream, client_stream) = tokio::io::duplex(65536);
         let worker = tokio::spawn(async move {
-            let server = Synmetra {
-                api: GoogleClient::new(None),
-            };
+            let server = Synmetra::new(GoogleClient::new(None), false);
             server
                 .serve(server_stream)
                 .await
@@ -472,10 +542,30 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn write_capability_is_hidden_by_default_and_requires_scope() {
+        use rmcp::model::CallToolRequestParams;
+        let (server_stream, client_stream) = tokio::io::duplex(65536);
+        let worker = tokio::spawn(async move {
+            Synmetra::new(GoogleClient::new(None), true)
+                .serve(server_stream).await.unwrap().waiting().await.unwrap();
+        });
+        let client = ().serve(client_stream).await.unwrap();
+        let tools = client.list_all_tools().await.unwrap();
+        assert_eq!(tools.len(), 21);
+        assert!(tools.iter().any(|t| t.name == "create_property_annotation"));
+        let mut args = serde_json::Map::new();
+        args.insert("property_id".into(), json!("42"));
+        args.insert("title".into(), json!("Test"));
+        args.insert("start_date".into(), json!("2026-10-25"));
+        let call = client.call_tool(CallToolRequestParams::new("create_property_annotation").with_arguments(args)).await.unwrap();
+        assert_eq!(call.is_error, Some(true));
+        client.cancel().await.unwrap();
+        worker.await.unwrap();
+    }
+
+    #[tokio::test]
     async fn offline_preview_rejects_bad_metrics_without_credentials() {
-        let server = Synmetra {
-            api: GoogleClient::new(None),
-        };
+        let server = Synmetra::new(GoogleClient::new(None), false);
         let bad = ReportArgs {
             property_id: "55".into(),
             date_ranges: vec![json!({"startDate":"7daysAgo","endDate":"today"})],

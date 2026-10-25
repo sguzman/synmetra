@@ -102,9 +102,7 @@ mod tests {
     async fn loopback_http_rejects_unauthenticated_wrong_host_and_wrong_origin() {
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let port = listener.local_addr().unwrap().port();
-        let server = Synmetra {
-            api: GoogleClient::new(None),
-        };
+        let server = Synmetra::new(GoogleClient::new(None), false);
         let token = "test-only-token-that-is-long-enough-123".to_owned();
         let task = tokio::spawn(async move {
             axum::serve(listener, app(server, token, port))

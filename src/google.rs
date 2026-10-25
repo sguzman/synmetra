@@ -1,6 +1,7 @@
 //! Bounded and least-privilege Google Analytics HTTP client.
 //! Credentials are never included in logs or response error strings.
 
+use chrono::{Datelike, NaiveDate};
 use futures_util::StreamExt;
 use serde_json::{json, Map, Value};
 use std::{fmt, time::Duration};
@@ -29,6 +30,7 @@ pub enum ApiError {
     InvalidResponse,
     TooManyPages,
     AuthenticationFailed,
+    InvalidAnnotation,
 }
 
 impl fmt::Display for ApiError {
@@ -43,6 +45,7 @@ impl fmt::Display for ApiError {
             Self::InvalidResponse => write!(f, "Google Analytics response was not valid JSON or had an invalid pagination contract."),
             Self::TooManyPages => write!(f, "Google Analytics pagination exceeded the 100-page safety limit."),
             Self::AuthenticationFailed => write!(f, "Synmetra OAuth credentials could not be loaded or refreshed. Run synmetra auth status, then login again if necessary."),
+            Self::InvalidAnnotation => write!(f, "Invalid annotation: check title, dates, description and allowed color."),
         }
     }
 }
@@ -66,6 +69,48 @@ pub fn property_name(input: &str) -> Result<String, ApiError> {
 
 pub fn account_name(input: &str) -> Result<String, ApiError> {
     scoped_name(input, "accounts")
+}
+
+
+/// Validate a single optional Google Analytics reporting annotation before any write.
+pub fn annotation_payload(
+    title: &str,
+    start_date: &str,
+    end_date: Option<&str>,
+    description: Option<&str>,
+    color: &str,
+) -> Result<Value, ApiError> {
+    let title = title.trim();
+    if title.is_empty() || title.chars().count() > 60
+        || description.is_some_and(|d| d.chars().count() > 150)
+    {
+        return Err(ApiError::InvalidAnnotation);
+    }
+    let color = color.trim().to_ascii_uppercase();
+    if !["PURPLE", "BROWN", "BLUE", "GREEN", "RED", "CYAN"].contains(&color.as_str()) {
+        // Orange is reserved for system-generated Google Analytics annotations.
+        return Err(ApiError::InvalidAnnotation);
+    }
+    let parsed_start = NaiveDate::parse_from_str(start_date, "%Y-%m-%d")
+        .map_err(|_| ApiError::InvalidAnnotation)?;
+    let date_object = |d: NaiveDate| json!({
+        "year": d.year(), "month": d.month(), "day": d.day()
+    });
+    let mut annotation = json!({"title": title, "color": color});
+    if let Some(description) = description {
+        annotation["description"] = json!(description);
+    }
+    if let Some(end_date) = end_date {
+        let parsed_end = NaiveDate::parse_from_str(end_date, "%Y-%m-%d")
+            .map_err(|_| ApiError::InvalidAnnotation)?;
+        if parsed_end < parsed_start { return Err(ApiError::InvalidAnnotation); }
+        annotation["annotationDateRange"] = json!({
+            "startDate": date_object(parsed_start), "endDate": date_object(parsed_end)
+        });
+    } else {
+        annotation["annotationDate"] = date_object(parsed_start);
+    }
+    Ok(json!({"reportingDataAnnotation": annotation}))
 }
 
 impl GoogleClient {
@@ -198,6 +243,16 @@ impl GoogleClient {
     pub async fn ads_links(&self, property: &str) -> Result<Value, ApiError> {
         let path = format!("/{}/googleAdsLinks", property_name(property)?);
         self.collection(&path, "googleAdsLinks", false).await
+    }
+
+    pub async fn create_annotation(&self, property: &str, body: Value) -> Result<Value, ApiError> {
+        let path = property_name(property)?;
+        if !body.is_object() || body["reportingDataAnnotation"].is_null() {
+            return Err(ApiError::InvalidAnnotation);
+        }
+        let url = format!("{}/v1alpha/{path}/reportingDataAnnotations", self.admin_base);
+        // Mutating requests are never retried automatically.
+        self.send(self.http.post(url).json(&body)).await
     }
 
     pub async fn annotations(&self, property: &str) -> Result<Value, ApiError> {
@@ -391,6 +446,42 @@ mod tests {
         io::{AsyncReadExt, AsyncWriteExt},
         net::TcpListener,
     };
+
+    #[test]
+    fn annotation_validates_dates_colors_and_lengths() {
+        let single = annotation_payload(" Release ", "2026-10-25", None, None, "BLUE").unwrap();
+        assert_eq!(single["reportingDataAnnotation"]["annotationDate"]["month"], 10);
+        assert_eq!(single["reportingDataAnnotation"]["title"], "Release");
+        assert!(single["reportingDataAnnotation"].get("annotationDateRange").is_none());
+        let range = annotation_payload("Release", "2026-10-25", Some("2026-10-27"), Some("v1"), "CYAN").unwrap();
+        assert_eq!(range["reportingDataAnnotation"]["annotationDateRange"]["endDate"]["day"], 27);
+        for (start, end, color) in [
+            ("2026-02-30", None, "BLUE"),
+            ("2026-10-25", Some("2026-10-24"), "BLUE"),
+            ("2026-10-25", None, "ORANGE"),
+            ("2026-10-25", None, "COLOR_UNSPECIFIED"),
+        ] {
+            assert_eq!(
+                annotation_payload("Release", start, end, None, color).unwrap_err(),
+                ApiError::InvalidAnnotation
+            );
+        }
+        assert!(annotation_payload(&"a".repeat(61), "2026-10-25", None, None, "BLUE").is_err());
+        assert!(annotation_payload("x", "2026-10-25", None, Some(&"d".repeat(151)), "BLUE").is_err());
+    }
+
+    #[tokio::test]
+    async fn annotation_post_targets_admin_v1alpha_without_retry() {
+        let (url, handle) = once(r#"{"name":"properties/42/reportingDataAnnotations/1"}"#).await;
+        let c = GoogleClient::with_endpoints(Some("test-token".into()), &url, &url);
+        let body = annotation_payload("Release", "2026-10-25", None, None, "BLUE").unwrap();
+        assert_eq!(
+            c.create_annotation("42", body).await.unwrap()["name"],
+            "properties/42/reportingDataAnnotations/1"
+        );
+        let request = handle.await.unwrap();
+        assert!(request.starts_with("POST /v1alpha/properties/42/reportingDataAnnotations HTTP/1.1"));
+    }
 
     #[test]
     fn rejects_property_path_and_zero() {

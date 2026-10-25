@@ -16,6 +16,7 @@ name = "synmetra-progress"
 path = "src/bin/synmetra-progress.rs"
 
 [dependencies]
+chrono = { version = "0.4", default-features = false, features = ["std"] }
 axum = "0.8"
 subtle = "2"
 base64 = "0.22"
