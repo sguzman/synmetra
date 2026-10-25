@@ -69,7 +69,6 @@ fn parse_event_date(value: &str) -> Option<chrono::NaiveDate> {
         .ok()
 }
 
-
 /// Bounded pre/post landing-page query-parameter comparison.
 pub struct LandingShiftConfig {
     pub session_id: String,
@@ -1051,131 +1050,183 @@ impl ScratchState {
 
     /// Compare query-parameter key frequency before and after a release.
     /// No user SQL or external URL fetch is performed.
-    pub fn landing_param_shift(
-        &self,
-        config: &LandingShiftConfig,
-    ) -> Result<Value, String> {
+    pub fn landing_param_shift(&self, config: &LandingShiftConfig) -> Result<Value, String> {
         use std::collections::{HashMap, HashSet};
         let id = session_id(&config.session_id)?;
         let table = table_name(&config.table_name)?;
-        let date_column = table_name(
-            config.date_column.as_deref().unwrap_or("date_parsed")
-        )?;
+        let date_column = table_name(config.date_column.as_deref().unwrap_or("date_parsed"))?;
         let url_column = table_name(
-            config.landing_url_column.as_deref().unwrap_or("landingpageplusquerystring")
+            config
+                .landing_url_column
+                .as_deref()
+                .unwrap_or("landingpageplusquerystring"),
         )?;
-        let channel_column = config.channel_column.as_deref()
-            .map(table_name).transpose()?;
-        let source_column = config.source_medium_column.as_deref()
-            .map(table_name).transpose()?;
+        let channel_column = config
+            .channel_column
+            .as_deref()
+            .map(table_name)
+            .transpose()?;
+        let source_column = config
+            .source_medium_column
+            .as_deref()
+            .map(table_name)
+            .transpose()?;
         let top_n = config.top_n.unwrap_or(100);
         if top_n == 0 || top_n > 200 {
             return Err("top_n must be between 1 and 200".into());
         }
         let (start, release, post_start, end) = release_windows(
-            &config.release_date, config.pre_days,
-            config.transition_days, config.post_days
+            &config.release_date,
+            config.pre_days,
+            config.transition_days,
+            config.post_days,
         )?;
         let mut inner = self.guard()?;
         Self::expire(&mut inner);
-        let db = &inner.sessions.get(id).ok_or("Scratchpad session not found or expired")?.db;
-        let mut stmt = db.prepare(
-            "SELECT column_name FROM information_schema.columns
+        let db = &inner
+            .sessions
+            .get(id)
+            .ok_or("Scratchpad session not found or expired")?
+            .db;
+        let mut stmt = db
+            .prepare(
+                "SELECT column_name FROM information_schema.columns
              WHERE table_schema='main' AND table_name=?1
-             ORDER BY ordinal_position LIMIT 33"
-        ).map_err(|_| "Landing schema lookup failed")?;
-        let fields = stmt.query_map([table], |row| row.get::<_, String>(0))
+             ORDER BY ordinal_position LIMIT 33",
+            )
+            .map_err(|_| "Landing schema lookup failed")?;
+        let fields = stmt
+            .query_map([table], |row| row.get::<_, String>(0))
             .map_err(|_| "Landing schema lookup failed")?
             .collect::<Result<Vec<_>, _>>()
             .map_err(|_| "Landing schema lookup failed")?;
         let exists = |name: &str| fields.iter().any(|field| field.eq_ignore_ascii_case(name));
-        if fields.is_empty() || fields.len() > 32 || !exists(date_column)
+        if fields.is_empty()
+            || fields.len() > 32
+            || !exists(date_column)
             || !exists(url_column)
             || channel_column.is_some_and(|name| !exists(name))
             || source_column.is_some_and(|name| !exists(name))
         {
             return Err("Landing diagnostic columns are absent".into());
         }
-        let cast = |name: &str, max: usize| {
-            format!("substr(CAST(\"{name}\" AS VARCHAR),1,{max})")
-        };
-        let channel_sql = channel_column.map_or("'all'".to_owned(), |name| cast(name,129));
-        let source_sql = source_column.map_or("'all'".to_owned(), |name| cast(name,129));
+        let cast = |name: &str, max: usize| format!("substr(CAST(\"{name}\" AS VARCHAR),1,{max})");
+        let channel_sql = channel_column.map_or("'all'".to_owned(), |name| cast(name, 129));
+        let source_sql = source_column.map_or("'all'".to_owned(), |name| cast(name, 129));
         let sql = format!(
             "SELECT {},{},{channel_sql},{source_sql} FROM \"{table}\" LIMIT 20001",
-            cast(date_column,33), cast(url_column,2049)
+            cast(date_column, 33),
+            cast(url_column, 2049)
         );
-        let mut statement = db.prepare(&sql)
-            .map_err(|_| "Landing projection failed")?;
-        let rows = statement.query_map([], |row| {
-            Ok((
-                row.get::<_, Option<String>>(0)?,
-                row.get::<_, Option<String>>(1)?,
-                row.get::<_, Option<String>>(2)?,
-                row.get::<_, Option<String>>(3)?,
-            ))
-        }).map_err(|_| "Landing projection failed")?
+        let mut statement = db.prepare(&sql).map_err(|_| "Landing projection failed")?;
+        let rows = statement
+            .query_map([], |row| {
+                Ok((
+                    row.get::<_, Option<String>>(0)?,
+                    row.get::<_, Option<String>>(1)?,
+                    row.get::<_, Option<String>>(2)?,
+                    row.get::<_, Option<String>>(3)?,
+                ))
+            })
+            .map_err(|_| "Landing projection failed")?
             .collect::<Result<Vec<_>, _>>()
             .map_err(|_| "Landing projection returned invalid rows")?;
         if rows.len() > 20000 {
             return Err("Landing analysis scan exceeds 20000 rows".into());
         }
-        let mut groups: HashMap<(String,String,String),(usize,usize)> = HashMap::new();
+        let mut groups: HashMap<(String, String, String), (usize, usize)> = HashMap::new();
         let mut pre_rows = 0usize;
         let mut post_rows = 0usize;
         let mut ignored = 0usize;
-        for (date,url,channel,source) in rows {
+        for (date, url, channel, source) in rows {
             let Some(date) = date.as_deref().and_then(parse_event_date) else {
-                ignored += 1;continue;
+                ignored += 1;
+                continue;
             };
-            let phase = if date>=start && date<release {0}
-                else if date>=post_start && date<end {1}
-                else {continue};
-            let Some(url) = url else {ignored+=1;continue;};
-            if url.len()>2048 { return Err("Landing URL exceeds 2048-byte limit".into()); }
-            let channel = channel.unwrap_or_else(||"unknown".into());
-            let source = source.unwrap_or_else(||"unknown".into());
-            if channel.len()>128 || source.len()>128 {
+            let phase = if date >= start && date < release {
+                0
+            } else if date >= post_start && date < end {
+                1
+            } else {
+                continue;
+            };
+            let Some(url) = url else {
+                ignored += 1;
+                continue;
+            };
+            if url.len() > 2048 {
+                return Err("Landing URL exceeds 2048-byte limit".into());
+            }
+            let channel = channel.unwrap_or_else(|| "unknown".into());
+            let source = source.unwrap_or_else(|| "unknown".into());
+            if channel.len() > 128 || source.len() > 128 {
                 return Err("Channel/source segment exceeds 128-byte limit".into());
             }
-            if phase==0 {pre_rows+=1;} else {post_rows+=1;}
-            let Some((_, query))=url.split_once('?') else {continue;};
+            if phase == 0 {
+                pre_rows += 1;
+            } else {
+                post_rows += 1;
+            }
+            let Some((_, query)) = url.split_once('?') else {
+                continue;
+            };
             let query = query.split('#').next().unwrap_or("");
             let mut seen = HashSet::new();
             for field in query.split('&').take(33) {
                 let key = field.split('=').next().unwrap_or("").trim();
-                if key.is_empty(){continue;}
-                if key.len()>64 || !key.bytes().all(|b|
-                    b.is_ascii_alphanumeric() || b == b'_' || b == b'-'
-                ){
+                if key.is_empty() {
                     continue;
                 }
-                if !seen.insert(key.to_owned()) {continue;}
-                if groups.len()>=2000
-                    && !groups.contains_key(&(key.to_owned(),channel.clone(),source.clone()))
+                if key.len() > 64
+                    || !key
+                        .bytes()
+                        .all(|b| b.is_ascii_alphanumeric() || b == b'_' || b == b'-')
+                {
+                    continue;
+                }
+                if !seen.insert(key.to_owned()) {
+                    continue;
+                }
+                if groups.len() >= 2000
+                    && !groups.contains_key(&(key.to_owned(), channel.clone(), source.clone()))
                 {
                     return Err("Landing parameter group cap of 2000 exceeded".into());
                 }
-                let entry=groups.entry((key.to_owned(),channel.clone(),source.clone()))
-                    .or_insert((0,0));
-                if phase==0 {entry.0+=1;} else {entry.1+=1;}
+                let entry = groups
+                    .entry((key.to_owned(), channel.clone(), source.clone()))
+                    .or_insert((0, 0));
+                if phase == 0 {
+                    entry.0 += 1;
+                } else {
+                    entry.1 += 1;
+                }
             }
         }
-        let mut ranked:Vec<_>=groups.into_iter().map(|((name,channel,source),(pre,post))|{
-            let delta = post as i64 - pre as i64;
-            json!({"parameter":name,"channel":channel,"source_medium":source,
+        let mut ranked: Vec<_> = groups
+            .into_iter()
+            .map(|((name, channel, source), (pre, post))| {
+                let delta = post as i64 - pre as i64;
+                json!({"parameter":name,"channel":channel,"source_medium":source,
                    "pre_occurrences":pre,"post_occurrences":post,"delta":delta})
-        }).collect();
-        ranked.sort_by(|a,b|{
-            b["delta"].as_i64().unwrap_or(0).unsigned_abs()
+            })
+            .collect();
+        ranked.sort_by(|a, b| {
+            b["delta"]
+                .as_i64()
+                .unwrap_or(0)
+                .unsigned_abs()
                 .cmp(&a["delta"].as_i64().unwrap_or(0).unsigned_abs())
                 .then_with(|| a["parameter"].as_str().cmp(&b["parameter"].as_str()))
                 .then_with(|| a["channel"].as_str().cmp(&b["channel"].as_str()))
-                .then_with(|| a["source_medium"].as_str().cmp(&b["source_medium"].as_str()))
+                .then_with(|| {
+                    a["source_medium"]
+                        .as_str()
+                        .cmp(&b["source_medium"].as_str())
+                })
         });
         let total = ranked.len();
         ranked.truncate(top_n);
-        let output=json!({
+        let output = json!({
             "session_id":id,"table_name":table,
             "release_date":config.release_date,
             "baseline_start":start.to_string(),
@@ -1186,7 +1237,7 @@ impl ScratchState {
             "shifts":ranked,
             "caution":"Parameter-key counts measure observed URL prevalence, not causal attribution."
         });
-        if serde_json::to_vec(&output).map_or(true,|v|v.len()>256*1024){
+        if serde_json::to_vec(&output).map_or(true, |v| v.len() > 256 * 1024) {
             return Err("Landing shift report exceeds 256 KiB".into());
         }
         Ok(output)
@@ -1275,9 +1326,9 @@ mod tests {
 
     #[test]
     fn landing_shift_finds_bounded_pre_post_parameter_changes() {
-        let state=ScratchState::new();
+        let state = ScratchState::new();
         state.open("landing_test").unwrap();
-        let payload=json!({
+        let payload = json!({
             "dimensionHeaders":[
                 {"name":"date_parsed"},
                 {"name":"landingpageplusquerystring"},
@@ -1297,31 +1348,44 @@ mod tests {
                     {"value":"Organic"},{"value":"google/organic"}],"metricValues":[]}
             ]
         });
-        state.ingest_ga_response("landing_test","landing",&payload,false).unwrap();
-        let mut config=LandingShiftConfig{
-            session_id:"landing_test".into(),table_name:"landing".into(),
-            release_date:"2026-10-25".into(),
-            date_column:None,landing_url_column:None,
-            channel_column:Some("channel".into()),
-            source_medium_column:Some("source_medium".into()),
-            pre_days:Some(14),transition_days:Some(1),post_days:Some(7),
-            top_n:Some(10),
+        state
+            .ingest_ga_response("landing_test", "landing", &payload, false)
+            .unwrap();
+        let mut config = LandingShiftConfig {
+            session_id: "landing_test".into(),
+            table_name: "landing".into(),
+            release_date: "2026-10-25".into(),
+            date_column: None,
+            landing_url_column: None,
+            channel_column: Some("channel".into()),
+            source_medium_column: Some("source_medium".into()),
+            pre_days: Some(14),
+            transition_days: Some(1),
+            post_days: Some(7),
+            top_n: Some(10),
         };
-        let report=state.landing_param_shift(&config).unwrap();
-        assert_eq!(report["pre_rows"],2);
-        assert_eq!(report["post_rows"],1);
-        assert!(report["shifts"].as_array().unwrap().iter().any(|s|
-            s["parameter"]=="utm_campaign" && s["delta"]==-2
-        ));
-        assert!(report["shifts"].as_array().unwrap().iter().any(|s|
-            s["parameter"]=="gclid" && s["delta"]==1
-        ));
-        config.top_n=Some(0);
+        let report = state.landing_param_shift(&config).unwrap();
+        assert_eq!(report["pre_rows"], 2);
+        assert_eq!(report["post_rows"], 1);
+        assert!(report["shifts"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|s| s["parameter"] == "utm_campaign" && s["delta"] == -2));
+        assert!(report["shifts"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|s| s["parameter"] == "gclid" && s["delta"] == 1));
+        config.top_n = Some(0);
         assert!(state.landing_param_shift(&config).is_err());
-        config.top_n=Some(10);
-        config.channel_column=Some("not-a-column".into());
+        config.top_n = Some(10);
+        config.channel_column = Some("not-a-column".into());
         assert!(state.landing_param_shift(&config).is_err());
-        assert_eq!(state.summarize_table("landing_test","landing").unwrap()["row_count"],3);
+        assert_eq!(
+            state.summarize_table("landing_test", "landing").unwrap()["row_count"],
+            3
+        );
     }
 
     #[test]

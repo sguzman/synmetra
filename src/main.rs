@@ -1381,24 +1381,31 @@ impl Synmetra {
         Parameters(args): Parameters<ScratchLandingArgs>,
     ) -> CallToolResult {
         if args.cursor.is_some() || args.output_mode.as_deref().is_some_and(|v| v != "rows") {
-            return local_result(Err("Landing diagnostics do not yet support cursors or alternate output modes".into()));
+            return local_result(Err(
+                "Landing diagnostics do not yet support cursors or alternate output modes".into(),
+            ));
         }
         let config = scratchpad::LandingShiftConfig {
-            session_id: args.session_id, table_name: args.table_name,
-            release_date: args.release_date, date_column: args.date_column,
+            session_id: args.session_id,
+            table_name: args.table_name,
+            release_date: args.release_date,
+            date_column: args.date_column,
             landing_url_column: args.landing_url_column,
             channel_column: args.channel_column,
             source_medium_column: args.source_medium_column,
-            pre_days: args.pre_days, transition_days: args.transition_days,
-            post_days: args.post_days, top_n: args.top_n,
+            pre_days: args.pre_days,
+            transition_days: args.transition_days,
+            post_days: args.post_days,
+            top_n: args.top_n,
         };
         let _summary_only = args.summary_only;
         local_result(
-            self.scratchpad.as_ref().expect("scratchpad capability required")
-                .landing_param_shift(&config)
+            self.scratchpad
+                .as_ref()
+                .expect("scratchpad capability required")
+                .landing_param_shift(&config),
         )
     }
-
 }
 
 #[tool_handler(
@@ -1803,21 +1810,42 @@ mod tests {
     #[test]
     fn landing_shift_required_fields_match_pinned_upstream_contract() {
         use std::collections::BTreeSet;
-        let upstream: Value=serde_json::from_str(
-            include_str!("../spec/upstream/sednalabs-tool-schema.v1.json")
-        ).unwrap();
-        let expected_tool=upstream["tools"].as_array().unwrap().iter()
-            .find(|t|t["name"]=="scratchpad_landing_param_shift_report").unwrap();
-        let server=Synmetra::new(GoogleClient::new(None),false).enable_scratchpad();
-        let native=server.router.list_all().into_iter()
-            .find(|tool|tool.name=="scratchpad_landing_param_shift_report").unwrap();
-        let expected:BTreeSet<_>=expected_tool["inputSchema"]["required"]
-            .as_array().into_iter().flatten().filter_map(Value::as_str).collect();
-        let actual:BTreeSet<_>=native.input_schema.get("required")
-            .and_then(Value::as_array).into_iter().flatten()
-            .filter_map(Value::as_str).collect();
-        assert_eq!(expected,actual);
-        assert_eq!(native.annotations.as_ref().unwrap().read_only_hint,Some(true));
+        let upstream: Value = serde_json::from_str(include_str!(
+            "../spec/upstream/sednalabs-tool-schema.v1.json"
+        ))
+        .unwrap();
+        let expected_tool = upstream["tools"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|t| t["name"] == "scratchpad_landing_param_shift_report")
+            .unwrap();
+        let server = Synmetra::new(GoogleClient::new(None), false).enable_scratchpad();
+        let native = server
+            .router
+            .list_all()
+            .into_iter()
+            .find(|tool| tool.name == "scratchpad_landing_param_shift_report")
+            .unwrap();
+        let expected: BTreeSet<_> = expected_tool["inputSchema"]["required"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .filter_map(Value::as_str)
+            .collect();
+        let actual: BTreeSet<_> = native
+            .input_schema
+            .get("required")
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+            .filter_map(Value::as_str)
+            .collect();
+        assert_eq!(expected, actual);
+        assert_eq!(
+            native.annotations.as_ref().unwrap().read_only_hint,
+            Some(true)
+        );
     }
 
     #[cfg(feature = "scratchpad")]
