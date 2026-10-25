@@ -278,6 +278,7 @@ impl GoogleClient {
         Err(ApiError::TooManyPages)
     }
 
+    #[cfg(test)]
     pub async fn account_summaries(&self) -> Result<Value, ApiError> {
         self.collection("/accountSummaries", "accountSummaries", false)
             .await
@@ -313,6 +314,7 @@ impl GoogleClient {
         self.get(&self.admin_base, &path, None).await
     }
 
+    #[cfg(test)]
     pub async fn ads_links(&self, property: &str) -> Result<Value, ApiError> {
         let path = format!("/{}/googleAdsLinks", property_name(property)?);
         self.collection(&path, "googleAdsLinks", false).await
