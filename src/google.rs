@@ -433,6 +433,14 @@ impl GoogleClient {
                 let reports = response["reports"]
                     .as_array()
                     .ok_or(ApiError::InvalidResponse)?;
+                if reports.len()
+                    != request["requests"]
+                        .as_array()
+                        .ok_or(ApiError::InvalidRequest)?
+                        .len()
+                {
+                    return Err(ApiError::InvalidResponse);
+                }
                 for report in reports {
                     validate_google_report_response(report)?;
                 }
@@ -1808,6 +1816,30 @@ mod tests {
                 .await
                 .unwrap()
                 .starts_with(&format!("POST /v1beta/properties/77:{method} HTTP/1.1")));
+        }
+    }
+
+    #[tokio::test]
+    async fn batch_reports_reject_missing_or_extra_provider_results() {
+        for payload in [
+            r#"{\"reports\":[]}"#,
+            r#"{\"reports\":[{\"rowCount\":0},{\"rowCount\":0}]}"#,
+            r#"{\"reports\":[{\"rowCount\":-1}]}"#,
+            r#"{\"reports\":\"invalid\"}"#,
+        ] {
+            let (url, handle) = once(payload).await;
+            let client = GoogleClient::with_endpoints(Some("fixture-token".into()), &url, &url);
+            let request = json!({
+                "requests": [{
+                    "metrics": [{"name":"activeUsers"}],
+                    "dateRanges": [{"startDate":"yesterday","endDate":"today"}]
+                }]
+            });
+            assert_eq!(
+                client.data_operation("42", request, "batchRunReports").await,
+                Err(ApiError::InvalidResponse)
+            );
+            assert!(handle.await.unwrap().contains("properties/42:batchRunReports"));
         }
     }
 
