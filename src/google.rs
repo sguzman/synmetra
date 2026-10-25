@@ -221,6 +221,26 @@ impl GoogleClient {
         self.send(self.http.post(url).json(&request)).await
     }
 
+    pub async fn alpha_report(&self, property: &str, request: Value, funnel: bool) -> Result<Value, ApiError> {
+        let property = property_name(property)?;
+        Self::validate_body(&request)?;
+        if funnel {
+            let steps = request["funnel"]["steps"].as_array().ok_or(ApiError::InvalidRequest)?;
+            if steps.is_empty() || steps.len() > 10 {
+                return Err(ApiError::InvalidRequest);
+            }
+        } else if request.get("conversionSpec").is_none()
+            && !request["metrics"].as_array().is_some_and(|metrics|
+                metrics.iter().any(|metric| metric["name"].as_str().is_some_and(|name| name.to_lowercase().contains("conversion")))
+            )
+        {
+            return Err(ApiError::InvalidRequest);
+        }
+        let method = if funnel { "runFunnelReport" } else { "runReport" };
+        let url = format!("{}/v1alpha/{property}:{method}", self.data_base);
+        self.send(self.http.post(url).json(&request)).await
+    }
+
     pub async fn access_report(&self, entity: &str, request: Value, account: bool) -> Result<Value, ApiError> {
         let entity = if account { account_name(entity)? } else { property_name(entity)? };
         Self::validate_body(&request)?;
@@ -370,6 +390,28 @@ mod tests {
             assert_eq!(c.access_report(id, json!({"dimensions":[]}), account).await.unwrap()["rowCount"], 0);
             assert!(handle.await.unwrap().starts_with(&format!("POST /v1beta/{id}:runAccessReport HTTP/1.1")));
         }
+    }
+
+    #[tokio::test]
+    async fn alpha_conversions_and_funnel_use_expected_methods() {
+        for (funnel, method, request) in [
+            (true, "runFunnelReport", json!({"funnel":{"steps":[{"name":"Home","filterExpression":{}}]}})),
+            (false, "runReport", json!({"conversionSpec":{"attributionModel":"LAST_CLICK"}})),
+        ] {
+            let (url, handle) = once(r#"{"rowCount":0}"#).await;
+            let c = GoogleClient::with_endpoints(Some("token".into()), &url, &url);
+            assert_eq!(c.alpha_report("42", request, funnel).await.unwrap()["rowCount"], 0);
+            assert!(handle.await.unwrap().starts_with(&format!("POST /v1alpha/properties/42:{method} HTTP/1.1")));
+        }
+    }
+
+    #[tokio::test]
+    async fn rejects_invalid_funnel_and_missing_conversion_spec() {
+        let c = GoogleClient::new(Some("token".into()));
+        for request in [json!({}), json!({"funnel":{"steps":[]}}), json!({"funnel":{"steps":vec![json!({});11]}})] {
+            assert_eq!(c.alpha_report("42", request, true).await.unwrap_err(), ApiError::InvalidRequest);
+        }
+        assert_eq!(c.alpha_report("42", json!({"metrics":[{"name":"activeUsers"}]}), false).await.unwrap_err(), ApiError::InvalidRequest);
     }
 
     #[tokio::test]

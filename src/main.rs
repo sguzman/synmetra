@@ -139,6 +139,16 @@ impl Synmetra {
         result(self.api.custom_definitions(&args.property_id).await)
     }
 
+    #[tool(description = "Run Google Analytics Data API v1alpha conversion reporting with conversionSpec or conversion metrics. Requires an eligible property.")]
+    async fn run_conversions_report(&self, Parameters(args): Parameters<RawPropertyRequestArgs>) -> CallToolResult {
+        result(self.api.alpha_report(&args.property_id, args.request, false).await)
+    }
+
+    #[tool(description = "Run Google Analytics Data API v1alpha funnel reporting with 1-10 funnel steps.")]
+    async fn run_funnel_report(&self, Parameters(args): Parameters<RawPropertyRequestArgs>) -> CallToolResult {
+        result(self.api.alpha_report(&args.property_id, args.request, true).await)
+    }
+
     #[tool(description = "Run a GA4 pivot report using the provider's RunPivotReportRequest JSON.")]
     async fn run_pivot_report(&self, Parameters(args): Parameters<RawPropertyRequestArgs>) -> CallToolResult {
         result(self.api.data_operation(&args.property_id, args.request, "runPivotReport").await)
@@ -162,6 +172,25 @@ impl Synmetra {
     #[tool(description = "Run an account-level data access report (requires Google Analytics Administrator privileges).")]
     async fn run_account_access_report(&self, Parameters(args): Parameters<RawAccountRequestArgs>) -> CallToolResult {
         result(self.api.access_report(&args.account_id, args.request, true).await)
+    }
+
+    #[tool(description = "Preview normalized historical report JSON offline without sending data to Google.")]
+    async fn preview_report_request(&self, Parameters(args): Parameters<ReportArgs>) -> CallToolResult {
+        let validation = google::property_name(&args.property_id).and_then(|_| report_request(
+            Some(args.date_ranges),
+            args.dimensions,
+            args.metrics,
+            vec![
+                ("dimensionFilter", args.dimension_filter),
+                ("metricFilter", args.metric_filter),
+                ("orderBys", args.order_bys.map(|x| json!(x))),
+                ("limit", args.limit.map(|x| json!(x.to_string()))),
+                ("offset", args.offset.map(|x| json!(x.to_string()))),
+                ("currencyCode", args.currency_code.map(|x| json!(x))),
+                ("keepEmptyRows", args.keep_empty_rows.map(|x| json!(x)))
+            ],
+        ));
+        result(validation.map(|body| json!({"request":body, "provider_called":false})))
     }
 
     #[tool(description = "Run a historical Google Analytics Data API report with metric and dimension names.")]
@@ -245,8 +274,8 @@ mod tests {
             .into_iter()
             .map(|tool| tool.name.to_string())
             .collect();
-        assert_eq!(names.len(), 14);
-        for name in ["get_account_summaries", "get_property_details", "get_account_data_sharing_settings", "get_property_data_retention_settings", "list_google_ads_links", "list_property_annotations", "get_custom_dimensions_and_metrics", "run_report", "run_realtime_report", "run_pivot_report", "batch_run_reports", "check_report_compatibility", "run_property_access_report", "run_account_access_report"] {
+        assert_eq!(names.len(), 17);
+        for name in ["get_account_summaries", "get_property_details", "preview_report_request", "run_conversions_report", "run_funnel_report", "get_account_data_sharing_settings", "get_property_data_retention_settings", "list_google_ads_links", "list_property_annotations", "get_custom_dimensions_and_metrics", "run_report", "run_realtime_report", "run_pivot_report", "batch_run_reports", "check_report_compatibility", "run_property_access_report", "run_account_access_report"] {
             assert!(names.contains(name), "missing {name}");
         }
         assert!(!names.contains("create_property_annotation"));
@@ -262,7 +291,7 @@ mod tests {
         });
         let client = ().serve(client_stream).await.unwrap();
         let tools = client.list_all_tools().await.unwrap();
-        assert_eq!(tools.len(), 14);
+        assert_eq!(tools.len(), 17);
         assert!(tools.iter().all(|tool| tool.name != "create_property_annotation"));
         let call = client.call_tool(CallToolRequestParams::new("get_account_summaries")).await.unwrap();
         assert_eq!(call.is_error, Some(true));
@@ -271,6 +300,26 @@ mod tests {
         assert!(!message.contains("test-token"));
         client.cancel().await.unwrap();
         worker.await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn offline_preview_rejects_bad_metrics_without_credentials() {
+        let server = Synmetra { api: GoogleClient::new(None) };
+        let bad = ReportArgs {
+            property_id: "55".into(),
+            date_ranges: vec![json!({"startDate":"7daysAgo","endDate":"today"})],
+            dimensions: vec![],
+            metrics: vec![],
+            dimension_filter: None,
+            metric_filter: None,
+            order_bys: None,
+            limit: None,
+            offset: None,
+            currency_code: None,
+            keep_empty_rows: None,
+        };
+        let result = server.preview_report_request(Parameters(bad)).await;
+        assert_eq!(result.is_error, Some(true));
     }
 
     #[test]
