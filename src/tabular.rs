@@ -215,6 +215,7 @@ pub fn project(
         "dimension_",
     )?;
     let metrics = columns(&Value::Object(provider.clone()), "metricHeaders", "metric_")?;
+    let dimension_count = dimensions.len();
     let mut names = Vec::new();
     names.extend(
         dimensions
@@ -277,15 +278,22 @@ pub fn project(
         }
         let mut object = Map::new();
         let mut tuple = Vec::new();
-        for (name, cell) in names
+        for (index, (name, cell)) in names
             .iter()
             .zip(dimension_values.iter().chain(metric_values.iter()))
+            .enumerate()
         {
             let value = cell
                 .get("value")
                 .cloned()
                 .ok_or(ApiError::InvalidResponse)?;
-            let clipped_value = clip_value(value, controls.max_cell_chars, &mut clipped);
+            // Metric values are decimal/int64 strings in GA4. Shortening them
+            // would silently change their numeric meaning and precision.
+            let clipped_value = if index < dimension_count {
+                clip_value(value, controls.max_cell_chars, &mut clipped)
+            } else {
+                value
+            };
             object.insert(name.clone(), clipped_value.clone());
             tuple.push(clipped_value);
         }
@@ -449,6 +457,43 @@ mod tests {
             project(&fixture(), tuples, false, None).unwrap().data["row_count"],
             2
         );
+    }
+
+    #[test]
+    fn numeric_metric_precision_and_currency_metadata_survive_text_clipping() {
+        let response = json!({
+            "dimensionHeaders":[{"name":"country"}],
+            "metricHeaders":[{"name":"totalRevenue","type":"TYPE_CURRENCY"}],
+            "rows":[
+                {
+                    "dimensionValues":[{"value":"México, Estados Unidos"}],
+                    "metricValues":[{"value":"12345678901234567890.123456789"}]
+                }
+            ],
+            "rowCount":1,
+            "metadata":{"currencyCode":"MXN","timeZone":"America/Mexico_City"}
+        });
+        let options = Controls {
+            output_mode: Some(OutputMode::Rows),
+            summary_only: false,
+            max_rows: Some(1),
+            max_cell_chars: Some(3),
+            cursor_supplied: false,
+        };
+        let output = project(&response, options, false, None).unwrap();
+        assert_eq!(output.data[0]["country"], "Méx");
+        assert_eq!(
+            output.data[0]["totalRevenue"],
+            "12345678901234567890.123456789"
+        );
+        assert_eq!(output.meta["cell_clipping"]["clipped_cells"], 1);
+        assert_eq!(output.meta["ga4"]["metadata"], response["metadata"]);
+        assert_eq!(output.meta["columns"][1]["logical_type"], "number");
+
+        let mut tuples = options;
+        tuples.output_mode = Some(OutputMode::Tuples);
+        let tuple = project(&response, tuples, false, None).unwrap();
+        assert_eq!(tuple.data[0][1], "12345678901234567890.123456789");
     }
 
     #[test]
