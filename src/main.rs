@@ -2259,6 +2259,86 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn historical_cursor_pages_remain_query_bound_and_never_repeat_rows() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        use tokio::net::TcpListener;
+
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let endpoint = format!("http://{}", listener.local_addr().unwrap());
+        let responder = tokio::spawn(async move {
+            for (page, country) in ["Mexico", "Canada"].into_iter().enumerate() {
+                let (mut stream, _) = listener.accept().await.unwrap();
+                let mut buffer = [0_u8; 4096];
+                let received = stream.read(&mut buffer).await.unwrap();
+                let request = String::from_utf8_lossy(&buffer[..received]);
+                assert!(request.contains("properties/42:runReport"));
+                assert!(request.contains(r#""limit":"1""#));
+                if page == 1 {
+                    assert!(request.contains(r#""offset":"1""#));
+                } else {
+                    assert!(!request.contains(r#""offset":"1""#));
+                }
+                let body = json!({
+                    "dimensionHeaders":[{"name":"country"}],
+                    "metricHeaders":[{"name":"activeUsers"}],
+                    "rows":[{
+                        "dimensionValues":[{"value":country}],
+                        "metricValues":[{"value":"12"}]
+                    }],
+                    "rowCount":2
+                })
+                .to_string();
+                let response = format!(
+                    "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                    body.len(),
+                    body
+                );
+                stream.write_all(response.as_bytes()).await.unwrap();
+            }
+        });
+        let server = Synmetra::new(
+            GoogleClient::with_endpoints(Some("private-test-token".into()), &endpoint, &endpoint),
+            false,
+        );
+        let mut fields = json!({
+            "property_id":"42",
+            "date_ranges":[{"start_date":"yesterday","end_date":"today"}],
+            "dimensions":["country"],
+            "metrics":["activeUsers"],
+            "output_mode":"rows",
+            "max_rows":1
+        });
+        let first = server
+            .run_report(Parameters(serde_json::from_value(fields.clone()).unwrap()))
+            .await;
+        assert_eq!(first.is_error, Some(false));
+        let first = first.structured_content.unwrap();
+        assert_eq!(first["data"][0]["country"], "Mexico");
+        let cursor = first["meta"]["next_cursor"].as_str().unwrap().to_owned();
+        fields["cursor"] = json!(cursor);
+        let second = server
+            .run_report(Parameters(serde_json::from_value(fields.clone()).unwrap()))
+            .await;
+        responder.await.unwrap();
+        assert_eq!(second.is_error, Some(false));
+        let second = second.structured_content.unwrap();
+        assert_eq!(second["data"][0]["country"], "Canada");
+        assert!(second["meta"]["next_cursor"].is_null());
+        assert_eq!(second["meta"]["row_count_total"], 2);
+        assert!(!second.to_string().contains("private-test-token"));
+
+        fields["metrics"] = json!(["screenPageViews"]);
+        let rejected = server
+            .run_report(Parameters(serde_json::from_value(fields).unwrap()))
+            .await;
+        assert_eq!(rejected.is_error, Some(true));
+        assert_eq!(
+            rejected.structured_content.unwrap()["error"]["code"],
+            "INVALID_REQUEST"
+        );
+    }
+
+    #[tokio::test]
     async fn historical_report_opt_in_projection_preserves_metadata_and_previews_offline() {
         use tokio::io::{AsyncReadExt, AsyncWriteExt};
         use tokio::net::TcpListener;
