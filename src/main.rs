@@ -191,6 +191,80 @@ struct ConversionArgs {
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
+struct PivotArgs {
+    property_id: String,
+    date_ranges: Vec<Value>,
+    dimensions: Vec<String>,
+    metrics: Vec<String>,
+    pivots: Vec<Value>,
+    #[serde(default)]
+    dimension_filter: Option<Value>,
+    #[serde(default)]
+    metric_filter: Option<Value>,
+    #[serde(default)]
+    order_bys: Option<Vec<Value>>,
+    #[serde(default)]
+    currency_code: Option<String>,
+    #[serde(default)]
+    keep_empty_rows: Option<bool>,
+    #[serde(default)]
+    return_property_quota: bool,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+struct BatchArgs {
+    property_id: String,
+    requests: Vec<Value>,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+struct CompatibilityArgs {
+    property_id: String,
+    dimensions: Vec<String>,
+    metrics: Vec<String>,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+struct PropertyAccessArgs {
+    property_id: String,
+    date_ranges: Vec<Value>,
+    dimensions: Vec<String>,
+    metrics: Vec<String>,
+    #[serde(default)]
+    dimension_filter: Option<Value>,
+    #[serde(default)]
+    metric_filter: Option<Value>,
+    #[serde(default)]
+    order_bys: Option<Vec<Value>>,
+    #[serde(default)]
+    limit: Option<u32>,
+    #[serde(default)]
+    offset: Option<u64>,
+    #[serde(default)]
+    time_zone: Option<String>,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+struct AccountAccessArgs {
+    account_id: String,
+    date_ranges: Vec<Value>,
+    dimensions: Vec<String>,
+    metrics: Vec<String>,
+    #[serde(default)]
+    dimension_filter: Option<Value>,
+    #[serde(default)]
+    metric_filter: Option<Value>,
+    #[serde(default)]
+    order_bys: Option<Vec<Value>>,
+    #[serde(default)]
+    limit: Option<u32>,
+    #[serde(default)]
+    offset: Option<u64>,
+    #[serde(default)]
+    time_zone: Option<String>,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
 struct ReportArgs {
     /// Positive numeric GA4 property ID or canonical properties/<id>.
     property_id: String,
