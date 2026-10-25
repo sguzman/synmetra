@@ -4,11 +4,14 @@
 use chrono::{Datelike, NaiveDate};
 use futures_util::StreamExt;
 use serde_json::{json, Map, Value};
-use std::{fmt, time::Duration};
+use std::{collections::HashSet, fmt, time::Duration};
 
 const ADMIN: &str = "https://analyticsadmin.googleapis.com";
 const DATA: &str = "https://analyticsdata.googleapis.com";
 const MAX_RESPONSE_BYTES: usize = 4 * 1024 * 1024;
+const MAX_COLLECTION_BYTES: usize = 16 * 1024 * 1024;
+const MAX_COLLECTION_ITEMS: usize = 10_000;
+const MAX_PAGE_TOKEN_BYTES: usize = 1024;
 const MAX_PAGES: usize = 100;
 
 #[derive(Clone)]
@@ -29,6 +32,7 @@ pub enum ApiError {
     ResponseTooLarge,
     InvalidResponse,
     TooManyPages,
+    CollectionTooLarge,
     AuthenticationFailed,
     InvalidAnnotation,
 }
@@ -44,6 +48,7 @@ impl fmt::Display for ApiError {
             Self::ResponseTooLarge => write!(f, "Google Analytics response exceeded the 4 MiB safety limit."),
             Self::InvalidResponse => write!(f, "Google Analytics response was not valid JSON or had an invalid pagination contract."),
             Self::TooManyPages => write!(f, "Google Analytics pagination exceeded the 100-page safety limit."),
+            Self::CollectionTooLarge => write!(f, "Google Analytics collection exceeded the 10,000-item or 16 MiB safety limit."),
             Self::AuthenticationFailed => write!(f, "Synmetra OAuth credentials could not be loaded or refreshed. Run synmetra auth status, then login again if necessary."),
             Self::InvalidAnnotation => write!(f, "Invalid annotation: check title, dates, description and allowed color."),
         }
@@ -204,12 +209,20 @@ impl GoogleClient {
         let path = format!("/{}{path}", if alpha { "v1alpha" } else { "v1beta" });
         let mut output = Vec::new();
         let mut next: Option<String> = None;
+        let mut tokens = HashSet::new();
+        let mut payload_bytes = 0usize;
         for _ in 0..MAX_PAGES {
             let page = self.get(base, &path, next.as_deref()).await?;
             if let Some(items) = page.get(field) {
-                let Some(items) = items.as_array() else {
-                    return Err(ApiError::InvalidResponse);
-                };
+                let items = items.as_array().ok_or(ApiError::InvalidResponse)?;
+                let bytes = serde_json::to_vec(items)
+                    .map_err(|_| ApiError::InvalidResponse)?.len();
+                if output.len().saturating_add(items.len()) > MAX_COLLECTION_ITEMS
+                    || payload_bytes.saturating_add(bytes) > MAX_COLLECTION_BYTES
+                {
+                    return Err(ApiError::CollectionTooLarge);
+                }
+                payload_bytes += bytes;
                 output.extend_from_slice(items);
             }
             next = page
@@ -217,7 +230,11 @@ impl GoogleClient {
                 .and_then(Value::as_str)
                 .filter(|s| !s.is_empty())
                 .map(ToOwned::to_owned);
-            if next.is_none() {
+            if let Some(token) = next.as_ref() {
+                if token.len() > MAX_PAGE_TOKEN_BYTES || !tokens.insert(token.clone()) {
+                    return Err(ApiError::InvalidResponse);
+                }
+            } else {
                 return Ok(json!({field: output}));
             }
         }
@@ -1244,6 +1261,70 @@ mod tests {
             received
         });
         (format!("http://{addr}"), handle)
+    }
+
+    #[tokio::test]
+    async fn account_pagination_collects_pages_and_rejects_replayed_tokens() {
+        async fn serve(pages: Vec<&'static str>) -> (String, tokio::task::JoinHandle<Vec<String>>) {
+            let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+            let address = listener.local_addr().unwrap();
+            let handle = tokio::spawn(async move {
+                let mut requests = Vec::new();
+                for response in pages {
+                    let (mut socket, _) = listener.accept().await.unwrap();
+                    let mut raw = [0u8; 8192];
+                    let count = socket.read(&mut raw).await.unwrap();
+                    requests.push(String::from_utf8_lossy(&raw[..count]).into_owned());
+                    let reply = format!(
+                        "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                        response.len(), response
+                    );
+                    socket.write_all(reply.as_bytes()).await.unwrap();
+                }
+                requests
+            });
+            (format!("http://{address}"), handle)
+        }
+        let (url, handle) = serve(vec![
+            r#"{"accountSummaries":[{"name":"accounts/1"}],"nextPageToken":"cursor2"}"#,
+            r#"{"accountSummaries":[{"name":"accounts/2"}]}"#
+        ]).await;
+        let client = GoogleClient::with_endpoints(Some("mock".into()), &url, &url);
+        let response = client.account_summaries().await.unwrap();
+        assert_eq!(response["accountSummaries"].as_array().unwrap().len(), 2);
+        let requests = handle.await.unwrap();
+        assert!(requests[0].starts_with("GET /v1beta/accountSummaries HTTP/1.1"));
+        assert!(requests[1].starts_with("GET /v1beta/accountSummaries?pageToken=cursor2 HTTP/1.1"));
+
+        let (url, handle) = serve(vec![
+            r#"{"accountSummaries":[],"nextPageToken":"cycle"}"#,
+            r#"{"accountSummaries":[],"nextPageToken":"cycle"}"#
+        ]).await;
+        let client = GoogleClient::with_endpoints(Some("mock".into()), &url, &url);
+        assert_eq!(client.account_summaries().await.unwrap_err(), ApiError::InvalidResponse);
+        assert_eq!(handle.await.unwrap().len(), 2);
+    }
+
+    #[tokio::test]
+    async fn account_collection_rejects_unbounded_item_count() {
+        let payload = json!({"accountSummaries":vec![json!({"name":"accounts/1"});10_001]})
+            .to_string();
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let handle = tokio::spawn(async move {
+            let (mut socket, _) = listener.accept().await.unwrap();
+            let mut buf = [0u8; 4096];
+            socket.read(&mut buf).await.unwrap();
+            let reply = format!(
+                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                payload.len(), payload
+            );
+            socket.write_all(reply.as_bytes()).await.unwrap();
+        });
+        let url = format!("http://{address}");
+        let client = GoogleClient::with_endpoints(Some("mock".into()), &url, &url);
+        assert_eq!(client.account_summaries().await.unwrap_err(), ApiError::CollectionTooLarge);
+        handle.await.unwrap();
     }
 
     #[tokio::test]
