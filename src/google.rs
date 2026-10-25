@@ -383,7 +383,7 @@ impl GoogleClient {
         }))
     }
 
-    fn validate_body(request: &Value) -> Result<(), ApiError> {
+    pub(crate) fn validate_body(request: &Value) -> Result<(), ApiError> {
         if !request.is_object()
             || serde_json::to_vec(request).map_or(true, |bytes| bytes.len() > 64 * 1024)
         {
@@ -989,7 +989,9 @@ pub fn report_request(
             request.insert(name.to_owned(), val);
         }
     }
-    Ok(Value::Object(request))
+    let body = Value::Object(request);
+    GoogleClient::validate_body(&body)?;
+    Ok(body)
 }
 
 #[cfg(test)]
@@ -1312,6 +1314,39 @@ mod tests {
         assert_eq!(account_name("123").unwrap(), "accounts/123");
         assert_eq!(account_name("accounts/123").unwrap(), "accounts/123");
         assert!(account_name("properties/5").is_err());
+    }
+
+    #[test]
+    fn historical_report_request_rejects_oversized_options_and_deep_filters() {
+        // This check must run *before* network access, including offline previews.
+        let huge_order_bys = (0..5000)
+            .map(|index| json!({"dimension":{"dimensionName":format!("field{index}")}}))
+            .collect::<Vec<_>>();
+        let large = report_request(
+            Some(vec![json!({"startDate":"yesterday","endDate":"today"})]),
+            vec!["country".into()],
+            vec!["activeUsers".into()],
+            vec![("orderBys", Some(json!(huge_order_bys)))],
+        );
+        assert_eq!(large, Err(ApiError::InvalidRequest));
+
+        let mut nested = json!({"filter":{"fieldName":"country","stringFilter":{"value":"US"}}});
+        for _ in 0..16 {
+            nested = json!({"notExpression":nested});
+        }
+        let rejected = report_request(
+            Some(vec![json!({"startDate":"yesterday","endDate":"today"})]),
+            vec!["country".into()],
+            vec!["activeUsers".into()],
+            vec![("dimensionFilter", Some(nested))],
+        );
+        assert_eq!(rejected, Err(ApiError::InvalidRequest));
+
+        let too_wide = json!({"orGroup":{"expressions":vec![json!({"filter":{"fieldName":"country","stringFilter":{"value":"US"}}});65]}});
+        assert_eq!(
+            validate_bounded_filter(&too_wide),
+            Err(ApiError::InvalidRequest)
+        );
     }
 
     #[test]

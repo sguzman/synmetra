@@ -1987,6 +1987,28 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn offline_preview_rejects_oversized_report_options_with_a_typed_error() {
+        let server = Synmetra::new(GoogleClient::new(None), false);
+        let oversized = (0..5000)
+            .map(|index| json!({"dimension":{"dimensionName":format!("field{index}")}}))
+            .collect::<Vec<_>>();
+        let args: ReportArgs = serde_json::from_value(json!({
+            "property_id": "42",
+            "date_ranges": [{"startDate": "yesterday", "endDate": "today"}],
+            "dimensions": ["country"],
+            "metrics": ["activeUsers"],
+            "order_bys": oversized
+        }))
+        .unwrap();
+        let reply = server.preview_report_request(Parameters(args)).await;
+        assert_eq!(reply.is_error, Some(true));
+        let payload = reply.structured_content.unwrap();
+        assert_eq!(payload["error"]["code"], "INVALID_REQUEST");
+        assert_eq!(payload["error"]["category"], "validation");
+        assert!(payload["data"].is_null());
+    }
+
+    #[tokio::test]
     async fn standard_report_quota_flag_has_upstream_default_and_explicit_override() {
         let server = Synmetra::new(GoogleClient::new(None), false);
         let fields = json!({
