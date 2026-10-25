@@ -19,6 +19,11 @@ use tokio::{
 };
 
 const SCOPE: &str = "https://www.googleapis.com/auth/analytics.readonly";
+const SCOPE_EDIT: &str = "https://www.googleapis.com/auth/analytics.edit";
+
+fn default_scope() -> String {
+    SCOPE.to_owned()
+}
 const AUTHORIZE: &str = "https://accounts.google.com/o/oauth2/v2/auth";
 const TOKEN_ENDPOINT: &str = "https://oauth2.googleapis.com/token";
 
@@ -41,6 +46,8 @@ struct Stored {
     refresh_token: String,
     access_token: String,
     expires_at: u64,
+    #[serde(default = "default_scope")]
+    granted_scope: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -167,14 +174,20 @@ fn nonce() -> String {
     URL_SAFE_NO_PAD.encode(data)
 }
 
-fn authorization_url(client_id: &str, redirect: &str, state: &str, verifier: &str) -> Url {
+fn authorization_url(
+    client_id: &str,
+    redirect: &str,
+    state: &str,
+    verifier: &str,
+    scopes: &str,
+) -> Url {
     let challenge = URL_SAFE_NO_PAD.encode(Sha256::digest(verifier.as_bytes()));
     let mut url = Url::parse(AUTHORIZE).expect("fixed Google URL");
     url.query_pairs_mut()
         .append_pair("client_id", client_id)
         .append_pair("redirect_uri", redirect)
         .append_pair("response_type", "code")
-        .append_pair("scope", SCOPE)
+        .append_pair("scope", scopes)
         .append_pair("access_type", "offline")
         .append_pair("prompt", "consent")
         .append_pair("state", state)
@@ -274,7 +287,7 @@ pub async fn access_token() -> Result<Option<String>, String> {
     Ok(Some(stored.access_token))
 }
 
-async fn login(path: &str) -> Result<(), String> {
+async fn login(path: &str, allow_edit: bool) -> Result<(), String> {
     let file = fs::read(path).map_err(|_| "Cannot read Google OAuth Desktop client JSON")?;
     if file.len() > 128 * 1024 {
         return Err("OAuth client JSON too large".into());
@@ -301,7 +314,18 @@ async fn login(path: &str) -> Result<(), String> {
     );
     let state = nonce();
     let verifier = nonce();
-    let url = authorization_url(&client.installed.client_id, &redirect, &state, &verifier);
+    let requested_scope = if allow_edit {
+        format!("{SCOPE} {SCOPE_EDIT}")
+    } else {
+        SCOPE.to_owned()
+    };
+    let url = authorization_url(
+        &client.installed.client_id,
+        &redirect,
+        &state,
+        &verifier,
+        &requested_scope,
+    );
     eprintln!("Open this Google login URL in your browser:\n{url}\n");
     // Optional desktop browser invocation; the printed URL supports headless use.
     let _ = std::process::Command::new("xdg-open")
@@ -348,12 +372,15 @@ async fn login(path: &str) -> Result<(), String> {
     if token.access_token.is_empty() || token.expires_in == 0 {
         return Err("Google returned invalid credentials".into());
     }
-    if !token
+    let granted_scope = token
         .scope
         .as_deref()
-        .is_some_and(|s| s.split_whitespace().any(|scope| scope == SCOPE))
+        .ok_or("Google did not report granted OAuth scopes")?;
+    if !requested_scope
+        .split_whitespace()
+        .all(|requested| granted_scope.split_whitespace().any(|scope| scope == requested))
     {
-        return Err("Google did not grant the analytics.readonly scope".into());
+        return Err("Google did not grant every explicitly requested Analytics scope".into());
     }
     let refresh_token = token
         .refresh_token
@@ -365,9 +392,14 @@ async fn login(path: &str) -> Result<(), String> {
         access_token: token.access_token,
         refresh_token,
         expires_at: epoch_seconds().saturating_add(token.expires_in),
+        granted_scope: granted_scope.to_owned(),
     };
     persist_credentials(&stored)?;
-    println!("Google Analytics read-only credentials saved privately for Synmetra.");
+    if allow_edit {
+        println!("Google Analytics read+edit credentials saved privately. The annotation write MCP tool still requires --allow-write.");
+    } else {
+        println!("Google Analytics read-only credentials saved privately for Synmetra.");
+    }
     Ok(())
 }
 
@@ -378,27 +410,41 @@ pub fn public_status() -> serde_json::Value {
         Ok(Some(config)) => serde_json::json!({
             "local_oauth_configured": true, "override_token_present": override_token,
             "cached_token_fresh": config.expires_at > epoch_seconds().saturating_add(120),
-            "scope": SCOPE
+            "scope": config.granted_scope
         }),
         Ok(None) => serde_json::json!({
             "local_oauth_configured": false, "override_token_present": override_token,
-            "scope": SCOPE
+            "scope": "none"
         }),
         Err(_) => serde_json::json!({
             "local_oauth_status": "unreadable_private_credentials",
             "override_token_present": override_token,
-            "scope": SCOPE
+            "scope": "unknown"
         }),
     }
 }
 
 pub async fn command(args: &[String]) -> Result<(), String> {
     match args {
-        [mode, flag, path] if mode == "login" && flag == "--client-id-file" => login(path).await,
+        [mode, flag, path] if mode == "login" && flag == "--client-id-file" => {
+            login(path, false).await
+        }
+        [mode, flag, path, write_flag]
+            if mode == "login" && flag == "--client-id-file" && write_flag == "--allow-edit" =>
+        {
+            login(path, true).await
+        }
         [mode] if mode == "status" => {
             match read_credentials()? {
                 Some(c) => {
-                    println!("Synmetra OAuth credentials are configured (read-only).");
+                    println!(
+                        "Synmetra OAuth credentials are configured ({}).",
+                        if c.granted_scope.split_whitespace().any(|v| v == SCOPE_EDIT) {
+                            "explicit read+edit"
+                        } else {
+                            "read-only"
+                        }
+                    );
                     println!(
                         "Current access token valid: {}",
                         c.expires_at > epoch_seconds().saturating_add(120)
@@ -489,6 +535,7 @@ mod tests {
             refresh_token: "synthetic-refresh".into(),
             access_token: "synthetic-access".into(),
             expires_at: 42,
+            granted_scope: SCOPE.to_owned(),
         };
         persist_credentials_at(&path, &stored).unwrap();
         assert_eq!(
@@ -523,6 +570,25 @@ mod tests {
     }
 
     #[test]
+    fn edit_scopes_require_explicit_consent_in_authorization_url() {
+        let verifier = nonce();
+        let state = nonce();
+        let scope = format!("{SCOPE} {SCOPE_EDIT}");
+        let url = authorization_url(
+            "sample.apps.googleusercontent.com",
+            "http://127.0.0.1:5000/callback",
+            &state,
+            &verifier,
+            &scope,
+        );
+        let pairs: std::collections::HashMap<_, _> = url.query_pairs().into_owned().collect();
+        assert_eq!(pairs["scope"], scope);
+        assert!(pairs["scope"].split_whitespace().any(|v| v == SCOPE_EDIT));
+        assert_eq!(pairs["code_challenge_method"], "S256");
+        assert!(!url.as_str().contains(&verifier));
+    }
+
+    #[test]
     fn pkce_authorization_is_readonly_and_state_bound() {
         let verifier = nonce();
         let state = nonce();
@@ -532,6 +598,7 @@ mod tests {
             "http://127.0.0.1:5000/callback",
             &state,
             &verifier,
+            SCOPE,
         );
         let pairs: std::collections::HashMap<_, _> = url.query_pairs().into_owned().collect();
         assert_eq!(pairs["scope"], SCOPE);

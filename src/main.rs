@@ -1533,7 +1533,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
     if args.len() > 1 && args[1] != "serve" {
-        eprintln!("Usage: synmetra [serve [--http-loopback] [--allow-write] [--scratchpad]|--version|auth login --client-id-file PATH|auth status|auth logout]\nStarts an experimental read-only MCP stdio server.\nUse synmetra auth login for native read-only OAuth, or SYNMETRA_GOOGLE_ACCESS_TOKEN for a short-lived token.");
+        eprintln!("Usage: synmetra [serve [--http-loopback] [--allow-write] [--scratchpad]|--version|auth login --client-id-file PATH [--allow-edit]|auth status|auth logout]\nStarts an experimental read-only MCP stdio server.\nUse synmetra auth login for native read-only OAuth, or SYNMETRA_GOOGLE_ACCESS_TOKEN for a short-lived token.");
         std::process::exit(2);
     }
     // Scratchpad state is process-shared, so allowing multiple HTTP callers would
