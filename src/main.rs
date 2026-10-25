@@ -3133,6 +3133,98 @@ mod tests {
         assert!(!body.to_string().contains("private-batch-fixture-token"));
     }
 
+    #[test]
+    fn batch_input_contract_requires_only_property_and_report_requests() {
+        use std::collections::BTreeSet;
+
+        let pinned: Value = serde_json::from_str(include_str!(
+            "../spec/upstream/sednalabs-tool-schema.v1.json"
+        ))
+        .unwrap();
+        let upstream = pinned["tools"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|tool| tool["name"] == "batch_run_reports")
+            .unwrap();
+        let native = Synmetra::tool_router()
+            .list_all()
+            .into_iter()
+            .find(|tool| tool.name == "batch_run_reports")
+            .unwrap();
+        let expected: BTreeSet<_> = upstream["inputSchema"]["properties"]
+            .as_object()
+            .unwrap()
+            .keys()
+            .map(String::as_str)
+            .collect();
+        let actual: BTreeSet<_> = native.input_schema["properties"]
+            .as_object()
+            .unwrap()
+            .keys()
+            .map(String::as_str)
+            .collect();
+        assert_eq!(actual, expected);
+        assert_eq!(actual, BTreeSet::from(["property_id", "requests"]));
+        let required: BTreeSet<_> = native.input_schema["required"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter_map(Value::as_str)
+            .collect();
+        assert_eq!(required, actual);
+    }
+
+    #[tokio::test]
+    async fn batch_report_permission_and_quota_denials_do_not_leak_provider_details() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        use tokio::net::TcpListener;
+
+        for (status, expected) in [("403 Forbidden", 403), ("429 Too Many Requests", 429)] {
+            let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+            let endpoint = format!("http://{}", listener.local_addr().unwrap());
+            let responder = tokio::spawn(async move {
+                let (mut stream, _) = listener.accept().await.unwrap();
+                let mut buffer = [0u8; 4096];
+                let n = stream.read(&mut buffer).await.unwrap();
+                assert!(String::from_utf8_lossy(&buffer[..n])
+                    .contains("properties/42:batchRunReports"));
+                let body = r#"{"error":{"message":"provider-private-error"}}"#;
+                let reply = format!(
+                    "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                    body.len(),
+                    body
+                );
+                stream.write_all(reply.as_bytes()).await.unwrap();
+            });
+            let server = Synmetra::new(
+                GoogleClient::with_endpoints(
+                    Some("private-batch-token".into()),
+                    &endpoint,
+                    &endpoint,
+                ),
+                false,
+            );
+            let args: BatchArgs = serde_json::from_value(json!({
+                "property_id":42,
+                "requests":[{
+                    "date_ranges":[{"start_date":"yesterday","end_date":"today"}],
+                    "dimensions":[],
+                    "metrics":["activeUsers"]
+                }]
+            }))
+            .unwrap();
+            let response = server.batch_run_reports(Parameters(args)).await;
+            responder.await.unwrap();
+            assert_eq!(response.is_error, Some(true));
+            let payload = response.structured_content.unwrap();
+            assert_eq!(payload["error"]["code"], "GOOGLE_HTTP_ERROR");
+            assert_eq!(payload["error"]["status_code"], expected);
+            assert!(!payload.to_string().contains("private-batch-token"));
+            assert!(!payload.to_string().contains("provider-private-error"));
+        }
+    }
+
     #[tokio::test]
     async fn batch_report_five_item_boundary_is_enforced_before_google_credentials() {
         let server = Synmetra::new(GoogleClient::new(None), false);
