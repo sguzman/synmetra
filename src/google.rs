@@ -149,7 +149,9 @@ fn readonly_retry_delay(
         200_u64.checked_mul(1_u64.checked_shl(attempt as u32)?)?
     };
     let jitter_ms = (rand::random::<u8>() % 101) as u64;
-    Some(Duration::from_millis((minimum_ms + jitter_ms).min(MAX_WAIT_MS)))
+    Some(Duration::from_millis(
+        (minimum_ms + jitter_ms).min(MAX_WAIT_MS),
+    ))
 }
 
 impl GoogleClient {
@@ -484,7 +486,9 @@ impl GoogleClient {
             return Err(ApiError::InvalidRequest);
         }
         let url = format!("{}/v1beta/{property}:{method}", self.data_base);
-        let response = self.send_readonly(self.http.post(url).json(&request)).await?;
+        let response = self
+            .send_readonly(self.http.post(url).json(&request))
+            .await?;
         match method {
             "runReport" | "runRealtimeReport" | "runPivotReport" => {
                 validate_google_report_response(&response)?;
@@ -2085,17 +2089,21 @@ mod tests {
         headers.insert(reqwest::header::RETRY_AFTER, "1".parse().unwrap());
         assert!(readonly_retry_delay(reqwest::StatusCode::FORBIDDEN, &headers, 0).is_none());
         assert!(readonly_retry_delay(reqwest::StatusCode::BAD_REQUEST, &headers, 0).is_none());
-        let delayed = readonly_retry_delay(reqwest::StatusCode::TOO_MANY_REQUESTS, &headers, 0)
-            .unwrap();
+        let delayed =
+            readonly_retry_delay(reqwest::StatusCode::TOO_MANY_REQUESTS, &headers, 0).unwrap();
         assert!(delayed >= Duration::from_secs(1));
         assert!(delayed <= Duration::from_millis(1100));
         headers.insert(reqwest::header::RETRY_AFTER, "60".parse().unwrap());
-        assert!(readonly_retry_delay(reqwest::StatusCode::TOO_MANY_REQUESTS, &headers, 0).is_none());
+        assert!(
+            readonly_retry_delay(reqwest::StatusCode::TOO_MANY_REQUESTS, &headers, 0).is_none()
+        );
         headers.insert(reqwest::header::RETRY_AFTER, "invalid".parse().unwrap());
-        assert!(readonly_retry_delay(reqwest::StatusCode::SERVICE_UNAVAILABLE, &headers, 0).is_none());
+        assert!(
+            readonly_retry_delay(reqwest::StatusCode::SERVICE_UNAVAILABLE, &headers, 0).is_none()
+        );
         headers.clear();
-        let delayed = readonly_retry_delay(reqwest::StatusCode::SERVICE_UNAVAILABLE, &headers, 1)
-            .unwrap();
+        let delayed =
+            readonly_retry_delay(reqwest::StatusCode::SERVICE_UNAVAILABLE, &headers, 1).unwrap();
         assert!(delayed >= Duration::from_millis(400));
         assert!(delayed <= Duration::from_millis(500));
     }
@@ -2114,7 +2122,10 @@ mod tests {
                 let request = String::from_utf8_lossy(&buffer[..n]);
                 assert!(request.contains("properties/42:runReport"));
                 let (status, body) = if index == 0 {
-                    ("429 Too Many Requests", r#"{"error":{"message":"secret-fixture"}}"#)
+                    (
+                        "429 Too Many Requests",
+                        r#"{"error":{"message":"secret-fixture"}}"#,
+                    )
                 } else {
                     ("200 OK", r#"{"rowCount":0}"#)
                 };
@@ -2132,8 +2143,12 @@ mod tests {
             vec![],
             vec!["activeUsers".to_owned()],
             vec![],
-        ).unwrap();
-        assert_eq!(client.report("42", body, false).await.unwrap()["rowCount"], 0);
+        )
+        .unwrap();
+        assert_eq!(
+            client.report("42", body, false).await.unwrap()["rowCount"],
+            0
+        );
         responder.await.unwrap();
     }
 
