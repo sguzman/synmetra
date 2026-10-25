@@ -2233,13 +2233,20 @@ mod tests {
                 .iter()
                 .find(|entry| entry["name"] == name)
                 .unwrap();
-            let actual = router.list_all().into_iter().find(|tool| tool.name == name).unwrap();
+            let actual = router
+                .list_all()
+                .into_iter()
+                .find(|tool| tool.name == name)
+                .unwrap();
             assert_eq!(
                 actual.input_schema["properties"]["limit"]["format"],
                 expected["inputSchema"]["properties"]["limit"]["format"],
                 "{name}"
             );
-            assert_eq!(actual.input_schema["properties"]["limit"]["format"], "uint64");
+            assert_eq!(
+                actual.input_schema["properties"]["limit"]["format"],
+                "uint64"
+            );
         }
 
         let huge = json!({
@@ -2253,7 +2260,10 @@ mod tests {
             .preview_report_request(Parameters(serde_json::from_value(huge.clone()).unwrap()))
             .await;
         assert_eq!(preview.is_error, Some(true));
-        assert_eq!(preview.structured_content.unwrap()["error"]["code"], "INVALID_REQUEST");
+        assert_eq!(
+            preview.structured_content.unwrap()["error"]["code"],
+            "INVALID_REQUEST"
+        );
 
         let realtime: RealtimeArgs = serde_json::from_value(json!({
             "property_id":"42",
@@ -2264,7 +2274,10 @@ mod tests {
         .unwrap();
         let result = server.run_realtime_report(Parameters(realtime)).await;
         assert_eq!(result.is_error, Some(true));
-        assert_eq!(result.structured_content.unwrap()["error"]["code"], "INVALID_REQUEST");
+        assert_eq!(
+            result.structured_content.unwrap()["error"]["code"],
+            "INVALID_REQUEST"
+        );
     }
 
     #[test]
