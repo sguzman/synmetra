@@ -2286,10 +2286,7 @@ mod tests {
         let account: AccountArgs = serde_json::from_value(json!({"account_id":97})).unwrap();
         assert_eq!(account.account_id, "97");
         for bad in [json!(-1), json!(1.5), json!(true), Value::Null] {
-            assert!(serde_json::from_value::<PropertyArgs>(
-                json!({"property_id":bad})
-            )
-            .is_err());
+            assert!(serde_json::from_value::<PropertyArgs>(json!({"property_id":bad})).is_err());
         }
         let router = Synmetra::tool_router();
         for (tool_name, field_name) in [
