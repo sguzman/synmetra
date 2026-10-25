@@ -3116,7 +3116,10 @@ mod tests {
             .filter_map(Value::as_str)
             .collect();
         assert_eq!(native_required, pinned_required);
-        assert_eq!(local.input_schema["properties"]["limit"]["format"], "uint64");
+        assert_eq!(
+            local.input_schema["properties"]["limit"]["format"],
+            "uint64"
+        );
         let schema = serde_json::to_value(&local.input_schema).unwrap();
         assert!(schema["properties"]["funnel_steps"]["items"]["$ref"].is_string());
     }
