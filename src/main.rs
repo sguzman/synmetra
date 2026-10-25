@@ -2188,12 +2188,15 @@ mod tests {
         assert_eq!(failure["error"]["status_code"], 429);
         assert_eq!(failure["error"]["code"], "GOOGLE_HTTP_ERROR");
 
-        let local = local_result(Err("Scratchpad session expired".into()));
-        let failure: Value = serde_json::from_str(
-            &local.content[0].as_text().unwrap().text
-        ).unwrap();
-        assert_eq!(failure["error"]["code"], "SCRATCHPAD_ERROR");
-        assert_eq!(failure["error"]["category"], "local");
+        #[cfg(feature = "scratchpad")]
+        {
+            let local = local_result(Err("Scratchpad session expired".into()));
+            let failure: Value = serde_json::from_str(
+                &local.content[0].as_text().unwrap().text
+            ).unwrap();
+            assert_eq!(failure["error"]["code"], "SCRATCHPAD_ERROR");
+            assert_eq!(failure["error"]["category"], "local");
+        }
     }
 
     #[test]
