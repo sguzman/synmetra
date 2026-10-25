@@ -3641,6 +3641,57 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn conversion_eligibility_and_permission_errors_remain_typed_and_private() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        use tokio::net::TcpListener;
+
+        for (status, code) in [("400 Bad Request", 400), ("403 Forbidden", 403)] {
+            let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+            let endpoint = format!("http://{}", listener.local_addr().unwrap());
+            let responder = tokio::spawn(async move {
+                let (mut socket, _) = listener.accept().await.unwrap();
+                let mut buffer = [0_u8; 4096];
+                let count = socket.read(&mut buffer).await.unwrap();
+                let request = String::from_utf8_lossy(&buffer[..count]);
+                assert!(request.starts_with("POST /v1alpha/properties/42:runReport "));
+                assert!(request.contains(r#""conversionSpec":{"attributionModel":"LAST_CLICK""#));
+                let body = r#"{"error":{"message":"private-ineligible-property-fixture"}}"#;
+                let response = format!(
+                    "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                    body.len(),
+                    body
+                );
+                socket.write_all(response.as_bytes()).await.unwrap();
+            });
+            let server = Synmetra::new(
+                GoogleClient::with_endpoints(
+                    Some("private-conversion-token".into()),
+                    &endpoint,
+                    &endpoint,
+                ),
+                false,
+            );
+            let args: ConversionArgs = serde_json::from_value(json!({
+                "property_id":42,
+                "date_ranges":[{"start_date":"yesterday","end_date":"today"}],
+                "dimensions":["country"],
+                "metrics":["allConversionsByInteractionDate"],
+                "conversion_spec":{"attribution_model":"LAST_CLICK"}
+            }))
+            .unwrap();
+            let result = server.run_conversions_report(Parameters(args)).await;
+            responder.await.unwrap();
+            assert_eq!(result.is_error, Some(true));
+            let payload = result.structured_content.unwrap();
+            assert_eq!(payload["error"]["code"], "GOOGLE_HTTP_ERROR");
+            assert_eq!(payload["error"]["status_code"], code);
+            assert_eq!(payload["error"]["category"], "upstream");
+            assert!(!payload.to_string().contains("private-conversion-token"));
+            assert!(!payload.to_string().contains("private-ineligible-property-fixture"));
+        }
+    }
+
+    #[tokio::test]
     async fn historical_and_realtime_report_denials_are_redacted_and_stable() {
         use tokio::io::{AsyncReadExt, AsyncWriteExt};
         use tokio::net::TcpListener;
