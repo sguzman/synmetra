@@ -615,6 +615,177 @@ impl ScratchState {
         }
     }
 
+    /// Limited SELECT-only query. The caller's SQL is parsed into a tightly
+    /// defined grammar; only a new, identifier-quoted projection is executed.
+    pub fn query_bounded(
+        &self,
+        raw: &str,
+        sql: &str,
+        max_rows: Option<usize>,
+        max_cell_chars: Option<usize>,
+        summary_only: bool,
+    ) -> Result<Value, String> {
+        let id = session_id(raw)?;
+        let row_cap = max_rows.unwrap_or(100);
+        let cell_cap = max_cell_chars.unwrap_or(1024);
+        if row_cap == 0 || row_cap > 1000 || cell_cap == 0 || cell_cap > 2048 {
+            return Err("Query bounds must be 1-1000 rows and 1-2048 cell characters".into());
+        }
+        let input = sql.trim();
+        if input.is_empty() || input.len() > 2048 {
+            return Err("SQL query must be 1-2048 bytes".into());
+        }
+        let statement = input.strip_suffix(';').unwrap_or(input).trim();
+        if !statement.bytes().all(|b|
+            b.is_ascii_alphanumeric() || b.is_ascii_whitespace()
+            || b"_*,()".contains(&b)
+        ) {
+            return Err("Only a restricted SELECT grammar is allowed".into());
+        }
+        let tokens: Vec<&str> = statement.split_ascii_whitespace().collect();
+        if tokens.len() < 4 || !tokens[0].eq_ignore_ascii_case("SELECT") {
+            return Err("Query must start with SELECT columns FROM table".into());
+        }
+        let from = tokens.iter().position(|s| s.eq_ignore_ascii_case("FROM"))
+            .ok_or("SELECT requires FROM")?;
+        if from < 2 || from + 1 >= tokens.len() {
+            return Err("SELECT requires columns and a table".into());
+        }
+        let table = table_name(tokens[from + 1])?;
+        // The owned vector below is necessary because SQL projection tokens
+        // may contain whitespace between comma-separated column names.
+        let projections: Vec<String> = tokens[1..from].join(" ")
+            .split(',').map(|x| x.trim().to_owned()).collect();
+        if projections.is_empty() || projections.len() > 32
+            || projections.iter().any(|s| s.is_empty())
+        {
+            return Err("SELECT projection must have 1-32 columns".into());
+        }
+        let count = projections.len() == 1
+            && projections[0].eq_ignore_ascii_case("COUNT(*)");
+        let wildcard = projections.len() == 1 && projections[0] == "*";
+        if !count && !wildcard {
+            for column in &projections {
+                table_name(column)?;
+            }
+        }
+        let mut order: Option<(String, &'static str)> = None;
+        let mut sql_limit: Option<usize> = None;
+        let mut offset = 0usize;
+        let mut cursor = from + 2;
+        while cursor < tokens.len() {
+            if tokens[cursor].eq_ignore_ascii_case("ORDER") {
+                if count || order.is_some() || cursor + 2 >= tokens.len()
+                    || !tokens[cursor + 1].eq_ignore_ascii_case("BY")
+                { return Err("Invalid ORDER BY clause".into()); }
+                let name = table_name(tokens[cursor + 2])?.to_owned();
+                cursor += 3;
+                let mut dir = "ASC";
+                if cursor < tokens.len() && tokens[cursor].eq_ignore_ascii_case("DESC") {
+                    dir = "DESC"; cursor += 1;
+                } else if cursor < tokens.len() && tokens[cursor].eq_ignore_ascii_case("ASC") {
+                    cursor += 1;
+                }
+                order = Some((name, dir));
+            } else if tokens[cursor].eq_ignore_ascii_case("LIMIT") {
+                if sql_limit.is_some() || cursor + 1 >= tokens.len() {
+                    return Err("Invalid LIMIT clause".into());
+                }
+                let limit = tokens[cursor+1].parse::<usize>().map_err(|_| "Invalid LIMIT number")?;
+                if limit == 0 || limit > 1000 {
+                    return Err("LIMIT must be between 1 and 1000".into());
+                }
+                sql_limit = Some(limit);
+                cursor += 2;
+            } else if tokens[cursor].eq_ignore_ascii_case("OFFSET") {
+                if offset != 0 || cursor + 1 >= tokens.len() {
+                    return Err("Invalid OFFSET clause".into());
+                }
+                offset = tokens[cursor+1].parse::<usize>().map_err(|_| "Invalid OFFSET number")?;
+                if offset > 20000 {
+                    return Err("OFFSET must be at most 20000".into());
+                }
+                cursor += 2;
+            } else {
+                return Err("Unsupported SQL clause: SELECT, ORDER BY, LIMIT and OFFSET only".into());
+            }
+        }
+        let mut inner = self.guard()?;
+        Self::expire(&mut inner);
+        let db = &inner.sessions.get(id).ok_or("Scratchpad session not found or expired")?.db;
+        let mut schema = db.prepare(
+            "SELECT column_name FROM information_schema.columns
+             WHERE table_schema='main' AND table_name=?1
+             ORDER BY ordinal_position LIMIT 33"
+        ).map_err(|_| "Query schema inspection failed")?;
+        let actual = schema.query_map([table], |row| row.get::<_, String>(0))
+            .map_err(|_| "Query schema inspection failed")?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|_| "Query schema inspection failed")?;
+        if actual.is_empty() || actual.len() > 32 {
+            return Err("Table not found or exceeds 32-column query limit".into());
+        }
+        let columns: Vec<String> = if count {
+            vec!["row_count".to_owned()]
+        } else if wildcard {
+            actual.clone()
+        } else {
+            for col in &projections {
+                if !actual.iter().any(|a| a.eq_ignore_ascii_case(col)) {
+                    return Err("Unknown SELECT column".into());
+                }
+            }
+            projections.clone()
+        };
+        if let Some((column, _)) = &order {
+            if !actual.iter().any(|a| a.eq_ignore_ascii_case(column)) {
+                return Err("Unknown ORDER BY column".into());
+            }
+        }
+        let projection = if count {
+            "CAST(COUNT(*) AS VARCHAR) AS \"row_count\"".to_owned()
+        } else {
+            columns.iter().map(|col| {
+                let quoted = col.replace('"', "\"\"");
+                format!("substr(CAST(\"{quoted}\" AS VARCHAR), 1, {cell_cap}) AS \"{quoted}\"")
+            }).collect::<Vec<_>>().join(", ")
+        };
+        let extra = row_cap.min(sql_limit.unwrap_or(row_cap));
+        let table_sql = table.replace('"', "\"\"");
+        let mut constructed = format!("SELECT {projection} FROM \"{table_sql}\"");
+        if let Some((column, direction)) = &order {
+            let safe = column.replace('"', "\"\"");
+            constructed.push_str(&format!(" ORDER BY \"{safe}\" {direction}"));
+        }
+        let fetch = if count { 1 } else { extra.saturating_add(1) };
+        constructed.push_str(&format!(" LIMIT {fetch} OFFSET {offset}"));
+        let mut stmt = db.prepare(&constructed).map_err(|_| "Read-only SELECT preparation failed")?;
+        let mut rows = stmt.query_map([], |row| {
+            let mut result = serde_json::Map::new();
+            for (i, col) in columns.iter().enumerate() {
+                let value: Option<String> = row.get(i)?;
+                result.insert(col.clone(), value.map_or(Value::Null, |v| json!(v)));
+            }
+            Ok(Value::Object(result))
+        }).map_err(|_| "Read-only SELECT failed")?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|_| "Read-only SELECT returned invalid values")?;
+        let truncated = !count && rows.len() > extra;
+        rows.truncate(extra);
+        let returned = rows.len();
+        if summary_only { rows.clear(); }
+        let output = json!({
+            "session_id":id,"columns":columns,"rows":rows,
+            "returned_rows":returned,"truncated":truncated,
+            "summary_only":summary_only,"source":"local_scratchpad",
+            "sql_subset":"SELECT columns FROM table [ORDER BY column] [LIMIT n] [OFFSET n]"
+        });
+        if serde_json::to_vec(&output).map_or(true, |v| v.len() > 256 * 1024) {
+            return Err("Query response exceeds 256 KiB output policy".into());
+        }
+        Ok(output)
+    }
+
     pub fn summarize_table(&self, raw: &str, table: &str) -> Result<Value, String> {
         // Catalog validation precedes the only dynamically constructed SQL statement.
         let schema = self.describe_table(raw, table)?;
@@ -694,6 +865,50 @@ mod tests {
         assert!(state.open("another").is_err());
         assert_eq!(state.close("project_1").unwrap()["closed"], true);
         assert!(state.close("project_1").is_err());
+    }
+
+    #[test]
+    fn restricted_select_query_is_bounded_and_never_executes_user_sql() {
+        let state = ScratchState::new();
+        state.open("query_test").unwrap();
+        let payload = json!({
+            "dimensionHeaders":[{"name":"country"}],
+            "metricHeaders":[{"name":"users"}],
+            "rows":[
+                {"dimensionValues":[{"value":"Mexico"}],"metricValues":[{"value":"7"}]},
+                {"dimensionValues":[{"value":"Canada"}],"metricValues":[{"value":"3"}]}
+            ]
+        });
+        state.ingest_ga_response("query_test","events",&payload,false).unwrap();
+        let results = state.query_bounded(
+            "query_test","SELECT country, users FROM events ORDER BY country ASC LIMIT 1",
+            Some(1),Some(50),false
+        ).unwrap();
+        assert_eq!(results["rows"][0]["country"], "Canada");
+        assert_eq!(results["returned_rows"], 1);
+        let count = state.query_bounded(
+            "query_test","SELECT COUNT(*) FROM events",None,None,false
+        ).unwrap();
+        assert_eq!(count["rows"][0]["row_count"], "2");
+        let summary = state.query_bounded(
+            "query_test","SELECT * FROM events",Some(1),None,true
+        ).unwrap();
+        assert!(summary["rows"].as_array().unwrap().is_empty());
+        assert_eq!(summary["returned_rows"],1);
+        assert_eq!(summary["truncated"],true);
+        for bad in [
+            "DROP TABLE events", "WITH x AS (SELECT * FROM events) SELECT * FROM x",
+            "SELECT * FROM events; DROP TABLE events",
+            "SELECT read_csv_auto('/etc/passwd') FROM events",
+            "SELECT * FROM events WHERE country = Mexico",
+            "SELECT * FROM events UNION SELECT * FROM events",
+            "SELECT unknown FROM events", "SELECT * FROM events LIMIT 1001",
+            "SELECT * FROM events OFFSET 20001",
+            "SELECT * FROM events -- comment"
+        ] {
+            assert!(state.query_bounded("query_test",bad,None,None,false).is_err(),"{bad}");
+        }
+        assert_eq!(state.summarize_table("query_test","events").unwrap()["row_count"],2);
     }
 
     #[test]
