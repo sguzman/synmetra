@@ -1969,16 +1969,18 @@
               "id": "T101",
               "emoji": "🗂️",
               "name": "Support pivot report ordering and groups",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "Nested pivots and row groups validated by fixtures",
               "checks": [
                 {
                   "text": "Deliver support pivot report ordering and groups as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs normalize_pivots now enforces 1–4 Google v1beta pivot axes, nonempty requested dimension fieldNames, required positive per-axis limits and bounded product <=250,000; accepts numeric/string offset/limit and normalizes to Google int64 strings, rejects invalid dimension/metric orderings and conflicting sort selectors. src/main.rs run_pivot_report uses it before Google calls; tests multi_axis_pivot_ordering_and_cardinality_are_bounded passed Actions 40238367789 full CI."
                 },
                 {
                   "text": "Nested pivots and row groups validated by fixtures",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/tabular.rs multi_axis_pivot_groups_preserve_headers_and_never_claim_flat_cursors uses grouped synthetic country/browser rows with two pivotHeaders, verifies all row values, original pivot header grouping, true totals, truncated bounds and no fabricated flat cursor. Existing pivot_report_projection_keeps_pivot_header_metadata_without_fake_cursor exercises read-only Google v1beta HTTP routing. GitHub Actions 40238367789 core+DuckDB passed. Live Google acceptance remains separate."
                 }
               ]
             },
@@ -2058,16 +2060,18 @@
               "id": "T106",
               "emoji": "📊",
               "name": "Support output modes rows tuples scalar compact",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "All compatible result projections are predictable",
               "checks": [
                 {
                   "text": "Deliver support output modes rows tuples scalar compact as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/tabular.rs OutputMode and project implement rows/tuples/scalar/compact plus summary_only and shared typed columns; src/main.rs report-MCP handlers opt into projection while preserving official provider JSON by default. all_compatible_ga_report_mcp_tools_advertise_four_tabular_output_modes verifies all seven core/advanced/Admin reporting MCP schema entries expose output_mode, with valid four and rejected unknown enum labels. GitHub Actions 40238367789 passed core+native."
                 },
                 {
                   "text": "All compatible result projections are predictable",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/tabular.rs projections_keep_true_counts_and_upstream_quota, provider_aggregate_rows_survive_all_projection_modes_without_recomputation and bounded_projection_limits_are_explicit_in_all_tabular_modes assert predictable mode-specific row/tuple/scalar/compact data, counts and unmodified provider aggregate/quota metadata. Funnel projection tests verify two independent subreports. GitHub Actions 40238367789 full CI passed; this is not 36-tool upstream response parity."
                 }
               ]
             },
@@ -2075,16 +2079,18 @@
               "id": "T107",
               "emoji": "✂️",
               "name": "Support row cell and request-size clipping",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "Limits protect context without hiding truncation metadata",
               "checks": [
                 {
                   "text": "Deliver support row cell and request-size clipping as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/tabular.rs Controls validate max_rows 1–1000 and max_cell_chars 1–2048, bounds Google report limit, clips Unicode dimension values while preserving numeric metric strings, and exposes row_count_total, row_count_returned, truncated, cell_clipping metadata. src/google.rs report_request and GoogleClient::validate_body enforce the entire 64-KiB request preflight and send caps the upstream response at 4 MiB. GitHub Actions 40238367789 core+DuckDB passed."
                 },
                 {
                   "text": "Limits protect context without hiding truncation metadata",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/tabular.rs bounded_projection_limits_are_explicit_in_all_tabular_modes verifies row and clip caps, returned=2 of total=7, clipped_cells=2, truncation and unmodified provider data across four output modes and summary_only. numeric_metric_precision_and_currency_metadata_survive_text_clipping tests large exact metrics are never silently shortened; src/google.rs historical_report_request_rejects_oversized_options_and_deep_filters checks large nested request denial. GitHub Actions 40238367789 full CI passed. Other-tool source-specific projections remain separate."
                 }
               ]
             },

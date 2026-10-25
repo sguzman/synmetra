@@ -63,3 +63,9 @@ The historical and realtime MCP handlers now accept numeric or resource-name pro
 ## 🔐 GA Admin data-access projections
 
 Both `run_property_access_report` and `run_account_access_report` retain Google provider JSON by default. Optional `output_mode`, `summary_only`, `max_rows`, `max_cell_chars`, and `cursor` enable bounded Contract V1-style projections. Access-response `dimensionName`/`metricName` headers are normalized to named columns. Query-bound continuation tokens are scoped to the canonical `properties/<id>` or `accounts/<id>` resource and cannot be reused between them. These are read-only Admin API reports but require Google Administrator-level access; synthetic 403 tests do not prove live authorization.
+
+## 🗂️ Pivot ordering and bounded projection limits
+
+Google v1beta pivots require explicit positive per-axis `limit` values; Synmetra now rejects a combined product above 250,000 before an API request. Each pivot's `fieldNames` must select requested dimensions (or `dateRange`), with its own `orderBys` restricted to matching pivot dimensions or requested metrics. Per-axis `offset` and `limit` are normalized to decimal int64 strings. Pivot headers and grouped report rows remain intact in `meta.ga4.pivotHeaders`, without advertising an invented flat cursor. Reference: https://developers.google.com/analytics/devguides/reporting/data/v1/rest/v1beta/Pivot.
+
+The seven compatible Google Data/Admin report MCP tools advertise `rows`, `tuples`, `scalar`, and `compact` modes. Bounded opt-in projections cap returned rows and Unicode dimension labels, keep numeric metrics exact, preserve aggregate/quota metadata and disclose truncation/clipping rather than silently hiding it. Native request JSON is capped at 64 KiB and upstream Google response bodies at 4 MiB. These controls do not claim complete SednaLabs Contract V1 parity across every tool.
