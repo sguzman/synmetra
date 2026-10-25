@@ -1,0 +1,340 @@
+//! Native, private Google Desktop OAuth credentials for a Linux single-user MCP.
+//! Never print tokens, credentials JSON, callback codes or HTTP response bodies.
+
+use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
+use rand::{rngs::OsRng, RngCore};
+use reqwest::Url;
+use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
+use std::{
+    env, fs,
+    io::{Read, Write},
+    path::{Path, PathBuf},
+    time::{Duration, SystemTime, UNIX_EPOCH},
+};
+use tokio::{io::{AsyncReadExt, AsyncWriteExt}, net::TcpListener, time::timeout};
+
+const SCOPE: &str = "https://www.googleapis.com/auth/analytics.readonly";
+const AUTHORIZE: &str = "https://accounts.google.com/o/oauth2/v2/auth";
+const TOKEN_ENDPOINT: &str = "https://oauth2.googleapis.com/token";
+
+#[derive(Debug, Deserialize)]
+struct OAuthClientFile {
+    installed: InstalledClient,
+}
+
+#[derive(Debug, Deserialize)]
+struct InstalledClient {
+    client_id: String,
+    #[serde(default)]
+    client_secret: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct Stored {
+    client_id: String,
+    client_secret: String,
+    refresh_token: String,
+    access_token: String,
+    expires_at: u64,
+}
+
+#[derive(Debug, Deserialize)]
+struct TokenResponse {
+    access_token: String,
+    #[serde(default)]
+    refresh_token: Option<String>,
+    expires_in: u64,
+    #[serde(default)]
+    scope: Option<String>,
+}
+
+fn epoch_seconds() -> u64 {
+    SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_secs()
+}
+
+fn credentials_path() -> Result<PathBuf, String> {
+    let root = match env::var_os("XDG_CONFIG_HOME") {
+        Some(path) if !path.is_empty() => PathBuf::from(path),
+        _ => PathBuf::from(env::var_os("HOME").ok_or("HOME is not set")?).join(".config"),
+    };
+    if !root.is_absolute() {
+        return Err("XDG_CONFIG_HOME must be an absolute path".to_owned());
+    }
+    Ok(root.join("synmetra").join("credentials.json"))
+}
+
+#[cfg(unix)]
+fn private_file(path: &Path) -> Result<(), String> {
+    use std::os::unix::fs::PermissionsExt;
+    let meta = fs::symlink_metadata(path).map_err(|_| "Cannot read credential file metadata")?;
+    if !meta.is_file() || meta.file_type().is_symlink() || meta.permissions().mode() & 0o077 != 0 {
+        return Err("Credentials are not a regular private (0600) file".into());
+    }
+    Ok(())
+}
+
+#[cfg(not(unix))]
+fn private_file(path: &Path) -> Result<(), String> {
+    if !path.is_file() || path.is_symlink() {
+        return Err("Credentials path is not a regular file".to_owned());
+    }
+    Ok(())
+}
+
+fn read_credentials() -> Result<Option<Stored>, String> {
+    let path = credentials_path()?;
+    if !path.exists() {
+        // A dangling symlink is still unsafe: don't follow/create at this path.
+        if fs::symlink_metadata(&path).is_ok() {
+            return Err("Credentials path is an invalid symlink".into());
+        }
+        return Ok(None);
+    }
+    private_file(&path)?;
+    let mut file = fs::File::open(&path).map_err(|_| "Cannot open credentials")?;
+    let mut data = String::new();
+    file.take(32 * 1024).read_to_string(&mut data).map_err(|_| "Cannot read credentials")?;
+    let stored: Stored = serde_json::from_str(&data).map_err(|_| "Credentials file has invalid format")?;
+    if stored.client_id.is_empty() || stored.refresh_token.is_empty() {
+        return Err("Credentials file lacks a client ID or refresh token".into());
+    }
+    Ok(Some(stored))
+}
+
+fn persist_credentials(stored: &Stored) -> Result<(), String> {
+    use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
+    let path = credentials_path()?;
+    let dir = path.parent().ok_or("No credential directory")?;
+    fs::create_dir_all(dir).map_err(|_| "Cannot create private auth directory")?;
+    let meta = fs::symlink_metadata(dir).map_err(|_| "Cannot stat auth directory")?;
+    if !meta.is_dir() || meta.file_type().is_symlink() {
+        return Err("Refusing credentials in a symlinked auth directory".into());
+    }
+    fs::set_permissions(dir, fs::Permissions::from_mode(0o700)).map_err(|_| "Cannot secure auth directory")?;
+    // Refuse modifying or replacing a symlink at the destination.
+    if fs::symlink_metadata(&path).is_ok() {
+        private_file(&path)?;
+    }
+    let temp = dir.join(format!(".credentials.{}.tmp", std::process::id()));
+    let mut file = fs::OpenOptions::new().create_new(true).write(true).mode(0o600)
+        .open(&temp).map_err(|_| "Cannot create private temporary credential file")?;
+    let data = serde_json::to_vec(stored).map_err(|_| "Cannot serialize credentials")?;
+    let result = (|| -> Result<(), String> {
+        file.write_all(&data).map_err(|_| "Cannot write credentials")?;
+        file.sync_all().map_err(|_| "Cannot sync credentials")?;
+        fs::rename(&temp, &path).map_err(|_| "Cannot install credentials")?;
+        Ok(())
+    })();
+    if result.is_err() {
+        let _ = fs::remove_file(&temp);
+    }
+    result
+}
+
+fn nonce() -> String {
+    let mut data = [0u8; 32];
+    OsRng.fill_bytes(&mut data);
+    URL_SAFE_NO_PAD.encode(data)
+}
+
+fn authorization_url(client_id: &str, redirect: &str, state: &str, verifier: &str) -> Url {
+    let challenge = URL_SAFE_NO_PAD.encode(Sha256::digest(verifier.as_bytes()));
+    let mut url = Url::parse(AUTHORIZE).expect("fixed Google URL");
+    url.query_pairs_mut()
+        .append_pair("client_id", client_id)
+        .append_pair("redirect_uri", redirect)
+        .append_pair("response_type", "code")
+        .append_pair("scope", SCOPE)
+        .append_pair("access_type", "offline")
+        .append_pair("prompt", "consent")
+        .append_pair("state", state)
+        .append_pair("code_challenge", &challenge)
+        .append_pair("code_challenge_method", "S256");
+    url
+}
+
+fn callback_code(request: &str, expected_state: &str) -> Result<String, String> {
+    let line = request.lines().next().ok_or("Missing callback request line")?;
+    let mut parts = line.split_whitespace();
+    if parts.next() != Some("GET") {
+        return Err("OAuth callback must use GET".into());
+    }
+    let path = parts.next().ok_or("Missing callback path")?;
+    let parsed = Url::parse(&format!("http://localhost{path}")).map_err(|_| "Invalid callback URL")?;
+    if parsed.path() != "/callback" {
+        return Err("Unexpected OAuth callback path".into());
+    }
+    let mut state = None;
+    let mut code = None;
+    for (key, value) in parsed.query_pairs() {
+        if key == "state" { state = Some(value.to_string()); }
+        if key == "code" { code = Some(value.to_string()); }
+        if key == "error" { return Err("Google rejected the OAuth login".into()); }
+    }
+    if state.as_deref() != Some(expected_state) {
+        return Err("OAuth state mismatch".into());
+    }
+    code.filter(|v| !v.is_empty() && v.len() < 4096).ok_or("Missing authorization code".into())
+}
+
+async fn token_exchange(fields: &[(&str, &str)]) -> Result<TokenResponse, String> {
+    let http = reqwest::Client::builder()
+        .timeout(Duration::from_secs(20))
+        .redirect(reqwest::redirect::Policy::none())
+        .build().map_err(|_| "Failed to build token client")?;
+    let response = http.post(TOKEN_ENDPOINT).form(fields).send().await
+        .map_err(|_| "Google token endpoint unavailable")?;
+    if !response.status().is_success() {
+        return Err(format!("Google token endpoint returned HTTP {}", response.status().as_u16()));
+    }
+    response.json::<TokenResponse>().await.map_err(|_| "Malformed Google token response".into())
+}
+
+pub async fn access_token() -> Result<Option<String>, String> {
+    static REFRESH_LOCK: tokio::sync::OnceCell<tokio::sync::Mutex<()>> = tokio::sync::OnceCell::const_new();
+    let lock = REFRESH_LOCK.get_or_init(|| async { tokio::sync::Mutex::new(()) }).await;
+    let _held = lock.lock().await;
+    let Some(mut stored) = read_credentials()? else { return Ok(None) };
+    if stored.expires_at > epoch_seconds().saturating_add(120) && !stored.access_token.is_empty() {
+        return Ok(Some(stored.access_token));
+    }
+    let refresh = token_exchange(&[
+        ("client_id", &stored.client_id),
+        ("client_secret", &stored.client_secret),
+        ("refresh_token", &stored.refresh_token),
+        ("grant_type", "refresh_token"),
+    ]).await?;
+    if refresh.access_token.is_empty() || refresh.expires_in == 0 {
+        return Err("Google returned invalid refreshed credentials".into());
+    }
+    if let Some(rotated) = refresh.refresh_token.filter(|s| !s.is_empty()) {
+        stored.refresh_token = rotated;
+    }
+    stored.access_token = refresh.access_token;
+    stored.expires_at = epoch_seconds().saturating_add(refresh.expires_in);
+    persist_credentials(&stored)?;
+    Ok(Some(stored.access_token))
+}
+
+async fn login(path: &str) -> Result<(), String> {
+    let file = fs::read(path).map_err(|_| "Cannot read Google OAuth Desktop client JSON")?;
+    if file.len() > 128 * 1024 {
+        return Err("OAuth client JSON too large".into());
+    }
+    let client: OAuthClientFile = serde_json::from_slice(&file)
+        .map_err(|_| "Expected Google OAuth Desktop client JSON under installed")?;
+    if client.installed.client_id.is_empty() || !client.installed.client_id.ends_with(".apps.googleusercontent.com") {
+        return Err("Invalid Google Desktop OAuth client ID".into());
+    }
+    let listener = TcpListener::bind("127.0.0.1:0").await.map_err(|_| "Could not bind local OAuth callback")?;
+    let redirect = format!("http://127.0.0.1:{}/callback",listener.local_addr().map_err(|_| "Could not read callback port")?.port());
+    let state = nonce();
+    let verifier = nonce();
+    let url = authorization_url(&client.installed.client_id, &redirect, &state, &verifier);
+    eprintln!("Open this Google login URL in your browser:\n{url}\n");
+    // Optional desktop browser invocation; the printed URL supports headless use.
+    let _ = std::process::Command::new("xdg-open").arg(url.as_str())
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .spawn();
+    let code = loop {
+        let (mut socket, _) = timeout(Duration::from_secs(300), listener.accept()).await
+            .map_err(|_| "Google login timed out")?
+            .map_err(|_| "OAuth callback listener failed")?;
+        let mut req = vec![0u8; 8192];
+        let n = timeout(Duration::from_secs(10), socket.read(&mut req)).await
+            .map_err(|_| "OAuth callback timed out")?
+            .map_err(|_| "Cannot read callback")?;
+        let input = std::str::from_utf8(&req[..n]).map_err(|_| "Callback encoding invalid")?;
+        let code = callback_code(input, &state);
+        let (status, body) = if code.is_ok() {
+            ("200 OK", "Synmetra authorization received. You may close this page.")
+        } else {
+            ("400 Bad Request", "Invalid authorization callback.")
+        };
+        let reply = format!("HTTP/1.1 {status}\r\nContent-Type: text/plain; charset=utf-8\r\nCache-Control: no-store\r\nConnection: close\r\nContent-Length: {}\r\n\r\n{body}", body.len());
+        let _ = socket.write_all(reply.as_bytes()).await;
+        if let Ok(code) = code { break code }
+    };
+    let token = token_exchange(&[
+        ("client_id", &client.installed.client_id),
+        ("client_secret", &client.installed.client_secret),
+        ("code", &code),
+        ("redirect_uri", &redirect),
+        ("code_verifier", &verifier),
+        ("grant_type", "authorization_code"),
+    ]).await?;
+    if token.access_token.is_empty() || token.expires_in == 0 {
+        return Err("Google returned invalid credentials".into());
+    }
+    if !token.scope.as_deref().is_some_and(|s| s.split_whitespace().any(|scope| scope == SCOPE)) {
+        return Err("Google did not grant the analytics.readonly scope".into());
+    }
+    let refresh_token = token.refresh_token.filter(|t| !t.is_empty())
+        .ok_or("Google did not return an offline refresh token; check Desktop OAuth setup")?;
+    let stored = Stored {
+        client_id: client.installed.client_id,
+        client_secret: client.installed.client_secret,
+        access_token: token.access_token,
+        refresh_token,
+        expires_at: epoch_seconds().saturating_add(token.expires_in)
+    };
+    persist_credentials(&stored)?;
+    println!("Google Analytics read-only credentials saved privately for Synmetra.");
+    Ok(())
+}
+
+pub async fn command(args: &[String]) -> Result<(), String> {
+    match args {
+        [mode, flag, path] if mode == "login" && flag == "--client-id-file" => login(path).await,
+        [mode] if mode == "status" => {
+            match read_credentials()? {
+                Some(c) => {
+                    println!("Synmetra OAuth credentials are configured (read-only).");
+                    println!("Current access token valid: {}", c.expires_at > epoch_seconds().saturating_add(120));
+                }
+                None => println!("Synmetra has no saved OAuth credentials."),
+            }
+            Ok(())
+        },
+        [mode] if mode == "logout" => {
+            let path = credentials_path()?;
+            if fs::symlink_metadata(&path).is_ok() {
+                private_file(&path)?;
+                fs::remove_file(path).map_err(|_| "Could not remove Synmetra credentials")?;
+            }
+            println!("Synmetra local credentials cleared. Revoke access in your Google account if desired.");
+            Ok(())
+        },
+        _ => Err("Usage: synmetra auth login --client-id-file /path/to/desktop.json | status | logout".into())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn state_callback_rejects_errors_and_wrong_paths() {
+        assert_eq!(callback_code("GET /callback?state=s&code=a HTTP/1.1\r\n", "s").unwrap(), "a");
+        for bad in ["GET /callback?state=other&code=secret HTTP/1.1", "GET /evil?state=s&code=a HTTP/1.1", "GET /callback?state=s HTTP/1.1", "POST /callback?state=s&code=a HTTP/1.1"] {
+            assert!(callback_code(bad, "s").is_err());
+        }
+    }
+
+    #[test]
+    fn pkce_authorization_is_readonly_and_state_bound() {
+        let verifier = nonce();
+        let state = nonce();
+        assert!(verifier.len() >= 43 && state.len() >= 43);
+        let url = authorization_url("sample.apps.googleusercontent.com", "http://127.0.0.1:5000/callback", &state, &verifier);
+        let pairs: std::collections::HashMap<_, _> = url.query_pairs().into_owned().collect();
+        assert_eq!(pairs["scope"], SCOPE);
+        assert_eq!(pairs["state"], state);
+        assert_eq!(pairs["code_challenge_method"], "S256");
+        assert!(!url.as_str().contains(&verifier));
+        assert!(!url.as_str().contains("analytics.edit"));
+    }
+}

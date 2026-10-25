@@ -9,3 +9,11 @@ Build and run: `cargo run --bin synmetra -- serve`. For a short-lived local deve
 MCP uses stdout exclusively. No credentials, real GA property IDs or private report bodies are used in automated CI; tests use synthetic fixtures. Network calls target fixed Google API hosts with rustls, bounded timeouts, 4 MiB response guard and no redirects. No Python or npm required by the binary. For real integrations, native OAuth remains outstanding.
 
 Additional read-only endpoints now include account data sharing, property retention, pivot and batched reports, metric compatibility, and account/property access reports. Advanced report tools currently take a provider-style `request` JSON object, not complete SednaLabs parameter schemas, so upstream parity remains open. Google access reports require Administrator permissions. Batch reports reject zero or more than five requests. The HTTP client refuses unknown operation names.
+
+## 🔑 Native OAuth setup
+
+Use a Google Cloud **Desktop** OAuth client JSON file (from an enabled Analytics Admin + Data API project), then run `synmetra auth login --client-id-file /path/to/client.json`. Synmetra binds a random port on `127.0.0.1`, opens the browser with `xdg-open`, and uses PKCE S256 plus a random callback state. Access is requested with **analytics.readonly** only and `access_type=offline`; no Python, npm, or gcloud is invoked. `synmetra auth status` reports whether private credentials exist; `synmetra auth logout` clears local credentials.
+
+Credentials are written as `$XDG_CONFIG_HOME/synmetra/credentials.json` (or `~/.config/synmetra/credentials.json`) with directory mode 0700 and file mode 0600. Tokens never enter public logs or CLI arguments. The process automatically refreshes an expiring access token using its private refresh token; `SYNMETRA_GOOGLE_ACCESS_TOKEN`, if explicitly set, overrides local storage and does not auto-refresh.
+
+**Security/acceptance:** OAuth is implemented with synthetic callback and PKCE tests, but no real Google login or refresh flow has yet been verified. An interactive OAuth login necessarily requires a one-time browser authorization by the account owner. Do not commit OAuth client JSON, credentials.json or browser callback URLs.

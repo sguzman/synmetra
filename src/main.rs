@@ -1,4 +1,5 @@
 //! Native MCP stdio server. Only implemented tools are advertised.
+mod auth;
 mod google;
 
 use google::{report_request, ApiError, GoogleClient};
@@ -207,19 +208,22 @@ impl Synmetra {
 #[tool_handler(
     name = "synmetra",
     version = "0.0.1",
-    instructions = "Read-only Google Analytics MCP server. Set SYNMETRA_GOOGLE_ACCESS_TOKEN to a short-lived access token scoped to analytics.readonly. Only implemented tools are listed; no write or scratchpad tools are enabled."
+    instructions = "Read-only Google Analytics MCP server. Use synmetra auth login for native OAuth token refresh, or SYNMETRA_GOOGLE_ACCESS_TOKEN for a short-lived analytics.readonly token. Only implemented tools are listed; no write or scratchpad tools are enabled."
 )]
 impl ServerHandler for Synmetra {}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = std::env::args().collect();
+    if args.len() >= 3 && args[1] == "auth" {
+        return auth::command(&args[2..]).await.map_err(|e| e.into());
+    }
     if args.len() == 2 && (args[1] == "--version" || args[1] == "-V") {
         println!("synmetra 0.0.1 (experimental read-only MCP)");
         return Ok(());
     }
     if args.len() != 1 && !(args.len() == 2 && args[1] == "serve") {
-        eprintln!("Usage: synmetra [serve|--version]\nStarts an experimental read-only MCP stdio server.\nSet SYNMETRA_GOOGLE_ACCESS_TOKEN to a short-lived Google OAuth token with analytics.readonly scope.");
+        eprintln!("Usage: synmetra [serve|--version|auth login --client-id-file PATH|auth status|auth logout]\nStarts an experimental read-only MCP stdio server.\nUse synmetra auth login for native read-only OAuth, or SYNMETRA_GOOGLE_ACCESS_TOKEN for a short-lived token.");
         std::process::exit(2);
     }
     let server = Synmetra {

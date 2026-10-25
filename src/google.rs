@@ -28,12 +28,13 @@ pub enum ApiError {
     ResponseTooLarge,
     InvalidResponse,
     TooManyPages,
+    AuthenticationFailed,
 }
 
 impl fmt::Display for ApiError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::MissingCredentials => write!(f, "No Google access token configured. Set SYNMETRA_GOOGLE_ACCESS_TOKEN to a scoped, short-lived token."),
+            Self::MissingCredentials => write!(f, "No Google access token configured. Run synmetra auth login --client-id-file PATH or set SYNMETRA_GOOGLE_ACCESS_TOKEN to a scoped, short-lived token."),
             Self::InvalidIdentifier => write!(f, "Invalid Google Analytics property identifier: expected positive decimal digits or properties/<digits>."),
             Self::InvalidRequest => write!(f, "Invalid Google Analytics request: report fields must be a JSON object."),
             Self::RequestFailed => write!(f, "Google Analytics request failed (network or timeout)."),
@@ -41,6 +42,7 @@ impl fmt::Display for ApiError {
             Self::ResponseTooLarge => write!(f, "Google Analytics response exceeded the 4 MiB safety limit."),
             Self::InvalidResponse => write!(f, "Google Analytics response was not valid JSON or had an invalid pagination contract."),
             Self::TooManyPages => write!(f, "Google Analytics pagination exceeded the 100-page safety limit."),
+            Self::AuthenticationFailed => write!(f, "Synmetra OAuth credentials could not be loaded or refreshed. Run synmetra auth status, then login again if necessary."),
         }
     }
 }
@@ -86,14 +88,21 @@ impl GoogleClient {
         }
     }
 
-    fn token(&self) -> Result<&str, ApiError> {
-        self.bearer.as_deref().ok_or(ApiError::MissingCredentials)
+    async fn token(&self) -> Result<String, ApiError> {
+        if let Some(explicit) = &self.bearer {
+            return Ok(explicit.clone());
+        }
+        match crate::auth::access_token().await {
+            Ok(Some(token)) => Ok(token),
+            Ok(None) => Err(ApiError::MissingCredentials),
+            Err(_) => Err(ApiError::AuthenticationFailed),
+        }
     }
 
     async fn send(&self, req: reqwest::RequestBuilder) -> Result<Value, ApiError> {
-        let bearer = self.token()?;
+        let bearer = self.token().await?;
         let response = req
-            .bearer_auth(bearer)
+            .bearer_auth(&bearer)
             .header(reqwest::header::ACCEPT, "application/json")
             .send()
             .await
