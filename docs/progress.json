@@ -1453,7 +1453,7 @@
               "id": "T075",
               "emoji": "🗺️",
               "name": "Normalize property and account resource names",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Numeric and canonical IDs round-trip",
               "checks": [
                 {
@@ -1463,7 +1463,8 @@
                 },
                 {
                   "text": "Numeric and canonical IDs round-trip",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs property_name and account_name normalize both positive bare numeric IDs and canonical properties/ or accounts/ resource names, rejecting path traversal, zero and malformed input. Test rejects_property_path_and_zero passed GitHub Actions core run 40218415190, 2026-10-25."
                 }
               ]
             },

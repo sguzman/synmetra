@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `██░░░░░░░░ 24.7%` · **+24.67 percentage points from initial empty repo; +1.10 pp in the verified pagination round** · 21/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `██░░░░░░░░ 24.9%` · **+24.89 percentage points from initial empty repo; +0.22 pp in numeric resource-name parity verification** · 21/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -198,7 +198,7 @@
   - ✅ **Gate:** State cleared without touching unrelated Google apps
 
 
-## 🏢 M3 — Admin API information parity — `███░░░░░░░ 31.2%`
+## 🏢 M3 — Admin API information parity — `███░░░░░░░ 34.4%`
 
 **Scope:** MVP. **Acceptance gate:** All administrative read tools and metadata endpoints match pinned signatures and response behavior.
 
@@ -221,14 +221,14 @@
 - 🧬 **T073 — Implement get_custom_dimensions_and_metrics** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Golden Admin API mock response and auth-denial case for get_custom_dimensions_and_metrics
 
-### 🏷️ P09 — Administrative edge cases — `██░░░░░░░░ 16.7%`
+### 🏷️ P09 — Administrative edge cases — `██░░░░░░░░ 22.2%`
 
 **Feature:** Admin fidelity.
 
 - 📚 **T074 — Page through all account summaries and Google Ads links** — `██████████ 100.0%`
   - ✅ **Gate:** Multi-page provider fixtures return complete results · **Evidence:** src/google.rs: GoogleClient::collection caps accumulated results at 10,000 items / 16 MiB, rejects repeated or oversized cursors, and aggregates account summaries/Ads links in mocked multi-page fixtures. Tests account_pagination_collects_pages_and_rejects_replayed_tokens and account_collection_rejects_unbounded_item_count passed GitHub Actions core run 40218035242, 2026-10-25.; src/google.rs: GoogleClient::collection caps accumulated results at 10,000 items / 16 MiB, rejects repeated or oversized cursors, and aggregates account summaries/Ads links in mocked multi-page fixtures. Tests account_pagination_collects_pages_and_rejects_replayed_tokens and account_collection_rejects_unbounded_item_count passed GitHub Actions core run 40218035242, 2026-10-25.
-- 🗺️ **T075 — Normalize property and account resource names** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Numeric and canonical IDs round-trip
+- 🗺️ **T075 — Normalize property and account resource names** — `██████████ 100.0%`
+  - ✅ **Gate:** Numeric and canonical IDs round-trip · **Evidence:** src/google.rs: scoped_name, property_name, account_name restrict and normalize positive resource IDs. Test rejects_property_path_and_zero passed GitHub Actions core 40218035242; complete account ID equivalence and live boundary QA remain open.; src/google.rs property_name and account_name normalize both positive bare numeric IDs and canonical properties/ or accounts/ resource names, rejecting path traversal, zero and malformed input. Test rejects_property_path_and_zero passed GitHub Actions core run 40218415190, 2026-10-25.
 - 🧱 **T076 — Handle GA4 property account hierarchy and time zones** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Correct property selection and permissions
 - ⏳ **T077 — Preserve property data retention and reset semantics** — `░░░░░░░░░░ 0.0%`
