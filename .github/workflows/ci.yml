@@ -1,0 +1,20 @@
+name: Rust foundation and progress integrity
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Test Rust project
+        run: cargo test --all-targets
+      - name: Verify task evidence and pinned MCP union
+        run: cargo run --bin synmetra-progress
