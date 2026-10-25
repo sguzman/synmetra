@@ -1826,12 +1826,13 @@
               "id": "T095",
               "emoji": "📅",
               "name": "Validate date ranges and reserved dates",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Multiple ranges and dates behave as Google expects",
               "checks": [
                 {
                   "text": "Deliver validate date ranges and reserved dates as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs: normalize_date_ranges validates ISO calendar dates and relative date forms, rejects reversed, unknown or invalid ranges and canonicalizes snake_case, used by historical, funnel and Admin report requests. Synthetic tests date_ranges_preserve_relative_dates_and_normalize_snake_case and date_ranges_reject_invalid_dates_and_unknown_fields passed GitHub Actions core run 40212316165; provider-wide acceptance remains open."
                 },
                 {
                   "text": "Multiple ranges and dates behave as Google expects",
@@ -1860,12 +1861,13 @@
               "id": "T097",
               "emoji": "📝",
               "name": "Normalize input values without silent coercion",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Lossless valid requests and typed invalid results",
               "checks": [
                 {
                   "text": "Deliver normalize input values without silent coercion as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs: canonical normalization of dates and typed invalid-request rejection before Google API calls; synthetic unit tests passed GitHub Actions core 40212316165. Full filter and pivot coercion and live API parity remain open."
                 },
                 {
                   "text": "Lossless valid requests and typed invalid results",
