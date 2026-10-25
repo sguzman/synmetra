@@ -29,7 +29,11 @@ impl Synmetra {
         if !writes_allowed {
             router.disable_route("create_property_annotation");
         }
-        Self { api, router, writes_allowed }
+        Self {
+            api,
+            router,
+            writes_allowed,
+        }
     }
 }
 
@@ -168,7 +172,9 @@ impl Synmetra {
         })))
     }
 
-    #[tool(description = "WRITE: Create a GA4 reporting annotation. Hidden and blocked unless server starts with --allow-write and Google token has analytics.edit scope. Never retry automatically.")]
+    #[tool(
+        description = "WRITE: Create a GA4 reporting annotation. Hidden and blocked unless server starts with --allow-write and Google token has analytics.edit scope. Never retry automatically."
+    )]
     async fn create_property_annotation(
         &self,
         Parameters(args): Parameters<CreateAnnotationArgs>,
@@ -505,8 +511,12 @@ mod tests {
         ] {
             assert!(names.contains(name), "missing {name}");
         }
-        assert!(!Synmetra::new(GoogleClient::new(None), false).router.has_route("create_property_annotation"));
-        assert!(Synmetra::new(GoogleClient::new(None), true).router.has_route("create_property_annotation"));
+        assert!(!Synmetra::new(GoogleClient::new(None), false)
+            .router
+            .has_route("create_property_annotation"));
+        assert!(Synmetra::new(GoogleClient::new(None), true)
+            .router
+            .has_route("create_property_annotation"));
     }
 
     #[tokio::test]
@@ -547,7 +557,12 @@ mod tests {
         let (server_stream, client_stream) = tokio::io::duplex(65536);
         let worker = tokio::spawn(async move {
             Synmetra::new(GoogleClient::new(None), true)
-                .serve(server_stream).await.unwrap().waiting().await.unwrap();
+                .serve(server_stream)
+                .await
+                .unwrap()
+                .waiting()
+                .await
+                .unwrap();
         });
         let client = ().serve(client_stream).await.unwrap();
         let tools = client.list_all_tools().await.unwrap();
@@ -557,7 +572,12 @@ mod tests {
         args.insert("property_id".into(), json!("42"));
         args.insert("title".into(), json!("Test"));
         args.insert("start_date".into(), json!("2026-10-25"));
-        let call = client.call_tool(CallToolRequestParams::new("create_property_annotation").with_arguments(args)).await.unwrap();
+        let call = client
+            .call_tool(
+                CallToolRequestParams::new("create_property_annotation").with_arguments(args),
+            )
+            .await
+            .unwrap();
         assert_eq!(call.is_error, Some(true));
         client.cancel().await.unwrap();
         worker.await.unwrap();

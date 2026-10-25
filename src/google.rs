@@ -71,7 +71,6 @@ pub fn account_name(input: &str) -> Result<String, ApiError> {
     scoped_name(input, "accounts")
 }
 
-
 /// Validate a single optional Google Analytics reporting annotation before any write.
 pub fn annotation_payload(
     title: &str,
@@ -81,7 +80,8 @@ pub fn annotation_payload(
     color: &str,
 ) -> Result<Value, ApiError> {
     let title = title.trim();
-    if title.is_empty() || title.chars().count() > 60
+    if title.is_empty()
+        || title.chars().count() > 60
         || description.is_some_and(|d| d.chars().count() > 150)
     {
         return Err(ApiError::InvalidAnnotation);
@@ -93,9 +93,11 @@ pub fn annotation_payload(
     }
     let parsed_start = NaiveDate::parse_from_str(start_date, "%Y-%m-%d")
         .map_err(|_| ApiError::InvalidAnnotation)?;
-    let date_object = |d: NaiveDate| json!({
-        "year": d.year(), "month": d.month(), "day": d.day()
-    });
+    let date_object = |d: NaiveDate| {
+        json!({
+            "year": d.year(), "month": d.month(), "day": d.day()
+        })
+    };
     let mut annotation = json!({"title": title, "color": color});
     if let Some(description) = description {
         annotation["description"] = json!(description);
@@ -103,7 +105,9 @@ pub fn annotation_payload(
     if let Some(end_date) = end_date {
         let parsed_end = NaiveDate::parse_from_str(end_date, "%Y-%m-%d")
             .map_err(|_| ApiError::InvalidAnnotation)?;
-        if parsed_end < parsed_start { return Err(ApiError::InvalidAnnotation); }
+        if parsed_end < parsed_start {
+            return Err(ApiError::InvalidAnnotation);
+        }
         annotation["annotationDateRange"] = json!({
             "startDate": date_object(parsed_start), "endDate": date_object(parsed_end)
         });
@@ -250,7 +254,10 @@ impl GoogleClient {
         if !body.is_object() || body["reportingDataAnnotation"].is_null() {
             return Err(ApiError::InvalidAnnotation);
         }
-        let url = format!("{}/v1alpha/{path}/reportingDataAnnotations", self.admin_base);
+        let url = format!(
+            "{}/v1alpha/{path}/reportingDataAnnotations",
+            self.admin_base
+        );
         // Mutating requests are never retried automatically.
         self.send(self.http.post(url).json(&body)).await
     }
@@ -450,11 +457,26 @@ mod tests {
     #[test]
     fn annotation_validates_dates_colors_and_lengths() {
         let single = annotation_payload(" Release ", "2026-10-25", None, None, "BLUE").unwrap();
-        assert_eq!(single["reportingDataAnnotation"]["annotationDate"]["month"], 10);
+        assert_eq!(
+            single["reportingDataAnnotation"]["annotationDate"]["month"],
+            10
+        );
         assert_eq!(single["reportingDataAnnotation"]["title"], "Release");
-        assert!(single["reportingDataAnnotation"].get("annotationDateRange").is_none());
-        let range = annotation_payload("Release", "2026-10-25", Some("2026-10-27"), Some("v1"), "CYAN").unwrap();
-        assert_eq!(range["reportingDataAnnotation"]["annotationDateRange"]["endDate"]["day"], 27);
+        assert!(single["reportingDataAnnotation"]
+            .get("annotationDateRange")
+            .is_none());
+        let range = annotation_payload(
+            "Release",
+            "2026-10-25",
+            Some("2026-10-27"),
+            Some("v1"),
+            "CYAN",
+        )
+        .unwrap();
+        assert_eq!(
+            range["reportingDataAnnotation"]["annotationDateRange"]["endDate"]["day"],
+            27
+        );
         for (start, end, color) in [
             ("2026-02-30", None, "BLUE"),
             ("2026-10-25", Some("2026-10-24"), "BLUE"),
@@ -467,7 +489,9 @@ mod tests {
             );
         }
         assert!(annotation_payload(&"a".repeat(61), "2026-10-25", None, None, "BLUE").is_err());
-        assert!(annotation_payload("x", "2026-10-25", None, Some(&"d".repeat(151)), "BLUE").is_err());
+        assert!(
+            annotation_payload("x", "2026-10-25", None, Some(&"d".repeat(151)), "BLUE").is_err()
+        );
     }
 
     #[tokio::test]
@@ -480,7 +504,9 @@ mod tests {
             "properties/42/reportingDataAnnotations/1"
         );
         let request = handle.await.unwrap();
-        assert!(request.starts_with("POST /v1alpha/properties/42/reportingDataAnnotations HTTP/1.1"));
+        assert!(
+            request.starts_with("POST /v1alpha/properties/42/reportingDataAnnotations HTTP/1.1")
+        );
     }
 
     #[test]
