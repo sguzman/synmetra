@@ -146,7 +146,10 @@ mod tests {
     fn production_http_bind_is_always_ipv4_loopback() {
         for port in [1, 44128, 65535] {
             let address = loopback_address(port);
-            assert_eq!(address.ip(), std::net::IpAddr::V4(std::net::Ipv4Addr::LOCALHOST));
+            assert_eq!(
+                address.ip(),
+                std::net::IpAddr::V4(std::net::Ipv4Addr::LOCALHOST)
+            );
             assert_eq!(address.port(), port);
         }
     }
