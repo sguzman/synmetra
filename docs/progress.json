@@ -234,7 +234,7 @@
               "id": "T011",
               "emoji": "🌐",
               "name": "Add reqwest rustls API client skeleton",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "No OpenSSL or Python runtime dependency",
               "checks": [
                 {
@@ -244,7 +244,8 @@
                 },
                 {
                   "text": "No OpenSSL or Python runtime dependency",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "Cargo.toml uses reqwest default-features=false with rustls-tls, no Python/OpenSSL requirement. .github/workflows/ci.yml native runtime step runs locked cargo tree and fails on openssl/openssl-sys/native-tls/pyo3 dependencies, builds the synmetra executable, then fails if ldd shows libssl/libcrypto/libpython. GitHub Actions 40241002371 both core and DuckDB jobs passed, including this native dependency/linkage check. Acceptance covers the default native Linux API server binary and dependency graph, not a claim about every user-installed system library."
                 }
               ]
             },

@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `████░░░░░░ 39.9%` · **+39.87 percentage points from initial empty repo; +0.22 pp from CI-proven adversarial filter validation** · 67/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `████░░░░░░ 40.1%` · **+40.09 percentage points from initial empty repo; +0.22 pp from CI-verified native TLS and Python/OpenSSL linkage boundary** · 68/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -11,7 +11,7 @@
 - On each stewardship round, report total and actively worked milestone/phase/task bars plus the **signed delta in percentage points** against the previous verified committed ledger; completed 100% tasks can be omitted in ongoing status updates.
 - **No progress padding.** Upstream feature inventory, planning and brand assets count only for their specific documentation tasks; GA4 functionality starts at 0% until tests establish otherwise. Real Google access, credentials and live tests are separate explicit gates.
 
-## 🧭 M0 — Reference baseline and project governance — `███████░░░ 67.7%`
+## 🧭 M0 — Reference baseline and project governance — `███████░░░ 70.6%`
 
 **Scope:** MVP. **Acceptance gate:** Audited pinned feature-union inventory, color identity, public-safe policies and reproducible plan. Foundation is not runtime parity.
 
@@ -36,7 +36,7 @@
 - 🔁 **T008 — Set up upstream drift tracking and version pin policy** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** CI alerts on name/signature deltas without silent breaking changes
 
-### 🦀 P01 — Native scaffold and quality gates — `█████░░░░░ 50.0%`
+### 🦀 P01 — Native scaffold and quality gates — `██████░░░░ 55.6%`
 
 **Feature:** Rust foundation.
 
@@ -44,8 +44,8 @@
   - ✅ **Gate:** Cargo metadata and CLI build on stable Rust x86-64 Linux · **Evidence:** Cargo.toml; src/main.rs; Actions 40202015488 compiled Synmetra native Rust binary and passed unit tests; Cargo.toml; src/main.rs; Actions 40202015488 compiled Synmetra native Rust binary and passed unit tests
 - 🔌 **T010 — Integrate rmcp server SDK foundation** — `██████████ 100.0%`
   - ✅ **Gate:** Protocol version pin plus compile-time registration tests · **Evidence:** src/main.rs rmcp 3.5.1 tool router and 17 registered MCP handlers; Actions 40202015488 passed; Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.
-- 🌐 **T011 — Add reqwest rustls API client skeleton** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** No OpenSSL or Python runtime dependency
+- 🌐 **T011 — Add reqwest rustls API client skeleton** — `██████████ 100.0%`
+  - ✅ **Gate:** No OpenSSL or Python runtime dependency · **Evidence:** src/google.rs reqwest/rustls fixed-host Admin/Data HTTP transport; Actions 40202015488 passed; Cargo.toml uses reqwest default-features=false with rustls-tls, no Python/OpenSSL requirement. .github/workflows/ci.yml native runtime step runs locked cargo tree and fails on openssl/openssl-sys/native-tls/pyo3 dependencies, builds the synmetra executable, then fails if ldd shows libssl/libcrypto/libpython. GitHub Actions 40241002371 both core and DuckDB jobs passed, including this native dependency/linkage check. Acceptance covers the default native Linux API server binary and dependency graph, not a claim about every user-installed system library.
 - 🧪 **T012 — Add fmt clippy unit tests and CI jobs** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Green push checks with pinned toolchain and dependency cache
 - 🧷 **T013 — Add lockfile dependency audits and license checks** — `░░░░░░░░░░ 0.0%`
