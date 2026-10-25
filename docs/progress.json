@@ -1809,12 +1809,13 @@
               "id": "T094",
               "emoji": "🔤",
               "name": "Support flexible dimension and metric filters",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "FilterExpression nested JSON and shorthand cases validated",
               "checks": [
                 {
                   "text": "Deliver support flexible dimension and metric filters as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs: structured nested dimensionFilter and metricFilter pass unchanged through report_request; bounded recursive validation and valid nested AND/NOT fixture passed 2026-10-25 GitHub Actions core job 121238774791 (run 40216536190). Shorthand filters and live GA4 contract parity still unverified."
                 },
                 {
                   "text": "FilterExpression nested JSON and shorthand cases validated",
@@ -2092,12 +2093,13 @@
               "id": "T110",
               "emoji": "🧱",
               "name": "Bound oversized filter recursion and JSON arguments",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Worst-case requests rejected before Google API",
               "checks": [
                 {
                   "text": "Deliver bound oversized filter recursion and json arguments as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs validate_bounded_filter: 16 KiB encoded bound, max depth 12, max 256 nodes, 64 children, and 1024-byte strings. Test nested_ga_filter_preserved_and_excessive_structures_rejected passed 2026-10-25 GitHub Actions core job 121238774791 (run 40216536190), alongside default Rust MCP unit tests and Clippy. More hostile corpus and live API acceptance pending."
                 },
                 {
                   "text": "Worst-case requests rejected before Google API",

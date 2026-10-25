@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `██░░░░░░░░ 22.9%` · **+22.91 percentage points from initial empty repo; +0.44 pp for verified date normalization implementation** · 21/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `██░░░░░░░░ 23.4%` · **+23.35 percentage points from initial empty repo; +0.44 pp in the verified bounded-filter round** · 21/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -245,7 +245,7 @@
   - ✅ **Gate:** No stale cross-principal cache confusion
 
 
-## 📊 M4 — Reporting, preflight and Data API parity — `██░░░░░░░░ 21.7%`
+## 📊 M4 — Reporting, preflight and Data API parity — `███░░░░░░░ 25.0%`
 
 **Scope:** MVP. **Acceptance gate:** All report tools return correct GA4 semantics, including documented alpha, pagination and response projections.
 
@@ -270,7 +270,7 @@
 - 👥 **T090 — Implement run_account_access_report** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** MCP schema, Google request, golden output and error cases for run_account_access_report
 
-### 🧭 P11 — Preflight MCP tools — `███░░░░░░░ 28.6%`
+### 🧭 P11 — Preflight MCP tools — `████░░░░░░ 35.7%`
 
 **Feature:** Preflight and metadata.
 
@@ -280,7 +280,7 @@
   - ✅ **Gate:** Validate its contract and unsupported metrics without wasteful report requests
 - 🧬 **T093 — Cache and refresh Data API metadata safely** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Metadata cache keys include property and caller
-- 🔤 **T094 — Support flexible dimension and metric filters** — `░░░░░░░░░░ 0.0%`
+- 🔤 **T094 — Support flexible dimension and metric filters** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** FilterExpression nested JSON and shorthand cases validated
 - 📅 **T095 — Validate date ranges and reserved dates** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Multiple ranges and dates behave as Google expects
@@ -289,7 +289,7 @@
 - 📝 **T097 — Normalize input values without silent coercion** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Lossless valid requests and typed invalid results
 
-### 📐 P12 — Data request fidelity and limits — `░░░░░░░░░░ 3.3%`
+### 📐 P12 — Data request fidelity and limits — `█░░░░░░░░░ 6.7%`
 
 **Feature:** Reporting correctness.
 
@@ -317,7 +317,7 @@
   - ✅ **Gate:** Counts and partial results are never misrepresented
 - 🌍 **T109 — Handle property-specific API permission and quota errors** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** 429 and 403 retry/backoff rules explicit
-- 🧱 **T110 — Bound oversized filter recursion and JSON arguments** — `░░░░░░░░░░ 0.0%`
+- 🧱 **T110 — Bound oversized filter recursion and JSON arguments** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Worst-case requests rejected before Google API
 - ♻️ **T111 — Make repeated report retries safe and idempotent** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Retry-After respected with bounded jitter
