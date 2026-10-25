@@ -2007,12 +2007,15 @@ mod tests {
     #[test]
     fn funnel_steps_preserve_sequencing_durations_and_bounded_breakdown_limits() {
         let body = funnel_request(
-            vec![json!({
-                "name":"Purchased",
-                "event":"purchase",
-                "is_directly_followed_by":true,
-                "within_duration_from_prior_step":"3600.5s"
-            })],
+            vec![
+                json!({"name":"Viewed","event":"page_view"}),
+                json!({
+                    "name":"Purchased",
+                    "event":"purchase",
+                    "is_directly_followed_by":true,
+                    "within_duration_from_prior_step":"3600.5s"
+                }),
+            ],
             None,
             Some(json!({"breakdown_dimension":"deviceCategory","limit":15})),
             Some(json!({"next_action_dimension":"eventName","limit":5})),
@@ -2020,9 +2023,9 @@ mod tests {
             false,
         )
         .unwrap();
-        assert_eq!(body["funnel"]["steps"][0]["isDirectlyFollowedBy"], true);
+        assert_eq!(body["funnel"]["steps"][1]["isDirectlyFollowedBy"], true);
         assert_eq!(
-            body["funnel"]["steps"][0]["withinDurationFromPriorStep"],
+            body["funnel"]["steps"][1]["withinDurationFromPriorStep"],
             "3600.5s"
         );
         assert_eq!(body["funnelBreakdown"]["limit"], "15");
@@ -2030,7 +2033,10 @@ mod tests {
 
         for invalid in ["-2s", "3600", "1.1234567890s", "not-a-duration"] {
             assert!(funnel_request(
-                vec![json!({"event":"purchase","within_duration_from_prior_step":invalid})],
+                vec![
+                    json!({"event":"page_view"}),
+                    json!({"event":"purchase","within_duration_from_prior_step":invalid}),
+                ],
                 None,
                 None,
                 None,
