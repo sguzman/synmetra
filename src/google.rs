@@ -905,9 +905,11 @@ mod tests {
         assert!(validate_bounded_filter(&valid).is_ok());
         let request = report_request(
             Some(vec![json!({"startDate":"7daysAgo","endDate":"today"})]),
-            vec!["country".into()], vec!["activeUsers".into()],
+            vec!["country".into()],
+            vec!["activeUsers".into()],
             vec![("dimensionFilter", Some(valid.clone()))],
-        ).unwrap();
+        )
+        .unwrap();
         assert_eq!(request["dimensionFilter"], valid);
 
         let mut deep = json!({"filter":{"fieldName":"country"}});
@@ -918,8 +920,13 @@ mod tests {
         assert!(validate_bounded_filter(&json!("country==Mexico")).is_err());
         assert!(validate_bounded_filter(&json!({"value":"x".repeat(1025)})).is_err());
         assert!(validate_bounded_filter(&json!({"expressions":vec![true;65]})).is_err());
-        assert!(report_request(None, vec![], vec!["activeUsers".into()],
-            vec![("metricFilter", Some(deep))]).is_err());
+        assert!(report_request(
+            None,
+            vec![],
+            vec!["activeUsers".into()],
+            vec![("metricFilter", Some(deep))]
+        )
+        .is_err());
     }
 
     #[test]
