@@ -233,6 +233,46 @@ struct CompatibilityArgs {
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
+struct PropertyAccessArgs {
+    property_id: String,
+    date_ranges: Vec<Value>,
+    dimensions: Vec<String>,
+    metrics: Vec<String>,
+    #[serde(default)]
+    dimension_filter: Option<Value>,
+    #[serde(default)]
+    metric_filter: Option<Value>,
+    #[serde(default)]
+    order_bys: Option<Vec<Value>>,
+    #[serde(default)]
+    limit: Option<u32>,
+    #[serde(default)]
+    offset: Option<u64>,
+    #[serde(default)]
+    time_zone: Option<String>,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+struct AccountAccessArgs {
+    account_id: String,
+    date_ranges: Vec<Value>,
+    dimensions: Vec<String>,
+    metrics: Vec<String>,
+    #[serde(default)]
+    dimension_filter: Option<Value>,
+    #[serde(default)]
+    metric_filter: Option<Value>,
+    #[serde(default)]
+    order_bys: Option<Vec<Value>>,
+    #[serde(default)]
+    limit: Option<u32>,
+    #[serde(default)]
+    offset: Option<u64>,
+    #[serde(default)]
+    time_zone: Option<String>,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
 struct RawAccountRequestArgs {
     /// Positive GA4 account number or canonical accounts/<id>.
     account_id: String,
@@ -634,13 +674,17 @@ impl Synmetra {
     )]
     async fn run_property_access_report(
         &self,
-        Parameters(args): Parameters<RawPropertyRequestArgs>,
+        Parameters(args): Parameters<PropertyAccessArgs>,
     ) -> CallToolResult {
-        result(
-            self.api
-                .access_report(&args.property_id, args.request, false)
-                .await,
-        )
+        let request = google::access_report_request(
+            args.date_ranges, args.dimensions, args.metrics,
+            args.dimension_filter, args.metric_filter, args.order_bys,
+            args.limit, args.offset, args.time_zone,
+        );
+        result(match request {
+            Ok(body) => self.api.access_report(&args.property_id, body, false).await,
+            Err(error) => Err(error),
+        })
     }
 
     #[tool(
@@ -654,13 +698,17 @@ impl Synmetra {
     )]
     async fn run_account_access_report(
         &self,
-        Parameters(args): Parameters<RawAccountRequestArgs>,
+        Parameters(args): Parameters<AccountAccessArgs>,
     ) -> CallToolResult {
-        result(
-            self.api
-                .access_report(&args.account_id, args.request, true)
-                .await,
-        )
+        let request = google::access_report_request(
+            args.date_ranges, args.dimensions, args.metrics,
+            args.dimension_filter, args.metric_filter, args.order_bys,
+            args.limit, args.offset, args.time_zone,
+        );
+        result(match request {
+            Ok(body) => self.api.access_report(&args.account_id, body, true).await,
+            Err(error) => Err(error),
+        })
     }
 
     #[tool(

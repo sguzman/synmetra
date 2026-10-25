@@ -516,6 +516,55 @@ pub fn funnel_request(
     Ok(request)
 }
 
+
+/// Normalize Google Analytics Admin API access-report inputs.
+/// AccessDimension/AccessMetric use dimensionName/metricName (not "name").
+pub fn access_report_request(
+    date_ranges: Vec<Value>, dimensions: Vec<String>, metrics: Vec<String>,
+    dimension_filter: Option<Value>, metric_filter: Option<Value>,
+    order_bys: Option<Vec<Value>>, limit: Option<u32>, offset: Option<u64>,
+    time_zone: Option<String>,
+) -> Result<Value, ApiError> {
+    if date_ranges.is_empty() || date_ranges.len() > 4
+        || metrics.is_empty() || metrics.len() > 10 || dimensions.len() > 9
+        || dimensions.iter().chain(metrics.iter()).any(|s| s.trim().is_empty())
+        || limit.is_some_and(|v| v == 0 || v > 250_000)
+    {
+        return Err(ApiError::InvalidRequest);
+    }
+    let mut dates = Vec::new();
+    for range in date_ranges {
+        let start = range.get("startDate").or_else(|| range.get("start_date"))
+            .and_then(Value::as_str).ok_or(ApiError::InvalidRequest)?;
+        let end = range.get("endDate").or_else(|| range.get("end_date"))
+            .and_then(Value::as_str).ok_or(ApiError::InvalidRequest)?;
+        if start.is_empty() || end.is_empty() || start.len() > 32 || end.len() > 32 {
+            return Err(ApiError::InvalidRequest);
+        }
+        dates.push(json!({"startDate":start,"endDate":end}));
+    }
+    let mut req = json!({
+        "dateRanges":dates,
+        "dimensions":dimensions.iter().map(|name| json!({"dimensionName":name})).collect::<Vec<_>>(),
+        "metrics":metrics.iter().map(|name| json!({"metricName":name})).collect::<Vec<_>>()
+    });
+    if let Some(filter) = dimension_filter { req["dimensionFilter"] = filter; }
+    if let Some(filter) = metric_filter { req["metricFilter"] = filter; }
+    if let Some(order_bys) = order_bys { req["orderBys"] = json!(order_bys); }
+    if let Some(limit) = limit { req["limit"] = json!(limit.to_string()); }
+    if let Some(offset) = offset { req["offset"] = json!(offset.to_string()); }
+    if let Some(zone) = time_zone {
+        if zone.is_empty() || zone.len() > 80 || zone.chars().any(|c| !c.is_ascii_alphanumeric() && !"/_+-".contains(c)) {
+            return Err(ApiError::InvalidRequest);
+        }
+        req["timeZone"] = json!(zone);
+    }
+    if serde_json::to_vec(&req).map_or(true, |bytes| bytes.len() > 64 * 1024) {
+        return Err(ApiError::InvalidRequest);
+    }
+    Ok(req)
+}
+
 /// Google REST APIs accept array entries as objects, not raw field names.
 pub fn report_request(
     dates: Option<Vec<Value>>,
@@ -613,6 +662,22 @@ mod tests {
         ] {
             assert!(funnel_request(bad,None,None,None,None,false).is_err());
         }
+    }
+
+    #[test]
+    fn access_reports_use_admin_field_names_and_reject_invalid_ranges() {
+        let request = access_report_request(
+            vec![json!({"start_date":"2026-10-20","end_date":"2026-10-25"})],
+            vec!["userEmail".into()], vec!["accessCount".into()],
+            None,None,None,Some(200),Some(0),Some("America/Mexico_City".into()),
+        ).unwrap();
+        assert_eq!(request["dateRanges"][0]["startDate"], "2026-10-20");
+        assert_eq!(request["dimensions"][0]["dimensionName"], "userEmail");
+        assert_eq!(request["metrics"][0]["metricName"], "accessCount");
+        assert_eq!(request["limit"], "200");
+        assert!(access_report_request(vec![], vec![], vec!["accessCount".into()],None,None,None,None,None,None).is_err());
+        assert!(access_report_request(vec![json!({})],vec![],vec!["accessCount".into()],None,None,None,None,None,None).is_err());
+        assert!(access_report_request(vec![json!({"startDate":"today","endDate":"today"})],vec![],vec!["accessCount".into()],None,None,None,None,None,Some("bad zone".into())).is_err());
     }
 
     #[test]
