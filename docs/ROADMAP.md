@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `███░░░░░░░ 31.9%` · **+31.94 percentage points from initial empty repo; +0.22 pp from tested four-range date normalization** · 42/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `███░░░░░░░ 32.4%` · **+32.38 percentage points from initial empty repo; +0.44 pp from CI-tested tabular summary and GA quota/warning preservation** · 43/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -245,7 +245,7 @@
   - ✅ **Gate:** No stale cross-principal cache confusion
 
 
-## 📊 M4 — Reporting, preflight and Data API parity — `████░░░░░░ 36.7%`
+## 📊 M4 — Reporting, preflight and Data API parity — `████░░░░░░ 40.0%`
 
 **Scope:** MVP. **Acceptance gate:** All report tools return correct GA4 semantics, including documented alpha, pagination and response projections.
 
@@ -289,7 +289,7 @@
 - 📝 **T097 — Normalize input values without silent coercion** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Lossless valid requests and typed invalid results
 
-### 📐 P12 — Data request fidelity and limits — `██░░░░░░░░ 23.3%`
+### 📐 P12 — Data request fidelity and limits — `███░░░░░░░ 30.0%`
 
 **Feature:** Reporting correctness.
 
@@ -313,16 +313,16 @@
   - ✅ **Gate:** All compatible result projections are predictable
 - ✂️ **T107 — Support row cell and request-size clipping** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Limits protect context without hiding truncation metadata
-- 📋 **T108 — Support summary-only responses and total known flags** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Counts and partial results are never misrepresented
+- 📋 **T108 — Support summary-only responses and total known flags** — `█████░░░░░ 50.0%`
+  - ✅ **Gate:** Counts and partial results are never misrepresented · **Evidence (partial):** src/tabular.rs provides opt-in summary_only responses with data=null, explicit row_count_total_known flag, truthful row_count_returned/truncated and no fabricated next_cursor; src/main.rs wires this to run_report/run_realtime_report and preview. Tests projections_keep_true_counts_and_upstream_quota, summary_and_unicode_clipping_preserve_counts_without_row_payload, unknown_total_is_marked_unknown_and_metric_only_reports_are_valid plus mock integration passed GitHub Actions 40230044045 full CI. Remaining all-tool output controls and stable historical cursors are open.
 - 🌍 **T109 — Handle property-specific API permission and quota errors** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** 429 and 403 retry/backoff rules explicit
 - 🧱 **T110 — Bound oversized filter recursion and JSON arguments** — `██████████ 100.0%`
   - ✅ **Gate:** Worst-case requests rejected before Google API · **Evidence:** src/google.rs validate_bounded_filter: 16 KiB encoded bound, max depth 12, max 256 nodes, 64 children, and 1024-byte strings. Test nested_ga_filter_preserved_and_excessive_structures_rejected passed 2026-10-25 GitHub Actions core job 121238774791 (run 40216536190), alongside default Rust MCP unit tests and Clippy. More hostile corpus and live API acceptance pending.; src/google.rs report_request validates the entire assembled body (64 KiB cap), plus existing bounded filter depth/nodes/breadth limits; src/main.rs offline_preview_rejects_oversized_report_options_with_a_typed_error confirms malformed options yield INVALID_REQUEST without requiring Google credentials or network access; google.rs historical_report_request_rejects_oversized_options_and_deep_filters verifies massive orderBy and recursive/wide filters. GitHub Actions 40228133861 core tests, rustfmt and Clippy passed. Independent live-Google and all-upstream schema acceptance remain separate.
 - ♻️ **T111 — Make repeated report retries safe and idempotent** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Retry-After respected with bounded jitter
-- 🧾 **T112 — Preserve GA response quota metadata and warnings** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Quotas accessible without leaking tokens · **Evidence (quota only):** src/main.rs result preserves the provider JSON data without dropping propertyQuota and never echoes the access token; realtime_mcp_retains_provider_quota_without_fabricating_a_next_cursor verifies quota remaining=9 and absence of the mock bearer token in MCP structured output. CI 40227043192 core passed. Structured warning metadata and full cross-tool quota/error behavior remain unaccepted.
+- 🧾 **T112 — Preserve GA response quota metadata and warnings** — `██████████ 100.0%`
+  - ✅ **Gate:** Quotas accessible without leaking tokens · **Evidence:** src/main.rs result preserves the provider JSON data without dropping propertyQuota and never echoes the access token; realtime_mcp_retains_provider_quota_without_fabricating_a_next_cursor verifies quota remaining=9 and absence of the mock bearer token in MCP structured output. CI 40227043192 core passed. Structured warning metadata and full cross-tool quota/error behavior remain unaccepted.; src/main.rs default provider-shaped result retains Google propertyQuota; src/tabular.rs opt-in output retains provider propertyQuota and warnings inside meta.ga4, with source token excluded from structured/text content. Tests realtime_mcp_retains_provider_quota_without_fabricating_a_next_cursor, historical_report_opt_in_projection_preserves_metadata_and_previews_offline, projections_keep_true_counts_and_upstream_quota confirm quota counts and warnings. GitHub Actions 40230044045 both core and DuckDB jobs passed. This is metadata pass-through acceptance, not a claim of all 36 upstream response projections. · **Evidence (quota only):** src/main.rs result preserves the provider JSON data without dropping propertyQuota and never echoes the access token; realtime_mcp_retains_provider_quota_without_fabricating_a_next_cursor verifies quota remaining=9 and absence of the mock bearer token in MCP structured output. CI 40227043192 core passed. Structured warning metadata and full cross-tool quota/error behavior remain unaccepted.
 
 
 ## ✍️ M5 — Explicitly gated GA mutation parity — `██████░░░░ 61.5%`

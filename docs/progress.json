@@ -2076,12 +2076,13 @@
               "id": "T108",
               "emoji": "📋",
               "name": "Support summary-only responses and total known flags",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Counts and partial results are never misrepresented",
               "checks": [
                 {
                   "text": "Deliver support summary-only responses and total known flags as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/tabular.rs provides opt-in summary_only responses with data=null, explicit row_count_total_known flag, truthful row_count_returned/truncated and no fabricated next_cursor; src/main.rs wires this to run_report/run_realtime_report and preview. Tests projections_keep_true_counts_and_upstream_quota, summary_and_unicode_clipping_preserve_counts_without_row_payload, unknown_total_is_marked_unknown_and_metric_only_reports_are_valid plus mock integration passed GitHub Actions 40230044045 full CI. Remaining all-tool output controls and stable historical cursors are open."
                 },
                 {
                   "text": "Counts and partial results are never misrepresented",
@@ -2146,7 +2147,7 @@
               "id": "T112",
               "emoji": "🧾",
               "name": "Preserve GA response quota metadata and warnings",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Quotas accessible without leaking tokens",
               "checks": [
                 {
@@ -2156,7 +2157,8 @@
                 },
                 {
                   "text": "Quotas accessible without leaking tokens",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs default provider-shaped result retains Google propertyQuota; src/tabular.rs opt-in output retains provider propertyQuota and warnings inside meta.ga4, with source token excluded from structured/text content. Tests realtime_mcp_retains_provider_quota_without_fabricating_a_next_cursor, historical_report_opt_in_projection_preserves_metadata_and_previews_offline, projections_keep_true_counts_and_upstream_quota confirm quota counts and warnings. GitHub Actions 40230044045 both core and DuckDB jobs passed. This is metadata pass-through acceptance, not a claim of all 36 upstream response projections."
                 }
               ]
             }
