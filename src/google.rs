@@ -1779,19 +1779,26 @@ mod tests {
     #[tokio::test]
     async fn advanced_reports_use_read_only_api_paths() {
         for method in ["runPivotReport", "checkCompatibility", "batchRunReports"] {
-            let (url, handle) = once(r#"{"ok":true}"#).await;
+            let response = match method {
+                "runPivotReport" => r#"{"rowCount":0}"#,
+                "checkCompatibility" => r#"{"dimensionCompatibilities":[],"metricCompatibilities":[]}"#,
+                "batchRunReports" => r#"{"reports":[{"rowCount":0}]}"#,
+                _ => unreachable!(),
+            };
+            let (url, handle) = once(response).await;
             let c = GoogleClient::with_endpoints(Some("token".into()), &url, &url);
             let body = if method == "batchRunReports" {
                 json!({"requests":[{"metrics":[{"name":"activeUsers"}]}]})
             } else {
                 json!({"metrics":[{"name":"activeUsers"}]})
             };
-            assert_eq!(
-                c.data_operation("properties/77", body, method)
-                    .await
-                    .unwrap()["ok"],
-                true
-            );
+            let parsed = c.data_operation("properties/77", body, method).await.unwrap();
+            match method {
+                "runPivotReport" => assert_eq!(parsed["rowCount"], 0),
+                "checkCompatibility" => assert!(parsed["metricCompatibilities"].is_array()),
+                "batchRunReports" => assert_eq!(parsed["reports"][0]["rowCount"], 0),
+                _ => unreachable!(),
+            }
             assert!(handle
                 .await
                 .unwrap()
