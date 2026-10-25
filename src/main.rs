@@ -19,6 +19,26 @@ use rmcp::{
 use serde::Deserialize;
 use serde_json::{json, Value};
 
+/// Match the pinned Google and SednaLabs contract: identifiers may arrive as
+/// positive decimal numbers or as canonical resource-name strings.
+#[derive(Debug, Deserialize, JsonSchema)]
+#[serde(untagged)]
+enum GaResourceIdInput {
+    Number(u64),
+    Text(String),
+}
+
+fn deserialize_google_id<'de, D>(deserializer: D) -> Result<String, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let input = GaResourceIdInput::deserialize(deserializer)?;
+    Ok(match input {
+        GaResourceIdInput::Number(value) => value.to_string(),
+        GaResourceIdInput::Text(value) => value,
+    })
+}
+
 #[derive(Clone)]
 struct Synmetra {
     api: GoogleClient,
@@ -138,6 +158,8 @@ struct ScratchEvidenceArgs {
 struct ScratchIngestReportArgs {
     session_id: String,
     table_name: String,
+    #[serde(deserialize_with = "deserialize_google_id")]
+    #[schemars(with = "GaResourceIdInput")]
     property_id: String,
     dimensions: Vec<String>,
     metrics: Vec<String>,
@@ -165,6 +187,8 @@ struct ScratchIngestReportArgs {
 struct ScratchIngestRealtimeArgs {
     session_id: String,
     table_name: String,
+    #[serde(deserialize_with = "deserialize_google_id")]
+    #[schemars(with = "GaResourceIdInput")]
     property_id: String,
     dimensions: Vec<String>,
     metrics: Vec<String>,
@@ -334,6 +358,8 @@ struct CollectionArgs {
 
 #[derive(Debug, Deserialize, JsonSchema)]
 struct PropertyCollectionArgs {
+    #[serde(deserialize_with = "deserialize_google_id")]
+    #[schemars(with = "GaResourceIdInput")]
     property_id: String,
     #[serde(default)]
     page_size: Option<u32>,
@@ -344,11 +370,15 @@ struct PropertyCollectionArgs {
 #[derive(Debug, Deserialize, JsonSchema)]
 struct PropertyArgs {
     /// Positive numeric GA4 property ID or canonical properties/<id>.
+    #[serde(deserialize_with = "deserialize_google_id")]
+    #[schemars(with = "GaResourceIdInput")]
     property_id: String,
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
 struct CreateAnnotationArgs {
+    #[serde(deserialize_with = "deserialize_google_id")]
+    #[schemars(with = "GaResourceIdInput")]
     property_id: String,
     title: String,
     start_date: String,
@@ -367,11 +397,15 @@ fn default_annotation_color() -> String {
 #[derive(Debug, Deserialize, JsonSchema)]
 struct AccountArgs {
     /// Positive GA4 account number or canonical accounts/<id>.
+    #[serde(deserialize_with = "deserialize_google_id")]
+    #[schemars(with = "GaResourceIdInput")]
     account_id: String,
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
 struct FunnelArgs {
+    #[serde(deserialize_with = "deserialize_google_id")]
+    #[schemars(with = "GaResourceIdInput")]
     property_id: String,
     funnel_steps: Vec<Value>,
     #[serde(default)]
@@ -388,6 +422,8 @@ struct FunnelArgs {
 
 #[derive(Debug, Deserialize, JsonSchema)]
 struct ConversionArgs {
+    #[serde(deserialize_with = "deserialize_google_id")]
+    #[schemars(with = "GaResourceIdInput")]
     property_id: String,
     date_ranges: Vec<Value>,
     dimensions: Vec<String>,
@@ -411,6 +447,8 @@ struct ConversionArgs {
 
 #[derive(Debug, Deserialize, JsonSchema)]
 struct PivotArgs {
+    #[serde(deserialize_with = "deserialize_google_id")]
+    #[schemars(with = "GaResourceIdInput")]
     property_id: String,
     date_ranges: Vec<Value>,
     dimensions: Vec<String>,
@@ -482,12 +520,16 @@ impl BatchReportItemArgs {
 
 #[derive(Debug, Deserialize, JsonSchema)]
 struct BatchArgs {
+    #[serde(deserialize_with = "deserialize_google_id")]
+    #[schemars(with = "GaResourceIdInput")]
     property_id: String,
     requests: Vec<BatchReportItemArgs>,
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
 struct CompatibilityArgs {
+    #[serde(deserialize_with = "deserialize_google_id")]
+    #[schemars(with = "GaResourceIdInput")]
     property_id: String,
     dimensions: Vec<String>,
     metrics: Vec<String>,
@@ -495,6 +537,8 @@ struct CompatibilityArgs {
 
 #[derive(Debug, Deserialize, JsonSchema)]
 struct PropertyAccessArgs {
+    #[serde(deserialize_with = "deserialize_google_id")]
+    #[schemars(with = "GaResourceIdInput")]
     property_id: String,
     date_ranges: Vec<Value>,
     dimensions: Vec<String>,
@@ -515,6 +559,8 @@ struct PropertyAccessArgs {
 
 #[derive(Debug, Deserialize, JsonSchema)]
 struct AccountAccessArgs {
+    #[serde(deserialize_with = "deserialize_google_id")]
+    #[schemars(with = "GaResourceIdInput")]
     account_id: String,
     date_ranges: Vec<Value>,
     dimensions: Vec<String>,
@@ -540,6 +586,8 @@ fn default_return_property_quota() -> bool {
 #[derive(Debug, Deserialize, JsonSchema)]
 struct ReportArgs {
     /// Positive numeric GA4 property ID or canonical properties/<id>.
+    #[serde(deserialize_with = "deserialize_google_id")]
+    #[schemars(with = "GaResourceIdInput")]
     property_id: String,
     /// Historical date ranges, e.g. [{"startDate":"7daysAgo","endDate":"today"}].
     date_ranges: Vec<Value>,
@@ -584,6 +632,8 @@ struct ReportArgs {
 
 #[derive(Debug, Deserialize, JsonSchema)]
 struct RealtimeArgs {
+    #[serde(deserialize_with = "deserialize_google_id")]
+    #[schemars(with = "GaResourceIdInput")]
     property_id: String,
     dimensions: Vec<String>,
     metrics: Vec<String>,
@@ -2216,6 +2266,49 @@ mod tests {
             response.structured_content.unwrap()["data"]["request"]["returnPropertyQuota"],
             false
         );
+    }
+
+    #[test]
+    fn resource_ids_accept_integer_or_canonical_text_in_registered_mcp_schemas() {
+        let base = json!({
+            "property_id":42,
+            "date_ranges":[{"start_date":"yesterday","end_date":"today"}],
+            "dimensions":[],
+            "metrics":["activeUsers"]
+        });
+        let report: ReportArgs = serde_json::from_value(base).unwrap();
+        assert_eq!(report.property_id, "42");
+        let prop: PropertyArgs = serde_json::from_value(json!({"property_id":42})).unwrap();
+        assert_eq!(prop.property_id, "42");
+        let prop: PropertyArgs =
+            serde_json::from_value(json!({"property_id":"properties/42"})).unwrap();
+        assert_eq!(prop.property_id, "properties/42");
+        let account: AccountArgs = serde_json::from_value(json!({"account_id":97})).unwrap();
+        assert_eq!(account.account_id, "97");
+        for bad in [json!(-1), json!(1.5), json!(true), Value::Null] {
+            assert!(serde_json::from_value::<PropertyArgs>(
+                json!({"property_id":bad})
+            )
+            .is_err());
+        }
+        let router = Synmetra::tool_router();
+        for (tool_name, field_name) in [
+            ("run_report", "property_id"),
+            ("run_realtime_report", "property_id"),
+            ("get_property_details", "property_id"),
+            ("get_account_data_sharing_settings", "account_id"),
+        ] {
+            let tool = router
+                .list_all()
+                .into_iter()
+                .find(|item| item.name == tool_name)
+                .unwrap();
+            let schema = &tool.input_schema["properties"][field_name];
+            assert!(
+                schema.get("anyOf").is_some() || schema.get("oneOf").is_some(),
+                "{tool_name} must advertise numeric or text IDs"
+            );
+        }
     }
 
     #[tokio::test]
