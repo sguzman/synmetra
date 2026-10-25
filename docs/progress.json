@@ -2416,7 +2416,7 @@
               "id": "T124",
               "emoji": "♻️",
               "name": "Handle Google transient failures without blind retries",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "No automatic duplicate annotation creation",
               "checks": [
                 {
@@ -2426,7 +2426,8 @@
                 },
                 {
                   "text": "No automatic duplicate annotation creation",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs create_annotation invokes self.send once, never an automatic retry. Test annotation_writes_do_not_retry_429_500_or_503_responses uses a single local loopback request with Retry-After: 1 for each transient status and checks immediate error and no leaked token, while annotation_post_targets_admin_v1alpha_without_retry verifies one successful POST. GitHub Actions 40239266063 and 40239414715 both passed core and DuckDB jobs. This does not claim future retry/backoff policy for read-only reporting (T109/T111)."
                 }
               ]
             },

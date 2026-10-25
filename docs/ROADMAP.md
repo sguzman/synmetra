@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `████░░░░░░ 37.9%` · **+37.89 percentage points from initial empty repo; +0.45 pp from CI-tested complex funnel round-trip and validation** · 61/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `████░░░░░░ 38.1%` · **+38.11 percentage points from initial empty repo; +0.22 pp from verified no-retry annotation safety gate** · 62/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -325,7 +325,7 @@
   - ✅ **Gate:** Quotas accessible without leaking tokens · **Evidence:** src/main.rs result preserves the provider JSON data without dropping propertyQuota and never echoes the access token; realtime_mcp_retains_provider_quota_without_fabricating_a_next_cursor verifies quota remaining=9 and absence of the mock bearer token in MCP structured output. CI 40227043192 core passed. Structured warning metadata and full cross-tool quota/error behavior remain unaccepted.; src/main.rs default provider-shaped result retains Google propertyQuota; src/tabular.rs opt-in output retains provider propertyQuota and warnings inside meta.ga4, with source token excluded from structured/text content. Tests realtime_mcp_retains_provider_quota_without_fabricating_a_next_cursor, historical_report_opt_in_projection_preserves_metadata_and_previews_offline, projections_keep_true_counts_and_upstream_quota confirm quota counts and warnings. GitHub Actions 40230044045 both core and DuckDB jobs passed. This is metadata pass-through acceptance, not a claim of all 36 upstream response projections. · **Evidence (quota only):** src/main.rs result preserves the provider JSON data without dropping propertyQuota and never echoes the access token; realtime_mcp_retains_provider_quota_without_fabricating_a_next_cursor verifies quota remaining=9 and absence of the mock bearer token in MCP structured output. CI 40227043192 core passed. Structured warning metadata and full cross-tool quota/error behavior remain unaccepted.
 
 
-## ✍️ M5 — Explicitly gated GA mutation parity — `██████░░░░ 61.5%`
+## ✍️ M5 — Explicitly gated GA mutation parity — `███████░░░ 65.4%`
 
 **Scope:** MVP. **Acceptance gate:** One official write tool operates with analytics.edit and explicit opt-in; ordinary mode cannot mutate GA.
 
@@ -350,7 +350,7 @@
 - 🧪 **T120 — Test write denial and optional live opt-in acceptance** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** No writes in automated public CI
 
-### 🚦 P14 — Write safety policies — `██████░░░░ 60.0%`
+### 🚦 P14 — Write safety policies — `███████░░░ 70.0%`
 
 **Feature:** Write gating.
 
@@ -360,8 +360,8 @@
   - ✅ **Gate:** Bypass attempts fail regardless of tool visibility
 - 🧾 **T123 — Produce redacted audit events for writes** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Timestamp and action identifiable but no secrets
-- ♻️ **T124 — Handle Google transient failures without blind retries** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** No automatic duplicate annotation creation
+- ♻️ **T124 — Handle Google transient failures without blind retries** — `██████████ 100.0%`
+  - ✅ **Gate:** No automatic duplicate annotation creation · **Evidence:** Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.; src/google.rs create_annotation invokes self.send once, never an automatic retry. Test annotation_writes_do_not_retry_429_500_or_503_responses uses a single local loopback request with Retry-After: 1 for each transient status and checks immediate error and no leaked token, while annotation_post_targets_admin_v1alpha_without_retry verifies one successful POST. GitHub Actions 40239266063 and 40239414715 both passed core and DuckDB jobs. This does not claim future retry/backoff policy for read-only reporting (T109/T111).
 - 🧯 **T125 — Support reversible config opt-out without token replacement** — `██████████ 100.0%`
   - ✅ **Gate:** Disable write capability at runtime restart · **Evidence:** Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.; Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.
 
