@@ -1282,7 +1282,7 @@ mod tests {
         let normalized = report_request(
             Some(vec![
                 json!({"start_date":"7daysAgo","end_date":"yesterday","name":"Week"}),
-                json!({"startDate":"2024-02-29","endDate":"2024-03-01"})
+                json!({"startDate":"2024-02-29","endDate":"2024-03-01"}),
             ]),
             vec!["country".into()],
             vec!["sessions".into()],
@@ -1291,7 +1291,7 @@ mod tests {
                 ("metricFilter", Some(json!("sessions==9223372036854775807"))),
                 ("orderBys", Some(ordering.clone())),
                 ("limit", Some(json!("250000"))),
-                ("offset", Some(json!("0")))
+                ("offset", Some(json!("0"))),
             ],
         )
         .unwrap();
@@ -1314,7 +1314,7 @@ mod tests {
             json!("sessions==NaN"),
             json!("sessions==1e309"),
             json!(true),
-            Value::Null
+            Value::Null,
         ] {
             assert_eq!(
                 report_request(
