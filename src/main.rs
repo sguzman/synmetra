@@ -385,6 +385,18 @@ struct PropertyArgs {
     property_id: String,
 }
 
+#[allow(dead_code)] // Public schema mirror; payload validation retains normalized String input.
+#[derive(JsonSchema)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+enum AnnotationColorInput {
+    Purple,
+    Brown,
+    Blue,
+    Green,
+    Red,
+    Cyan,
+}
+
 #[derive(Debug, Deserialize, JsonSchema)]
 struct CreateAnnotationArgs {
     #[serde(deserialize_with = "deserialize_google_id")]
@@ -397,6 +409,7 @@ struct CreateAnnotationArgs {
     #[serde(default)]
     description: Option<String>,
     #[serde(default = "default_annotation_color")]
+    #[schemars(with = "AnnotationColorInput")]
     color: String,
 }
 
@@ -2388,6 +2401,71 @@ mod tests {
         assert!(Synmetra::new(GoogleClient::new(None), true)
             .router
             .has_route("create_property_annotation"));
+    }
+
+    #[test]
+    fn annotation_schema_and_payload_cover_default_color_and_single_or_range_dates() {
+        let tool = Synmetra::tool_router()
+            .list_all()
+            .into_iter()
+            .find(|tool| tool.name == "create_property_annotation")
+            .unwrap();
+        let schema = serde_json::to_value(&tool.input_schema).unwrap();
+        let required = schema["required"].as_array().unwrap();
+        for field in ["property_id", "title", "start_date"] {
+            assert!(required.contains(&json!(field)));
+        }
+        for field in ["end_date", "description", "color"] {
+            assert!(!required.contains(&json!(field)));
+        }
+        let color = &schema["properties"]["color"];
+        let color_schema = if let Some(reference) = color["$ref"]
+            .as_str()
+            .and_then(|reference| reference.strip_prefix("#/$defs/"))
+        {
+            &schema["$defs"][reference]
+        } else {
+            color
+        };
+        let values = color_schema["enum"].as_array().unwrap();
+        for expected in ["PURPLE", "BROWN", "BLUE", "GREEN", "RED", "CYAN"] {
+            assert!(values.contains(&json!(expected)));
+        }
+        assert!(!values.contains(&json!("ORANGE")));
+        let input: CreateAnnotationArgs = serde_json::from_value(json!({
+            "property_id":42,
+            "title":"Release",
+            "start_date":"2026-10-25"
+        }))
+        .unwrap();
+        assert_eq!(input.color, "BLUE");
+        let single = annotation_payload(
+            &input.title,
+            &input.start_date,
+            input.end_date.as_deref(),
+            input.description.as_deref(),
+            &input.color,
+        )
+        .unwrap();
+        assert_eq!(single["reportingDataAnnotation"]["annotationDate"],
+            json!({"year":2026,"month":10,"day":25}));
+        assert_eq!(single["reportingDataAnnotation"]["color"], "BLUE");
+        assert!(single["reportingDataAnnotation"].get("annotationDateRange").is_none());
+        let ranged = annotation_payload(
+            "Release notes",
+            "2026-10-20",
+            Some("2026-10-25"),
+            Some("Private internal description"),
+            "PURPLE",
+        )
+        .unwrap();
+        assert_eq!(ranged["reportingDataAnnotation"]["annotationDateRange"]["startDate"],
+            json!({"year":2026,"month":10,"day":20}));
+        assert_eq!(ranged["reportingDataAnnotation"]["annotationDateRange"]["endDate"],
+            json!({"year":2026,"month":10,"day":25}));
+        assert_eq!(ranged["reportingDataAnnotation"]["description"],
+            "Private internal description");
+        assert!(ranged["reportingDataAnnotation"].get("annotationDate").is_none());
     }
 
     #[test]
