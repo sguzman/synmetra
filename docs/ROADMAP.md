@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `██░░░░░░░░ 21.4%` · **+21.37 percentage points from initial empty repo; +2.65 pp in the initial native-DuckDB test round** · 21/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `██░░░░░░░░ 21.8%` · **+21.81 percentage points from initial empty repo; +0.44 pp in the verified DuckDB table-inspection round** · 21/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -366,7 +366,7 @@
   - ✅ **Gate:** Disable write capability at runtime restart · **Evidence:** Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.; Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.
 
 
-## 🗃️ M6 — DuckDB scratchpad and advanced analytics parity — `██░░░░░░░░ 24.0%`
+## 🗃️ M6 — DuckDB scratchpad and advanced analytics parity — `███░░░░░░░ 28.0%`
 
 **Scope:** MVP. **Acceptance gate:** All 15 local scratchpad tools and policy limits operate without unsafe SQL or credential disclosure.
 
@@ -389,7 +389,7 @@
 - 🧹 **T132 — Implement scratchpad_drop_table** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Isolated session lifecycle plus quota failure fixtures for scratchpad_drop_table
 
-### 📥 P16 — Scratchpad ingest and query MCP tools — `░░░░░░░░░░ 0.0%`
+### 📥 P16 — Scratchpad ingest and query MCP tools — `██░░░░░░░░ 20.0%`
 
 **Feature:** Five ingest/query tools.
 
@@ -399,9 +399,9 @@
   - ✅ **Gate:** Synthetic GA payload and DuckDB query conformance for scratchpad_ingest_realtime_report
 - 🔎 **T135 — Implement scratchpad_query** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Synthetic GA payload and DuckDB query conformance for scratchpad_query
-- 🧬 **T136 — Implement scratchpad_describe_table** — `░░░░░░░░░░ 0.0%`
+- 🧬 **T136 — Implement scratchpad_describe_table** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Synthetic GA payload and DuckDB query conformance for scratchpad_describe_table
-- 🧮 **T137 — Implement scratchpad_summarize_table** — `░░░░░░░░░░ 0.0%`
+- 🧮 **T137 — Implement scratchpad_summarize_table** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Synthetic GA payload and DuckDB query conformance for scratchpad_summarize_table
 
 ### 📉 P17 — Scratchpad analysis MCP tools — `░░░░░░░░░░ 0.0%`

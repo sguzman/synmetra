@@ -2602,12 +2602,13 @@
               "id": "T136",
               "emoji": "🧬",
               "name": "Implement scratchpad_describe_table",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Synthetic GA payload and DuckDB query conformance for scratchpad_describe_table",
               "checks": [
                 {
                   "text": "Deliver implement scratchpad_describe_table as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/scratchpad.rs and src/main.rs: in-memory DuckDB schema inspection and bounded row-count summary; tests describes_and_summarizes_bounded_local_tables plus native DuckDB cargo test --features scratchpad passed in GitHub Actions run 40208111289. Upstream optional output controls and live GA parity remain unaccepted."
                 },
                 {
                   "text": "Synthetic GA payload and DuckDB query conformance for scratchpad_describe_table",
@@ -2619,12 +2620,13 @@
               "id": "T137",
               "emoji": "🧮",
               "name": "Implement scratchpad_summarize_table",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Synthetic GA payload and DuckDB query conformance for scratchpad_summarize_table",
               "checks": [
                 {
                   "text": "Deliver implement scratchpad_summarize_table as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/scratchpad.rs and src/main.rs: in-memory DuckDB schema inspection and bounded row-count summary; tests describes_and_summarizes_bounded_local_tables plus native DuckDB cargo test --features scratchpad passed in GitHub Actions run 40208111289. Upstream optional output controls and live GA parity remain unaccepted."
                 },
                 {
                   "text": "Synthetic GA payload and DuckDB query conformance for scratchpad_summarize_table",

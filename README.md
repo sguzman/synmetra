@@ -10,7 +10,7 @@
 
 ## 📊 Evidence-backed progress
 
-**Overall:** `██░░░░░░░░ 21.4%` · **overall delta: +21.37 percentage points** from initial 0% (**latest verified round: +2.65 pp**). **20/36 read-only provisional handlers and 1 opt-in annotation handler; 0/36 fully accepted upstream parity.** Real Google account acceptance and full tool schemas remain pending.
+**Overall:** `██░░░░░░░░ 21.8%` · **overall delta: +21.81 percentage points** from initial 0% (**latest verified round: +0.44 pp**). **20/36 read-only provisional handlers and 1 opt-in annotation handler; 0/36 fully accepted upstream parity.** Real Google account acceptance and full tool schemas remain pending.
 
 | Milestone | Progress | Gate |
 | --- | --- | --- |
@@ -20,7 +20,7 @@
 | 🏢 M3 Admin API information parity | `██░░░░░░░░ 21.9%` | MVP |
 | 📊 M4 Reporting, preflight and Data API parity | `██░░░░░░░░ 18.3%` | MVP |
 | ✍️ M5 Explicitly gated GA mutation parity | `██████░░░░ 61.5%` | MVP |
-| 🗃️ M6 DuckDB scratchpad and advanced analytics parity | `██░░░░░░░░ 24.0%` | MVP |
+| 🗃️ M6 DuckDB scratchpad and advanced analytics parity | `███░░░░░░░ 28.0%` | MVP |
 | 🧬 M7 Tool contract interoperability and parity audits | `░░░░░░░░░░ 0.0%` | MVP |
 | 🧪 M8 Verification, resilience and security acceptance | `█░░░░░░░░░ 8.9%` | MVP |
 | 🚀 M9 Linux release and Codex-ready inauguration | `░░░░░░░░░░ 0.0%` | MVP |
