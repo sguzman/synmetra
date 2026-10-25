@@ -1980,7 +1980,10 @@ mod tests {
                 .and_then(|props| props.get("return_property_quota"))
                 .unwrap_or_else(|| panic!("{name} omitted return_property_quota"));
             assert_eq!(declared["type"], pinned["type"], "{name} type drift");
-            assert_eq!(declared["default"], pinned["default"], "{name} default drift");
+            assert_eq!(
+                declared["default"], pinned["default"],
+                "{name} default drift"
+            );
         }
     }
 
