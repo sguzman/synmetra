@@ -424,7 +424,22 @@ impl GoogleClient {
             return Err(ApiError::InvalidRequest);
         }
         let url = format!("{}/v1beta/{property}:{method}", self.data_base);
-        self.send(self.http.post(url).json(&request)).await
+        let response = self.send(self.http.post(url).json(&request)).await?;
+        match method {
+            "runReport" | "runRealtimeReport" | "runPivotReport" => {
+                validate_google_report_response(&response)?;
+            }
+            "batchRunReports" => {
+                let reports = response["reports"]
+                    .as_array()
+                    .ok_or(ApiError::InvalidResponse)?;
+                for report in reports {
+                    validate_google_report_response(report)?;
+                }
+            }
+            _ => {}
+        }
+        Ok(response)
     }
 
     pub async fn alpha_report(
@@ -496,6 +511,46 @@ impl GoogleClient {
         )
         .await
     }
+}
+
+/// Reject malformed successful GA4 tabular responses before exposing them to
+/// either native provider-shaped tools or the optional Contract V1 projector.
+fn validate_google_report_response(response: &Value) -> Result<(), ApiError> {
+    let root = response.as_object().ok_or(ApiError::InvalidResponse)?;
+    let count = if let Some(raw) = root.get("rowCount") {
+        let count = raw.as_u64().or_else(|| {
+            raw.as_str().and_then(|text| text.parse::<u64>().ok())
+        });
+        Some(count.ok_or(ApiError::InvalidResponse)?)
+    } else {
+        None
+    };
+    for header in ["dimensionHeaders", "metricHeaders"] {
+        if let Some(value) = root.get(header) {
+            let items = value.as_array().ok_or(ApiError::InvalidResponse)?;
+            if items.iter().any(|item| !item.is_object()) {
+                return Err(ApiError::InvalidResponse);
+            }
+        }
+    }
+    if let Some(raw_rows) = root.get("rows") {
+        let rows = raw_rows.as_array().ok_or(ApiError::InvalidResponse)?;
+        if count.is_some_and(|count| count < rows.len() as u64) {
+            return Err(ApiError::InvalidResponse);
+        }
+        for row in rows {
+            let row = row.as_object().ok_or(ApiError::InvalidResponse)?;
+            for field in ["dimensionValues", "metricValues"] {
+                if let Some(value) = row.get(field) {
+                    let items = value.as_array().ok_or(ApiError::InvalidResponse)?;
+                    if items.iter().any(|item| !item.is_object()) {
+                        return Err(ApiError::InvalidResponse);
+                    }
+                }
+            }
+        }
+    }
+    Ok(())
 }
 
 /// Normalize and validate Google's v1alpha conversion report specification.
@@ -1431,6 +1486,31 @@ mod tests {
         assert_eq!(account_name("123").unwrap(), "accounts/123");
         assert_eq!(account_name("accounts/123").unwrap(), "accounts/123");
         assert!(account_name("properties/5").is_err());
+    }
+
+    #[test]
+    fn report_response_validator_rejects_inconsistent_provider_row_shapes() {
+        assert!(validate_google_report_response(
+            &json!({"rowCount":2,"rows":[{"metricValues":[{"value":"7"}]}]})
+        )
+        .is_ok());
+        assert!(validate_google_report_response(&json!({"rowCount":"2","rows":[]})).is_ok());
+        for invalid in [
+            json!(null),
+            json!({"rowCount":-1}),
+            json!({"rowCount":0,"rows":[{}]}),
+            json!({"dimensionHeaders":"wrong"}),
+            json!({"metricHeaders":[17]}),
+            json!({"rows":{}}),
+            json!({"rows":[null]}),
+            json!({"rows":[{"metricValues":[7]}]}),
+            json!({"rows":[{"dimensionValues":"not an array"}]}),
+        ] {
+            assert_eq!(
+                validate_google_report_response(&invalid),
+                Err(ApiError::InvalidResponse)
+            );
+        }
     }
 
     #[test]
