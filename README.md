@@ -10,7 +10,7 @@
 
 ## 📊 Evidence-backed progress
 
-**Overall:** `███░░░░░░░ 25.8%` · **overall delta: +25.77 percentage points** from initial 0% (**latest accepted round: +0.44 pp**). **20/36 read-only provisional handlers and 1 opt-in annotation handler; 0/36 fully accepted upstream parity.** Real Google account acceptance and full tool schemas remain pending.
+**Overall:** `███░░░░░░░ 26.2%` · **overall delta: +26.21 percentage points** from initial 0% (**latest accepted round: +0.44 pp**). **35/35 SednaLabs tool names implemented provisionally plus 1 opt-in annotation handler; 0/36 fully accepted upstream parity.** Real Google account acceptance and full tool schemas remain pending.
 
 | Milestone | Progress | Gate |
 | --- | --- | --- |
@@ -20,7 +20,7 @@
 | 🏢 M3 Admin API information parity | `███░░░░░░░ 34.4%` | MVP |
 | 📊 M4 Reporting, preflight and Data API parity | `███░░░░░░░ 26.7%` | MVP |
 | ✍️ M5 Explicitly gated GA mutation parity | `██████░░░░ 61.5%` | MVP |
-| 🗃️ M6 DuckDB scratchpad and advanced analytics parity | `████░░░░░░ 36.0%` | MVP |
+| 🗃️ M6 DuckDB scratchpad and advanced analytics parity | `████░░░░░░ 40.0%` | MVP |
 | 🧬 M7 Tool contract interoperability and parity audits | `░░░░░░░░░░ 0.0%` | MVP |
 | 🧪 M8 Verification, resilience and security acceptance | `█░░░░░░░░░ 12.5%` | MVP |
 | 🚀 M9 Linux release and Codex-ready inauguration | `░░░░░░░░░░ 0.0%` | MVP |
@@ -55,3 +55,5 @@ Build and launch the MCP stdio server with `cargo run --bin synmetra -- serve`. 
 **Native DuckDB feature testing:** The initial seven lifecycle tool implementations passed an optional bundled-DuckDB feature test in [GitHub Actions run 40206168306](https://github.com/sguzman/synmetra/actions/runs/40206168306). Later schema refinements and full strict Clippy/Google integration are not yet accepted. The 7 lifecycle tasks remain partial (50%) rather than falsely marking full upstream parity.
 
 **Latest native scratchpad:** Twelve provisional local DuckDB MCP tools are available only with `--features scratchpad` and `serve --scratchpad`, including historical and realtime GA4 ingestion. Sessions are memory-only and inaccessible through Synmetra's HTTP transport. See [scratchpad policy](docs/SCRATCHPAD.md). No live Google authorization has been tested.
+
+**Tool-name implementation coverage:** 35/35 of the pinned SednaLabs tools now have native Rust handlers. Fifteen DuckDB tools require the optional feature and explicit scratchpad capability. All 36 union tools still require full input/output behavioral acceptance; none is certified 100% upstream parity complete.

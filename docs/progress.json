@@ -2661,12 +2661,13 @@
               "id": "T138",
               "emoji": "📉",
               "name": "Implement scratchpad_release_regression_report",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Evidence fixture and schema/output equivalence for scratchpad_release_regression_report",
               "checks": [
                 {
                   "text": "Deliver implement scratchpad_release_regression_report as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/scratchpad.rs and src/main.rs implement read-only release-window event-ratio analysis and landing URL parameter-key change diagnostics using validated DuckDB identifiers, bounded data scans and conservative flags. Tests release_diagnostic_distinguishes_ratio_drop_and_low_sample, landing_shift_finds_bounded_pre_post_parameter_changes, pinned required MCP fields, and native Rust/feature CI passed GitHub Actions 40220219899. Exact SednaLabs output/algorithm contract, complete controls and live property acceptance remain pending."
                 },
                 {
                   "text": "Evidence fixture and schema/output equivalence for scratchpad_release_regression_report",
@@ -2678,12 +2679,13 @@
               "id": "T139",
               "emoji": "🔀",
               "name": "Implement scratchpad_landing_param_shift_report",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Evidence fixture and schema/output equivalence for scratchpad_landing_param_shift_report",
               "checks": [
                 {
                   "text": "Deliver implement scratchpad_landing_param_shift_report as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/scratchpad.rs and src/main.rs implement read-only release-window event-ratio analysis and landing URL parameter-key change diagnostics using validated DuckDB identifiers, bounded data scans and conservative flags. Tests release_diagnostic_distinguishes_ratio_drop_and_low_sample, landing_shift_finds_bounded_pre_post_parameter_changes, pinned required MCP fields, and native Rust/feature CI passed GitHub Actions 40220219899. Exact SednaLabs output/algorithm contract, complete controls and live property acceptance remain pending."
                 },
                 {
                   "text": "Evidence fixture and schema/output equivalence for scratchpad_landing_param_shift_report",
