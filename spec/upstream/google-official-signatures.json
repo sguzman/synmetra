@@ -1,0 +1,381 @@
+{
+  "schema": 1,
+  "reference_repo": "googleanalytics/google-analytics-mcp",
+  "reference_commit": "ce84226bf4cedea7f2910f5afb07a6b9138f6553",
+  "checked_date": "2026-10-25",
+  "method": "Independent extraction of upstream Python async function signatures and explicit MCP coordinator required-field overrides. Not a runtime ADK-generated JSON Schema snapshot.",
+  "tools": [
+    {
+      "name": "get_account_summaries",
+      "source_file": "analytics_mcp/tools/admin/info.py",
+      "parameters": [],
+      "required": []
+    },
+    {
+      "name": "list_google_ads_links",
+      "source_file": "analytics_mcp/tools/admin/info.py",
+      "parameters": [
+        {
+          "name": "property_id",
+          "type": "int | str",
+          "required": true
+        }
+      ],
+      "required": [
+        "property_id"
+      ]
+    },
+    {
+      "name": "get_property_details",
+      "source_file": "analytics_mcp/tools/admin/info.py",
+      "parameters": [
+        {
+          "name": "property_id",
+          "type": "int | str",
+          "required": true
+        }
+      ],
+      "required": [
+        "property_id"
+      ]
+    },
+    {
+      "name": "list_property_annotations",
+      "source_file": "analytics_mcp/tools/admin/info.py",
+      "parameters": [
+        {
+          "name": "property_id",
+          "type": "int | str",
+          "required": true
+        }
+      ],
+      "required": [
+        "property_id"
+      ]
+    },
+    {
+      "name": "create_property_annotation",
+      "source_file": "analytics_mcp/tools/admin/info.py",
+      "parameters": [
+        {
+          "name": "property_id",
+          "type": "int | str",
+          "required": true
+        },
+        {
+          "name": "title",
+          "type": "str",
+          "required": true
+        },
+        {
+          "name": "start_date",
+          "type": "str",
+          "required": true
+        },
+        {
+          "name": "color",
+          "type": "str",
+          "required": false,
+          "default_repr": "\"BLUE\""
+        },
+        {
+          "name": "description",
+          "type": "str",
+          "required": false,
+          "default_repr": "None"
+        },
+        {
+          "name": "end_date",
+          "type": "str",
+          "required": false,
+          "default_repr": "None"
+        }
+      ],
+      "required": [
+        "property_id",
+        "title",
+        "start_date"
+      ]
+    },
+    {
+      "name": "get_custom_dimensions_and_metrics",
+      "source_file": "analytics_mcp/tools/reporting/metadata.py",
+      "parameters": [
+        {
+          "name": "property_id",
+          "type": "int | str",
+          "required": true
+        }
+      ],
+      "required": [
+        "property_id"
+      ]
+    },
+    {
+      "name": "run_report",
+      "source_file": "analytics_mcp/tools/reporting/core.py",
+      "parameters": [
+        {
+          "name": "property_id",
+          "type": "int | str",
+          "required": true
+        },
+        {
+          "name": "date_ranges",
+          "type": "List[Dict[str, Any]]",
+          "required": true
+        },
+        {
+          "name": "dimensions",
+          "type": "List[str]",
+          "required": true
+        },
+        {
+          "name": "metrics",
+          "type": "List[str]",
+          "required": true
+        },
+        {
+          "name": "dimension_filter",
+          "type": "Dict[str, Any]",
+          "required": false,
+          "default_repr": "None"
+        },
+        {
+          "name": "metric_filter",
+          "type": "Dict[str, Any]",
+          "required": false,
+          "default_repr": "None"
+        },
+        {
+          "name": "order_bys",
+          "type": "List[Dict[str, Any]]",
+          "required": false,
+          "default_repr": "None"
+        },
+        {
+          "name": "limit",
+          "type": "int",
+          "required": false,
+          "default_repr": "None"
+        },
+        {
+          "name": "offset",
+          "type": "int",
+          "required": false,
+          "default_repr": "None"
+        },
+        {
+          "name": "currency_code",
+          "type": "str",
+          "required": false,
+          "default_repr": "None"
+        },
+        {
+          "name": "return_property_quota",
+          "type": "bool",
+          "required": false,
+          "default_repr": "False"
+        }
+      ],
+      "required": [
+        "property_id",
+        "date_ranges",
+        "dimensions",
+        "metrics"
+      ]
+    },
+    {
+      "name": "run_realtime_report",
+      "source_file": "analytics_mcp/tools/reporting/realtime.py",
+      "parameters": [
+        {
+          "name": "property_id",
+          "type": "int | str",
+          "required": true
+        },
+        {
+          "name": "dimensions",
+          "type": "List[str]",
+          "required": true
+        },
+        {
+          "name": "metrics",
+          "type": "List[str]",
+          "required": true
+        },
+        {
+          "name": "dimension_filter",
+          "type": "Dict[str, Any]",
+          "required": false,
+          "default_repr": "None"
+        },
+        {
+          "name": "metric_filter",
+          "type": "Dict[str, Any]",
+          "required": false,
+          "default_repr": "None"
+        },
+        {
+          "name": "order_bys",
+          "type": "List[Dict[str, Any]]",
+          "required": false,
+          "default_repr": "None"
+        },
+        {
+          "name": "limit",
+          "type": "int",
+          "required": false,
+          "default_repr": "None"
+        },
+        {
+          "name": "offset",
+          "type": "int",
+          "required": false,
+          "default_repr": "None"
+        },
+        {
+          "name": "return_property_quota",
+          "type": "bool",
+          "required": false,
+          "default_repr": "False"
+        }
+      ],
+      "required": [
+        "property_id",
+        "dimensions",
+        "metrics"
+      ]
+    },
+    {
+      "name": "run_funnel_report",
+      "source_file": "analytics_mcp/tools/reporting/funnel.py",
+      "parameters": [
+        {
+          "name": "property_id",
+          "type": "int | str",
+          "required": true
+        },
+        {
+          "name": "funnel_steps",
+          "type": "List[Dict[str, Any]]",
+          "required": true
+        },
+        {
+          "name": "date_ranges",
+          "type": "List[Dict[str, str]]",
+          "required": false,
+          "default_repr": "None"
+        },
+        {
+          "name": "funnel_breakdown",
+          "type": "Dict[str, str]",
+          "required": false,
+          "default_repr": "None"
+        },
+        {
+          "name": "funnel_next_action",
+          "type": "Dict[str, str]",
+          "required": false,
+          "default_repr": "None"
+        },
+        {
+          "name": "segments",
+          "type": "List[Dict[str, Any]]",
+          "required": false,
+          "default_repr": "None"
+        },
+        {
+          "name": "return_property_quota",
+          "type": "bool",
+          "required": false,
+          "default_repr": "False"
+        }
+      ],
+      "required": [
+        "property_id",
+        "funnel_steps"
+      ]
+    },
+    {
+      "name": "run_conversions_report",
+      "source_file": "analytics_mcp/tools/reporting/conversions.py",
+      "parameters": [
+        {
+          "name": "property_id",
+          "type": "int | str",
+          "required": true
+        },
+        {
+          "name": "date_ranges",
+          "type": "List[Dict[str, Any]]",
+          "required": true
+        },
+        {
+          "name": "dimensions",
+          "type": "List[str]",
+          "required": true
+        },
+        {
+          "name": "metrics",
+          "type": "List[str]",
+          "required": true
+        },
+        {
+          "name": "conversion_spec",
+          "type": "Dict[str, Any]",
+          "required": true
+        },
+        {
+          "name": "dimension_filter",
+          "type": "Dict[str, Any]",
+          "required": false,
+          "default_repr": "None"
+        },
+        {
+          "name": "metric_filter",
+          "type": "Dict[str, Any]",
+          "required": false,
+          "default_repr": "None"
+        },
+        {
+          "name": "order_bys",
+          "type": "List[Dict[str, Any]]",
+          "required": false,
+          "default_repr": "None"
+        },
+        {
+          "name": "limit",
+          "type": "int",
+          "required": false,
+          "default_repr": "None"
+        },
+        {
+          "name": "offset",
+          "type": "int",
+          "required": false,
+          "default_repr": "None"
+        },
+        {
+          "name": "currency_code",
+          "type": "str",
+          "required": false,
+          "default_repr": "None"
+        },
+        {
+          "name": "return_property_quota",
+          "type": "bool",
+          "required": false,
+          "default_repr": "False"
+        }
+      ],
+      "required": [
+        "property_id",
+        "date_ranges",
+        "dimensions",
+        "metrics",
+        "conversion_spec"
+      ]
+    }
+  ]
+}

@@ -57,3 +57,7 @@ Sources: [TOOL_GUIDE](https://github.com/sednalabs/ga4-mcp/blob/039fd4620064fc4b
 ### 📄 Exact SednaLabs schema fixture
 
 The complete 35-tool MCP JSON schema snapshot is archived unchanged at [`spec/upstream/sednalabs-tool-schema.v1.json`](../spec/upstream/sednalabs-tool-schema.v1.json) with the original Apache 2.0 LICENSE in [`licenses/SEDNALABS-APACHE-2.0.txt`](../licenses/SEDNALABS-APACHE-2.0.txt). The snapshot pins argument-level signature expectations and will support differential tests; it **does not** certify native Rust argument or behavior parity. Google's pinned schema capture remains separate work.
+
+### 📗 Google's official Python tool signatures
+
+[Independent signature extraction](../spec/upstream/google-official-signatures.json) records all ten official upstream function parameter lists from pinned commit `ce84226bf4cedea7f2910f5afb07a6b9138f6553`, including the optional gated annotation write. This is a source-derived reference, **not** a copy of Google ADK's runtime-generated MCP JSON schema, and cannot alone establish inputSchema parity. The corresponding pinned Python sources are linked in this document. Future work must compare live generated JSON schemas and error/response behavior.
