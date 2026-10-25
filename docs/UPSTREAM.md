@@ -61,3 +61,7 @@ The complete 35-tool MCP JSON schema snapshot is archived unchanged at [`spec/up
 ### 📗 Google's official Python tool signatures
 
 [Independent signature extraction](../spec/upstream/google-official-signatures.json) records all ten official upstream function parameter lists from pinned commit `ce84226bf4cedea7f2910f5afb07a6b9138f6553`, including the optional gated annotation write. This is a source-derived reference, **not** a copy of Google ADK's runtime-generated MCP JSON schema, and cannot alone establish inputSchema parity. The corresponding pinned Python sources are linked in this document. Future work must compare live generated JSON schemas and error/response behavior.
+
+## 🔔 Automated drift detection
+
+A read-only [weekly GitHub Actions watch](../.github/workflows/upstream-drift.yml) checks public upstream `main` Git blob IDs against [drift-lock.json](../spec/upstream/drift-lock.json) each Monday and whenever the watch or pins change. It checks SednaLabs' published 35-tool schema snapshot and Google's signature-bearing `analytics_mcp/coordinator.py`. A changed blob fails the workflow so source differences must be reviewed and the baseline updated explicitly; no reference or application code is automatically replaced. Google's entire dynamic runtime schema is not captured in this baseline, and a source-file change can be non-semantic. The alert therefore indicates **possible** input/signature drift requiring inspection, not proof of a breaking change.

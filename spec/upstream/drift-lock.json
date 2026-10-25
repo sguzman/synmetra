@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "policy": "review_required_no_automatic_repin",
+  "sednalabs": {
+    "repository": "sednalabs/ga4-mcp",
+    "path": "spec/tool_schema_snapshot.v1.json",
+    "pinned_commit": "039fd4620064fc4b76dc6bca641945aba52c14bc",
+    "blob_sha": "646c0baa22692b73430a0ee96415b0e2fe6215a3"
+  },
+  "googleanalytics": {
+    "repository": "googleanalytics/google-analytics-mcp",
+    "path": "analytics_mcp/coordinator.py",
+    "pinned_commit": "ce84226bf4cedea7f2910f5afb07a6b9138f6553",
+    "blob_sha": "a1e7936af5ea66d434c285ae19740bb56a4415e2"
+  }
+}
