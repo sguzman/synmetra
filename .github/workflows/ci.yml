@@ -9,12 +9,11 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: synmetra-${{ github.workflow }}-${{ github.ref }}-${{ startsWith(github.event.head_commit.message, 'docs:') && 'docs' || 'code' }}
-  cancel-in-progress: false
-
 jobs:
   core:
+    concurrency:
+      group: synmetra-core-${{ github.ref }}
+      cancel-in-progress: true
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -40,6 +39,9 @@ jobs:
         run: cargo run --locked --bin synmetra-progress
 
   duckdb:
+    concurrency:
+      group: synmetra-${{ github.workflow }}-${{ github.ref }}-code
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     timeout-minutes: 70
     env:
