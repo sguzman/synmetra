@@ -1,0 +1,4235 @@
+{
+  "schema": 2,
+  "as_of": "2026-10-25",
+  "policy": {
+    "calculation": "Each atomic task = accepted documented checks / all checks × 100. A check is accepted only when passed=true and has a nonempty evidence string. Phase, milestone and overall progress are arithmetic means of underlying atomic task percentages (equal weight), rounded to two decimals. No 100% without acceptance evidence. An upstream reference snapshot or roadmap text is not evidence of functional runtime parity.",
+    "report": "Every subsequent response: overall and active milestone/phase/task bars, absolute percentage and signed percentage-point delta from previous verified ledger state; omit already completed work from touched task updates.",
+    "baseline_before_bootstrap": 0,
+    "post_mvp_in_overall": true
+  },
+  "source_pins": {
+    "google": {
+      "repo": "googleanalytics/google-analytics-mcp",
+      "sha": "ce84226bf4cedea7f2910f5afb07a6b9138f6553",
+      "license": "Apache-2.0"
+    },
+    "rust": {
+      "repo": "sednalabs/ga4-mcp",
+      "sha": "039fd4620064fc4b76dc6bca641945aba52c14bc",
+      "license": "Apache-2.0"
+    }
+  },
+  "tool_union_count": 36,
+  "milestones": [
+    {
+      "id": "M0",
+      "emoji": "🧭",
+      "name": "Reference baseline and project governance",
+      "gate": "Audited pinned feature-union inventory, color identity, public-safe policies and reproducible plan. Foundation is not runtime parity.",
+      "scope": "MVP",
+      "phases": [
+        {
+          "id": "P00",
+          "emoji": "📚",
+          "name": "Upstream contracts and provenance",
+          "feature": "Reference provenance",
+          "tasks": [
+            {
+              "id": "T001",
+              "emoji": "📌",
+              "name": "Pin official and Rust upstream commits",
+              "progress": 100,
+              "acceptance": "Record both source SHAs and reference date with traceable links",
+              "checks": [
+                {
+                  "text": "Deliver pin official and rust upstream commits as reviewable repository evidence",
+                  "passed": true,
+                  "evidence": "docs/UPSTREAM.md"
+                },
+                {
+                  "text": "Record both source SHAs and reference date with traceable links",
+                  "passed": true,
+                  "evidence": "docs/UPSTREAM.md pinned references"
+                }
+              ]
+            },
+            {
+              "id": "T002",
+              "emoji": "🧮",
+              "name": "Audit 36-tool feature union and overlaps",
+              "progress": 100,
+              "acceptance": "Verify 10 Google and 35 Rust names, 9 shared, 36 unique",
+              "checks": [
+                {
+                  "text": "Deliver audit 36-tool feature union and overlaps as reviewable repository evidence",
+                  "passed": true,
+                  "evidence": "docs/tool-inventory.json"
+                },
+                {
+                  "text": "Verify 10 Google and 35 Rust names, 9 shared, 36 unique",
+                  "passed": true,
+                  "evidence": "docs/tool-inventory.json checked 10+35-9=36"
+                }
+              ]
+            },
+            {
+              "id": "T003",
+              "emoji": "⚖️",
+              "name": "Document license and independent reimplementation policy",
+              "progress": 100,
+              "acceptance": "MIT Synmetra license retained; Apache upstream attributions and boundaries explained",
+              "checks": [
+                {
+                  "text": "Deliver document license and independent reimplementation policy as reviewable repository evidence",
+                  "passed": true,
+                  "evidence": "docs/PROVENANCE.md"
+                },
+                {
+                  "text": "MIT Synmetra license retained; Apache upstream attributions and boundaries explained",
+                  "passed": true,
+                  "evidence": "LICENSE and docs/PROVENANCE.md attribution policy"
+                }
+              ]
+            },
+            {
+              "id": "T004",
+              "emoji": "🎨",
+              "name": "Select an sRGB-safe OKLCH brand color",
+              "progress": 100,
+              "acceptance": "Publish swatch with verified dark-on-accent contrast",
+              "checks": [
+                {
+                  "text": "Deliver select an srgb-safe oklch brand color as reviewable repository evidence",
+                  "passed": true,
+                  "evidence": "docs/COLOR.md and assets/synmetra-color.svg"
+                },
+                {
+                  "text": "Publish swatch with verified dark-on-accent contrast",
+                  "passed": true,
+                  "evidence": "docs/COLOR.md contrast calculations"
+                }
+              ]
+            },
+            {
+              "id": "T005",
+              "emoji": "🗺️",
+              "name": "Write complete milestone-phase-task ledger and roadmap",
+              "progress": 100,
+              "acceptance": "Document consistent task gates, percentages, visual bars and baseline deltas",
+              "checks": [
+                {
+                  "text": "Deliver write complete milestone-phase-task ledger and roadmap as reviewable repository evidence",
+                  "passed": true,
+                  "evidence": "docs/ROADMAP.md and docs/progress.json"
+                },
+                {
+                  "text": "Document consistent task gates, percentages, visual bars and baseline deltas",
+                  "passed": true,
+                  "evidence": "README.md and docs/ROADMAP.md reference ledger"
+                }
+              ]
+            },
+            {
+              "id": "T006",
+              "emoji": "🛡️",
+              "name": "Document privacy, security and maintainer governance",
+              "progress": 100,
+              "acceptance": "Explicit no-secret and read-only defaults and evidence policy",
+              "checks": [
+                {
+                  "text": "Deliver document privacy, security and maintainer governance as reviewable repository evidence",
+                  "passed": true,
+                  "evidence": "docs/GOVERNANCE.md and docs/SECURITY.md"
+                },
+                {
+                  "text": "Explicit no-secret and read-only defaults and evidence policy",
+                  "passed": true,
+                  "evidence": "docs/GOVERNANCE.md and docs/SECURITY.md approved policies"
+                }
+              ]
+            },
+            {
+              "id": "T007",
+              "emoji": "🧾",
+              "name": "Archive exact upstream tool schemas and signatures",
+              "progress": 0,
+              "acceptance": "Verifiable pinned schema snapshots with tool argument parity tests",
+              "checks": [
+                {
+                  "text": "Deliver archive exact upstream tool schemas and signatures as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Verifiable pinned schema snapshots with tool argument parity tests",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T008",
+              "emoji": "🔁",
+              "name": "Set up upstream drift tracking and version pin policy",
+              "progress": 0,
+              "acceptance": "CI alerts on name/signature deltas without silent breaking changes",
+              "checks": [
+                {
+                  "text": "Deliver set up upstream drift tracking and version pin policy as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "CI alerts on name/signature deltas without silent breaking changes",
+                  "passed": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "P01",
+          "emoji": "🦀",
+          "name": "Native scaffold and quality gates",
+          "feature": "Rust foundation",
+          "tasks": [
+            {
+              "id": "T009",
+              "emoji": "📦",
+              "name": "Initialize single-crate Rust executable synmetra",
+              "progress": 0,
+              "acceptance": "Cargo metadata and CLI build on stable Rust x86-64 Linux",
+              "checks": [
+                {
+                  "text": "Deliver initialize single-crate rust executable synmetra as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Cargo metadata and CLI build on stable Rust x86-64 Linux",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T010",
+              "emoji": "🔌",
+              "name": "Integrate rmcp server SDK foundation",
+              "progress": 0,
+              "acceptance": "Protocol version pin plus compile-time registration tests",
+              "checks": [
+                {
+                  "text": "Deliver integrate rmcp server sdk foundation as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Protocol version pin plus compile-time registration tests",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T011",
+              "emoji": "🌐",
+              "name": "Add reqwest rustls API client skeleton",
+              "progress": 0,
+              "acceptance": "No OpenSSL or Python runtime dependency",
+              "checks": [
+                {
+                  "text": "Deliver add reqwest rustls api client skeleton as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "No OpenSSL or Python runtime dependency",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T012",
+              "emoji": "🧪",
+              "name": "Add fmt clippy unit tests and CI jobs",
+              "progress": 0,
+              "acceptance": "Green push checks with pinned toolchain and dependency cache",
+              "checks": [
+                {
+                  "text": "Deliver add fmt clippy unit tests and ci jobs as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Green push checks with pinned toolchain and dependency cache",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T013",
+              "emoji": "🧷",
+              "name": "Add lockfile dependency audits and license checks",
+              "progress": 0,
+              "acceptance": "Dependencies auditable with deny or equivalent process",
+              "checks": [
+                {
+                  "text": "Deliver add lockfile dependency audits and license checks as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Dependencies auditable with deny or equivalent process",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T014",
+              "emoji": "🧰",
+              "name": "Create deterministic offline fixtures and mock server",
+              "progress": 0,
+              "acceptance": "No secrets or real analytics identifiers in fixtures",
+              "checks": [
+                {
+                  "text": "Deliver create deterministic offline fixtures and mock server as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "No secrets or real analytics identifiers in fixtures",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T015",
+              "emoji": "🧭",
+              "name": "Implement CLI config parsing and doctor subcommands",
+              "progress": 0,
+              "acceptance": "Actionable diagnostics and typed failures without exposing secrets",
+              "checks": [
+                {
+                  "text": "Deliver implement cli config parsing and doctor subcommands as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Actionable diagnostics and typed failures without exposing secrets",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T016",
+              "emoji": "🔏",
+              "name": "Threat-model local execution and its credential boundary",
+              "progress": 0,
+              "acceptance": "Review accepted before live Google credentials",
+              "checks": [
+                {
+                  "text": "Deliver threat-model local execution and its credential boundary as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Review accepted before live Google credentials",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T017",
+              "emoji": "🗒️",
+              "name": "Create changelog and reproducible release policy",
+              "progress": 0,
+              "acceptance": "Document semver and provenance gates",
+              "checks": [
+                {
+                  "text": "Deliver create changelog and reproducible release policy as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Document semver and provenance gates",
+                  "passed": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "M1",
+      "emoji": "🔌",
+      "name": "MCP protocol and transport fidelity",
+      "gate": "Spec-conforming native MCP discovery and calls over stdio plus bounded Streamable HTTP; all transport safety tests pass.",
+      "scope": "MVP",
+      "phases": [
+        {
+          "id": "P02",
+          "emoji": "📨",
+          "name": "Stdio protocol",
+          "feature": "MCP stdio",
+          "tasks": [
+            {
+              "id": "T018",
+              "emoji": "📥",
+              "name": "Support MCP initialize and capability negotiation",
+              "progress": 0,
+              "acceptance": "Inspector negotiates compatible protocol version and identity",
+              "checks": [
+                {
+                  "text": "Deliver support mcp initialize and capability negotiation as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Inspector negotiates compatible protocol version and identity",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T019",
+              "emoji": "📋",
+              "name": "Support tools/list with exact declared JSON schemas",
+              "progress": 0,
+              "acceptance": "All available tools discoverable by MCP clients",
+              "checks": [
+                {
+                  "text": "Deliver support tools/list with exact declared json schemas as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "All available tools discoverable by MCP clients",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T020",
+              "emoji": "⚙️",
+              "name": "Support tools/call dispatch and structured content",
+              "progress": 0,
+              "acceptance": "Call requests resolve to tools with valid response envelopes",
+              "checks": [
+                {
+                  "text": "Deliver support tools/call dispatch and structured content as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Call requests resolve to tools with valid response envelopes",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T021",
+              "emoji": "📣",
+              "name": "Implement JSON-RPC notifications and cancellation",
+              "progress": 0,
+              "acceptance": "Cancelled requests do not spawn orphan Google calls",
+              "checks": [
+                {
+                  "text": "Deliver implement json-rpc notifications and cancellation as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Cancelled requests do not spawn orphan Google calls",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T022",
+              "emoji": "🚧",
+              "name": "Separate stdout protocol from stderr diagnostics",
+              "progress": 0,
+              "acceptance": "No banners or logging contaminate JSON-RPC stdout",
+              "checks": [
+                {
+                  "text": "Deliver separate stdout protocol from stderr diagnostics as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "No banners or logging contaminate JSON-RPC stdout",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T023",
+              "emoji": "📏",
+              "name": "Bound request sizes concurrency and timeouts",
+              "progress": 0,
+              "acceptance": "Malformed and oversize frames rejected deterministically",
+              "checks": [
+                {
+                  "text": "Deliver bound request sizes concurrency and timeouts as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Malformed and oversize frames rejected deterministically",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T024",
+              "emoji": "⌨️",
+              "name": "Integrate Codex stdio configuration smoke",
+              "progress": 0,
+              "acceptance": "Codex recognizes locally built synmetra binary",
+              "checks": [
+                {
+                  "text": "Deliver integrate codex stdio configuration smoke as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Codex recognizes locally built synmetra binary",
+                  "passed": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "P03",
+          "emoji": "🌐",
+          "name": "Streamable HTTP protocol",
+          "feature": "MCP Streamable HTTP",
+          "tasks": [
+            {
+              "id": "T025",
+              "emoji": "🌍",
+              "name": "Expose Streamable HTTP MCP endpoint",
+              "progress": 0,
+              "acceptance": "Official MCP inspector connects and initializes",
+              "checks": [
+                {
+                  "text": "Deliver expose streamable http mcp endpoint as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Official MCP inspector connects and initializes",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T026",
+              "emoji": "🏠",
+              "name": "Default bind to loopback only",
+              "progress": 0,
+              "acceptance": "Non-loopback starts are rejected unless policy configured",
+              "checks": [
+                {
+                  "text": "Deliver default bind to loopback only as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Non-loopback starts are rejected unless policy configured",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T027",
+              "emoji": "🧿",
+              "name": "Validate Host Origin and DNS rebinding defenses",
+              "progress": 0,
+              "acceptance": "Host header and Origin tests block inappropriate requests",
+              "checks": [
+                {
+                  "text": "Deliver validate host origin and dns rebinding defenses as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Host header and Origin tests block inappropriate requests",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T028",
+              "emoji": "🔐",
+              "name": "Add inbound bearer authorization policy",
+              "progress": 0,
+              "acceptance": "Unauthenticated requests cannot enumerate tools on protected endpoints",
+              "checks": [
+                {
+                  "text": "Deliver add inbound bearer authorization policy as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Unauthenticated requests cannot enumerate tools on protected endpoints",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T029",
+              "emoji": "🧭",
+              "name": "Serve protected MCP metadata and health endpoints",
+              "progress": 0,
+              "acceptance": "Health is not publicly exposed under inbound auth",
+              "checks": [
+                {
+                  "text": "Deliver serve protected mcp metadata and health endpoints as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Health is not publicly exposed under inbound auth",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T030",
+              "emoji": "📡",
+              "name": "Support authenticated sessions and request routing",
+              "progress": 0,
+              "acceptance": "Sessions terminate and cannot cross principal boundaries",
+              "checks": [
+                {
+                  "text": "Deliver support authenticated sessions and request routing as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Sessions terminate and cannot cross principal boundaries",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T031",
+              "emoji": "🧊",
+              "name": "Enforce payload and connection resource limits",
+              "progress": 0,
+              "acceptance": "Slow and oversized requests are bounded under load",
+              "checks": [
+                {
+                  "text": "Deliver enforce payload and connection resource limits as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Slow and oversized requests are bounded under load",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T032",
+              "emoji": "🪪",
+              "name": "Support TLS behind secure deployment configurations",
+              "progress": 0,
+              "acceptance": "Certificate and proxy trust rules reviewed and exercised",
+              "checks": [
+                {
+                  "text": "Deliver support tls behind secure deployment configurations as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Certificate and proxy trust rules reviewed and exercised",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T033",
+              "emoji": "🧫",
+              "name": "Test MCP HTTP inspector interoperability",
+              "progress": 0,
+              "acceptance": "End-to-end tool invocation under loopback and protected remote modes",
+              "checks": [
+                {
+                  "text": "Deliver test mcp http inspector interoperability as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "End-to-end tool invocation under loopback and protected remote modes",
+                  "passed": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "P04",
+          "emoji": "🧾",
+          "name": "MCP schema semantics",
+          "feature": "MCP contract",
+          "tasks": [
+            {
+              "id": "T034",
+              "emoji": "📐",
+              "name": "Validate structured input against exported schemas",
+              "progress": 0,
+              "acceptance": "Tool arguments validated with stable user-facing errors",
+              "checks": [
+                {
+                  "text": "Deliver validate structured input against exported schemas as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Tool arguments validated with stable user-facing errors",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T035",
+              "emoji": "🧩",
+              "name": "Declare read-only versus mutating tool annotations",
+              "progress": 0,
+              "acceptance": "Annotation write differs accurately from read tools",
+              "checks": [
+                {
+                  "text": "Deliver declare read-only versus mutating tool annotations as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Annotation write differs accurately from read tools",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T036",
+              "emoji": "🎛️",
+              "name": "Expose capability-profile filtered tool lists",
+              "progress": 0,
+              "acceptance": "Default read-only excludes writes and scratchpad effects",
+              "checks": [
+                {
+                  "text": "Deliver expose capability-profile filtered tool lists as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Default read-only excludes writes and scratchpad effects",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T037",
+              "emoji": "♻️",
+              "name": "Honor deterministic pagination and tool list consistency",
+              "progress": 0,
+              "acceptance": "Discovery pagination and list change tests pass",
+              "checks": [
+                {
+                  "text": "Deliver honor deterministic pagination and tool list consistency as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Discovery pagination and list change tests pass",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T038",
+              "emoji": "⚠️",
+              "name": "Normalize MCP protocol errors separately from GA failures",
+              "progress": 0,
+              "acceptance": "Invalid tools are distinct from Google API errors",
+              "checks": [
+                {
+                  "text": "Deliver normalize mcp protocol errors separately from ga failures as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Invalid tools are distinct from Google API errors",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T039",
+              "emoji": "🧵",
+              "name": "Propagate request cancellation across auth and HTTP",
+              "progress": 0,
+              "acceptance": "Interrupted calls free resources",
+              "checks": [
+                {
+                  "text": "Deliver propagate request cancellation across auth and http as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Interrupted calls free resources",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T040",
+              "emoji": "🧪",
+              "name": "Run cross-client MCP conformance suite",
+              "progress": 0,
+              "acceptance": "Protocol wire fixtures pass multiple clients",
+              "checks": [
+                {
+                  "text": "Deliver run cross-client mcp conformance suite as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Protocol wire fixtures pass multiple clients",
+                  "passed": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "M2",
+      "emoji": "🔑",
+      "name": "Google authentication and credential isolation",
+      "gate": "Secure, least-privilege, non-Python auth across interactive, local and service configurations; no secret leaks.",
+      "scope": "MVP",
+      "phases": [
+        {
+          "id": "P05",
+          "emoji": "🪪",
+          "name": "Native OAuth login and operators",
+          "feature": "Native OAuth",
+          "tasks": [
+            {
+              "id": "T041",
+              "emoji": "🧭",
+              "name": "Implement auth login and auth status CLI",
+              "progress": 0,
+              "acceptance": "One-time login and status work without invoking Python or npm",
+              "checks": [
+                {
+                  "text": "Deliver implement auth login and auth status cli as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "One-time login and status work without invoking Python or npm",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T042",
+              "emoji": "🧰",
+              "name": "Implement auth doctor and login-command helper",
+              "progress": 0,
+              "acceptance": "Operator gets actionable non-secret diagnostics",
+              "checks": [
+                {
+                  "text": "Deliver implement auth doctor and login-command helper as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Operator gets actionable non-secret diagnostics",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T043",
+              "emoji": "🌐",
+              "name": "Implement browser OAuth PKCE loopback flow",
+              "progress": 0,
+              "acceptance": "CSRF state, PKCE, timeout and redirect checks pass",
+              "checks": [
+                {
+                  "text": "Deliver implement browser oauth pkce loopback flow as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "CSRF state, PKCE, timeout and redirect checks pass",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T044",
+              "emoji": "🖥️",
+              "name": "Support headless copy-back OAuth setup",
+              "progress": 0,
+              "acceptance": "Headless flow completes and rejects replayed callbacks",
+              "checks": [
+                {
+                  "text": "Deliver support headless copy-back oauth setup as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Headless flow completes and rejects replayed callbacks",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T045",
+              "emoji": "🔐",
+              "name": "Store tokens in GA4-specific user config storage",
+              "progress": 0,
+              "acceptance": "Private file permissions and no shared ADC clobbering",
+              "checks": [
+                {
+                  "text": "Deliver store tokens in ga4-specific user config storage as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Private file permissions and no shared ADC clobbering",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T046",
+              "emoji": "♻️",
+              "name": "Implement expiry-aware access-token refresh",
+              "progress": 0,
+              "acceptance": "Refresh honors expiry and avoids parallel stampedes",
+              "checks": [
+                {
+                  "text": "Deliver implement expiry-aware access-token refresh as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Refresh honors expiry and avoids parallel stampedes",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T047",
+              "emoji": "📛",
+              "name": "Validate requested OAuth scopes per capability",
+              "progress": 0,
+              "acceptance": "Read-only uses analytics.readonly; writes demand analytics.edit",
+              "checks": [
+                {
+                  "text": "Deliver validate requested oauth scopes per capability as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Read-only uses analytics.readonly; writes demand analytics.edit",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T048",
+              "emoji": "🔎",
+              "name": "Validate live token and quota-project configuration",
+              "progress": 0,
+              "acceptance": "API-enabled project and quota errors are distinguishable",
+              "checks": [
+                {
+                  "text": "Deliver validate live token and quota-project configuration as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "API-enabled project and quota errors are distinguishable",
+                  "passed": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "P06",
+          "emoji": "📂",
+          "name": "ADC, service account and token policy",
+          "feature": "Google identities",
+          "tasks": [
+            {
+              "id": "T049",
+              "emoji": "🔑",
+              "name": "Support explicit Google application credentials JSON",
+              "progress": 0,
+              "acceptance": "Credential paths resolved without stdout token leakage",
+              "checks": [
+                {
+                  "text": "Deliver support explicit google application credentials json as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Credential paths resolved without stdout token leakage",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T050",
+              "emoji": "🪄",
+              "name": "Support ADC user credentials as opt-in",
+              "progress": 0,
+              "acceptance": "Existing ADC loads without modifying global credentials",
+              "checks": [
+                {
+                  "text": "Deliver support adc user credentials as opt-in as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Existing ADC loads without modifying global credentials",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T051",
+              "emoji": "🤖",
+              "name": "Support service-account JWT token exchange",
+              "progress": 0,
+              "acceptance": "Service identity token renews and errors correctly",
+              "checks": [
+                {
+                  "text": "Deliver support service-account jwt token exchange as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Service identity token renews and errors correctly",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T052",
+              "emoji": "🔗",
+              "name": "Support delegated and impersonated identities where valid",
+              "progress": 0,
+              "acceptance": "Bound and documented Google subject/scopes",
+              "checks": [
+                {
+                  "text": "Deliver support delegated and impersonated identities where valid as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Bound and documented Google subject/scopes",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T053",
+              "emoji": "📨",
+              "name": "Support request-header upstream bearer tokens",
+              "progress": 0,
+              "acceptance": "Client token is never persisted in server config",
+              "checks": [
+                {
+                  "text": "Deliver support request-header upstream bearer tokens as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Client token is never persisted in server config",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T054",
+              "emoji": "🔀",
+              "name": "Support request-header-or-config only on loopback",
+              "progress": 0,
+              "acceptance": "Hosted fallback to server-held identity fails closed",
+              "checks": [
+                {
+                  "text": "Deliver support request-header-or-config only on loopback as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Hosted fallback to server-held identity fails closed",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T055",
+              "emoji": "🧮",
+              "name": "Support configured refresh-token credentials",
+              "progress": 0,
+              "acceptance": "Explicit credentials refresh without CLI gcloud dependency",
+              "checks": [
+                {
+                  "text": "Deliver support configured refresh-token credentials as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Explicit credentials refresh without CLI gcloud dependency",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T056",
+              "emoji": "🏷️",
+              "name": "Support quota project and billing headers",
+              "progress": 0,
+              "acceptance": "Expected Google quota routing preserved",
+              "checks": [
+                {
+                  "text": "Deliver support quota project and billing headers as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Expected Google quota routing preserved",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T057",
+              "emoji": "⏳",
+              "name": "Guard clock skew and rotation races",
+              "progress": 0,
+              "acceptance": "Expiring secrets renew safely during concurrent calls",
+              "checks": [
+                {
+                  "text": "Deliver guard clock skew and rotation races as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Expiring secrets renew safely during concurrent calls",
+                  "passed": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "P07",
+          "emoji": "🛡️",
+          "name": "Inbound versus upstream trust",
+          "feature": "Identity security",
+          "tasks": [
+            {
+              "id": "T058",
+              "emoji": "🚪",
+              "name": "Separate inbound MCP identity from Google identity",
+              "progress": 0,
+              "acceptance": "No identity-conflation in HTTP transport",
+              "checks": [
+                {
+                  "text": "Deliver separate inbound mcp identity from google identity as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "No identity-conflation in HTTP transport",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T059",
+              "emoji": "🧾",
+              "name": "Define capability authorization matrices",
+              "progress": 0,
+              "acceptance": "Google and local permissions checked per tool call",
+              "checks": [
+                {
+                  "text": "Deliver define capability authorization matrices as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Google and local permissions checked per tool call",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T060",
+              "emoji": "💼",
+              "name": "Avoid credential exposure in crash logs and traces",
+              "progress": 0,
+              "acceptance": "Secret scanner fixtures remain clean",
+              "checks": [
+                {
+                  "text": "Deliver avoid credential exposure in crash logs and traces as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Secret scanner fixtures remain clean",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T061",
+              "emoji": "🔍",
+              "name": "Validate Google scope and role errors distinctly",
+              "progress": 0,
+              "acceptance": "No broad-scope silent escalation on 403",
+              "checks": [
+                {
+                  "text": "Deliver validate google scope and role errors distinctly as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "No broad-scope silent escalation on 403",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T062",
+              "emoji": "🔐",
+              "name": "Protect local credential files from symlink attacks",
+              "progress": 0,
+              "acceptance": "No world-readable files and atomic writes",
+              "checks": [
+                {
+                  "text": "Deliver protect local credential files from symlink attacks as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "No world-readable files and atomic writes",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T063",
+              "emoji": "🚫",
+              "name": "Block SSRF via URLs in config or request arguments",
+              "progress": 0,
+              "acceptance": "Only pinned Google API hosts are contacted by default",
+              "checks": [
+                {
+                  "text": "Deliver block ssrf via urls in config or request arguments as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Only pinned Google API hosts are contacted by default",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T064",
+              "emoji": "🧪",
+              "name": "Exercise expired revoked and invalid credentials",
+              "progress": 0,
+              "acceptance": "All modes fail safely with stable errors",
+              "checks": [
+                {
+                  "text": "Deliver exercise expired revoked and invalid credentials as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "All modes fail safely with stable errors",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T065",
+              "emoji": "📦",
+              "name": "Ensure no auth dependency on gcloud installation",
+              "progress": 0,
+              "acceptance": "Native test environment lacks gcloud Python and npm",
+              "checks": [
+                {
+                  "text": "Deliver ensure no auth dependency on gcloud installation as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Native test environment lacks gcloud Python and npm",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T066",
+              "emoji": "🧯",
+              "name": "Implement safe logout and credential revocation guidance",
+              "progress": 0,
+              "acceptance": "State cleared without touching unrelated Google apps",
+              "checks": [
+                {
+                  "text": "Deliver implement safe logout and credential revocation guidance as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "State cleared without touching unrelated Google apps",
+                  "passed": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "M3",
+      "emoji": "🏢",
+      "name": "Admin API information parity",
+      "gate": "All administrative read tools and metadata endpoints match pinned signatures and response behavior.",
+      "scope": "MVP",
+      "phases": [
+        {
+          "id": "P08",
+          "emoji": "🗂️",
+          "name": "Admin MCP tools",
+          "feature": "Seven Admin read tools",
+          "tasks": [
+            {
+              "id": "T067",
+              "emoji": "🧾",
+              "name": "Implement get_account_summaries",
+              "progress": 0,
+              "acceptance": "Golden Admin API mock response and auth-denial case for get_account_summaries",
+              "checks": [
+                {
+                  "text": "Deliver implement get_account_summaries as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Golden Admin API mock response and auth-denial case for get_account_summaries",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T068",
+              "emoji": "📃",
+              "name": "Implement get_account_data_sharing_settings",
+              "progress": 0,
+              "acceptance": "Golden Admin API mock response and auth-denial case for get_account_data_sharing_settings",
+              "checks": [
+                {
+                  "text": "Deliver implement get_account_data_sharing_settings as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Golden Admin API mock response and auth-denial case for get_account_data_sharing_settings",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T069",
+              "emoji": "🏠",
+              "name": "Implement get_property_details",
+              "progress": 0,
+              "acceptance": "Golden Admin API mock response and auth-denial case for get_property_details",
+              "checks": [
+                {
+                  "text": "Deliver implement get_property_details as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Golden Admin API mock response and auth-denial case for get_property_details",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T070",
+              "emoji": "⏳",
+              "name": "Implement get_property_data_retention_settings",
+              "progress": 0,
+              "acceptance": "Golden Admin API mock response and auth-denial case for get_property_data_retention_settings",
+              "checks": [
+                {
+                  "text": "Deliver implement get_property_data_retention_settings as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Golden Admin API mock response and auth-denial case for get_property_data_retention_settings",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T071",
+              "emoji": "🔗",
+              "name": "Implement list_google_ads_links",
+              "progress": 0,
+              "acceptance": "Golden Admin API mock response and auth-denial case for list_google_ads_links",
+              "checks": [
+                {
+                  "text": "Deliver implement list_google_ads_links as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Golden Admin API mock response and auth-denial case for list_google_ads_links",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T072",
+              "emoji": "📌",
+              "name": "Implement list_property_annotations",
+              "progress": 0,
+              "acceptance": "Golden Admin API mock response and auth-denial case for list_property_annotations",
+              "checks": [
+                {
+                  "text": "Deliver implement list_property_annotations as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Golden Admin API mock response and auth-denial case for list_property_annotations",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T073",
+              "emoji": "🧬",
+              "name": "Implement get_custom_dimensions_and_metrics",
+              "progress": 0,
+              "acceptance": "Golden Admin API mock response and auth-denial case for get_custom_dimensions_and_metrics",
+              "checks": [
+                {
+                  "text": "Deliver implement get_custom_dimensions_and_metrics as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Golden Admin API mock response and auth-denial case for get_custom_dimensions_and_metrics",
+                  "passed": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "P09",
+          "emoji": "🏷️",
+          "name": "Administrative edge cases",
+          "feature": "Admin fidelity",
+          "tasks": [
+            {
+              "id": "T074",
+              "emoji": "📚",
+              "name": "Page through all account summaries and Google Ads links",
+              "progress": 0,
+              "acceptance": "Multi-page provider fixtures return complete results",
+              "checks": [
+                {
+                  "text": "Deliver page through all account summaries and google ads links as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Multi-page provider fixtures return complete results",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T075",
+              "emoji": "🗺️",
+              "name": "Normalize property and account resource names",
+              "progress": 0,
+              "acceptance": "Numeric and canonical IDs round-trip",
+              "checks": [
+                {
+                  "text": "Deliver normalize property and account resource names as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Numeric and canonical IDs round-trip",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T076",
+              "emoji": "🧱",
+              "name": "Handle GA4 property account hierarchy and time zones",
+              "progress": 0,
+              "acceptance": "Correct property selection and permissions",
+              "checks": [
+                {
+                  "text": "Deliver handle ga4 property account hierarchy and time zones as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Correct property selection and permissions",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T077",
+              "emoji": "⏳",
+              "name": "Preserve property data retention and reset semantics",
+              "progress": 0,
+              "acceptance": "Sparse optional values and defaults tested",
+              "checks": [
+                {
+                  "text": "Deliver preserve property data retention and reset semantics as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Sparse optional values and defaults tested",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T078",
+              "emoji": "🧩",
+              "name": "Support custom dimension and metric catalogs",
+              "progress": 0,
+              "acceptance": "Custom-scoped names and reserved field handling correct",
+              "checks": [
+                {
+                  "text": "Deliver support custom dimension and metric catalogs as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Custom-scoped names and reserved field handling correct",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T079",
+              "emoji": "🏷️",
+              "name": "Support annotation listing and date intervals",
+              "progress": 0,
+              "acceptance": "All pages and annotation color enums round-trip",
+              "checks": [
+                {
+                  "text": "Deliver support annotation listing and date intervals as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "All pages and annotation color enums round-trip",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T080",
+              "emoji": "🪪",
+              "name": "Handle GA Admin API beta versus alpha resources",
+              "progress": 0,
+              "acceptance": "Version-specific host and payload shapes pinned",
+              "checks": [
+                {
+                  "text": "Deliver handle ga admin api beta versus alpha resources as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Version-specific host and payload shapes pinned",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T081",
+              "emoji": "🚷",
+              "name": "Represent missing account permissions without data leaks",
+              "progress": 0,
+              "acceptance": "Partial access errors are explicit and scoped",
+              "checks": [
+                {
+                  "text": "Deliver represent missing account permissions without data leaks as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Partial access errors are explicit and scoped",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T082",
+              "emoji": "🔄",
+              "name": "Refresh account metadata safely on repeated calls",
+              "progress": 0,
+              "acceptance": "No stale cross-principal cache confusion",
+              "checks": [
+                {
+                  "text": "Deliver refresh account metadata safely on repeated calls as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "No stale cross-principal cache confusion",
+                  "passed": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "M4",
+      "emoji": "📊",
+      "name": "Reporting, preflight and Data API parity",
+      "gate": "All report tools return correct GA4 semantics, including documented alpha, pagination and response projections.",
+      "scope": "MVP",
+      "phases": [
+        {
+          "id": "P10",
+          "emoji": "📈",
+          "name": "Report MCP tools",
+          "feature": "Eight report tools",
+          "tasks": [
+            {
+              "id": "T083",
+              "emoji": "📊",
+              "name": "Implement run_report",
+              "progress": 0,
+              "acceptance": "MCP schema, Google request, golden output and error cases for run_report",
+              "checks": [
+                {
+                  "text": "Deliver implement run_report as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "MCP schema, Google request, golden output and error cases for run_report",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T084",
+              "emoji": "🛒",
+              "name": "Implement run_conversions_report",
+              "progress": 0,
+              "acceptance": "MCP schema, Google request, golden output and error cases for run_conversions_report",
+              "checks": [
+                {
+                  "text": "Deliver implement run_conversions_report as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "MCP schema, Google request, golden output and error cases for run_conversions_report",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T085",
+              "emoji": "🚦",
+              "name": "Implement run_funnel_report",
+              "progress": 0,
+              "acceptance": "MCP schema, Google request, golden output and error cases for run_funnel_report",
+              "checks": [
+                {
+                  "text": "Deliver implement run_funnel_report as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "MCP schema, Google request, golden output and error cases for run_funnel_report",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T086",
+              "emoji": "⚡",
+              "name": "Implement run_realtime_report",
+              "progress": 0,
+              "acceptance": "MCP schema, Google request, golden output and error cases for run_realtime_report",
+              "checks": [
+                {
+                  "text": "Deliver implement run_realtime_report as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "MCP schema, Google request, golden output and error cases for run_realtime_report",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T087",
+              "emoji": "🧩",
+              "name": "Implement run_pivot_report",
+              "progress": 0,
+              "acceptance": "MCP schema, Google request, golden output and error cases for run_pivot_report",
+              "checks": [
+                {
+                  "text": "Deliver implement run_pivot_report as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "MCP schema, Google request, golden output and error cases for run_pivot_report",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T088",
+              "emoji": "📦",
+              "name": "Implement batch_run_reports",
+              "progress": 0,
+              "acceptance": "MCP schema, Google request, golden output and error cases for batch_run_reports",
+              "checks": [
+                {
+                  "text": "Deliver implement batch_run_reports as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "MCP schema, Google request, golden output and error cases for batch_run_reports",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T089",
+              "emoji": "🔎",
+              "name": "Implement run_property_access_report",
+              "progress": 0,
+              "acceptance": "MCP schema, Google request, golden output and error cases for run_property_access_report",
+              "checks": [
+                {
+                  "text": "Deliver implement run_property_access_report as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "MCP schema, Google request, golden output and error cases for run_property_access_report",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T090",
+              "emoji": "👥",
+              "name": "Implement run_account_access_report",
+              "progress": 0,
+              "acceptance": "MCP schema, Google request, golden output and error cases for run_account_access_report",
+              "checks": [
+                {
+                  "text": "Deliver implement run_account_access_report as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "MCP schema, Google request, golden output and error cases for run_account_access_report",
+                  "passed": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "P11",
+          "emoji": "🧭",
+          "name": "Preflight MCP tools",
+          "feature": "Preflight and metadata",
+          "tasks": [
+            {
+              "id": "T091",
+              "emoji": "🧭",
+              "name": "Implement preview_report_request",
+              "progress": 0,
+              "acceptance": "Validate its contract and unsupported metrics without wasteful report requests",
+              "checks": [
+                {
+                  "text": "Deliver implement preview_report_request as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Validate its contract and unsupported metrics without wasteful report requests",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T092",
+              "emoji": "✅",
+              "name": "Implement check_report_compatibility",
+              "progress": 0,
+              "acceptance": "Validate its contract and unsupported metrics without wasteful report requests",
+              "checks": [
+                {
+                  "text": "Deliver implement check_report_compatibility as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Validate its contract and unsupported metrics without wasteful report requests",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T093",
+              "emoji": "🧬",
+              "name": "Cache and refresh Data API metadata safely",
+              "progress": 0,
+              "acceptance": "Metadata cache keys include property and caller",
+              "checks": [
+                {
+                  "text": "Deliver cache and refresh data api metadata safely as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Metadata cache keys include property and caller",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T094",
+              "emoji": "🔤",
+              "name": "Support flexible dimension and metric filters",
+              "progress": 0,
+              "acceptance": "FilterExpression nested JSON and shorthand cases validated",
+              "checks": [
+                {
+                  "text": "Deliver support flexible dimension and metric filters as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "FilterExpression nested JSON and shorthand cases validated",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T095",
+              "emoji": "📅",
+              "name": "Validate date ranges and reserved dates",
+              "progress": 0,
+              "acceptance": "Multiple ranges and dates behave as Google expects",
+              "checks": [
+                {
+                  "text": "Deliver validate date ranges and reserved dates as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Multiple ranges and dates behave as Google expects",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T096",
+              "emoji": "🧮",
+              "name": "Implement metric and dimension compatibility checks",
+              "progress": 0,
+              "acceptance": "Invalid combinations handled before expensive calls",
+              "checks": [
+                {
+                  "text": "Deliver implement metric and dimension compatibility checks as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Invalid combinations handled before expensive calls",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T097",
+              "emoji": "📝",
+              "name": "Normalize input values without silent coercion",
+              "progress": 0,
+              "acceptance": "Lossless valid requests and typed invalid results",
+              "checks": [
+                {
+                  "text": "Deliver normalize input values without silent coercion as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Lossless valid requests and typed invalid results",
+                  "passed": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "P12",
+          "emoji": "📐",
+          "name": "Data request fidelity and limits",
+          "feature": "Reporting correctness",
+          "tasks": [
+            {
+              "id": "T098",
+              "emoji": "🧮",
+              "name": "Support metric aggregates and row counts",
+              "progress": 0,
+              "acceptance": "Totals minimum maximum and aggregate fields preserved",
+              "checks": [
+                {
+                  "text": "Deliver support metric aggregates and row counts as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Totals minimum maximum and aggregate fields preserved",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T099",
+              "emoji": "📎",
+              "name": "Support pagination offsets and opaque cursors",
+              "progress": 0,
+              "acceptance": "Continuation is stable with bounded row limits",
+              "checks": [
+                {
+                  "text": "Deliver support pagination offsets and opaque cursors as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Continuation is stable with bounded row limits",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T100",
+              "emoji": "⚡",
+              "name": "Honor realtime non-paginated semantics",
+              "progress": 0,
+              "acceptance": "No fake continuation token when GA realtime lacks offset",
+              "checks": [
+                {
+                  "text": "Deliver honor realtime non-paginated semantics as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "No fake continuation token when GA realtime lacks offset",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T101",
+              "emoji": "🗂️",
+              "name": "Support pivot report ordering and groups",
+              "progress": 0,
+              "acceptance": "Nested pivots and row groups validated by fixtures",
+              "checks": [
+                {
+                  "text": "Deliver support pivot report ordering and groups as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Nested pivots and row groups validated by fixtures",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T102",
+              "emoji": "📦",
+              "name": "Enforce batch report maximums and isolation",
+              "progress": 0,
+              "acceptance": "Five-report constraint and distinct report results preserved",
+              "checks": [
+                {
+                  "text": "Deliver enforce batch report maximums and isolation as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Five-report constraint and distinct report results preserved",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T103",
+              "emoji": "🧪",
+              "name": "Support funnel steps segments trended and breakdown",
+              "progress": 0,
+              "acceptance": "Complex v1alpha funnel shapes round-trip",
+              "checks": [
+                {
+                  "text": "Deliver support funnel steps segments trended and breakdown as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Complex v1alpha funnel shapes round-trip",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T104",
+              "emoji": "🛒",
+              "name": "Support conversion and attribution reporting v1alpha",
+              "progress": 0,
+              "acceptance": "Eligible and ineligible properties/errors tested",
+              "checks": [
+                {
+                  "text": "Deliver support conversion and attribution reporting v1alpha as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Eligible and ineligible properties/errors tested",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T105",
+              "emoji": "💵",
+              "name": "Preserve currency timezone and numeric precision",
+              "progress": 0,
+              "acceptance": "Typed metrics and currency metadata retained",
+              "checks": [
+                {
+                  "text": "Deliver preserve currency timezone and numeric precision as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Typed metrics and currency metadata retained",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T106",
+              "emoji": "📊",
+              "name": "Support output modes rows tuples scalar compact",
+              "progress": 0,
+              "acceptance": "All compatible result projections are predictable",
+              "checks": [
+                {
+                  "text": "Deliver support output modes rows tuples scalar compact as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "All compatible result projections are predictable",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T107",
+              "emoji": "✂️",
+              "name": "Support row cell and request-size clipping",
+              "progress": 0,
+              "acceptance": "Limits protect context without hiding truncation metadata",
+              "checks": [
+                {
+                  "text": "Deliver support row cell and request-size clipping as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Limits protect context without hiding truncation metadata",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T108",
+              "emoji": "📋",
+              "name": "Support summary-only responses and total known flags",
+              "progress": 0,
+              "acceptance": "Counts and partial results are never misrepresented",
+              "checks": [
+                {
+                  "text": "Deliver support summary-only responses and total known flags as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Counts and partial results are never misrepresented",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T109",
+              "emoji": "🌍",
+              "name": "Handle property-specific API permission and quota errors",
+              "progress": 0,
+              "acceptance": "429 and 403 retry/backoff rules explicit",
+              "checks": [
+                {
+                  "text": "Deliver handle property-specific api permission and quota errors as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "429 and 403 retry/backoff rules explicit",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T110",
+              "emoji": "🧱",
+              "name": "Bound oversized filter recursion and JSON arguments",
+              "progress": 0,
+              "acceptance": "Worst-case requests rejected before Google API",
+              "checks": [
+                {
+                  "text": "Deliver bound oversized filter recursion and json arguments as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Worst-case requests rejected before Google API",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T111",
+              "emoji": "♻️",
+              "name": "Make repeated report retries safe and idempotent",
+              "progress": 0,
+              "acceptance": "Retry-After respected with bounded jitter",
+              "checks": [
+                {
+                  "text": "Deliver make repeated report retries safe and idempotent as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Retry-After respected with bounded jitter",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T112",
+              "emoji": "🧾",
+              "name": "Preserve GA response quota metadata and warnings",
+              "progress": 0,
+              "acceptance": "Quotas accessible without leaking tokens",
+              "checks": [
+                {
+                  "text": "Deliver preserve ga response quota metadata and warnings as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Quotas accessible without leaking tokens",
+                  "passed": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "M5",
+      "emoji": "✍️",
+      "name": "Explicitly gated GA mutation parity",
+      "gate": "One official write tool operates with analytics.edit and explicit opt-in; ordinary mode cannot mutate GA.",
+      "scope": "MVP",
+      "phases": [
+        {
+          "id": "P13",
+          "emoji": "📝",
+          "name": "Annotation creation parity",
+          "feature": "One opt-in Google write tool",
+          "tasks": [
+            {
+              "id": "T113",
+              "emoji": "🖊️",
+              "name": "Implement create_property_annotation",
+              "progress": 0,
+              "acceptance": "Full official title description dates and color schema contract tested",
+              "checks": [
+                {
+                  "text": "Deliver implement create_property_annotation as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Full official title description dates and color schema contract tested",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T114",
+              "emoji": "📅",
+              "name": "Validate annotation date and range order",
+              "progress": 0,
+              "acceptance": "Reject malformed dates and reversed ranges before Google call",
+              "checks": [
+                {
+                  "text": "Deliver validate annotation date and range order as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Reject malformed dates and reversed ranges before Google call",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T115",
+              "emoji": "🎨",
+              "name": "Reject reserved ORANGE and invalid enum colors",
+              "progress": 0,
+              "acceptance": "Only supported annotation colors submitted to Google",
+              "checks": [
+                {
+                  "text": "Deliver reject reserved orange and invalid enum colors as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Only supported annotation colors submitted to Google",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T116",
+              "emoji": "📝",
+              "name": "Validate maximum title and description lengths",
+              "progress": 0,
+              "acceptance": "60-character title and 150-character description bounds respected",
+              "checks": [
+                {
+                  "text": "Deliver validate maximum title and description lengths as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "60-character title and 150-character description bounds respected",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T117",
+              "emoji": "🔐",
+              "name": "Require explicit allow-write startup capability",
+              "progress": 0,
+              "acceptance": "Default tools/list and tools/call cannot write",
+              "checks": [
+                {
+                  "text": "Deliver require explicit allow-write startup capability as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Default tools/list and tools/call cannot write",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T118",
+              "emoji": "🪪",
+              "name": "Demand analytics.edit scope and sufficient property role",
+              "progress": 0,
+              "acceptance": "Clear denial without escalating OAuth permissions",
+              "checks": [
+                {
+                  "text": "Deliver demand analytics.edit scope and sufficient property role as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Clear denial without escalating OAuth permissions",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T119",
+              "emoji": "✋",
+              "name": "Require user confirmation at client boundary when supported",
+              "progress": 0,
+              "acceptance": "High-impact writes annotated and host approval guidance explicit",
+              "checks": [
+                {
+                  "text": "Deliver require user confirmation at client boundary when supported as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "High-impact writes annotated and host approval guidance explicit",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T120",
+              "emoji": "🧪",
+              "name": "Test write denial and optional live opt-in acceptance",
+              "progress": 0,
+              "acceptance": "No writes in automated public CI",
+              "checks": [
+                {
+                  "text": "Deliver test write denial and optional live opt-in acceptance as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "No writes in automated public CI",
+                  "passed": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "P14",
+          "emoji": "🚦",
+          "name": "Write safety policies",
+          "feature": "Write gating",
+          "tasks": [
+            {
+              "id": "T121",
+              "emoji": "🏷️",
+              "name": "Annotate mutating MCP tools correctly",
+              "progress": 0,
+              "acceptance": "ReadOnly and idempotence hints match effects",
+              "checks": [
+                {
+                  "text": "Deliver annotate mutating mcp tools correctly as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "ReadOnly and idempotence hints match effects",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T122",
+              "emoji": "🛡️",
+              "name": "Keep write tool hidden under read-only profiles",
+              "progress": 0,
+              "acceptance": "Bypass attempts fail regardless of tool visibility",
+              "checks": [
+                {
+                  "text": "Deliver keep write tool hidden under read-only profiles as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Bypass attempts fail regardless of tool visibility",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T123",
+              "emoji": "🧾",
+              "name": "Produce redacted audit events for writes",
+              "progress": 0,
+              "acceptance": "Timestamp and action identifiable but no secrets",
+              "checks": [
+                {
+                  "text": "Deliver produce redacted audit events for writes as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Timestamp and action identifiable but no secrets",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T124",
+              "emoji": "♻️",
+              "name": "Handle Google transient failures without blind retries",
+              "progress": 0,
+              "acceptance": "No automatic duplicate annotation creation",
+              "checks": [
+                {
+                  "text": "Deliver handle google transient failures without blind retries as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "No automatic duplicate annotation creation",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T125",
+              "emoji": "🧯",
+              "name": "Support reversible config opt-out without token replacement",
+              "progress": 0,
+              "acceptance": "Disable write capability at runtime restart",
+              "checks": [
+                {
+                  "text": "Deliver support reversible config opt-out without token replacement as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Disable write capability at runtime restart",
+                  "passed": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "M6",
+      "emoji": "🗃️",
+      "name": "DuckDB scratchpad and advanced analytics parity",
+      "gate": "All 15 local scratchpad tools and policy limits operate without unsafe SQL or credential disclosure.",
+      "scope": "MVP",
+      "phases": [
+        {
+          "id": "P15",
+          "emoji": "🗄️",
+          "name": "Scratchpad lifecycle MCP tools",
+          "feature": "Seven session tools",
+          "tasks": [
+            {
+              "id": "T126",
+              "emoji": "🧱",
+              "name": "Implement scratchpad_open_session",
+              "progress": 0,
+              "acceptance": "Isolated session lifecycle plus quota failure fixtures for scratchpad_open_session",
+              "checks": [
+                {
+                  "text": "Deliver implement scratchpad_open_session as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Isolated session lifecycle plus quota failure fixtures for scratchpad_open_session",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T127",
+              "emoji": "🔒",
+              "name": "Implement scratchpad_close_session",
+              "progress": 0,
+              "acceptance": "Isolated session lifecycle plus quota failure fixtures for scratchpad_close_session",
+              "checks": [
+                {
+                  "text": "Deliver implement scratchpad_close_session as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Isolated session lifecycle plus quota failure fixtures for scratchpad_close_session",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T128",
+              "emoji": "📋",
+              "name": "Implement scratchpad_list_sessions",
+              "progress": 0,
+              "acceptance": "Isolated session lifecycle plus quota failure fixtures for scratchpad_list_sessions",
+              "checks": [
+                {
+                  "text": "Deliver implement scratchpad_list_sessions as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Isolated session lifecycle plus quota failure fixtures for scratchpad_list_sessions",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T129",
+              "emoji": "📏",
+              "name": "Implement scratchpad_get_runtime_limits",
+              "progress": 0,
+              "acceptance": "Isolated session lifecycle plus quota failure fixtures for scratchpad_get_runtime_limits",
+              "checks": [
+                {
+                  "text": "Deliver implement scratchpad_get_runtime_limits as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Isolated session lifecycle plus quota failure fixtures for scratchpad_get_runtime_limits",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T130",
+              "emoji": "🎛️",
+              "name": "Implement scratchpad_set_runtime_limits",
+              "progress": 0,
+              "acceptance": "Isolated session lifecycle plus quota failure fixtures for scratchpad_set_runtime_limits",
+              "checks": [
+                {
+                  "text": "Deliver implement scratchpad_set_runtime_limits as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Isolated session lifecycle plus quota failure fixtures for scratchpad_set_runtime_limits",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T131",
+              "emoji": "🗂️",
+              "name": "Implement scratchpad_list_tables",
+              "progress": 0,
+              "acceptance": "Isolated session lifecycle plus quota failure fixtures for scratchpad_list_tables",
+              "checks": [
+                {
+                  "text": "Deliver implement scratchpad_list_tables as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Isolated session lifecycle plus quota failure fixtures for scratchpad_list_tables",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T132",
+              "emoji": "🧹",
+              "name": "Implement scratchpad_drop_table",
+              "progress": 0,
+              "acceptance": "Isolated session lifecycle plus quota failure fixtures for scratchpad_drop_table",
+              "checks": [
+                {
+                  "text": "Deliver implement scratchpad_drop_table as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Isolated session lifecycle plus quota failure fixtures for scratchpad_drop_table",
+                  "passed": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "P16",
+          "emoji": "📥",
+          "name": "Scratchpad ingest and query MCP tools",
+          "feature": "Five ingest/query tools",
+          "tasks": [
+            {
+              "id": "T133",
+              "emoji": "📊",
+              "name": "Implement scratchpad_ingest_report",
+              "progress": 0,
+              "acceptance": "Synthetic GA payload and DuckDB query conformance for scratchpad_ingest_report",
+              "checks": [
+                {
+                  "text": "Deliver implement scratchpad_ingest_report as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Synthetic GA payload and DuckDB query conformance for scratchpad_ingest_report",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T134",
+              "emoji": "⚡",
+              "name": "Implement scratchpad_ingest_realtime_report",
+              "progress": 0,
+              "acceptance": "Synthetic GA payload and DuckDB query conformance for scratchpad_ingest_realtime_report",
+              "checks": [
+                {
+                  "text": "Deliver implement scratchpad_ingest_realtime_report as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Synthetic GA payload and DuckDB query conformance for scratchpad_ingest_realtime_report",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T135",
+              "emoji": "🔎",
+              "name": "Implement scratchpad_query",
+              "progress": 0,
+              "acceptance": "Synthetic GA payload and DuckDB query conformance for scratchpad_query",
+              "checks": [
+                {
+                  "text": "Deliver implement scratchpad_query as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Synthetic GA payload and DuckDB query conformance for scratchpad_query",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T136",
+              "emoji": "🧬",
+              "name": "Implement scratchpad_describe_table",
+              "progress": 0,
+              "acceptance": "Synthetic GA payload and DuckDB query conformance for scratchpad_describe_table",
+              "checks": [
+                {
+                  "text": "Deliver implement scratchpad_describe_table as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Synthetic GA payload and DuckDB query conformance for scratchpad_describe_table",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T137",
+              "emoji": "🧮",
+              "name": "Implement scratchpad_summarize_table",
+              "progress": 0,
+              "acceptance": "Synthetic GA payload and DuckDB query conformance for scratchpad_summarize_table",
+              "checks": [
+                {
+                  "text": "Deliver implement scratchpad_summarize_table as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Synthetic GA payload and DuckDB query conformance for scratchpad_summarize_table",
+                  "passed": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "P17",
+          "emoji": "📉",
+          "name": "Scratchpad analysis MCP tools",
+          "feature": "Three analytic tools",
+          "tasks": [
+            {
+              "id": "T138",
+              "emoji": "📉",
+              "name": "Implement scratchpad_release_regression_report",
+              "progress": 0,
+              "acceptance": "Evidence fixture and schema/output equivalence for scratchpad_release_regression_report",
+              "checks": [
+                {
+                  "text": "Deliver implement scratchpad_release_regression_report as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Evidence fixture and schema/output equivalence for scratchpad_release_regression_report",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T139",
+              "emoji": "🔀",
+              "name": "Implement scratchpad_landing_param_shift_report",
+              "progress": 0,
+              "acceptance": "Evidence fixture and schema/output equivalence for scratchpad_landing_param_shift_report",
+              "checks": [
+                {
+                  "text": "Deliver implement scratchpad_landing_param_shift_report as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Evidence fixture and schema/output equivalence for scratchpad_landing_param_shift_report",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T140",
+              "emoji": "📤",
+              "name": "Implement scratchpad_export_evidence_bundle",
+              "progress": 0,
+              "acceptance": "Evidence fixture and schema/output equivalence for scratchpad_export_evidence_bundle",
+              "checks": [
+                {
+                  "text": "Deliver implement scratchpad_export_evidence_bundle as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Evidence fixture and schema/output equivalence for scratchpad_export_evidence_bundle",
+                  "passed": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "P18",
+          "emoji": "🔐",
+          "name": "DuckDB security and resource controls",
+          "feature": "Scratchpad sandbox",
+          "tasks": [
+            {
+              "id": "T141",
+              "emoji": "🚪",
+              "name": "Gate scratchpad behind explicit capability profile",
+              "progress": 0,
+              "acceptance": "Default read-only process has no scratchpad tools",
+              "checks": [
+                {
+                  "text": "Deliver gate scratchpad behind explicit capability profile as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Default read-only process has no scratchpad tools",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T142",
+              "emoji": "🧩",
+              "name": "Enforce per-session quotas and retention",
+              "progress": 0,
+              "acceptance": "Memory disk time rows and session count bounded",
+              "checks": [
+                {
+                  "text": "Deliver enforce per-session quotas and retention as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Memory disk time rows and session count bounded",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T143",
+              "emoji": "🗃️",
+              "name": "Isolate scratchpad database files per identity",
+              "progress": 0,
+              "acceptance": "Cross-user table read attempts fail",
+              "checks": [
+                {
+                  "text": "Deliver isolate scratchpad database files per identity as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Cross-user table read attempts fail",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T144",
+              "emoji": "🪬",
+              "name": "Implement SQL SELECT-only parser policy",
+              "progress": 0,
+              "acceptance": "DML DDL COPY INSTALL LOAD ATTACH and external scans rejected",
+              "checks": [
+                {
+                  "text": "Deliver implement sql select-only parser policy as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "DML DDL COPY INSTALL LOAD ATTACH and external scans rejected",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T145",
+              "emoji": "🌍",
+              "name": "Disable remote extensions and filesystem reads",
+              "progress": 0,
+              "acceptance": "No network or arbitrary path escape through DuckDB",
+              "checks": [
+                {
+                  "text": "Deliver disable remote extensions and filesystem reads as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "No network or arbitrary path escape through DuckDB",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T146",
+              "emoji": "🧯",
+              "name": "Handle unexpected termination and session cleanup",
+              "progress": 0,
+              "acceptance": "Leftover temp files sanitized on restart",
+              "checks": [
+                {
+                  "text": "Deliver handle unexpected termination and session cleanup as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Leftover temp files sanitized on restart",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T147",
+              "emoji": "📏",
+              "name": "Provide deterministic truncation and evidence limits",
+              "progress": 0,
+              "acceptance": "Bundle size and context limits enforced",
+              "checks": [
+                {
+                  "text": "Deliver provide deterministic truncation and evidence limits as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Bundle size and context limits enforced",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T148",
+              "emoji": "🔏",
+              "name": "Guard exported evidence bundle permissions",
+              "progress": 0,
+              "acceptance": "Exports do not overwrite arbitrary paths or expose secrets",
+              "checks": [
+                {
+                  "text": "Deliver guard exported evidence bundle permissions as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Exports do not overwrite arbitrary paths or expose secrets",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T149",
+              "emoji": "🧪",
+              "name": "Run embedded DuckDB fuzz and hostile SQL fixtures",
+              "progress": 0,
+              "acceptance": "Policy bypass corpus fails safely",
+              "checks": [
+                {
+                  "text": "Deliver run embedded duckdb fuzz and hostile sql fixtures as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Policy bypass corpus fails safely",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T150",
+              "emoji": "🦀",
+              "name": "Document native DuckDB library boundary honestly",
+              "progress": 0,
+              "acceptance": "Dependency license architecture and portability reviewed",
+              "checks": [
+                {
+                  "text": "Deliver document native duckdb library boundary honestly as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Dependency license architecture and portability reviewed",
+                  "passed": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "M7",
+      "emoji": "🧬",
+      "name": "Tool contract interoperability and parity audits",
+      "gate": "All 36 tool schemas and response mappings are independently snapshot-tested against both pinned upstreams.",
+      "scope": "MVP",
+      "phases": [
+        {
+          "id": "P19",
+          "emoji": "🧰",
+          "name": "Setup and authentication MCP tools",
+          "feature": "Three auth/setup tools",
+          "tasks": [
+            {
+              "id": "T151",
+              "emoji": "🧭",
+              "name": "Implement ga4_get_started",
+              "progress": 0,
+              "acceptance": "Native CLI guidance and MCP schema parity for ga4_get_started",
+              "checks": [
+                {
+                  "text": "Deliver implement ga4_get_started as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Native CLI guidance and MCP schema parity for ga4_get_started",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T152",
+              "emoji": "🩺",
+              "name": "Implement ga4_auth_status",
+              "progress": 0,
+              "acceptance": "Native CLI guidance and MCP schema parity for ga4_auth_status",
+              "checks": [
+                {
+                  "text": "Deliver implement ga4_auth_status as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Native CLI guidance and MCP schema parity for ga4_auth_status",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T153",
+              "emoji": "🗝️",
+              "name": "Implement ga4_auth_login_command",
+              "progress": 0,
+              "acceptance": "Native CLI guidance and MCP schema parity for ga4_auth_login_command",
+              "checks": [
+                {
+                  "text": "Deliver implement ga4_auth_login_command as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Native CLI guidance and MCP schema parity for ga4_auth_login_command",
+                  "passed": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "P20",
+          "emoji": "📜",
+          "name": "Schema and error contract",
+          "feature": "Contracts and schemas",
+          "tasks": [
+            {
+              "id": "T154",
+              "emoji": "🪪",
+              "name": "Generate exact 36-name tool inventory from server",
+              "progress": 0,
+              "acceptance": "No missing or unexpected tool names in union gate",
+              "checks": [
+                {
+                  "text": "Deliver generate exact 36-name tool inventory from server as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "No missing or unexpected tool names in union gate",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T155",
+              "emoji": "📑",
+              "name": "Compare required fields defaults descriptions and schemas",
+              "progress": 0,
+              "acceptance": "Diff against both upstream pinned snapshots reviewed",
+              "checks": [
+                {
+                  "text": "Deliver compare required fields defaults descriptions and schemas as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Diff against both upstream pinned snapshots reviewed",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T156",
+              "emoji": "🧳",
+              "name": "Implement Contract V1 ok/data/meta responses",
+              "progress": 0,
+              "acceptance": "All Rust parity tools produce validated success envelope",
+              "checks": [
+                {
+                  "text": "Deliver implement contract v1 ok/data/meta responses as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "All Rust parity tools produce validated success envelope",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T157",
+              "emoji": "⚠️",
+              "name": "Implement Contract V1 ok/error/meta responses",
+              "progress": 0,
+              "acceptance": "Errors have stable status code reason and context fields",
+              "checks": [
+                {
+                  "text": "Deliver implement contract v1 ok/error/meta responses as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Errors have stable status code reason and context fields",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T158",
+              "emoji": "⚖️",
+              "name": "Preserve official response semantics where conflicting",
+              "progress": 0,
+              "acceptance": "Document compatibility choice and adapters",
+              "checks": [
+                {
+                  "text": "Deliver preserve official response semantics where conflicting as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Document compatibility choice and adapters",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T159",
+              "emoji": "📏",
+              "name": "Enforce stable cursor and truncation metadata",
+              "progress": 0,
+              "acceptance": "All tabular tools report known/unknown totals honestly",
+              "checks": [
+                {
+                  "text": "Deliver enforce stable cursor and truncation metadata as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "All tabular tools report known/unknown totals honestly",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T160",
+              "emoji": "📂",
+              "name": "Publish schema snapshot with generated reference SHA",
+              "progress": 0,
+              "acceptance": "Tool schema diff is reviewed during every upstream update",
+              "checks": [
+                {
+                  "text": "Deliver publish schema snapshot with generated reference sha as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Tool schema diff is reviewed during every upstream update",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T161",
+              "emoji": "🤝",
+              "name": "Test alternative MCP clients and structured output",
+              "progress": 0,
+              "acceptance": "Codex and inspector consume every major response type",
+              "checks": [
+                {
+                  "text": "Deliver test alternative mcp clients and structured output as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Codex and inspector consume every major response type",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T162",
+              "emoji": "🧯",
+              "name": "Avoid false confidence from mocked-only parity",
+              "progress": 0,
+              "acceptance": "Document live coverage by tool and account eligibility",
+              "checks": [
+                {
+                  "text": "Deliver avoid false confidence from mocked-only parity as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Document live coverage by tool and account eligibility",
+                  "passed": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "P21",
+          "emoji": "🔀",
+          "name": "Feature-union conflict resolution",
+          "feature": "Compatibility governance",
+          "tasks": [
+            {
+              "id": "T163",
+              "emoji": "🔍",
+              "name": "Audit every parameter-level difference between sources",
+              "progress": 0,
+              "acceptance": "Diff includes nullable fields limits aliases and errors",
+              "checks": [
+                {
+                  "text": "Deliver audit every parameter-level difference between sources as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Diff includes nullable fields limits aliases and errors",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T164",
+              "emoji": "🧱",
+              "name": "Choose a stable canonical contract without dropping capabilities",
+              "progress": 0,
+              "acceptance": "All documented upstream inputs remain expressible",
+              "checks": [
+                {
+                  "text": "Deliver choose a stable canonical contract without dropping capabilities as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "All documented upstream inputs remain expressible",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T165",
+              "emoji": "⚙️",
+              "name": "Version compatibility adapters and response projections",
+              "progress": 0,
+              "acceptance": "Legacy tool expectations and version policy documented",
+              "checks": [
+                {
+                  "text": "Deliver version compatibility adapters and response projections as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Legacy tool expectations and version policy documented",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T166",
+              "emoji": "📚",
+              "name": "Keep per-tool source-to-Rust test reference links",
+              "progress": 0,
+              "acceptance": "Each one of 36 tools has provenance and acceptance evidence",
+              "checks": [
+                {
+                  "text": "Deliver keep per-tool source-to-rust test reference links as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Each one of 36 tools has provenance and acceptance evidence",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T167",
+              "emoji": "🕵️",
+              "name": "Detect new upstream tools and changes in CI",
+              "progress": 0,
+              "acceptance": "Changes open maintenance work rather than silently inflate parity",
+              "checks": [
+                {
+                  "text": "Deliver detect new upstream tools and changes in ci as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Changes open maintenance work rather than silently inflate parity",
+                  "passed": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "M8",
+      "emoji": "🧪",
+      "name": "Verification, resilience and security acceptance",
+      "gate": "Full offline and authorized live verification including malformed inputs, MCP interoperability and threat model.",
+      "scope": "MVP",
+      "phases": [
+        {
+          "id": "P22",
+          "emoji": "🧫",
+          "name": "Deterministic tests",
+          "feature": "Offline QA",
+          "tasks": [
+            {
+              "id": "T168",
+              "emoji": "🧪",
+              "name": "Create offline GA Admin and Data endpoint mocks",
+              "progress": 0,
+              "acceptance": "Representative success empty error and pagination fixtures",
+              "checks": [
+                {
+                  "text": "Deliver create offline ga admin and data endpoint mocks as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Representative success empty error and pagination fixtures",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T169",
+              "emoji": "📦",
+              "name": "Exercise all 36 tool names through MCP dispatch",
+              "progress": 0,
+              "acceptance": "Tool-by-tool tests verify tool catalog and call behavior",
+              "checks": [
+                {
+                  "text": "Deliver exercise all 36 tool names through mcp dispatch as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Tool-by-tool tests verify tool catalog and call behavior",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T170",
+              "emoji": "🧿",
+              "name": "Test JSON schema rejection and nested depth caps",
+              "progress": 0,
+              "acceptance": "Adversarial payload corpus is bounded and rejected",
+              "checks": [
+                {
+                  "text": "Deliver test json schema rejection and nested depth caps as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Adversarial payload corpus is bounded and rejected",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T171",
+              "emoji": "📚",
+              "name": "Differentially compare upstream response projections",
+              "progress": 0,
+              "acceptance": "Normalized golden fixtures generated from pinned baseline",
+              "checks": [
+                {
+                  "text": "Deliver differentially compare upstream response projections as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Normalized golden fixtures generated from pinned baseline",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T172",
+              "emoji": "🪟",
+              "name": "Exercise stdio tools under an MCP inspector",
+              "progress": 0,
+              "acceptance": "Every advertised tool can be called with synthetic fixtures",
+              "checks": [
+                {
+                  "text": "Deliver exercise stdio tools under an mcp inspector as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Every advertised tool can be called with synthetic fixtures",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T173",
+              "emoji": "🛰️",
+              "name": "Exercise protected Streamable HTTP end-to-end",
+              "progress": 0,
+              "acceptance": "Valid and invalid sessions checked over loopback",
+              "checks": [
+                {
+                  "text": "Deliver exercise protected streamable http end-to-end as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Valid and invalid sessions checked over loopback",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T174",
+              "emoji": "🧹",
+              "name": "Enforce schema/roadmap ledger consistency in CI",
+              "progress": 0,
+              "acceptance": "Progress bars and evidence checks regenerated reproducibly",
+              "checks": [
+                {
+                  "text": "Deliver enforce schema/roadmap ledger consistency in ci as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Progress bars and evidence checks regenerated reproducibly",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T175",
+              "emoji": "⏱️",
+              "name": "Validate timeouts retries backoff and rate limits",
+              "progress": 0,
+              "acceptance": "Offline deterministic clock and throttled 429 tests",
+              "checks": [
+                {
+                  "text": "Deliver validate timeouts retries backoff and rate limits as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Offline deterministic clock and throttled 429 tests",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T176",
+              "emoji": "🦀",
+              "name": "Pass rustfmt clippy and tests on clean environment",
+              "progress": 0,
+              "acceptance": "All-target strict checks green in CI",
+              "checks": [
+                {
+                  "text": "Deliver pass rustfmt clippy and tests on clean environment as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "All-target strict checks green in CI",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T177",
+              "emoji": "🔐",
+              "name": "Run dependency secret and license scanners",
+              "progress": 0,
+              "acceptance": "No accidental credentials or prohibited licenses in repository",
+              "checks": [
+                {
+                  "text": "Deliver run dependency secret and license scanners as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "No accidental credentials or prohibited licenses in repository",
+                  "passed": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "P23",
+          "emoji": "🔬",
+          "name": "Authorized live Google acceptance",
+          "feature": "Live GA gates",
+          "tasks": [
+            {
+              "id": "T178",
+              "emoji": "🧑",
+              "name": "Verify native browser user OAuth on Linux",
+              "progress": 0,
+              "acceptance": "Authenticated operator with a safe Google test identity",
+              "checks": [
+                {
+                  "text": "Deliver verify native browser user oauth on linux as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Authenticated operator with a safe Google test identity",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T179",
+              "emoji": "🏢",
+              "name": "Confirm account and property discovery against real GA",
+              "progress": 0,
+              "acceptance": "At least one explicit test property readable",
+              "checks": [
+                {
+                  "text": "Deliver confirm account and property discovery against real ga as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "At least one explicit test property readable",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T180",
+              "emoji": "📊",
+              "name": "Confirm standard historical and realtime reports",
+              "progress": 0,
+              "acceptance": "Compare key totals to GA console with date/timezone recorded",
+              "checks": [
+                {
+                  "text": "Deliver confirm standard historical and realtime reports as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Compare key totals to GA console with date/timezone recorded",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T181",
+              "emoji": "🧪",
+              "name": "Confirm funnel and conversion API eligibility behavior",
+              "progress": 0,
+              "acceptance": "Expected success or documented Google restriction captured",
+              "checks": [
+                {
+                  "text": "Deliver confirm funnel and conversion api eligibility behavior as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Expected success or documented Google restriction captured",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T182",
+              "emoji": "📈",
+              "name": "Confirm pivot batch and property access reports",
+              "progress": 0,
+              "acceptance": "Authorized scoped live evidence and no sensitive data committed",
+              "checks": [
+                {
+                  "text": "Deliver confirm pivot batch and property access reports as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Authorized scoped live evidence and no sensitive data committed",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T183",
+              "emoji": "🗃️",
+              "name": "Confirm scratchpad ingest query and export lifecycle",
+              "progress": 0,
+              "acceptance": "Synthetic or sanitized GA evidence kept private",
+              "checks": [
+                {
+                  "text": "Deliver confirm scratchpad ingest query and export lifecycle as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Synthetic or sanitized GA evidence kept private",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T184",
+              "emoji": "✍️",
+              "name": "Opt-in annotation write and disable workflow",
+              "progress": 0,
+              "acceptance": "Test property only after explicit operator authorization",
+              "checks": [
+                {
+                  "text": "Deliver opt-in annotation write and disable workflow as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Test property only after explicit operator authorization",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T185",
+              "emoji": "🧬",
+              "name": "Smoke test Codex multi-tool use with local MCP",
+              "progress": 0,
+              "acceptance": "Successful live analysis query with no manual QA burden",
+              "checks": [
+                {
+                  "text": "Deliver smoke test codex multi-tool use with local mcp as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Successful live analysis query with no manual QA burden",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T186",
+              "emoji": "🗄️",
+              "name": "Record redacted reproducible live test ledger",
+              "progress": 0,
+              "acceptance": "All outcomes scoped with date and source SHA",
+              "checks": [
+                {
+                  "text": "Deliver record redacted reproducible live test ledger as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "All outcomes scoped with date and source SHA",
+                  "passed": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "P24",
+          "emoji": "🛡️",
+          "name": "Robustness and operational performance",
+          "feature": "Reliability and security",
+          "tasks": [
+            {
+              "id": "T187",
+              "emoji": "🔒",
+              "name": "Threat-model inbound Google and DuckDB trust boundaries",
+              "progress": 0,
+              "acceptance": "Documented review of MCP prompt injection and auth vectors",
+              "checks": [
+                {
+                  "text": "Deliver threat-model inbound google and duckdb trust boundaries as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Documented review of MCP prompt injection and auth vectors",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T188",
+              "emoji": "🧪",
+              "name": "Fuzz resource names filters cursors and JSON parsing",
+              "progress": 0,
+              "acceptance": "Fuzz corpus with reproducible seeds and crash guard",
+              "checks": [
+                {
+                  "text": "Deliver fuzz resource names filters cursors and json parsing as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Fuzz corpus with reproducible seeds and crash guard",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T189",
+              "emoji": "⏱️",
+              "name": "Benchmark startup latency peak RSS and tool calls",
+              "progress": 0,
+              "acceptance": "Repeatable Linux measurements under no-cache and warm-cache",
+              "checks": [
+                {
+                  "text": "Deliver benchmark startup latency peak rss and tool calls as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Repeatable Linux measurements under no-cache and warm-cache",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T190",
+              "emoji": "🧰",
+              "name": "Handle network outage and Google API failure modes",
+              "progress": 0,
+              "acceptance": "Actionable status without unsafe retries",
+              "checks": [
+                {
+                  "text": "Deliver handle network outage and google api failure modes as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Actionable status without unsafe retries",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T191",
+              "emoji": "♻️",
+              "name": "Test OAuth refresh and cancellation under concurrency",
+              "progress": 0,
+              "acceptance": "No token duplication or orphan request leaks",
+              "checks": [
+                {
+                  "text": "Deliver test oauth refresh and cancellation under concurrency as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "No token duplication or orphan request leaks",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T192",
+              "emoji": "🚧",
+              "name": "Test untrusted MCP arguments for injection and SSRF",
+              "progress": 0,
+              "acceptance": "No arbitrary networking or destructive file access",
+              "checks": [
+                {
+                  "text": "Deliver test untrusted mcp arguments for injection and ssrf as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "No arbitrary networking or destructive file access",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T193",
+              "emoji": "📃",
+              "name": "Redact logs telemetry and error reports by default",
+              "progress": 0,
+              "acceptance": "No account data or tokens in CI artifacts",
+              "checks": [
+                {
+                  "text": "Deliver redact logs telemetry and error reports by default as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "No account data or tokens in CI artifacts",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T194",
+              "emoji": "🛑",
+              "name": "Document safe remote deployment rejection gates",
+              "progress": 0,
+              "acceptance": "No unauthenticated public shared-credential service",
+              "checks": [
+                {
+                  "text": "Deliver document safe remote deployment rejection gates as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "No unauthenticated public shared-credential service",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T195",
+              "emoji": "🦺",
+              "name": "Exercise build reproducibility and supply-chain pinning",
+              "progress": 0,
+              "acceptance": "Signed provenance and dependency audit evidence",
+              "checks": [
+                {
+                  "text": "Deliver exercise build reproducibility and supply-chain pinning as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Signed provenance and dependency audit evidence",
+                  "passed": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "M9",
+      "emoji": "🚀",
+      "name": "Linux release and Codex-ready inauguration",
+      "gate": "A documented stable native binary with 36-tool verified parity and release artifacts; no Python/npm runtime.",
+      "scope": "MVP",
+      "phases": [
+        {
+          "id": "P25",
+          "emoji": "📦",
+          "name": "Packaging and installation",
+          "feature": "Native packaging",
+          "tasks": [
+            {
+              "id": "T196",
+              "emoji": "🏗️",
+              "name": "Build reproducible x86-64 Linux binary",
+              "progress": 0,
+              "acceptance": "Artifact installs without Python npm or node",
+              "checks": [
+                {
+                  "text": "Deliver build reproducible x86-64 linux binary as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Artifact installs without Python npm or node",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T197",
+              "emoji": "🦀",
+              "name": "Provide rustup and cargo-based source installation",
+              "progress": 0,
+              "acceptance": "Native build documented for Arch and other Linux",
+              "checks": [
+                {
+                  "text": "Deliver provide rustup and cargo-based source installation as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Native build documented for Arch and other Linux",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T198",
+              "emoji": "📦",
+              "name": "Provide Arch PKGBUILD or local packaging recipe",
+              "progress": 0,
+              "acceptance": "Pacman-managed or local user installation path tested",
+              "checks": [
+                {
+                  "text": "Deliver provide arch pkgbuild or local packaging recipe as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Pacman-managed or local user installation path tested",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T199",
+              "emoji": "🧷",
+              "name": "Offer optional ARM64 Linux release binary",
+              "progress": 0,
+              "acceptance": "Aarch64 CI artifact smoke test and linked library audit",
+              "checks": [
+                {
+                  "text": "Deliver offer optional arm64 linux release binary as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Aarch64 CI artifact smoke test and linked library audit",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T200",
+              "emoji": "📏",
+              "name": "Document DuckDB native shared/static requirements",
+              "progress": 0,
+              "acceptance": "Fresh-system runtime prerequisites verified",
+              "checks": [
+                {
+                  "text": "Deliver document duckdb native shared/static requirements as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Fresh-system runtime prerequisites verified",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T201",
+              "emoji": "🖋️",
+              "name": "Publish install/uninstall and upgrades guide",
+              "progress": 0,
+              "acceptance": "No writes outside approved local paths",
+              "checks": [
+                {
+                  "text": "Deliver publish install/uninstall and upgrades guide as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "No writes outside approved local paths",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T202",
+              "emoji": "🐚",
+              "name": "Provide Fish-friendly CLI configuration examples",
+              "progress": 0,
+              "acceptance": "No npm Python or bash-only assumptions",
+              "checks": [
+                {
+                  "text": "Deliver provide fish-friendly cli configuration examples as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "No npm Python or bash-only assumptions",
+                  "passed": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "P26",
+          "emoji": "📖",
+          "name": "Documentation and agent onboarding",
+          "feature": "Operator docs",
+          "tasks": [
+            {
+              "id": "T203",
+              "emoji": "📋",
+              "name": "Write complete CLI help config and environment reference",
+              "progress": 0,
+              "acceptance": "All flags options and permissions documented",
+              "checks": [
+                {
+                  "text": "Deliver write complete cli help config and environment reference as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "All flags options and permissions documented",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T204",
+              "emoji": "🔌",
+              "name": "Publish tested Codex global MCP registration",
+              "progress": 0,
+              "acceptance": "One-line setup verified with official Codex",
+              "checks": [
+                {
+                  "text": "Deliver publish tested codex global mcp registration as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "One-line setup verified with official Codex",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T205",
+              "emoji": "🧠",
+              "name": "Document other MCP agents using stdio and HTTP",
+              "progress": 0,
+              "acceptance": "Secure example configurations and token separation",
+              "checks": [
+                {
+                  "text": "Deliver document other mcp agents using stdio and http as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Secure example configurations and token separation",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T206",
+              "emoji": "🔑",
+              "name": "Write Google Cloud setup without mandatory gcloud",
+              "progress": 0,
+              "acceptance": "Project API activation and scopes clearly explained",
+              "checks": [
+                {
+                  "text": "Deliver write google cloud setup without mandatory gcloud as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Project API activation and scopes clearly explained",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T207",
+              "emoji": "🔍",
+              "name": "Document per-tool parameter guides for all 36 tools",
+              "progress": 0,
+              "acceptance": "Each tool includes input output limits and examples",
+              "checks": [
+                {
+                  "text": "Deliver document per-tool parameter guides for all 36 tools as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Each tool includes input output limits and examples",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T208",
+              "emoji": "🧪",
+              "name": "Publish anonymized smoke scenarios and QA limits",
+              "progress": 0,
+              "acceptance": "Operator can diagnose errors without pasting secrets",
+              "checks": [
+                {
+                  "text": "Deliver publish anonymized smoke scenarios and qa limits as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Operator can diagnose errors without pasting secrets",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T209",
+              "emoji": "📗",
+              "name": "Publish migrations from official and SednaLabs servers",
+              "progress": 0,
+              "acceptance": "Tool schema and behavior differences listed",
+              "checks": [
+                {
+                  "text": "Deliver publish migrations from official and sednalabs servers as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Tool schema and behavior differences listed",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T210",
+              "emoji": "🛡️",
+              "name": "Publish responsible security disclosure policy",
+              "progress": 0,
+              "acceptance": "Safe vulnerability contact with no leaked reports",
+              "checks": [
+                {
+                  "text": "Deliver publish responsible security disclosure policy as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Safe vulnerability contact with no leaked reports",
+                  "passed": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "P27",
+          "emoji": "🏁",
+          "name": "Release acceptance and semantic versions",
+          "feature": "v1.0 GA4 parity",
+          "tasks": [
+            {
+              "id": "T211",
+              "emoji": "✅",
+              "name": "Complete all MVP atomic acceptance gates",
+              "progress": 0,
+              "acceptance": "No tool parity acceptance based on mocks alone",
+              "checks": [
+                {
+                  "text": "Deliver complete all mvp atomic acceptance gates as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "No tool parity acceptance based on mocks alone",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T212",
+              "emoji": "📊",
+              "name": "Regenerate all progress percentages from evidence",
+              "progress": 0,
+              "acceptance": "Zero uncited 100 percent tasks",
+              "checks": [
+                {
+                  "text": "Deliver regenerate all progress percentages from evidence as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Zero uncited 100 percent tasks",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T213",
+              "emoji": "🏷️",
+              "name": "Tag v1.0.0 only after parity and live QA",
+              "progress": 0,
+              "acceptance": "Semver milestone traceable to test artifacts",
+              "checks": [
+                {
+                  "text": "Deliver tag v1.0.0 only after parity and live qa as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Semver milestone traceable to test artifacts",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T214",
+              "emoji": "📦",
+              "name": "Publish checksummed Linux release assets",
+              "progress": 0,
+              "acceptance": "Checksums and source commit visible",
+              "checks": [
+                {
+                  "text": "Deliver publish checksummed linux release assets as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Checksums and source commit visible",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T215",
+              "emoji": "🧾",
+              "name": "Publish provenance and release notes",
+              "progress": 0,
+              "acceptance": "Attributed dependencies and known GA alpha limitations",
+              "checks": [
+                {
+                  "text": "Deliver publish provenance and release notes as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Attributed dependencies and known GA alpha limitations",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T216",
+              "emoji": "🔏",
+              "name": "Publish SBOM and binary dependency inventory",
+              "progress": 0,
+              "acceptance": "Explicit native runtime dependencies and license compliance",
+              "checks": [
+                {
+                  "text": "Deliver publish sbom and binary dependency inventory as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Explicit native runtime dependencies and license compliance",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T217",
+              "emoji": "🩺",
+              "name": "Run clean-install and uninstall QA on EndeavourOS",
+              "progress": 0,
+              "acceptance": "Does not disturb other installed tools",
+              "checks": [
+                {
+                  "text": "Deliver run clean-install and uninstall qa on endeavouros as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Does not disturb other installed tools",
+                  "passed": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "M10",
+      "emoji": "🔭",
+      "name": "Post-MVP extensions and sustained stewardship",
+      "gate": "Changes beyond upstream feature union remain separate and do not delay v1.0 parity.",
+      "scope": "POST_MVP",
+      "phases": [
+        {
+          "id": "P28",
+          "emoji": "🌱",
+          "name": "Lifecycle maintenance",
+          "feature": "Upstream stewardship",
+          "tasks": [
+            {
+              "id": "T218",
+              "emoji": "🔄",
+              "name": "Track upstream Google and Rust tool drift monthly",
+              "progress": 0,
+              "acceptance": "Pinned bump proposes documented schema differences",
+              "checks": [
+                {
+                  "text": "Deliver track upstream google and rust tool drift monthly as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Pinned bump proposes documented schema differences",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T219",
+              "emoji": "🧬",
+              "name": "Add new Google Admin and Data API endpoints deliberately",
+              "progress": 0,
+              "acceptance": "No accidental broad write surface",
+              "checks": [
+                {
+                  "text": "Deliver add new google admin and data api endpoints deliberately as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "No accidental broad write surface",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T220",
+              "emoji": "🗞️",
+              "name": "Maintain alpha API eligibility and deprecation matrix",
+              "progress": 0,
+              "acceptance": "Conversion and funnel contract changes communicated",
+              "checks": [
+                {
+                  "text": "Deliver maintain alpha api eligibility and deprecation matrix as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Conversion and funnel contract changes communicated",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T221",
+              "emoji": "🏷️",
+              "name": "Publish clear deprecation and semver compatibility rules",
+              "progress": 0,
+              "acceptance": "Existing agent configs survive non-major updates",
+              "checks": [
+                {
+                  "text": "Deliver publish clear deprecation and semver compatibility rules as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Existing agent configs survive non-major updates",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T222",
+              "emoji": "🔬",
+              "name": "Maintain long-term performance and privacy regression suite",
+              "progress": 0,
+              "acceptance": "Releases reject regressions against previous stable versions",
+              "checks": [
+                {
+                  "text": "Deliver maintain long-term performance and privacy regression suite as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Releases reject regressions against previous stable versions",
+                  "passed": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "P29",
+          "emoji": "📡",
+          "name": "Optional analytics enhancements",
+          "feature": "Optional extensions",
+          "tasks": [
+            {
+              "id": "T223",
+              "emoji": "📊",
+              "name": "Add optional cross-property aggregate summary tool",
+              "progress": 0,
+              "acceptance": "No unconsented aggregation across Google identities",
+              "checks": [
+                {
+                  "text": "Deliver add optional cross-property aggregate summary tool as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "No unconsented aggregation across Google identities",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T224",
+              "emoji": "💡",
+              "name": "Add privacy-preserving analysis templates for small sites",
+              "progress": 0,
+              "acceptance": "No exported visitor-level personal information",
+              "checks": [
+                {
+                  "text": "Deliver add privacy-preserving analysis templates for small sites as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "No exported visitor-level personal information",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T225",
+              "emoji": "🧠",
+              "name": "Add semantic agent analysis prompts as optional presets",
+              "progress": 0,
+              "acceptance": "Prompts contain no private site or visitor details",
+              "checks": [
+                {
+                  "text": "Deliver add semantic agent analysis prompts as optional presets as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Prompts contain no private site or visitor details",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T226",
+              "emoji": "🔗",
+              "name": "Add optional secure hosted self-service endpoint",
+              "progress": 0,
+              "acceptance": "Threat model authorization TLS and rate limiting required",
+              "checks": [
+                {
+                  "text": "Deliver add optional secure hosted self-service endpoint as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Threat model authorization TLS and rate limiting required",
+                  "passed": false
+                }
+              ]
+            },
+            {
+              "id": "T227",
+              "emoji": "🌉",
+              "name": "Evaluate Chatarium agent harness/A2A interoperability",
+              "progress": 0,
+              "acceptance": "Do not add protocol dependencies before core parity",
+              "checks": [
+                {
+                  "text": "Deliver evaluate chatarium agent harness/a2a interoperability as reviewable repository evidence",
+                  "passed": false
+                },
+                {
+                  "text": "Do not add protocol dependencies before core parity",
+                  "passed": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
