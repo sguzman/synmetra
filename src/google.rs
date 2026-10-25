@@ -205,7 +205,8 @@ impl GoogleClient {
         field: &str,
         alpha: bool,
     ) -> Result<Value, ApiError> {
-        self.collection_with_options(path, field, alpha, None, None).await
+        self.collection_with_options(path, field, alpha, None, None)
+            .await
     }
 
     pub async fn collection_with_options(
@@ -230,7 +231,9 @@ impl GoogleClient {
         let page_cap = max_pages.map_or(MAX_PAGES, |n| n as usize);
         for page_number in 0..page_cap {
             let page = if let Some(size) = page_size {
-                let mut req = self.http.get(format!("{base}{path}"))
+                let mut req = self
+                    .http
+                    .get(format!("{base}{path}"))
                     .query(&[("pageSize", size.to_string())]);
                 if let Some(token) = next.as_deref() {
                     req = req.query(&[("pageToken", token)]);
@@ -281,11 +284,18 @@ impl GoogleClient {
     }
 
     pub async fn account_summaries_with_options(
-        &self, page_size: Option<u32>, max_pages: Option<u32>
+        &self,
+        page_size: Option<u32>,
+        max_pages: Option<u32>,
     ) -> Result<Value, ApiError> {
         self.collection_with_options(
-            "/accountSummaries","accountSummaries",false,page_size,max_pages
-        ).await
+            "/accountSummaries",
+            "accountSummaries",
+            false,
+            page_size,
+            max_pages,
+        )
+        .await
     }
 
     pub async fn property(&self, property: &str) -> Result<Value, ApiError> {
@@ -309,10 +319,14 @@ impl GoogleClient {
     }
 
     pub async fn ads_links_with_options(
-        &self, property: &str, page_size: Option<u32>, max_pages: Option<u32>
+        &self,
+        property: &str,
+        page_size: Option<u32>,
+        max_pages: Option<u32>,
     ) -> Result<Value, ApiError> {
         let path = format!("/{}/googleAdsLinks", property_name(property)?);
-        self.collection_with_options(&path,"googleAdsLinks",false,page_size,max_pages).await
+        self.collection_with_options(&path, "googleAdsLinks", false, page_size, max_pages)
+            .await
     }
 
     pub async fn create_annotation(&self, property: &str, body: Value) -> Result<Value, ApiError> {
@@ -335,12 +349,20 @@ impl GoogleClient {
     }
 
     pub async fn annotations_with_options(
-        &self, property: &str, page_size: Option<u32>, max_pages: Option<u32>
+        &self,
+        property: &str,
+        page_size: Option<u32>,
+        max_pages: Option<u32>,
     ) -> Result<Value, ApiError> {
         let path = format!("/{}/reportingDataAnnotations", property_name(property)?);
         self.collection_with_options(
-            &path,"reportingDataAnnotations",true,page_size,max_pages
-        ).await
+            &path,
+            "reportingDataAnnotations",
+            true,
+            page_size,
+            max_pages,
+        )
+        .await
     }
 
     pub async fn custom_definitions(&self, property: &str) -> Result<Value, ApiError> {
@@ -1324,19 +1346,31 @@ mod tests {
 
     #[tokio::test]
     async fn collection_page_size_and_explicit_page_cap_are_bounded() {
-        let (url, handle) = once(
-            r#"{"accountSummaries":[{"name":"accounts/1"}],"nextPageToken":"next-page"}"#
-        ).await;
-        let client=GoogleClient::with_endpoints(Some("mock".into()),&url,&url);
-        let result=client.account_summaries_with_options(Some(25),Some(1)).await.unwrap();
-        assert_eq!(result["accountSummaries"][0]["name"],"accounts/1");
-        assert_eq!(result["nextPageToken"],"next-page");
-        assert_eq!(result["truncated"],true);
-        let request=handle.await.unwrap();
+        let (url, handle) =
+            once(r#"{"accountSummaries":[{"name":"accounts/1"}],"nextPageToken":"next-page"}"#)
+                .await;
+        let client = GoogleClient::with_endpoints(Some("mock".into()), &url, &url);
+        let result = client
+            .account_summaries_with_options(Some(25), Some(1))
+            .await
+            .unwrap();
+        assert_eq!(result["accountSummaries"][0]["name"], "accounts/1");
+        assert_eq!(result["nextPageToken"], "next-page");
+        assert_eq!(result["truncated"], true);
+        let request = handle.await.unwrap();
         assert!(request.starts_with("GET /v1beta/accountSummaries?pageSize=25 HTTP/1.1"));
-        assert!(client.account_summaries_with_options(Some(0),Some(1)).await.is_err());
-        assert!(client.account_summaries_with_options(Some(201),Some(1)).await.is_err());
-        assert!(client.account_summaries_with_options(Some(25),Some(101)).await.is_err());
+        assert!(client
+            .account_summaries_with_options(Some(0), Some(1))
+            .await
+            .is_err());
+        assert!(client
+            .account_summaries_with_options(Some(201), Some(1))
+            .await
+            .is_err());
+        assert!(client
+            .account_summaries_with_options(Some(25), Some(101))
+            .await
+            .is_err());
     }
 
     #[tokio::test]
