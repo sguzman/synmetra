@@ -1311,23 +1311,31 @@ impl Synmetra {
         Parameters(args): Parameters<ScratchReleaseArgs>,
     ) -> CallToolResult {
         if args.cursor.is_some() || args.output_mode.as_deref().is_some_and(|m| m != "rows") {
-            return local_result(Err("Release diagnostics do not yet support cursors or alternate output modes".into()));
+            return local_result(Err(
+                "Release diagnostics do not yet support cursors or alternate output modes".into(),
+            ));
         }
         let config = scratchpad::ReleaseRegressionConfig {
-            session_id: args.session_id, table_name: args.table_name,
-            release_date: args.release_date, anchor_event: args.anchor_event,
-            comparison_event: args.comparison_event, date_column: args.date_column,
-            event_column: args.event_column, metric_column: args.metric_column,
-            pre_days: args.pre_days, transition_days: args.transition_days,
+            session_id: args.session_id,
+            table_name: args.table_name,
+            release_date: args.release_date,
+            anchor_event: args.anchor_event,
+            comparison_event: args.comparison_event,
+            date_column: args.date_column,
+            event_column: args.event_column,
+            metric_column: args.metric_column,
+            pre_days: args.pre_days,
+            transition_days: args.transition_days,
             post_days: args.post_days,
         };
         let _summary_only = args.summary_only;
         local_result(
-            self.scratchpad.as_ref().expect("scratchpad capability required")
-                .release_regression(&config)
+            self.scratchpad
+                .as_ref()
+                .expect("scratchpad capability required")
+                .release_regression(&config),
         )
     }
-
 }
 
 #[tool_handler(
@@ -1732,21 +1740,42 @@ mod tests {
     #[test]
     fn release_regression_has_upstream_required_inputs_and_read_only_hint() {
         use std::collections::BTreeSet;
-        let upstream: Value = serde_json::from_str(
-            include_str!("../spec/upstream/sednalabs-tool-schema.v1.json")
-        ).unwrap();
-        let reference = upstream["tools"].as_array().unwrap().iter()
-            .find(|x| x["name"]=="scratchpad_release_regression_report").unwrap();
-        let server = Synmetra::new(GoogleClient::new(None),false).enable_scratchpad();
-        let tool=server.router.list_all().into_iter()
-            .find(|x| x.name=="scratchpad_release_regression_report").unwrap();
-        let expected:BTreeSet<_>=reference["inputSchema"]["required"].as_array()
-            .into_iter().flatten().filter_map(Value::as_str).collect();
-        let actual:BTreeSet<_>=tool.input_schema.get("required")
-            .and_then(Value::as_array).into_iter().flatten()
-            .filter_map(Value::as_str).collect();
-        assert_eq!(expected,actual);
-        assert_eq!(tool.annotations.as_ref().unwrap().read_only_hint,Some(true));
+        let upstream: Value = serde_json::from_str(include_str!(
+            "../spec/upstream/sednalabs-tool-schema.v1.json"
+        ))
+        .unwrap();
+        let reference = upstream["tools"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|x| x["name"] == "scratchpad_release_regression_report")
+            .unwrap();
+        let server = Synmetra::new(GoogleClient::new(None), false).enable_scratchpad();
+        let tool = server
+            .router
+            .list_all()
+            .into_iter()
+            .find(|x| x.name == "scratchpad_release_regression_report")
+            .unwrap();
+        let expected: BTreeSet<_> = reference["inputSchema"]["required"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .filter_map(Value::as_str)
+            .collect();
+        let actual: BTreeSet<_> = tool
+            .input_schema
+            .get("required")
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+            .filter_map(Value::as_str)
+            .collect();
+        assert_eq!(expected, actual);
+        assert_eq!(
+            tool.annotations.as_ref().unwrap().read_only_hint,
+            Some(true)
+        );
     }
 
     #[cfg(feature = "scratchpad")]
