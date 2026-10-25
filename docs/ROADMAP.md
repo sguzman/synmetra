@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `████░░░░░░ 43.2%` · **+43.17 percentage points from initial empty repo; +0.44 pp from CI-verified authenticated metadata and health endpoints** · 81/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `████░░░░░░ 43.6%` · **+43.61 percentage points from initial empty repo; +0.44 pp from bounded HTTP payload, concurrency and slow-body acceptance** · 82/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -60,7 +60,7 @@
   - ✅ **Gate:** Document semver and provenance gates
 
 
-## 🔌 M1 — MCP protocol and transport fidelity — `█████░░░░░ 45.6%`
+## 🔌 M1 — MCP protocol and transport fidelity — `█████░░░░░ 50.0%`
 
 **Scope:** MVP. **Acceptance gate:** Spec-conforming native MCP discovery and calls over stdio plus bounded Streamable HTTP; all transport safety tests pass.
 
@@ -83,7 +83,7 @@
 - ⌨️ **T024 — Integrate Codex stdio configuration smoke** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Codex recognizes locally built synmetra binary
 
-### 🌐 P03 — Streamable HTTP protocol — `██████░░░░ 55.6%`
+### 🌐 P03 — Streamable HTTP protocol — `███████░░░ 66.7%`
 
 **Feature:** MCP Streamable HTTP.
 
@@ -99,8 +99,8 @@
   - ✅ **Gate:** Health is not publicly exposed under inbound auth · **Evidence:** src/http.rs adds /health and /metadata GET routes to the optional authenticated loopback MCP router. Health returns only an uptime-style status; metadata lists static server transport and auth policy without Google account or credential information. Both routes use require_local_auth, shared with /mcp.; src/http.rs metadata_and_health_are_authenticated_and_never_contain_credentials uses a real local HTTP listener to verify missing/wrong bearer and malicious Origin return 401, correct bearer returns JSON without tokens or private account/tool data. GitHub Actions 40246616329 core tests, fmt and Clippy plus native DuckDB job passed. No public or unauthenticated health surface is enabled.
 - 📡 **T030 — Support authenticated sessions and request routing** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Sessions terminate and cannot cross principal boundaries
-- 🧊 **T031 — Enforce payload and connection resource limits** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Slow and oversized requests are bounded under load
+- 🧊 **T031 — Enforce payload and connection resource limits** — `██████████ 100.0%`
+  - ✅ **Gate:** Slow and oversized requests are bounded under load · **Evidence:** src/http.rs authenticated require_local_auth bounds requests to 1,048,576 bytes using Content-Length precheck plus axum::body::to_bytes hard limit, 16 concurrent in-flight handlers via Tokio semaphore, 10s body-read deadline and 30s handler deadline. Refuses unauthorized requests before consuming bodies. Implementation applies to protected /mcp, /health and /metadata.; src/http.rs authenticated_http_rejects_oversize_slow_and_overloaded_requests launches local TCP HTTP server: 1,048,577-byte body returns 413, saturated one-slot semaphore returns 503, incomplete slow Content-Length body exceeds injected 150ms deadline and receives 408. CI 40246890771 passed core tests, rustfmt, strict Clippy and DuckDB. Limits bound request processing, not an end-to-end guarantee for all HTTP response streaming sessions.
 - 🪪 **T032 — Support TLS behind secure deployment configurations** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Certificate and proxy trust rules reviewed and exercised
 - 🧫 **T033 — Test MCP HTTP inspector interoperability** — `░░░░░░░░░░ 0.0%`

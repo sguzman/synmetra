@@ -17,3 +17,7 @@ The binary's production bind helper constructs only `127.0.0.1:<port>`. There is
 ## Protected local diagnostic endpoints
 
 Authenticated loopback HTTP exposes `GET /health` (minimal `{"status":"ok"}`) and `GET /metadata` (static service, transport, bearer-policy, and loopback-policy descriptors). Both use exactly the same strict bearer-token, Host, and Origin checks as `/mcp` and return HTTP 401 if those checks fail. They do not expose account information, private provider status, tool discovery, or Google credentials; health reflects the local server's ability to answer rather than verifying a Google account. No public-network bind is available.
+
+## Bounded inbound HTTP requests
+
+Authenticated local HTTP requests to MCP and diagnostic endpoints are capped at **1 MiB per request body**, **16 concurrent in-flight request handlers**, **10 seconds for request-body reception**, and **30 seconds for handler completion**. The middleware checks Host, Origin and bearer authorization first; it then enforces Content-Length and a streaming body cap (including chunked uploads), rejects overload with HTTP 503, oversized bodies with HTTP 413, slow bodies with HTTP 408 and handler timeouts with HTTP 504. These are request-processing limits, not a guarantee of complete byte/time limits for all long-lived outbound SSE response streams. The body/concurrency/slow-client checks run under synthetic local TCP integration tests; no public listener is supported.

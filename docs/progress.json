@@ -625,16 +625,18 @@
               "id": "T031",
               "emoji": "🧊",
               "name": "Enforce payload and connection resource limits",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "Slow and oversized requests are bounded under load",
               "checks": [
                 {
                   "text": "Deliver enforce payload and connection resource limits as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/http.rs authenticated require_local_auth bounds requests to 1,048,576 bytes using Content-Length precheck plus axum::body::to_bytes hard limit, 16 concurrent in-flight handlers via Tokio semaphore, 10s body-read deadline and 30s handler deadline. Refuses unauthorized requests before consuming bodies. Implementation applies to protected /mcp, /health and /metadata."
                 },
                 {
                   "text": "Slow and oversized requests are bounded under load",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/http.rs authenticated_http_rejects_oversize_slow_and_overloaded_requests launches local TCP HTTP server: 1,048,577-byte body returns 413, saturated one-slot semaphore returns 503, incomplete slow Content-Length body exceeds injected 150ms deadline and receives 408. CI 40246890771 passed core tests, rustfmt, strict Clippy and DuckDB. Limits bound request processing, not an end-to-end guarantee for all HTTP response streaming sessions."
                 }
               ]
             },
