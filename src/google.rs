@@ -852,7 +852,14 @@ pub fn normalize_report_filter(input: Value, metric: bool) -> Result<Value, ApiE
                     if raw_value.starts_with('"') || raw_value.contains("==") {
                         return Err(ApiError::InvalidRequest);
                     }
-                    let numeric = if let Ok(value) = raw_value.parse::<i64>() {
+                    let digits = raw_value.strip_prefix('-').unwrap_or(raw_value);
+                    let numeric = if !digits.is_empty()
+                        && digits.bytes().all(|byte| byte.is_ascii_digit())
+                    {
+                        // Never silently convert an out-of-range integer to f64.
+                        let value = raw_value
+                            .parse::<i64>()
+                            .map_err(|_| ApiError::InvalidRequest)?;
                         json!({"int64Value":value.to_string()})
                     } else {
                         let value = raw_value
@@ -1097,6 +1104,42 @@ mod tests {
         assert!(normalize_report_filter(json!("sessions==\"7\""), true).is_err());
         assert!(normalize_report_filter(json!("sessions==NaN"), true).is_err());
         assert!(normalize_report_filter(json!("sessions==infinity"), true).is_err());
+    }
+
+    #[test]
+    fn numeric_metric_filter_preserves_i64_edges_and_rejects_overflow() {
+        for (literal, canonical) in [
+            ("9223372036854775807", "9223372036854775807"),
+            ("-9223372036854775808", "-9223372036854775808"),
+            ("0", "0"),
+        ] {
+            let value = normalize_report_filter(
+                json!(format!("sessions=={literal}")),
+                true,
+            )
+            .unwrap();
+            assert_eq!(
+                value["filter"]["numericFilter"]["value"]["int64Value"],
+                canonical
+            );
+        }
+        for invalid in [
+            "sessions==9223372036854775808",
+            "sessions==-9223372036854775809",
+            "sessions==18446744073709551616",
+            "sessions==999999999999999999999999999999999",
+        ] {
+            assert_eq!(
+                normalize_report_filter(json!(invalid), true),
+                Err(ApiError::InvalidRequest),
+                "{invalid}"
+            );
+        }
+        let decimal = normalize_report_filter(json!("engagementRate==1e20"), true).unwrap();
+        assert_eq!(
+            decimal["filter"]["numericFilter"]["value"]["doubleValue"],
+            1e20
+        );
     }
 
     #[test]
