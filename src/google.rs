@@ -126,6 +126,32 @@ pub fn annotation_payload(
     Ok(json!({"reportingDataAnnotation": annotation}))
 }
 
+/// Bounded automatic retry is restricted to read-only Google methods.
+/// If a provider's Retry-After exceeds the five-second retry budget, return
+/// the original HTTP error instead of violating the requested backoff.
+fn readonly_retry_delay(
+    status: reqwest::StatusCode,
+    headers: &reqwest::header::HeaderMap,
+    attempt: usize,
+) -> Option<Duration> {
+    if !matches!(status.as_u16(), 429 | 500 | 502 | 503 | 504) {
+        return None;
+    }
+    const MAX_WAIT_MS: u64 = 5_000;
+    let minimum_ms = if let Some(raw) = headers.get(reqwest::header::RETRY_AFTER) {
+        let seconds = raw.to_str().ok()?.parse::<u64>().ok()?;
+        let delay = seconds.checked_mul(1_000)?;
+        if delay > MAX_WAIT_MS {
+            return None;
+        }
+        delay
+    } else {
+        200_u64.checked_mul(1_u64.checked_shl(attempt as u32)?)?
+    };
+    let jitter_ms = (rand::random::<u8>() % 101) as u64;
+    Some(Duration::from_millis((minimum_ms + jitter_ms).min(MAX_WAIT_MS)))
+}
+
 impl GoogleClient {
     pub fn new(bearer: Option<String>) -> Self {
         Self::with_endpoints(bearer, ADMIN, DATA)
@@ -158,6 +184,8 @@ impl GoogleClient {
     }
 
     async fn send(&self, req: reqwest::RequestBuilder) -> Result<Value, ApiError> {
+        // Single attempt only. This path is reserved for mutations; never replay a
+        // Google annotation write after a timeout, 429, or ambiguous 5xx response.
         let bearer = self.token().await?;
         let response = req
             .bearer_auth(&bearer)
@@ -165,9 +193,41 @@ impl GoogleClient {
             .send()
             .await
             .map_err(|_| ApiError::RequestFailed)?;
+        Self::decode_response(response).await
+    }
+
+    async fn send_readonly(&self, req: reqwest::RequestBuilder) -> Result<Value, ApiError> {
+        let bearer = self.token().await?;
+        let mut req = req;
+        for attempt in 0..3 {
+            // A request carrying a streaming or unclonable body is not retried.
+            let replay = req.try_clone();
+            let response = req
+                .bearer_auth(&bearer)
+                .header(reqwest::header::ACCEPT, "application/json")
+                .send()
+                .await
+                .map_err(|_| ApiError::RequestFailed)?;
+            let status = response.status();
+            if attempt < 2 {
+                if let (Some(next), Some(delay)) = (
+                    replay,
+                    readonly_retry_delay(status, response.headers(), attempt),
+                ) {
+                    tokio::time::sleep(delay).await;
+                    req = next;
+                    continue;
+                }
+            }
+            return Self::decode_response(response).await;
+        }
+        Err(ApiError::RequestFailed)
+    }
+
+    async fn decode_response(response: reqwest::Response) -> Result<Value, ApiError> {
         let status = response.status();
         if !status.is_success() {
-            // Do not reflect response body or URL: both may contain secrets.
+            // Never reflect response body, endpoint URL, or request headers.
             return Err(ApiError::Http(status.as_u16()));
         }
         if response
@@ -200,7 +260,7 @@ impl GoogleClient {
         } else {
             req
         };
-        self.send(req).await
+        self.send_readonly(req).await
     }
 
     pub async fn collection(
@@ -242,7 +302,7 @@ impl GoogleClient {
                 if let Some(token) = next.as_deref() {
                     req = req.query(&[("pageToken", token)]);
                 }
-                self.send(req).await?
+                self.send_readonly(req).await?
             } else {
                 self.get(base, &path, next.as_deref()).await?
             };
@@ -424,7 +484,7 @@ impl GoogleClient {
             return Err(ApiError::InvalidRequest);
         }
         let url = format!("{}/v1beta/{property}:{method}", self.data_base);
-        let response = self.send(self.http.post(url).json(&request)).await?;
+        let response = self.send_readonly(self.http.post(url).json(&request)).await?;
         match method {
             "runReport" | "runRealtimeReport" | "runPivotReport" => {
                 validate_google_report_response(&response)?;
@@ -482,7 +542,7 @@ impl GoogleClient {
             "runReport"
         };
         let url = format!("{}/v1alpha/{property}:{method}", self.data_base);
-        self.send(self.http.post(url).json(&request)).await
+        self.send_readonly(self.http.post(url).json(&request)).await
     }
 
     pub async fn access_report(
@@ -499,7 +559,7 @@ impl GoogleClient {
         Self::validate_body(&request)?;
         // This Admin API endpoint requires Administrator privileges on the selected entity.
         let url = format!("{}/v1beta/{entity}:runAccessReport", self.admin_base);
-        self.send(self.http.post(url).json(&request)).await
+        self.send_readonly(self.http.post(url).json(&request)).await
     }
 
     pub async fn report(
@@ -2017,6 +2077,64 @@ mod tests {
         assert!(
             request.starts_with("POST /v1alpha/properties/42/reportingDataAnnotations HTTP/1.1")
         );
+    }
+
+    #[test]
+    fn readonly_retry_policy_honors_backoff_limits_and_never_retries_forbidden() {
+        let mut headers = reqwest::header::HeaderMap::new();
+        headers.insert(reqwest::header::RETRY_AFTER, "1".parse().unwrap());
+        assert!(readonly_retry_delay(reqwest::StatusCode::FORBIDDEN, &headers, 0).is_none());
+        assert!(readonly_retry_delay(reqwest::StatusCode::BAD_REQUEST, &headers, 0).is_none());
+        let delayed = readonly_retry_delay(reqwest::StatusCode::TOO_MANY_REQUESTS, &headers, 0)
+            .unwrap();
+        assert!(delayed >= Duration::from_secs(1));
+        assert!(delayed <= Duration::from_millis(1100));
+        headers.insert(reqwest::header::RETRY_AFTER, "60".parse().unwrap());
+        assert!(readonly_retry_delay(reqwest::StatusCode::TOO_MANY_REQUESTS, &headers, 0).is_none());
+        headers.insert(reqwest::header::RETRY_AFTER, "invalid".parse().unwrap());
+        assert!(readonly_retry_delay(reqwest::StatusCode::SERVICE_UNAVAILABLE, &headers, 0).is_none());
+        headers.clear();
+        let delayed = readonly_retry_delay(reqwest::StatusCode::SERVICE_UNAVAILABLE, &headers, 1)
+            .unwrap();
+        assert!(delayed >= Duration::from_millis(400));
+        assert!(delayed <= Duration::from_millis(500));
+    }
+
+    #[tokio::test]
+    async fn readonly_report_retry_is_bounded_and_never_replays_writes() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        use tokio::net::TcpListener;
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let url = format!("http://{}", listener.local_addr().unwrap());
+        let responder = tokio::spawn(async move {
+            for index in 0..2 {
+                let (mut socket, _) = listener.accept().await.unwrap();
+                let mut buffer = [0_u8; 4096];
+                let n = socket.read(&mut buffer).await.unwrap();
+                let request = String::from_utf8_lossy(&buffer[..n]);
+                assert!(request.contains("properties/42:runReport"));
+                let (status, body) = if index == 0 {
+                    ("429 Too Many Requests", r#"{"error":{"message":"secret-fixture"}}"#)
+                } else {
+                    ("200 OK", r#"{"rowCount":0}"#)
+                };
+                let reply = format!(
+                    "HTTP/1.1 {status}\\r\\nRetry-After: 0\\r\\nContent-Type: application/json\\r\\nContent-Length: {}\\r\\nConnection: close\\r\\n\\r\\n{}",
+                    body.len(),
+                    body
+                );
+                socket.write_all(reply.as_bytes()).await.unwrap();
+            }
+        });
+        let client = GoogleClient::with_endpoints(Some("private-test-token".into()), &url, &url);
+        let body = report_request(
+            Some(vec![json!({"startDate":"yesterday","endDate":"today"})]),
+            vec![],
+            vec!["activeUsers".to_owned()],
+            vec![],
+        ).unwrap();
+        assert_eq!(client.report("42", body, false).await.unwrap()["rowCount"], 0);
+        responder.await.unwrap();
     }
 
     #[tokio::test]
