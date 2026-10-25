@@ -1375,17 +1375,27 @@ mod tests {
             Some(json!("country==MX")),
         )
         .unwrap();
-        assert_eq!(final_request["funnel"]["steps"].as_array().unwrap().len(), 3);
         assert_eq!(
-            final_request["funnel"]["steps"][1]["filterExpression"]["funnelEventFilter"]["eventName"],
+            final_request["funnel"]["steps"].as_array().unwrap().len(),
+            3
+        );
+        assert_eq!(
+            final_request["funnel"]["steps"][1]["filterExpression"]["funnelEventFilter"]
+                ["eventName"],
             "add_to_cart"
         );
-        assert_eq!(final_request["funnel"]["steps"][1]["isDirectlyFollowedBy"], true);
+        assert_eq!(
+            final_request["funnel"]["steps"][1]["isDirectlyFollowedBy"],
+            true
+        );
         assert_eq!(
             final_request["funnel"]["steps"][1]["withinDurationFromPriorStep"],
             "3600.5s"
         );
-        assert_eq!(final_request["funnel"]["steps"][2]["withinDurationFromPriorStep"], "86400s");
+        assert_eq!(
+            final_request["funnel"]["steps"][2]["withinDurationFromPriorStep"],
+            "86400s"
+        );
         assert_eq!(final_request["funnel"]["isOpenFunnel"], true);
         assert_eq!(final_request["funnelVisualizationType"], "TRENDED_FUNNEL");
         assert_eq!(final_request["funnelBreakdown"]["limit"], "15");
@@ -1393,7 +1403,10 @@ mod tests {
         assert_eq!(final_request["segments"], json!(segments));
         assert_eq!(final_request["returnPropertyQuota"], true);
         assert_eq!(final_request["limit"], "150");
-        assert_eq!(final_request["dimensionFilter"]["filter"]["fieldName"], "country");
+        assert_eq!(
+            final_request["dimensionFilter"]["filter"]["fieldName"],
+            "country"
+        );
 
         for bad in [
             json!({"event":"page_view","is_directly_followed_by":true}),
