@@ -48,7 +48,7 @@ jobs:
             echo "changed=false" >> "$GITHUB_OUTPUT"
           fi
       - name: Test feature-gated native DuckDB scratchpad
-        if: steps.native.outputs.changed == 'true'
+        if: steps.native.outputs.changed == 'true' || startsWith(github.ref, 'refs/tags/v')
         run: cargo test --all-targets --locked --features scratchpad
       - name: Strict Clippy for default Rust MCP
         run: cargo clippy --all-targets --locked -- -D warnings
