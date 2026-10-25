@@ -37,15 +37,21 @@ fn update_bar(markdown: &mut String, marker: &str, progress: f64) -> Result<(), 
             continue;
         }
         count += 1;
-        let start = line.find('`').ok_or_else(|| format!("{marker}: missing opening bar"))?;
+        let start = line
+            .find('`')
+            .ok_or_else(|| format!("{marker}: missing opening bar"))?;
         let suffix = &line[start + 1..];
-        let end = suffix.find('`').ok_or_else(|| format!("{marker}: missing closing bar"))?;
+        let end = suffix
+            .find('`')
+            .ok_or_else(|| format!("{marker}: missing closing bar"))?;
         result.push_str(&line[..start + 1]);
         result.push_str(&bar(progress));
         result.push_str(&suffix[end..]);
     }
     if count != 1 {
-        return Err(format!("{marker}: expected one Markdown marker, found {count}"));
+        return Err(format!(
+            "{marker}: expected one Markdown marker, found {count}"
+        ));
     }
     *markdown = result;
     Ok(())
@@ -101,7 +107,11 @@ fn regenerate_bars(
         let value = round_two(milestones.iter().sum::<f64>() / milestones.len().max(1) as f64);
         update_bar(
             &mut roadmap,
-            &format!("{} — {} —", field(milestone, "id"), field(milestone, "name")),
+            &format!(
+                "{} — {} —",
+                field(milestone, "id"),
+                field(milestone, "name")
+            ),
             value,
         )?;
         update_bar(
@@ -136,8 +146,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         if args.as_slice() != ["--write-bars"] {
             return Err("Usage: synmetra-progress [--write-bars]".into());
         }
-        let (new_roadmap, new_readme) =
-            regenerate_bars(&ledger, &roadmap, &readme)?;
+        let (new_roadmap, new_readme) = regenerate_bars(&ledger, &roadmap, &readme)?;
         fs::write("docs/ROADMAP.md", &new_roadmap)?;
         fs::write("README.md", &new_readme)?;
         roadmap = new_roadmap;
