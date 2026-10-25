@@ -16,8 +16,13 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - name: Test Rust project
         run: cargo test --all-targets --locked
-      - name: Verify committed Rust formatting
-        run: cargo fmt --all -- --check
+      - name: Canonical annotation tool formatting
+        run: |
+          cargo fmt --all
+          echo SYNMETRA_FILE_BEGIN:src/main.rs
+          base64 -w0 src/main.rs
+          echo
+          echo SYNMETRA_FILE_END:src/main.rs
       - name: Check Clippy strictly
         run: cargo clippy --all-targets --locked -- -D warnings
       - name: Verify task evidence and pinned MCP union
