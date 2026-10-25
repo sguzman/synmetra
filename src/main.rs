@@ -455,6 +455,10 @@ struct AccountAccessArgs {
     time_zone: Option<String>,
 }
 
+fn default_return_property_quota() -> bool {
+    true
+}
+
 #[derive(Debug, Deserialize, JsonSchema)]
 struct ReportArgs {
     /// Positive numeric GA4 property ID or canonical properties/<id>.
@@ -485,6 +489,9 @@ struct ReportArgs {
     currency_code: Option<String>,
     #[serde(default)]
     keep_empty_rows: Option<bool>,
+    /// Include GA4 property quota metadata in the provider response (upstream default: true).
+    #[serde(default = "default_return_property_quota")]
+    return_property_quota: bool,
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
@@ -1018,6 +1025,7 @@ impl Synmetra {
                     ("offset", args.offset.map(|x| json!(x.to_string()))),
                     ("currencyCode", args.currency_code.map(|x| json!(x))),
                     ("keepEmptyRows", args.keep_empty_rows.map(|x| json!(x))),
+                    ("returnPropertyQuota", Some(json!(args.return_property_quota))),
                 ],
             )
         });
@@ -1046,6 +1054,7 @@ impl Synmetra {
                 ("offset", args.offset.map(|x| json!(x.to_string()))),
                 ("currencyCode", args.currency_code.map(|x| json!(x))),
                 ("keepEmptyRows", args.keep_empty_rows.map(|x| json!(x))),
+                ("returnPropertyQuota", Some(json!(args.return_property_quota))),
             ],
         );
         result(match body {
@@ -1883,9 +1892,39 @@ mod tests {
             offset: None,
             currency_code: None,
             keep_empty_rows: None,
+            return_property_quota: true,
         };
         let result = server.preview_report_request(Parameters(bad)).await;
         assert_eq!(result.is_error, Some(true));
+    }
+
+    #[tokio::test]
+    async fn standard_report_quota_flag_has_upstream_default_and_explicit_override() {
+        let server = Synmetra::new(GoogleClient::new(None), false);
+        let fields = json!({
+            "property_id": "55",
+            "date_ranges": [{"startDate": "2026-10-01", "endDate": "2026-10-02"}],
+            "dimensions": [],
+            "metrics": ["activeUsers"]
+        });
+        let default_args: ReportArgs = serde_json::from_value(fields.clone()).unwrap();
+        assert!(default_args.return_property_quota);
+        let response = server.preview_report_request(Parameters(default_args)).await;
+        assert_eq!(response.is_error, Some(false));
+        assert_eq!(
+            response.structured_content.unwrap()["data"]["request"]["returnPropertyQuota"],
+            true
+        );
+
+        let mut overridden = fields;
+        overridden["return_property_quota"] = json!(false);
+        let explicit_args: ReportArgs = serde_json::from_value(overridden).unwrap();
+        assert!(!explicit_args.return_property_quota);
+        let response = server.preview_report_request(Parameters(explicit_args)).await;
+        assert_eq!(
+            response.structured_content.unwrap()["data"]["request"]["returnPropertyQuota"],
+            false
+        );
     }
 
     #[cfg(feature = "scratchpad")]
