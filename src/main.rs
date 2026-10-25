@@ -3025,9 +3025,16 @@ mod tests {
                     }
                 };
                 let native = serde_json::to_value(&local.input_schema).unwrap();
-                assert_eq!(collect(&native), collect(&upstream["inputSchema"]), "{name} {field}");
+                assert_eq!(
+                    collect(&native),
+                    collect(&upstream["inputSchema"]),
+                    "{name} {field}"
+                );
             }
-            assert_eq!(local.input_schema["properties"]["limit"]["format"], "uint64");
+            assert_eq!(
+                local.input_schema["properties"]["limit"]["format"],
+                "uint64"
+            );
         }
     }
 
@@ -3088,11 +3095,15 @@ mod tests {
                 request[if account { "account_id" } else { "property_id" }] = json!(42);
                 let reply = if account {
                     server
-                        .run_account_access_report(Parameters(serde_json::from_value(request).unwrap()))
+                        .run_account_access_report(Parameters(
+                            serde_json::from_value(request).unwrap(),
+                        ))
                         .await
                 } else {
                     server
-                        .run_property_access_report(Parameters(serde_json::from_value(request).unwrap()))
+                        .run_property_access_report(Parameters(
+                            serde_json::from_value(request).unwrap(),
+                        ))
                         .await
                 };
                 responder.await.unwrap();
