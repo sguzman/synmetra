@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `███░░░░░░░ 34.1%` · **+34.14 percentage points from initial empty repo; +0.22 pp from CI-tested pivot MCP schema and response/error behavior** · 50/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `███░░░░░░░ 34.6%` · **+34.58 percentage points from initial empty repo; +0.44 pp from CI-verified Admin property/account access reports** · 52/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -245,11 +245,11 @@
   - ✅ **Gate:** No stale cross-principal cache confusion
 
 
-## 📊 M4 — Reporting, preflight and Data API parity — `█████░░░░░ 53.3%`
+## 📊 M4 — Reporting, preflight and Data API parity — `██████░░░░ 56.7%`
 
 **Scope:** MVP. **Acceptance gate:** All report tools return correct GA4 semantics, including documented alpha, pagination and response projections.
 
-### 📈 P10 — Report MCP tools — `████████░░ 81.2%`
+### 📈 P10 — Report MCP tools — `█████████░ 93.8%`
 
 **Feature:** Eight report tools.
 
@@ -265,10 +265,10 @@
   - ✅ **Gate:** MCP schema, Google request, golden output and error cases for run_pivot_report · **Evidence:** src/main.rs implemented run_pivot_report MCP handler plus src/google.rs request route/validation; Rust unit and in-memory MCP tests passed Actions 40202015488; full upstream schema/live GA parity remains open; src/main.rs pivot_input_fields_and_required_sets_match_pinned_contract compares all pinned input fields, required set and quota default to the native MCP router; pivot_report_projection_keeps_pivot_header_metadata_without_fake_cursor uses synthetic Google v1beta pivot HTTP response to verify request routing, opt-in rows, true totals, original pivotHeaders under meta.ga4, and nonfabricated next_cursor; core_preflight_and_batch_reject_invalid_input_before_google_calls tests missing pivots; pivot_report_provider_denial_excludes_http_body_and_bearer verifies stable redacted Google HTTP 403. GitHub Actions 40235171004 core passed tests, fmt and strict Clippy. Real Google acceptance, pivot-axis pagination and all-upstream response parity remain open.
 - 📦 **T088 — Implement batch_run_reports** — `██████████ 100.0%`
   - ✅ **Gate:** MCP schema, Google request, golden output and error cases for batch_run_reports · **Evidence:** src/main.rs implemented batch_run_reports MCP handler plus src/google.rs request route/validation; Rust unit and in-memory MCP tests passed Actions 40202015488; full upstream schema/live GA parity remains open; src/main.rs batch_input_contract_requires_only_property_and_report_requests verifies the exact pinned outer MCP properties/required fields; BatchReportItemArgs safely normalizes snake_case request items to Google camelCase; batch_reports_normalize_separate_requests_and_preserve_distinct_results mock confirms distinct golden results; batch_report_five_item_boundary_is_enforced_before_google_credentials tests one-to-five bounds; batch_report_permission_and_quota_denials_do_not_leak_provider_details validates HTTP 403/429, stable errors and secret redaction; src/google.rs batch_reports_reject_missing_or_extra_provider_results rejects inconsistent Google success arrays. GitHub Actions 40234680391 core passed tests, formatting, strict Clippy. This does not imply 36-tool parity or authorized live Google tests.
-- 🔎 **T089 — Implement run_property_access_report** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** MCP schema, Google request, golden output and error cases for run_property_access_report
-- 👥 **T090 — Implement run_account_access_report** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** MCP schema, Google request, golden output and error cases for run_account_access_report
+- 🔎 **T089 — Implement run_property_access_report** — `██████████ 100.0%`
+  - ✅ **Gate:** MCP schema, Google request, golden output and error cases for run_property_access_report · **Evidence:** src/main.rs implemented run_property_access_report MCP handler plus src/google.rs request route/validation; Rust unit and in-memory MCP tests passed Actions 40202015488; full upstream schema/live GA parity remains open; src/main.rs admin_access_mcp_inputs_cover_pinned_fields_and_required_sets verifies complete SednaLabs property access MCP input inventory, required set, and uint64 limit. admin_access_reports_project_named_fields_and_redact_google_denials uses local Admin API HTTP mocks for both resource types to test POST routing, GA dimensionName/metricName fields, stable golden rows, bounded totals and v1 continuation, and redacted HTTP 403 provider errors. src/tabular.rs admin_access_headers_and_resource_boundaries_have_distinct_cursors verifies account/property cursor fingerprints cannot be reused across resource types. GitHub Actions 40235752963 core passed formatting, tests, strict Clippy. Admin privileges and live Google acceptance remain separate.
+- 👥 **T090 — Implement run_account_access_report** — `██████████ 100.0%`
+  - ✅ **Gate:** MCP schema, Google request, golden output and error cases for run_account_access_report · **Evidence:** src/main.rs implemented run_account_access_report MCP handler plus src/google.rs request route/validation; Rust unit and in-memory MCP tests passed Actions 40202015488; full upstream schema/live GA parity remains open; src/main.rs admin_access_mcp_inputs_cover_pinned_fields_and_required_sets verifies complete SednaLabs account access MCP input inventory, required set, and uint64 limit. admin_access_reports_project_named_fields_and_redact_google_denials uses local Admin API HTTP mocks for both resource types to test POST routing, GA dimensionName/metricName fields, stable golden rows, bounded totals and v1 continuation, and redacted HTTP 403 provider errors. src/tabular.rs admin_access_headers_and_resource_boundaries_have_distinct_cursors verifies account/property cursor fingerprints cannot be reused across resource types. GitHub Actions 40235752963 core passed formatting, tests, strict Clippy. Admin privileges and live Google acceptance remain separate.
 
 ### 🧭 P11 — Preflight MCP tools — `██████░░░░ 57.1%`
 

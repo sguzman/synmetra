@@ -1729,7 +1729,7 @@
               "id": "T089",
               "emoji": "🔎",
               "name": "Implement run_property_access_report",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "MCP schema, Google request, golden output and error cases for run_property_access_report",
               "checks": [
                 {
@@ -1739,7 +1739,8 @@
                 },
                 {
                   "text": "MCP schema, Google request, golden output and error cases for run_property_access_report",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs admin_access_mcp_inputs_cover_pinned_fields_and_required_sets verifies complete SednaLabs property access MCP input inventory, required set, and uint64 limit. admin_access_reports_project_named_fields_and_redact_google_denials uses local Admin API HTTP mocks for both resource types to test POST routing, GA dimensionName/metricName fields, stable golden rows, bounded totals and v1 continuation, and redacted HTTP 403 provider errors. src/tabular.rs admin_access_headers_and_resource_boundaries_have_distinct_cursors verifies account/property cursor fingerprints cannot be reused across resource types. GitHub Actions 40235752963 core passed formatting, tests, strict Clippy. Admin privileges and live Google acceptance remain separate."
                 }
               ]
             },
@@ -1747,7 +1748,7 @@
               "id": "T090",
               "emoji": "👥",
               "name": "Implement run_account_access_report",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "MCP schema, Google request, golden output and error cases for run_account_access_report",
               "checks": [
                 {
@@ -1757,7 +1758,8 @@
                 },
                 {
                   "text": "MCP schema, Google request, golden output and error cases for run_account_access_report",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs admin_access_mcp_inputs_cover_pinned_fields_and_required_sets verifies complete SednaLabs account access MCP input inventory, required set, and uint64 limit. admin_access_reports_project_named_fields_and_redact_google_denials uses local Admin API HTTP mocks for both resource types to test POST routing, GA dimensionName/metricName fields, stable golden rows, bounded totals and v1 continuation, and redacted HTTP 403 provider errors. src/tabular.rs admin_access_headers_and_resource_boundaries_have_distinct_cursors verifies account/property cursor fingerprints cannot be reused across resource types. GitHub Actions 40235752963 core passed formatting, tests, strict Clippy. Admin privileges and live Google acceptance remain separate."
                 }
               ]
             }
