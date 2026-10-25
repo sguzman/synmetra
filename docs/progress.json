@@ -2563,12 +2563,13 @@
               "id": "T133",
               "emoji": "📊",
               "name": "Implement scratchpad_ingest_report",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Synthetic GA payload and DuckDB query conformance for scratchpad_ingest_report",
               "checks": [
                 {
                   "text": "Deliver implement scratchpad_ingest_report as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs and src/scratchpad.rs: opt-in historical and realtime ingestion tool handlers, checked pinned required MCP parameters, parameter-bound transactional DuckDB response ingestion with append/schema/row quotas; GitHub Actions run 40218852253 passed core Rust and bundled-DuckDB tests. Full official GA live report acceptance, cursor/page contracts and exact output parity remain unverified."
                 },
                 {
                   "text": "Synthetic GA payload and DuckDB query conformance for scratchpad_ingest_report",
@@ -2580,12 +2581,13 @@
               "id": "T134",
               "emoji": "⚡",
               "name": "Implement scratchpad_ingest_realtime_report",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Synthetic GA payload and DuckDB query conformance for scratchpad_ingest_realtime_report",
               "checks": [
                 {
                   "text": "Deliver implement scratchpad_ingest_realtime_report as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs and src/scratchpad.rs: opt-in historical and realtime ingestion tool handlers, checked pinned required MCP parameters, parameter-bound transactional DuckDB response ingestion with append/schema/row quotas; GitHub Actions run 40218852253 passed core Rust and bundled-DuckDB tests. Full official GA live report acceptance, cursor/page contracts and exact output parity remain unverified."
                 },
                 {
                   "text": "Synthetic GA payload and DuckDB query conformance for scratchpad_ingest_realtime_report",

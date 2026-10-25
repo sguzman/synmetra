@@ -6,11 +6,11 @@
 
 **Project identity:** `#28BDAD` · CSS `oklch(72% 0.12 184)` — [OKLab color rationale](docs/COLOR.md).
 
-> **Status: experimental native Rust MCP stdio server, not production-ready.** 20 read-only tool handlers and one optional annotation write and native OAuth code compile and pass synthetic tests. No authorized live Google account, end-to-end login, or full upstream schema parity has been verified. Authenticated loopback HTTP passed a synthetic initialization test; optional DuckDB scratchpad code exists but its feature-enabled build and parity remain unverified. The GitHub repository's owner remains its GitHub account holder; ChatGPT is acting as delegated development steward.
+> **Status: experimental native Rust MCP stdio server, not production-ready.** 20 read-only tool handlers and one optional annotation write and native OAuth code compile and pass synthetic tests. No authorized live Google account, end-to-end login, or full upstream schema parity has been verified. Authenticated loopback HTTP passed a synthetic initialization test; optional DuckDB scratchpad builds and passes synthetic native tests, but live GA ingestion and full upstream parity remain unverified. The GitHub repository's owner remains its GitHub account holder; ChatGPT is acting as delegated development steward.
 
 ## 📊 Evidence-backed progress
 
-**Overall:** `██░░░░░░░░ 24.9%` · **overall delta: +24.89 percentage points** from initial 0% (**latest accepted round: +0.22 pp**). **20/36 read-only provisional handlers and 1 opt-in annotation handler; 0/36 fully accepted upstream parity.** Real Google account acceptance and full tool schemas remain pending.
+**Overall:** `███░░░░░░░ 25.3%` · **overall delta: +25.33 percentage points** from initial 0% (**latest accepted round: +0.44 pp**). **20/36 read-only provisional handlers and 1 opt-in annotation handler; 0/36 fully accepted upstream parity.** Real Google account acceptance and full tool schemas remain pending.
 
 | Milestone | Progress | Gate |
 | --- | --- | --- |
@@ -20,7 +20,7 @@
 | 🏢 M3 Admin API information parity | `███░░░░░░░ 34.4%` | MVP |
 | 📊 M4 Reporting, preflight and Data API parity | `███░░░░░░░ 26.7%` | MVP |
 | ✍️ M5 Explicitly gated GA mutation parity | `██████░░░░ 61.5%` | MVP |
-| 🗃️ M6 DuckDB scratchpad and advanced analytics parity | `███░░░░░░░ 28.0%` | MVP |
+| 🗃️ M6 DuckDB scratchpad and advanced analytics parity | `███░░░░░░░ 32.0%` | MVP |
 | 🧬 M7 Tool contract interoperability and parity audits | `░░░░░░░░░░ 0.0%` | MVP |
 | 🧪 M8 Verification, resilience and security acceptance | `█░░░░░░░░░ 12.5%` | MVP |
 | 🚀 M9 Linux release and Codex-ready inauguration | `░░░░░░░░░░ 0.0%` | MVP |
@@ -53,3 +53,5 @@ Build and launch the MCP stdio server with `cargo run --bin synmetra -- serve`. 
 **Optional scratchpad (experimental):** `cargo build --features scratchpad` and `synmetra serve --scratchpad` expose seven provisional in-memory DuckDB lifecycle operations. They are blocked on Streamable HTTP because per-client isolation is unfinished. Feature-enabled native compilation and contract verification remain pending. [Scratchpad limitations](docs/SCRATCHPAD.md) · [Upstream schema gaps](docs/SCHEMA_GAPS.md).
 
 **Native DuckDB feature testing:** The initial seven lifecycle tool implementations passed an optional bundled-DuckDB feature test in [GitHub Actions run 40206168306](https://github.com/sguzman/synmetra/actions/runs/40206168306). Later schema refinements and full strict Clippy/Google integration are not yet accepted. The 7 lifecycle tasks remain partial (50%) rather than falsely marking full upstream parity.
+
+**Latest native scratchpad:** Twelve provisional local DuckDB MCP tools are available only with `--features scratchpad` and `serve --scratchpad`, including historical and realtime GA4 ingestion. Sessions are memory-only and inaccessible through Synmetra's HTTP transport. See [scratchpad policy](docs/SCRATCHPAD.md). No live Google authorization has been tested.
