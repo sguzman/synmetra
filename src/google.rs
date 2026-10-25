@@ -518,9 +518,9 @@ impl GoogleClient {
 fn validate_google_report_response(response: &Value) -> Result<(), ApiError> {
     let root = response.as_object().ok_or(ApiError::InvalidResponse)?;
     let count = if let Some(raw) = root.get("rowCount") {
-        let count = raw.as_u64().or_else(|| {
-            raw.as_str().and_then(|text| text.parse::<u64>().ok())
-        });
+        let count = raw
+            .as_u64()
+            .or_else(|| raw.as_str().and_then(|text| text.parse::<u64>().ok()));
         Some(count.ok_or(ApiError::InvalidResponse)?)
     } else {
         None
