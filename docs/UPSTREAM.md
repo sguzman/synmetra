@@ -49,3 +49,7 @@ Sources: [TOOL_GUIDE](https://github.com/sednalabs/ga4-mcp/blob/039fd4620064fc4b
 7. Detect and record future upstream drift against these fixed baselines and only update the parity target through reviewed commits.
 
 **Not verified:** Tool signatures, output schemas and runtime results have not yet been exhaustively compared. This document pins the tool **name inventory**, not certified behavioral parity.
+
+## 📜 Archived input schemas
+
+[Exact SednaLabs input-schema snapshot](../spec/upstream/tool_schema_snapshot.v1.json) is retained as a pinned, Apache-2.0 attributed test reference. It includes 35 tool names with the original `inputSchema` objects, not acceptance of any Synmetra implementation. Google's 10 dynamic schemas still need a separate authenticated reference export before T007 reaches full completion.
