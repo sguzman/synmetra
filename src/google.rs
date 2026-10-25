@@ -722,6 +722,70 @@ pub fn normalize_date_ranges(dates: Vec<Value>) -> Result<Vec<Value>, ApiError> 
         .collect()
 }
 
+/// Accept Google FilterExpression objects, JSON-encoded objects, or an
+/// explicit equality shorthand. Reject ambiguous and lossily coerced values.
+pub fn normalize_report_filter(input: Value, metric: bool) -> Result<Value, ApiError> {
+    let value = match input {
+        Value::Object(_) => input,
+        Value::String(raw) => {
+            let raw = raw.trim();
+            if raw.len() > 1024 || raw.is_empty() {
+                return Err(ApiError::InvalidRequest);
+            }
+            if raw.starts_with('{') {
+                serde_json::from_str::<Value>(raw).map_err(|_| ApiError::InvalidRequest)?
+            } else {
+                let (field, raw_value) = raw.split_once("==").ok_or(ApiError::InvalidRequest)?;
+                let field = field.trim();
+                let raw_value = raw_value.trim();
+                if field.is_empty() || field.len() > 64
+                    || !field.as_bytes()[0].is_ascii_alphabetic()
+                    || !field.bytes().all(|c| c.is_ascii_alphanumeric() || c == b'_')
+                    || raw_value.is_empty() || raw_value.len() > 256
+                {
+                    return Err(ApiError::InvalidRequest);
+                }
+                if metric {
+                    // Numeric filters must carry exact integer or finite decimal
+                    // values, not invented string-to-number coercions.
+                    if raw_value.starts_with('"') || raw_value.contains("==") {
+                        return Err(ApiError::InvalidRequest);
+                    }
+                    let numeric = if let Ok(value) = raw_value.parse::<i64>() {
+                        json!({"int64Value":value.to_string()})
+                    } else {
+                        let value = raw_value.parse::<f64>().map_err(|_| ApiError::InvalidRequest)?;
+                        if !value.is_finite() {
+                            return Err(ApiError::InvalidRequest);
+                        }
+                        json!({"doubleValue":value})
+                    };
+                    json!({"filter":{"fieldName":field,"numericFilter":{"operation":"EQUAL","value":numeric}}})
+                } else {
+                    let parsed = if raw_value.starts_with('"') {
+                        serde_json::from_str::<String>(raw_value)
+                            .map_err(|_| ApiError::InvalidRequest)?
+                    } else {
+                        if raw_value.chars().any(|c| c.is_whitespace() || c.is_control())
+                            || raw_value.contains("==") || raw_value.contains('"')
+                        {
+                            return Err(ApiError::InvalidRequest);
+                        }
+                        raw_value.to_owned()
+                    };
+                    if parsed.is_empty() || parsed.len() > 256 {
+                        return Err(ApiError::InvalidRequest);
+                    }
+                    json!({"filter":{"fieldName":field,"stringFilter":{"matchType":"EXACT","value":parsed}}})
+                }
+            }
+        }
+        _ => return Err(ApiError::InvalidRequest),
+    };
+    validate_bounded_filter(&value)?;
+    Ok(value)
+}
+
 /// Validate bounded, structured GA4 FilterExpression input without coercing values.
 /// The Google API remains responsible for deciding valid field/operator semantics.
 pub fn validate_bounded_filter(filter: &Value) -> Result<(), ApiError> {
@@ -811,9 +875,11 @@ pub fn report_request(
     );
     for (name, val) in extras {
         if let Some(val) = val {
-            if name == "dimensionFilter" || name == "metricFilter" {
-                validate_bounded_filter(&val)?;
-            }
+            let val = match name {
+                "dimensionFilter" => normalize_report_filter(val, false)?,
+                "metricFilter" => normalize_report_filter(val, true)?,
+                _ => val,
+            };
             request.insert(name.to_owned(), val);
         }
     }
@@ -888,6 +954,37 @@ mod tests {
         ] {
             assert!(funnel_request(bad, None, None, None, None, false).is_err());
         }
+    }
+
+    #[test]
+    fn report_filter_shorthand_normalizes_without_ambiguous_coercions() {
+        let country = normalize_report_filter(json!("country==Mexico"), false).unwrap();
+        assert_eq!(country["filter"]["fieldName"], "country");
+        assert_eq!(country["filter"]["stringFilter"]["value"], "Mexico");
+        let channel = normalize_report_filter(
+            json!("sessionDefaultChannelGroup==\\\"Paid Other\\\""), false
+        ).unwrap();
+        assert_eq!(channel["filter"]["stringFilter"]["value"], "Paid Other");
+        let count = normalize_report_filter(json!("sessions==7"), true).unwrap();
+        assert_eq!(count["filter"]["numericFilter"]["value"]["int64Value"], "7");
+        let rate = normalize_report_filter(json!("engagementRate==0.5"), true).unwrap();
+        assert_eq!(rate["filter"]["numericFilter"]["value"]["doubleValue"], 0.5);
+        let json_encoded = normalize_report_filter(
+            json!(r#"{"filter":{"fieldName":"country","stringFilter":{"value":"MX","matchType":"EXACT"}}}"#),
+            false,
+        ).unwrap();
+        assert_eq!(json_encoded["filter"]["stringFilter"]["value"], "MX");
+
+        for raw in [
+            "country=Mexico", "country==Paid Other", "country==",
+            "country-name==Mexico", "country==Mexico==US",
+            "country==\\\"unterminated", "country==\\\"x\\\"y",
+        ] {
+            assert!(normalize_report_filter(json!(raw), false).is_err(), "{raw}");
+        }
+        assert!(normalize_report_filter(json!("sessions==\\\"7\\\""), true).is_err());
+        assert!(normalize_report_filter(json!("sessions==NaN"), true).is_err());
+        assert!(normalize_report_filter(json!("sessions==infinity"), true).is_err());
     }
 
     #[test]
