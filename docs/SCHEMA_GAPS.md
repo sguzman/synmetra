@@ -1,5 +1,8 @@
 # 📐 Synmetra MCP signature audit against pinned SednaLabs
 
+> **Historical source-level audit, not current tool coverage.** This document and `spec/contract-gaps.json` describe the native Rust source revision identified below. Since that revision, all 35 SednaLabs tool names plus Google's annotation-write tool have acquired provisional handlers, and a feature-enabled `tools/list` inventory test confirms the 36-name union. Missing-name counts in this historical table **must not be read as current**. The project is now capturing actual registered MCP `inputSchema` JSON for a new field/type/default comparison. No behavioral or live-Google parity has been declared.
+
+
 Pinned reference: `sednalabs/ga4-mcp@039fd4620064fc4b76dc6bca641945aba52c14bc`. Native source: `src/main.rs` at `5e781197fdbe94b8206ec303a18a90bfadbecbd1`.
 
 **Static field-name assessment:** **29/35 upstream tools have provisional Rust handlers; 6 remain unimplemented.** All 29 named handlers now declare their upstream **required input field names** (down from nine requiring fixes at the start of this continuation). This **does not mean JSON schema or behavioral parity**: optional controls, input types/defaults, actual Google API execution, response envelopes, pagination and security acceptance still require verification.
