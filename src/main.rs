@@ -28,6 +28,14 @@ enum GaResourceIdInput {
     Text(String),
 }
 
+/// The pinned SednaLabs JSON Schema names historical dates with snake_case.
+/// Runtime normalization additionally accepts Google camelCase and named ranges.
+#[derive(JsonSchema)]
+struct ReportDateRangeInput {
+    start_date: String,
+    end_date: String,
+}
+
 fn deserialize_google_id<'de, D>(deserializer: D) -> Result<String, D::Error>
 where
     D: serde::Deserializer<'de>,
@@ -177,6 +185,7 @@ struct ScratchIngestReportArgs {
     order_bys: Option<Vec<Value>>,
     #[serde(default = "default_return_property_quota")]
     return_property_quota: bool,
+    #[schemars(with = "Vec<ReportDateRangeInput>")]
     date_ranges: Vec<Value>,
     #[serde(default)]
     currency_code: Option<String>,
@@ -425,6 +434,7 @@ struct ConversionArgs {
     #[serde(deserialize_with = "deserialize_google_id")]
     #[schemars(with = "GaResourceIdInput")]
     property_id: String,
+    #[schemars(with = "Vec<ReportDateRangeInput>")]
     date_ranges: Vec<Value>,
     dimensions: Vec<String>,
     metrics: Vec<String>,
@@ -450,6 +460,7 @@ struct PivotArgs {
     #[serde(deserialize_with = "deserialize_google_id")]
     #[schemars(with = "GaResourceIdInput")]
     property_id: String,
+    #[schemars(with = "Vec<ReportDateRangeInput>")]
     date_ranges: Vec<Value>,
     dimensions: Vec<String>,
     metrics: Vec<String>,
@@ -471,6 +482,7 @@ struct PivotArgs {
 #[derive(Debug, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 struct BatchReportItemArgs {
+    #[schemars(with = "Vec<ReportDateRangeInput>")]
     date_ranges: Vec<Value>,
     dimensions: Vec<String>,
     metrics: Vec<String>,
@@ -540,6 +552,7 @@ struct PropertyAccessArgs {
     #[serde(deserialize_with = "deserialize_google_id")]
     #[schemars(with = "GaResourceIdInput")]
     property_id: String,
+    #[schemars(with = "Vec<ReportDateRangeInput>")]
     date_ranges: Vec<Value>,
     dimensions: Vec<String>,
     metrics: Vec<String>,
@@ -562,6 +575,7 @@ struct AccountAccessArgs {
     #[serde(deserialize_with = "deserialize_google_id")]
     #[schemars(with = "GaResourceIdInput")]
     account_id: String,
+    #[schemars(with = "Vec<ReportDateRangeInput>")]
     date_ranges: Vec<Value>,
     dimensions: Vec<String>,
     metrics: Vec<String>,
@@ -590,6 +604,7 @@ struct ReportArgs {
     #[schemars(with = "GaResourceIdInput")]
     property_id: String,
     /// Historical date ranges, e.g. [{"startDate":"7daysAgo","endDate":"today"}].
+    #[schemars(with = "Vec<ReportDateRangeInput>")]
     date_ranges: Vec<Value>,
     /// Names of dimensions (not Dimension objects).
     dimensions: Vec<String>,
@@ -2266,6 +2281,39 @@ mod tests {
             response.structured_content.unwrap()["data"]["request"]["returnPropertyQuota"],
             false
         );
+    }
+
+    #[test]
+    fn report_date_range_mcp_schema_requires_named_start_and_end_fields() {
+        let router = Synmetra::tool_router();
+        for name in [
+            "run_report",
+            "run_pivot_report",
+            "run_conversions_report",
+            "batch_run_reports",
+            "run_property_access_report",
+        ] {
+            let tool = router.list_all().into_iter().find(|item| item.name == name).unwrap();
+            let full = serde_json::to_value(&tool.input_schema).unwrap();
+            let items = if name == "batch_run_reports" {
+                let item_ref = full["properties"]["requests"]["items"]["$ref"].as_str().unwrap();
+                let item_name = item_ref.strip_prefix("#/$defs/").unwrap();
+                &full["$defs"][item_name]["properties"]["date_ranges"]["items"]
+            } else {
+                &full["properties"]["date_ranges"]["items"]
+            };
+            let resolved = if let Some(key) = items["$ref"]
+                .as_str()
+                .and_then(|path| path.strip_prefix("#/$defs/"))
+            {
+                &full["$defs"][key]
+            } else {
+                items
+            };
+            let required = resolved["required"].as_array().unwrap();
+            assert!(required.contains(&json!("start_date")), "{name}");
+            assert!(required.contains(&json!("end_date")), "{name}");
+        }
     }
 
     #[test]
