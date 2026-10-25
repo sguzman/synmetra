@@ -1579,10 +1579,7 @@ mod tests {
         assert_eq!(request["funnel"]["isOpenFunnel"], true);
         assert_eq!(request["funnelVisualizationType"], "TRENDED_FUNNEL");
         assert_eq!(request["limit"], "150");
-        assert_eq!(
-            request["dimensionFilter"]["filter"]["fieldName"],
-            "country"
-        );
+        assert_eq!(request["dimensionFilter"]["filter"]["fieldName"], "country");
         for bad in [0, 250_001, u64::MAX] {
             assert_eq!(
                 funnel_request_options(base.clone(), false, None, Some(bad), None),

@@ -3086,11 +3086,23 @@ mod tests {
         responder.await.unwrap();
         assert_eq!(result.is_error, Some(false));
         let payload = result.structured_content.unwrap();
-        assert_eq!(payload["data"]["funnel_table"][0]["funnelStepName"], "1. Viewed");
-        assert_eq!(payload["data"]["funnel_visualization"][0]["activeUsers"], "9");
+        assert_eq!(
+            payload["data"]["funnel_table"][0]["funnelStepName"],
+            "1. Viewed"
+        );
+        assert_eq!(
+            payload["data"]["funnel_visualization"][0]["activeUsers"],
+            "9"
+        );
         assert_eq!(payload["meta"]["funnel_table"]["row_count_total"], 2);
-        assert_eq!(payload["meta"]["funnel_visualization"]["row_count_returned"], 1);
-        assert_eq!(payload["meta"]["ga4"]["propertyQuota"]["concurrentRequests"]["remaining"], 2);
+        assert_eq!(
+            payload["meta"]["funnel_visualization"]["row_count_returned"],
+            1
+        );
+        assert_eq!(
+            payload["meta"]["ga4"]["propertyQuota"]["concurrentRequests"]["remaining"],
+            2
+        );
         assert!(!payload.to_string().contains("private-funnel-token"));
     }
 
@@ -3119,7 +3131,10 @@ mod tests {
         assert!(payload["data"]["funnel_table"].is_null());
         assert!(payload["data"]["funnel_visualization"].is_null());
         assert_eq!(payload["meta"]["funnel_table"]["row_count_total"], 4);
-        assert_eq!(payload["meta"]["funnel_visualization"]["row_count_total"], 4);
+        assert_eq!(
+            payload["meta"]["funnel_visualization"]["row_count_total"],
+            4
+        );
         assert!(payload["meta"]["funnel_table"]["next_cursor"].is_null());
     }
 
