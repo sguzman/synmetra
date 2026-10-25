@@ -2230,6 +2230,91 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn historical_report_opt_in_projection_preserves_metadata_and_previews_offline() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        use tokio::net::TcpListener;
+
+        let fields = json!({
+            "property_id":"42",
+            "date_ranges":[{"start_date":"yesterday","end_date":"today"}],
+            "dimensions":["country"],
+            "metrics":["activeUsers"],
+            "output_mode":"rows",
+            "max_rows":1,
+            "max_cell_chars":3
+        });
+        let preview = Synmetra::new(GoogleClient::new(None), false)
+            .preview_report_request(Parameters(serde_json::from_value(fields.clone()).unwrap()))
+            .await;
+        assert_eq!(preview.is_error, Some(false));
+        let preview_payload = preview.structured_content.unwrap();
+        assert_eq!(preview_payload["data"]["provider_called"], false);
+        assert_eq!(preview_payload["data"]["request"]["limit"], "1");
+
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let endpoint = format!("http://{}", listener.local_addr().unwrap());
+        let api = GoogleClient::with_endpoints(
+            Some("private-tabular-fixture-token".into()),
+            &endpoint,
+            &endpoint,
+        );
+        let responder = tokio::spawn(async move {
+            let (mut stream, _) = listener.accept().await.unwrap();
+            let mut buffer = [0u8; 4096];
+            let received = stream.read(&mut buffer).await.unwrap();
+            let request = String::from_utf8_lossy(&buffer[..received]);
+            assert!(request.contains("properties/42:runReport"));
+            assert!(request.contains(r#""limit":"1""#));
+            let body = json!({
+                "dimensionHeaders":[{"name":"country"}],
+                "metricHeaders":[{"name":"activeUsers","type":"TYPE_INTEGER"}],
+                "rows":[{"dimensionValues":[{"value":"México"}],"metricValues":[{"value":"17"}]}],
+                "rowCount":3,
+                "propertyQuota":{"concurrentRequests":{"remaining":9}}
+            })
+            .to_string();
+            let reply = format!(
+                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                body.len(),
+                body
+            );
+            stream.write_all(reply.as_bytes()).await.unwrap();
+        });
+        let server = Synmetra::new(api, false);
+        let report = server
+            .run_report(Parameters(serde_json::from_value(fields).unwrap()))
+            .await;
+        responder.await.unwrap();
+        assert_eq!(report.is_error, Some(false));
+        let payload = report.structured_content.unwrap();
+        assert_eq!(payload["data"][0]["country"], "Méx");
+        assert_eq!(payload["meta"]["row_count_total"], 3);
+        assert_eq!(payload["meta"]["row_count_returned"], 1);
+        assert_eq!(payload["meta"]["truncated"], true);
+        assert!(payload["meta"]["next_cursor"].is_null());
+        assert_eq!(payload["meta"]["ga4"]["propertyQuota"]["concurrentRequests"]["remaining"], 9);
+        assert!(!payload.to_string().contains("private-tabular-fixture-token"));
+
+        let unsupported_cursor = Synmetra::new(GoogleClient::new(None), false)
+            .preview_report_request(Parameters(
+                serde_json::from_value(json!({
+                    "property_id":"42",
+                    "date_ranges":[{"start_date":"yesterday","end_date":"today"}],
+                    "dimensions":["country"],
+                    "metrics":["activeUsers"],
+                    "cursor":"v1:pending:5"
+                }))
+                .unwrap(),
+            ))
+            .await;
+        assert_eq!(unsupported_cursor.is_error, Some(true));
+        assert_eq!(
+            unsupported_cursor.structured_content.unwrap()["error"]["code"],
+            "INVALID_REQUEST"
+        );
+    }
+
+    #[tokio::test]
     async fn batch_reports_normalize_separate_requests_and_preserve_distinct_results() {
         use tokio::io::{AsyncReadExt, AsyncWriteExt};
         use tokio::net::TcpListener;
