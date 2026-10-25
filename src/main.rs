@@ -2039,7 +2039,10 @@ mod tests {
         let properties = declared.input_schema.get("properties").unwrap();
         for arg in signature["parameters"].as_array().unwrap() {
             let name = arg["name"].as_str().unwrap();
-            assert!(properties.get(name).is_some(), "Missing official argument {name}");
+            assert!(
+                properties.get(name).is_some(),
+                "Missing official argument {name}"
+            );
         }
 
         let args: RealtimeArgs = serde_json::from_value(json!({
