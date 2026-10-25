@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `███░░░░░░░ 29.7%` · **+29.74 percentage points from initial empty repo; +0.67 pp from CI-verified realtime offset and cursor behavior** · 32/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `███░░░░░░░ 31.3%` · **+31.28 percentage points from initial empty repo; +1.54 pp from seven CI-tested golden Admin MCP mock responses and denials** · 39/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -198,28 +198,28 @@
   - ✅ **Gate:** State cleared without touching unrelated Google apps
 
 
-## 🏢 M3 — Admin API information parity — `███░░░░░░░ 34.4%`
+## 🏢 M3 — Admin API information parity — `██████░░░░ 56.3%`
 
 **Scope:** MVP. **Acceptance gate:** All administrative read tools and metadata endpoints match pinned signatures and response behavior.
 
-### 🗂️ P08 — Admin MCP tools — `█████░░░░░ 50.0%`
+### 🗂️ P08 — Admin MCP tools — `██████████ 100.0%`
 
 **Feature:** Seven Admin read tools.
 
-- 🧾 **T067 — Implement get_account_summaries** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Golden Admin API mock response and auth-denial case for get_account_summaries
-- 📃 **T068 — Implement get_account_data_sharing_settings** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Golden Admin API mock response and auth-denial case for get_account_data_sharing_settings
-- 🏠 **T069 — Implement get_property_details** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Golden Admin API mock response and auth-denial case for get_property_details
-- ⏳ **T070 — Implement get_property_data_retention_settings** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Golden Admin API mock response and auth-denial case for get_property_data_retention_settings
-- 🔗 **T071 — Implement list_google_ads_links** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Golden Admin API mock response and auth-denial case for list_google_ads_links
-- 📌 **T072 — Implement list_property_annotations** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Golden Admin API mock response and auth-denial case for list_property_annotations
-- 🧬 **T073 — Implement get_custom_dimensions_and_metrics** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Golden Admin API mock response and auth-denial case for get_custom_dimensions_and_metrics
+- 🧾 **T067 — Implement get_account_summaries** — `██████████ 100.0%`
+  - ✅ **Gate:** Golden Admin API mock response and auth-denial case for get_account_summaries · **Evidence:** src/main.rs implemented get_account_summaries MCP handler plus src/google.rs request route/validation; Rust unit and in-memory MCP tests passed Actions 40202015488; full upstream schema/live GA parity remains open; src/main.rs admin_handlers_preserve_golden_google_json_and_reject_403_without_leakage exercises get_account_summaries over isolated loopback HTTP with canonical mock Admin API JSON and HTTP 403 denial; verifies exact method/path, MCP structured response and stable GOOGLE_HTTP_ERROR/status 403 without the fixture bearer token. GitHub Actions 40227511758 core passed tests, fmt and strict Clippy. These synthetic fixtures do not certify authorized live Google or full upstream schema parity.
+- 📃 **T068 — Implement get_account_data_sharing_settings** — `██████████ 100.0%`
+  - ✅ **Gate:** Golden Admin API mock response and auth-denial case for get_account_data_sharing_settings · **Evidence:** src/main.rs implemented get_account_data_sharing_settings MCP handler plus src/google.rs request route/validation; Rust unit and in-memory MCP tests passed Actions 40202015488; full upstream schema/live GA parity remains open; src/main.rs admin_handlers_preserve_golden_google_json_and_reject_403_without_leakage exercises get_account_data_sharing_settings over isolated loopback HTTP with canonical mock Admin API JSON and HTTP 403 denial; verifies exact method/path, MCP structured response and stable GOOGLE_HTTP_ERROR/status 403 without the fixture bearer token. GitHub Actions 40227511758 core passed tests, fmt and strict Clippy. These synthetic fixtures do not certify authorized live Google or full upstream schema parity.
+- 🏠 **T069 — Implement get_property_details** — `██████████ 100.0%`
+  - ✅ **Gate:** Golden Admin API mock response and auth-denial case for get_property_details · **Evidence:** src/main.rs implemented get_property_details MCP handler plus src/google.rs request route/validation; Rust unit and in-memory MCP tests passed Actions 40202015488; full upstream schema/live GA parity remains open; src/main.rs admin_handlers_preserve_golden_google_json_and_reject_403_without_leakage exercises get_property_details over isolated loopback HTTP with canonical mock Admin API JSON and HTTP 403 denial; verifies exact method/path, MCP structured response and stable GOOGLE_HTTP_ERROR/status 403 without the fixture bearer token. GitHub Actions 40227511758 core passed tests, fmt and strict Clippy. These synthetic fixtures do not certify authorized live Google or full upstream schema parity.
+- ⏳ **T070 — Implement get_property_data_retention_settings** — `██████████ 100.0%`
+  - ✅ **Gate:** Golden Admin API mock response and auth-denial case for get_property_data_retention_settings · **Evidence:** src/main.rs implemented get_property_data_retention_settings MCP handler plus src/google.rs request route/validation; Rust unit and in-memory MCP tests passed Actions 40202015488; full upstream schema/live GA parity remains open; src/main.rs admin_handlers_preserve_golden_google_json_and_reject_403_without_leakage exercises get_property_data_retention_settings over isolated loopback HTTP with canonical mock Admin API JSON and HTTP 403 denial; verifies exact method/path, MCP structured response and stable GOOGLE_HTTP_ERROR/status 403 without the fixture bearer token. GitHub Actions 40227511758 core passed tests, fmt and strict Clippy. These synthetic fixtures do not certify authorized live Google or full upstream schema parity.
+- 🔗 **T071 — Implement list_google_ads_links** — `██████████ 100.0%`
+  - ✅ **Gate:** Golden Admin API mock response and auth-denial case for list_google_ads_links · **Evidence:** src/main.rs implemented list_google_ads_links MCP handler plus src/google.rs request route/validation; Rust unit and in-memory MCP tests passed Actions 40202015488; full upstream schema/live GA parity remains open; src/main.rs admin_handlers_preserve_golden_google_json_and_reject_403_without_leakage exercises list_google_ads_links over isolated loopback HTTP with canonical mock Admin API JSON and HTTP 403 denial; verifies exact method/path, MCP structured response and stable GOOGLE_HTTP_ERROR/status 403 without the fixture bearer token. GitHub Actions 40227511758 core passed tests, fmt and strict Clippy. These synthetic fixtures do not certify authorized live Google or full upstream schema parity.
+- 📌 **T072 — Implement list_property_annotations** — `██████████ 100.0%`
+  - ✅ **Gate:** Golden Admin API mock response and auth-denial case for list_property_annotations · **Evidence:** src/main.rs implemented list_property_annotations MCP handler plus src/google.rs request route/validation; Rust unit and in-memory MCP tests passed Actions 40202015488; full upstream schema/live GA parity remains open; src/main.rs admin_handlers_preserve_golden_google_json_and_reject_403_without_leakage exercises list_property_annotations over isolated loopback HTTP with canonical mock Admin API JSON and HTTP 403 denial; verifies exact method/path, MCP structured response and stable GOOGLE_HTTP_ERROR/status 403 without the fixture bearer token. GitHub Actions 40227511758 core passed tests, fmt and strict Clippy. These synthetic fixtures do not certify authorized live Google or full upstream schema parity.
+- 🧬 **T073 — Implement get_custom_dimensions_and_metrics** — `██████████ 100.0%`
+  - ✅ **Gate:** Golden Admin API mock response and auth-denial case for get_custom_dimensions_and_metrics · **Evidence:** src/main.rs implemented get_custom_dimensions_and_metrics MCP handler plus src/google.rs request route/validation; Rust unit and in-memory MCP tests passed Actions 40202015488; full upstream schema/live GA parity remains open; src/main.rs admin_handlers_preserve_golden_google_json_and_reject_403_without_leakage exercises get_custom_dimensions_and_metrics over isolated loopback HTTP with canonical mock Admin API JSON and HTTP 403 denial; verifies exact method/path, MCP structured response and stable GOOGLE_HTTP_ERROR/status 403 without the fixture bearer token. GitHub Actions 40227511758 core passed tests, fmt and strict Clippy. These synthetic fixtures do not certify authorized live Google or full upstream schema parity.
 
 ### 🏷️ P09 — Administrative edge cases — `██░░░░░░░░ 22.2%`
 

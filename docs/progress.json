@@ -1301,7 +1301,7 @@
               "id": "T067",
               "emoji": "🧾",
               "name": "Implement get_account_summaries",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Golden Admin API mock response and auth-denial case for get_account_summaries",
               "checks": [
                 {
@@ -1311,7 +1311,8 @@
                 },
                 {
                   "text": "Golden Admin API mock response and auth-denial case for get_account_summaries",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs admin_handlers_preserve_golden_google_json_and_reject_403_without_leakage exercises get_account_summaries over isolated loopback HTTP with canonical mock Admin API JSON and HTTP 403 denial; verifies exact method/path, MCP structured response and stable GOOGLE_HTTP_ERROR/status 403 without the fixture bearer token. GitHub Actions 40227511758 core passed tests, fmt and strict Clippy. These synthetic fixtures do not certify authorized live Google or full upstream schema parity."
                 }
               ]
             },
@@ -1319,7 +1320,7 @@
               "id": "T068",
               "emoji": "📃",
               "name": "Implement get_account_data_sharing_settings",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Golden Admin API mock response and auth-denial case for get_account_data_sharing_settings",
               "checks": [
                 {
@@ -1329,7 +1330,8 @@
                 },
                 {
                   "text": "Golden Admin API mock response and auth-denial case for get_account_data_sharing_settings",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs admin_handlers_preserve_golden_google_json_and_reject_403_without_leakage exercises get_account_data_sharing_settings over isolated loopback HTTP with canonical mock Admin API JSON and HTTP 403 denial; verifies exact method/path, MCP structured response and stable GOOGLE_HTTP_ERROR/status 403 without the fixture bearer token. GitHub Actions 40227511758 core passed tests, fmt and strict Clippy. These synthetic fixtures do not certify authorized live Google or full upstream schema parity."
                 }
               ]
             },
@@ -1337,7 +1339,7 @@
               "id": "T069",
               "emoji": "🏠",
               "name": "Implement get_property_details",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Golden Admin API mock response and auth-denial case for get_property_details",
               "checks": [
                 {
@@ -1347,7 +1349,8 @@
                 },
                 {
                   "text": "Golden Admin API mock response and auth-denial case for get_property_details",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs admin_handlers_preserve_golden_google_json_and_reject_403_without_leakage exercises get_property_details over isolated loopback HTTP with canonical mock Admin API JSON and HTTP 403 denial; verifies exact method/path, MCP structured response and stable GOOGLE_HTTP_ERROR/status 403 without the fixture bearer token. GitHub Actions 40227511758 core passed tests, fmt and strict Clippy. These synthetic fixtures do not certify authorized live Google or full upstream schema parity."
                 }
               ]
             },
@@ -1355,7 +1358,7 @@
               "id": "T070",
               "emoji": "⏳",
               "name": "Implement get_property_data_retention_settings",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Golden Admin API mock response and auth-denial case for get_property_data_retention_settings",
               "checks": [
                 {
@@ -1365,7 +1368,8 @@
                 },
                 {
                   "text": "Golden Admin API mock response and auth-denial case for get_property_data_retention_settings",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs admin_handlers_preserve_golden_google_json_and_reject_403_without_leakage exercises get_property_data_retention_settings over isolated loopback HTTP with canonical mock Admin API JSON and HTTP 403 denial; verifies exact method/path, MCP structured response and stable GOOGLE_HTTP_ERROR/status 403 without the fixture bearer token. GitHub Actions 40227511758 core passed tests, fmt and strict Clippy. These synthetic fixtures do not certify authorized live Google or full upstream schema parity."
                 }
               ]
             },
@@ -1373,7 +1377,7 @@
               "id": "T071",
               "emoji": "🔗",
               "name": "Implement list_google_ads_links",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Golden Admin API mock response and auth-denial case for list_google_ads_links",
               "checks": [
                 {
@@ -1383,7 +1387,8 @@
                 },
                 {
                   "text": "Golden Admin API mock response and auth-denial case for list_google_ads_links",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs admin_handlers_preserve_golden_google_json_and_reject_403_without_leakage exercises list_google_ads_links over isolated loopback HTTP with canonical mock Admin API JSON and HTTP 403 denial; verifies exact method/path, MCP structured response and stable GOOGLE_HTTP_ERROR/status 403 without the fixture bearer token. GitHub Actions 40227511758 core passed tests, fmt and strict Clippy. These synthetic fixtures do not certify authorized live Google or full upstream schema parity."
                 }
               ]
             },
@@ -1391,7 +1396,7 @@
               "id": "T072",
               "emoji": "📌",
               "name": "Implement list_property_annotations",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Golden Admin API mock response and auth-denial case for list_property_annotations",
               "checks": [
                 {
@@ -1401,7 +1406,8 @@
                 },
                 {
                   "text": "Golden Admin API mock response and auth-denial case for list_property_annotations",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs admin_handlers_preserve_golden_google_json_and_reject_403_without_leakage exercises list_property_annotations over isolated loopback HTTP with canonical mock Admin API JSON and HTTP 403 denial; verifies exact method/path, MCP structured response and stable GOOGLE_HTTP_ERROR/status 403 without the fixture bearer token. GitHub Actions 40227511758 core passed tests, fmt and strict Clippy. These synthetic fixtures do not certify authorized live Google or full upstream schema parity."
                 }
               ]
             },
@@ -1409,7 +1415,7 @@
               "id": "T073",
               "emoji": "🧬",
               "name": "Implement get_custom_dimensions_and_metrics",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Golden Admin API mock response and auth-denial case for get_custom_dimensions_and_metrics",
               "checks": [
                 {
@@ -1419,7 +1425,8 @@
                 },
                 {
                   "text": "Golden Admin API mock response and auth-denial case for get_custom_dimensions_and_metrics",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs admin_handlers_preserve_golden_google_json_and_reject_403_without_leakage exercises get_custom_dimensions_and_metrics over isolated loopback HTTP with canonical mock Admin API JSON and HTTP 403 denial; verifies exact method/path, MCP structured response and stable GOOGLE_HTTP_ERROR/status 403 without the fixture bearer token. GitHub Actions 40227511758 core passed tests, fmt and strict Clippy. These synthetic fixtures do not certify authorized live Google or full upstream schema parity."
                 }
               ]
             }
