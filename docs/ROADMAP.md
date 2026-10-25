@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `████░░░░░░ 41.0%` · **+40.97 percentage points from initial empty repo; +0.22 pp from CI-tested automatic upstream source drift alerts** · 72/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `████░░░░░░ 41.6%` · **+41.63 percentage points from initial empty repo; +0.66 pp from CI-verified real stdio discovery, dispatch and JSON-RPC stdout isolation** · 75/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -60,24 +60,24 @@
   - ✅ **Gate:** Document semver and provenance gates
 
 
-## 🔌 M1 — MCP protocol and transport fidelity — `███░░░░░░░ 32.6%`
+## 🔌 M1 — MCP protocol and transport fidelity — `████░░░░░░ 39.1%`
 
 **Scope:** MVP. **Acceptance gate:** Spec-conforming native MCP discovery and calls over stdio plus bounded Streamable HTTP; all transport safety tests pass.
 
-### 📨 P02 — Stdio protocol — `███░░░░░░░ 28.6%`
+### 📨 P02 — Stdio protocol — `█████░░░░░ 50.0%`
 
 **Feature:** MCP stdio.
 
 - 📥 **T018 — Support MCP initialize and capability negotiation** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Inspector negotiates compatible protocol version and identity
-- 📋 **T019 — Support tools/list with exact declared JSON schemas** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** All available tools discoverable by MCP clients
-- ⚙️ **T020 — Support tools/call dispatch and structured content** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Call requests resolve to tools with valid response envelopes
+- 📋 **T019 — Support tools/list with exact declared JSON schemas** — `██████████ 100.0%`
+  - ✅ **Gate:** All available tools discoverable by MCP clients · **Evidence:** src/main.rs typed schemars tool metadata; in-memory client lists 17 handlers in Actions 40202015488; Real binary stdio JSON-RPC tools/list issued after initialize and notifications/initialized returned the exact 20 read-only handlers, each with object inputSchema, including ga4_get_started and excluding create_property_annotation; .github/workflows/ci.yml real-process smoke in GitHub Actions run 40243631855 succeeded alongside existing in-memory MCP tool discovery and pinned field tests. Feature-enabled 36-name union remains separate.
+- ⚙️ **T020 — Support tools/call dispatch and structured content** — `██████████ 100.0%`
+  - ✅ **Gate:** Call requests resolve to tools with valid response envelopes · **Evidence:** src/main.rs actual rmcp tools/call of get_account_summaries via in-memory client; Actions 40202015488 passed; Real binary stdio JSON-RPC tools/call dispatched ga4_get_started following initialize and tools/list and returned a successful MCP result with structuredContent.ok=true and the precise read-only analytics scope. Real-process CI run 40243631855 passed; existing in-memory rmcp call and structured envelope tests cover invalid/no-auth cases.
 - 📣 **T021 — Implement JSON-RPC notifications and cancellation** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Cancelled requests do not spawn orphan Google calls
-- 🚧 **T022 — Separate stdout protocol from stderr diagnostics** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** No banners or logging contaminate JSON-RPC stdout
+- 🚧 **T022 — Separate stdout protocol from stderr diagnostics** — `██████████ 100.0%`
+  - ✅ **Gate:** No banners or logging contaminate JSON-RPC stdout · **Evidence:** src/main.rs stdio transport only on serve path; application diagnostic output uses stderr; Actions 40202015488 passed; Real native synmetra serve process captured stdout and stderr separately, enforced exactly three well-formed JSON-RPC result lines for initialize/list/call with no banner, and confirmed a synthetic SYNMETRA_GOOGLE_ACCESS_TOKEN canary never entered stdout. .github/workflows/ci.yml CI run 40243631855 core and DuckDB passed. Provider logs/stderr remain intentionally separate.
 - 📏 **T023 — Bound request sizes concurrency and timeouts** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Malformed and oversize frames rejected deterministically
 - ⌨️ **T024 — Integrate Codex stdio configuration smoke** — `░░░░░░░░░░ 0.0%`

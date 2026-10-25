@@ -395,7 +395,7 @@
               "id": "T019",
               "emoji": "📋",
               "name": "Support tools/list with exact declared JSON schemas",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "All available tools discoverable by MCP clients",
               "checks": [
                 {
@@ -405,7 +405,8 @@
                 },
                 {
                   "text": "All available tools discoverable by MCP clients",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "Real binary stdio JSON-RPC tools/list issued after initialize and notifications/initialized returned the exact 20 read-only handlers, each with object inputSchema, including ga4_get_started and excluding create_property_annotation; .github/workflows/ci.yml real-process smoke in GitHub Actions run 40243631855 succeeded alongside existing in-memory MCP tool discovery and pinned field tests. Feature-enabled 36-name union remains separate."
                 }
               ]
             },
@@ -413,7 +414,7 @@
               "id": "T020",
               "emoji": "⚙️",
               "name": "Support tools/call dispatch and structured content",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Call requests resolve to tools with valid response envelopes",
               "checks": [
                 {
@@ -423,7 +424,8 @@
                 },
                 {
                   "text": "Call requests resolve to tools with valid response envelopes",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "Real binary stdio JSON-RPC tools/call dispatched ga4_get_started following initialize and tools/list and returned a successful MCP result with structuredContent.ok=true and the precise read-only analytics scope. Real-process CI run 40243631855 passed; existing in-memory rmcp call and structured envelope tests cover invalid/no-auth cases."
                 }
               ]
             },
@@ -448,7 +450,7 @@
               "id": "T022",
               "emoji": "🚧",
               "name": "Separate stdout protocol from stderr diagnostics",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "No banners or logging contaminate JSON-RPC stdout",
               "checks": [
                 {
@@ -458,7 +460,8 @@
                 },
                 {
                   "text": "No banners or logging contaminate JSON-RPC stdout",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "Real native synmetra serve process captured stdout and stderr separately, enforced exactly three well-formed JSON-RPC result lines for initialize/list/call with no banner, and confirmed a synthetic SYNMETRA_GOOGLE_ACCESS_TOKEN canary never entered stdout. .github/workflows/ci.yml CI run 40243631855 core and DuckDB passed. Provider logs/stderr remain intentionally separate."
                 }
               ]
             },
