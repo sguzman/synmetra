@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `███░░░░░░░ 34.8%` · **+34.80 percentage points from initial empty repo; +0.22 pp from verified funnel MCP golden/error tests** · 53/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `████░░░░░░ 35.2%` · **+35.24 percentage points from initial empty repo; +0.44 pp from verified provider aggregate and row-count preservation** · 54/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -245,7 +245,7 @@
   - ✅ **Gate:** No stale cross-principal cache confusion
 
 
-## 📊 M4 — Reporting, preflight and Data API parity — `██████░░░░ 58.3%`
+## 📊 M4 — Reporting, preflight and Data API parity — `██████░░░░ 61.7%`
 
 **Scope:** MVP. **Acceptance gate:** All report tools return correct GA4 semantics, including documented alpha, pagination and response projections.
 
@@ -289,12 +289,12 @@
 - 📝 **T097 — Normalize input values without silent coercion** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Lossless valid requests and typed invalid results
 
-### 📐 P12 — Data request fidelity and limits — `████░░░░░░ 36.7%`
+### 📐 P12 — Data request fidelity and limits — `████░░░░░░ 43.3%`
 
 **Feature:** Reporting correctness.
 
-- 🧮 **T098 — Support metric aggregates and row counts** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Totals minimum maximum and aggregate fields preserved
+- 🧮 **T098 — Support metric aggregates and row counts** — `██████████ 100.0%`
+  - ✅ **Gate:** Totals minimum maximum and aggregate fields preserved · **Evidence:** src/tabular.rs project explicitly preserves provider totals, minimums, maximums, aggregates and propertyQuota unmodified in meta.ga4, while retaining row_count_total and row_count_total_known and keeping ordinary rows separate from aggregate rows. Default native run_report continues returning provider-shaped JSON. GitHub Actions 40236868925 full core+DuckDB CI passed.; src/tabular.rs provider_aggregate_rows_survive_all_projection_modes_without_recomputation checks all four output modes and summary-only against fixed non-integer revenue strings and original GA totals/minimums/maximums/aggregates, truthful total=18 and returned=1, and excludes fabricated aggregates when absent. CI 40236868925 passed Rust tests, canonical fmt, strict Clippy, ledger and native DuckDB job. Live Google and complete response parity remain independent.
 - 📎 **T099 — Support pagination offsets and opaque cursors** — `██████████ 100.0%`
   - ✅ **Gate:** Continuation is stable with bounded row limits · **Evidence:** src/tabular.rs implements bounded SHA-256 query-bound v1 continuation cursor codec, normalized property, canonical report query without pagination parameters, offset bound of 10 million, and cursor+offset conflict/mismatch rejection; src/main.rs uses it in run_report and offline preview, realtime cursor remains explicitly rejected. Tests historical_cursor_round_trip_enforces_query_hash_and_bounded_offset passed GitHub Actions 40231599082 core Rust CI.; src/main.rs historical_cursor_pages_remain_query_bound_and_never_repeat_rows runs sequential local mock Google pages, verifies the first report returns v1 next_cursor, the next request sends Google offset=1, second report returns a distinct row with no further token, and changed query with reused cursor fails before network access. Core GitHub Actions 40231599082 passed formatting, tests, strict Clippy, ledger. This does not guarantee snapshot isolation if Google data changes, nor establish full SednaLabs parity or live Google acceptance.
 - ⚡ **T100 — Honor realtime non-paginated semantics** — `██████████ 100.0%`

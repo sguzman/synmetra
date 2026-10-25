@@ -1911,16 +1911,18 @@
               "id": "T098",
               "emoji": "🧮",
               "name": "Support metric aggregates and row counts",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "Totals minimum maximum and aggregate fields preserved",
               "checks": [
                 {
                   "text": "Deliver support metric aggregates and row counts as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/tabular.rs project explicitly preserves provider totals, minimums, maximums, aggregates and propertyQuota unmodified in meta.ga4, while retaining row_count_total and row_count_total_known and keeping ordinary rows separate from aggregate rows. Default native run_report continues returning provider-shaped JSON. GitHub Actions 40236868925 full core+DuckDB CI passed."
                 },
                 {
                   "text": "Totals minimum maximum and aggregate fields preserved",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/tabular.rs provider_aggregate_rows_survive_all_projection_modes_without_recomputation checks all four output modes and summary-only against fixed non-integer revenue strings and original GA totals/minimums/maximums/aggregates, truthful total=18 and returned=1, and excludes fabricated aggregates when absent. CI 40236868925 passed Rust tests, canonical fmt, strict Clippy, ledger and native DuckDB job. Live Google and complete response parity remain independent."
                 }
               ]
             },
