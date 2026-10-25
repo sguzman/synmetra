@@ -1944,6 +1944,47 @@ mod tests {
     }
 
     #[test]
+    fn property_quota_schema_defaults_match_pinned_upstream_tools() {
+        let snapshot: Value = serde_json::from_str(include_str!(
+            "../spec/upstream/sednalabs-tool-schema.v1.json"
+        ))
+        .unwrap();
+        let server = Synmetra::new(GoogleClient::new(None), false);
+        #[cfg(feature = "scratchpad")]
+        let server = server.enable_scratchpad();
+        let tools = server.router.list_all();
+        for name in [
+            "run_report",
+            "run_realtime_report",
+            "run_pivot_report",
+            "run_conversions_report",
+            "run_funnel_report",
+            "scratchpad_ingest_report",
+            "scratchpad_ingest_realtime_report",
+        ] {
+            #[cfg(not(feature = "scratchpad"))]
+            if name.starts_with("scratchpad_") {
+                continue;
+            }
+            let expected = snapshot["tools"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|entry| entry["name"] == name)
+                .unwrap();
+            let native = tools.iter().find(|tool| tool.name == name).unwrap();
+            let pinned = &expected["inputSchema"]["properties"]["return_property_quota"];
+            let declared = native
+                .input_schema
+                .get("properties")
+                .and_then(|props| props.get("return_property_quota"))
+                .unwrap_or_else(|| panic!("{name} omitted return_property_quota"));
+            assert_eq!(declared["type"], pinned["type"], "{name} type drift");
+            assert_eq!(declared["default"], pinned["default"], "{name} default drift");
+        }
+    }
+
+    #[test]
     fn pivot_and_realtime_default_to_upstream_property_quota_reporting() {
         let pivot: PivotArgs = serde_json::from_value(json!({
             "property_id": "42",
