@@ -10,7 +10,7 @@
 
 ## 📊 Evidence-backed progress
 
-**Overall:** `███░░░░░░░ 28.6%` · **overall delta: +28.63 percentage points** from initial 0% (**latest accepted round: +0.22 pp**). **35/35 SednaLabs tool names implemented provisionally plus 1 opt-in annotation handler; 0/36 fully accepted upstream parity.** Real Google account acceptance and full tool schemas remain pending.
+**Overall:** `███░░░░░░░ 29.1%` · **overall delta: +29.07 percentage points** from initial 0% (**latest accepted round: +0.44 pp**). **35/35 SednaLabs tool names implemented provisionally plus 1 opt-in annotation handler; 0/36 fully accepted upstream parity.** Real Google account acceptance and full tool schemas remain pending.
 
 | Milestone | Progress | Gate |
 | --- | --- | --- |
@@ -21,10 +21,12 @@
 | 📊 M4 Reporting, preflight and Data API parity | `███░░░░░░░ 26.7%` | MVP |
 | ✍️ M5 Explicitly gated GA mutation parity | `██████░░░░ 61.5%` | MVP |
 | 🗃️ M6 DuckDB scratchpad and advanced analytics parity | `████░░░░░░ 40.0%` | MVP |
-| 🧬 M7 Tool contract interoperability and parity audits | `███░░░░░░░ 29.4%` | MVP |
+| 🧬 M7 Tool contract interoperability and parity audits | `████░░░░░░ 35.3%` | MVP |
 | 🧪 M8 Verification, resilience and security acceptance | `█░░░░░░░░░ 12.5%` | MVP |
 | 🚀 M9 Linux release and Codex-ready inauguration | `░░░░░░░░░░ 0.0%` | MVP |
 | 🔭 M10 Post-MVP extensions and sustained stewardship | `░░░░░░░░░░ 0.0%` | POST_MVP |
+
+The [pinned native input-schema parity audit](docs/SCHEMA_PARITY_AUDIT.md) documents measured argument/schema gaps from an earlier feature-enabled CI run; these gaps are tracked separately from the 36-name inventory and are not yet all resolved.
 
 Detailed milestone, phase, feature and atomic-task progress: [ROADMAP](docs/ROADMAP.md). [GitHub milestone issue queue](docs/ISSUES.md) keeps the 11 tracking issues in sync. Machine-readable evidence and checks: [progress.json](docs/progress.json). Exact combined tool surface: [tool-inventory.json](docs/tool-inventory.json). Source/protocol audit: [UPSTREAM](docs/UPSTREAM.md).
 

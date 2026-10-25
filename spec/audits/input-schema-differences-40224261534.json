@@ -1,0 +1,1893 @@
+{
+  "schema": 1,
+  "provenance": {
+    "date": "2026-10-25",
+    "native_commit": "43a69ecc66e441c49dbdc8afa81285c0951b8688",
+    "github_actions_run": 40224261534,
+    "github_actions_job": 121262186234,
+    "sednalabs_upstream_sha": "039fd4620064fc4b76dc6bca641945aba52c14bc",
+    "google_upstream_sha": "ce84226bf4cedea7f2910f5afb07a6b9138f6553",
+    "warning": "Captured from an earlier passing feature-enabled CI run. Later auth and quota patches are NOT represented; re-run before declaring current schema parity."
+  },
+  "comparison": "Raw field-name and required-set comparisons; selected unexpanded property attributes compared as JSON. $ref vs inline or type vs anyOf may be syntactic differences, not guaranteed behavioral defects.",
+  "attributes_compared": [
+    "type",
+    "default",
+    "description",
+    "format",
+    "minimum",
+    "maximum",
+    "enum",
+    "items",
+    "anyOf"
+  ],
+  "summary": {
+    "sednalabs_tools_compared": 35,
+    "sednalabs_tools_with_any_difference": 33,
+    "missing_sednalabs_properties": 75,
+    "additional_native_properties_vs_sednalabs": 2,
+    "raw_attribute_mismatches": 163,
+    "sednalabs_required_field_differences": 0,
+    "official_tools_compared": 10,
+    "missing_official_parameters": 2,
+    "extra_native_parameters_vs_official": 7,
+    "official_required_field_differences": 0
+  },
+  "attribute_mismatch_breakdown": {
+    "type": 23,
+    "items": 10,
+    "description": 115,
+    "format": 8,
+    "default": 2,
+    "anyOf": 5
+  },
+  "sednalabs": [
+    {
+      "name": "batch_run_reports",
+      "missing_properties": [],
+      "additional_properties": [],
+      "required_match": true,
+      "native_required": [
+        "property_id",
+        "requests"
+      ],
+      "upstream_required": [
+        "property_id",
+        "requests"
+      ],
+      "attribute_differences": [
+        {
+          "field": "property_id",
+          "attribute": "type",
+          "native": "string",
+          "upstream": null
+        },
+        {
+          "field": "requests",
+          "attribute": "items",
+          "native": true,
+          "upstream": {
+            "$ref": "#/$defs/BatchRunReportItemArgs"
+          }
+        }
+      ]
+    },
+    {
+      "name": "check_report_compatibility",
+      "missing_properties": [],
+      "additional_properties": [],
+      "required_match": true,
+      "native_required": [
+        "dimensions",
+        "metrics",
+        "property_id"
+      ],
+      "upstream_required": [
+        "dimensions",
+        "metrics",
+        "property_id"
+      ],
+      "attribute_differences": [
+        {
+          "field": "dimensions",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Requested dimensions for preflight compatibility checks."
+        },
+        {
+          "field": "metrics",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Requested metrics for preflight compatibility checks."
+        },
+        {
+          "field": "property_id",
+          "attribute": "type",
+          "native": "string",
+          "upstream": null
+        },
+        {
+          "field": "property_id",
+          "attribute": "description",
+          "native": null,
+          "upstream": "The Google Analytics property id as integer or \"properties/<id>\"."
+        }
+      ]
+    },
+    {
+      "name": "ga4_auth_login_command",
+      "missing_properties": [
+        "account",
+        "callback_port",
+        "client_id_file",
+        "headless",
+        "quota_project",
+        "shared_adc"
+      ],
+      "additional_properties": [],
+      "required_match": true,
+      "native_required": [],
+      "upstream_required": [],
+      "attribute_differences": []
+    },
+    {
+      "name": "ga4_auth_status",
+      "missing_properties": [],
+      "additional_properties": [],
+      "required_match": true,
+      "native_required": [],
+      "upstream_required": [],
+      "attribute_differences": [
+        {
+          "field": "verify_token",
+          "attribute": "description",
+          "native": null,
+          "upstream": "When true, acquire a Google access token and call GA account summaries. The token is never returned."
+        }
+      ]
+    },
+    {
+      "name": "ga4_get_started",
+      "missing_properties": [],
+      "additional_properties": [],
+      "required_match": true,
+      "native_required": [],
+      "upstream_required": [],
+      "attribute_differences": []
+    },
+    {
+      "name": "get_account_data_sharing_settings",
+      "missing_properties": [],
+      "additional_properties": [],
+      "required_match": true,
+      "native_required": [
+        "account_id"
+      ],
+      "upstream_required": [
+        "account_id"
+      ],
+      "attribute_differences": [
+        {
+          "field": "account_id",
+          "attribute": "type",
+          "native": "string",
+          "upstream": null
+        },
+        {
+          "field": "account_id",
+          "attribute": "description",
+          "native": "Positive GA4 account number or canonical accounts/<id>.",
+          "upstream": "The Google Analytics account id as integer or \"accounts/<id>\"."
+        }
+      ]
+    },
+    {
+      "name": "get_account_summaries",
+      "missing_properties": [],
+      "additional_properties": [],
+      "required_match": true,
+      "native_required": [],
+      "upstream_required": [],
+      "attribute_differences": [
+        {
+          "field": "max_pages",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Optional max pages to fetch before stopping."
+        },
+        {
+          "field": "page_size",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Optional page size used during pagination. Defaults to server max."
+        }
+      ]
+    },
+    {
+      "name": "get_custom_dimensions_and_metrics",
+      "missing_properties": [],
+      "additional_properties": [],
+      "required_match": true,
+      "native_required": [
+        "property_id"
+      ],
+      "upstream_required": [
+        "property_id"
+      ],
+      "attribute_differences": [
+        {
+          "field": "property_id",
+          "attribute": "type",
+          "native": "string",
+          "upstream": null
+        },
+        {
+          "field": "property_id",
+          "attribute": "description",
+          "native": "Positive numeric GA4 property ID or canonical properties/<id>.",
+          "upstream": "The Google Analytics property id as integer or \"properties/<id>\"."
+        }
+      ]
+    },
+    {
+      "name": "get_property_data_retention_settings",
+      "missing_properties": [],
+      "additional_properties": [],
+      "required_match": true,
+      "native_required": [
+        "property_id"
+      ],
+      "upstream_required": [
+        "property_id"
+      ],
+      "attribute_differences": [
+        {
+          "field": "property_id",
+          "attribute": "type",
+          "native": "string",
+          "upstream": null
+        },
+        {
+          "field": "property_id",
+          "attribute": "description",
+          "native": "Positive numeric GA4 property ID or canonical properties/<id>.",
+          "upstream": "The Google Analytics property id as integer or \"properties/<id>\"."
+        }
+      ]
+    },
+    {
+      "name": "get_property_details",
+      "missing_properties": [],
+      "additional_properties": [],
+      "required_match": true,
+      "native_required": [
+        "property_id"
+      ],
+      "upstream_required": [
+        "property_id"
+      ],
+      "attribute_differences": [
+        {
+          "field": "property_id",
+          "attribute": "type",
+          "native": "string",
+          "upstream": null
+        },
+        {
+          "field": "property_id",
+          "attribute": "description",
+          "native": "Positive numeric GA4 property ID or canonical properties/<id>.",
+          "upstream": "The Google Analytics property id as integer or \"properties/<id>\"."
+        }
+      ]
+    },
+    {
+      "name": "list_google_ads_links",
+      "missing_properties": [],
+      "additional_properties": [],
+      "required_match": true,
+      "native_required": [
+        "property_id"
+      ],
+      "upstream_required": [
+        "property_id"
+      ],
+      "attribute_differences": [
+        {
+          "field": "max_pages",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Optional max pages to fetch before stopping."
+        },
+        {
+          "field": "page_size",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Optional page size used during pagination. Defaults to server max."
+        },
+        {
+          "field": "property_id",
+          "attribute": "type",
+          "native": "string",
+          "upstream": null
+        },
+        {
+          "field": "property_id",
+          "attribute": "description",
+          "native": null,
+          "upstream": "The Google Analytics property id as integer or \"properties/<id>\"."
+        }
+      ]
+    },
+    {
+      "name": "list_property_annotations",
+      "missing_properties": [],
+      "additional_properties": [],
+      "required_match": true,
+      "native_required": [
+        "property_id"
+      ],
+      "upstream_required": [
+        "property_id"
+      ],
+      "attribute_differences": [
+        {
+          "field": "max_pages",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Optional max pages to fetch before stopping."
+        },
+        {
+          "field": "page_size",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Optional page size used during pagination. Defaults to server max."
+        },
+        {
+          "field": "property_id",
+          "attribute": "type",
+          "native": "string",
+          "upstream": null
+        },
+        {
+          "field": "property_id",
+          "attribute": "description",
+          "native": null,
+          "upstream": "The Google Analytics property id as integer or \"properties/<id>\"."
+        }
+      ]
+    },
+    {
+      "name": "preview_report_request",
+      "missing_properties": [
+        "cursor",
+        "max_cell_chars",
+        "max_rows",
+        "output_mode",
+        "summary_only"
+      ],
+      "additional_properties": [
+        "keep_empty_rows"
+      ],
+      "required_match": true,
+      "native_required": [
+        "date_ranges",
+        "dimensions",
+        "metrics",
+        "property_id"
+      ],
+      "upstream_required": [
+        "date_ranges",
+        "dimensions",
+        "metrics",
+        "property_id"
+      ],
+      "attribute_differences": [
+        {
+          "field": "currency_code",
+          "attribute": "description",
+          "native": "ISO currency code.",
+          "upstream": null
+        },
+        {
+          "field": "date_ranges",
+          "attribute": "description",
+          "native": "Historical date ranges, e.g. [{\"startDate\":\"7daysAgo\",\"endDate\":\"today\"}].",
+          "upstream": null
+        },
+        {
+          "field": "date_ranges",
+          "attribute": "items",
+          "native": true,
+          "upstream": {
+            "$ref": "#/$defs/ReportDateRangeSchema"
+          }
+        },
+        {
+          "field": "dimension_filter",
+          "attribute": "description",
+          "native": "Optional Google FilterExpression.",
+          "upstream": "GA FilterExpression. Accepts an object, JSON-object string, or `field==value` shorthand."
+        },
+        {
+          "field": "dimensions",
+          "attribute": "description",
+          "native": "Names of dimensions (not Dimension objects).",
+          "upstream": null
+        },
+        {
+          "field": "limit",
+          "attribute": "description",
+          "native": "Limit rows returned.",
+          "upstream": null
+        },
+        {
+          "field": "limit",
+          "attribute": "format",
+          "native": "uint32",
+          "upstream": "uint64"
+        },
+        {
+          "field": "metric_filter",
+          "attribute": "description",
+          "native": "Optional Google FilterExpression.",
+          "upstream": "GA FilterExpression. Accepts an object or JSON-object string."
+        },
+        {
+          "field": "metrics",
+          "attribute": "description",
+          "native": "Names of metrics (not Metric objects).",
+          "upstream": null
+        },
+        {
+          "field": "offset",
+          "attribute": "description",
+          "native": "Pagination offset.",
+          "upstream": null
+        },
+        {
+          "field": "order_bys",
+          "attribute": "description",
+          "native": "Optional Google OrderBy structures.",
+          "upstream": null
+        },
+        {
+          "field": "property_id",
+          "attribute": "type",
+          "native": "string",
+          "upstream": null
+        },
+        {
+          "field": "property_id",
+          "attribute": "description",
+          "native": "Positive numeric GA4 property ID or canonical properties/<id>.",
+          "upstream": null
+        },
+        {
+          "field": "return_property_quota",
+          "attribute": "description",
+          "native": "Include GA4 property quota metadata in the provider response (upstream default: true).",
+          "upstream": null
+        }
+      ]
+    },
+    {
+      "name": "run_account_access_report",
+      "missing_properties": [
+        "cursor",
+        "max_cell_chars",
+        "max_rows",
+        "output_mode",
+        "summary_only"
+      ],
+      "additional_properties": [],
+      "required_match": true,
+      "native_required": [
+        "account_id",
+        "date_ranges",
+        "dimensions",
+        "metrics"
+      ],
+      "upstream_required": [
+        "account_id",
+        "date_ranges",
+        "dimensions",
+        "metrics"
+      ],
+      "attribute_differences": [
+        {
+          "field": "account_id",
+          "attribute": "type",
+          "native": "string",
+          "upstream": null
+        },
+        {
+          "field": "date_ranges",
+          "attribute": "items",
+          "native": true,
+          "upstream": {
+            "$ref": "#/$defs/ReportDateRangeSchema"
+          }
+        },
+        {
+          "field": "dimension_filter",
+          "attribute": "description",
+          "native": null,
+          "upstream": "GA FilterExpression. Accepts an object, JSON-object string, or `field==value` shorthand."
+        },
+        {
+          "field": "limit",
+          "attribute": "format",
+          "native": "uint32",
+          "upstream": "uint64"
+        },
+        {
+          "field": "metric_filter",
+          "attribute": "description",
+          "native": null,
+          "upstream": "GA FilterExpression. Accepts an object or JSON-object string."
+        }
+      ]
+    },
+    {
+      "name": "run_conversions_report",
+      "missing_properties": [
+        "cursor",
+        "max_cell_chars",
+        "max_rows",
+        "output_mode",
+        "summary_only"
+      ],
+      "additional_properties": [],
+      "required_match": true,
+      "native_required": [
+        "conversion_spec",
+        "date_ranges",
+        "dimensions",
+        "metrics",
+        "property_id"
+      ],
+      "upstream_required": [
+        "conversion_spec",
+        "date_ranges",
+        "dimensions",
+        "metrics",
+        "property_id"
+      ],
+      "attribute_differences": [
+        {
+          "field": "date_ranges",
+          "attribute": "items",
+          "native": true,
+          "upstream": {
+            "$ref": "#/$defs/ReportDateRangeSchema"
+          }
+        },
+        {
+          "field": "dimension_filter",
+          "attribute": "description",
+          "native": null,
+          "upstream": "GA FilterExpression. Accepts an object, JSON-object string, or `field==value` shorthand."
+        },
+        {
+          "field": "dimensions",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Conversion-report dimensions. See the tool description for the supported names."
+        },
+        {
+          "field": "limit",
+          "attribute": "format",
+          "native": "uint32",
+          "upstream": "uint64"
+        },
+        {
+          "field": "metric_filter",
+          "attribute": "description",
+          "native": null,
+          "upstream": "GA FilterExpression. Accepts an object or JSON-object string."
+        },
+        {
+          "field": "metrics",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Conversion-report metrics. See the tool description for the supported names."
+        },
+        {
+          "field": "property_id",
+          "attribute": "type",
+          "native": "string",
+          "upstream": null
+        }
+      ]
+    },
+    {
+      "name": "run_funnel_report",
+      "missing_properties": [
+        "dimension_filter",
+        "funnel_visualization_type",
+        "is_open_funnel",
+        "limit",
+        "max_cell_chars",
+        "max_rows",
+        "output_mode",
+        "summary_only"
+      ],
+      "additional_properties": [],
+      "required_match": true,
+      "native_required": [
+        "funnel_steps",
+        "property_id"
+      ],
+      "upstream_required": [
+        "funnel_steps",
+        "property_id"
+      ],
+      "attribute_differences": [
+        {
+          "field": "date_ranges",
+          "attribute": "type",
+          "native": [
+            "array",
+            "null"
+          ],
+          "upstream": "array"
+        },
+        {
+          "field": "date_ranges",
+          "attribute": "default",
+          "native": null,
+          "upstream": []
+        },
+        {
+          "field": "date_ranges",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Optional report date ranges."
+        },
+        {
+          "field": "date_ranges",
+          "attribute": "items",
+          "native": true,
+          "upstream": {
+            "$ref": "#/$defs/ReportDateRangeSchema"
+          }
+        },
+        {
+          "field": "funnel_breakdown",
+          "attribute": "anyOf",
+          "native": null,
+          "upstream": [
+            {
+              "$ref": "#/$defs/FunnelBreakdownArgs"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        {
+          "field": "funnel_next_action",
+          "attribute": "anyOf",
+          "native": null,
+          "upstream": [
+            {
+              "$ref": "#/$defs/FunnelNextActionArgs"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        {
+          "field": "funnel_steps",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Ordered funnel steps. Each step must set exactly one of `event` or `filter_expression`."
+        },
+        {
+          "field": "funnel_steps",
+          "attribute": "items",
+          "native": true,
+          "upstream": {
+            "$ref": "#/$defs/FunnelStepArgs"
+          }
+        },
+        {
+          "field": "property_id",
+          "attribute": "type",
+          "native": "string",
+          "upstream": null
+        },
+        {
+          "field": "segments",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Optional GA segment objects. Google permits at most four."
+        }
+      ]
+    },
+    {
+      "name": "run_pivot_report",
+      "missing_properties": [
+        "cursor",
+        "max_cell_chars",
+        "max_rows",
+        "output_mode",
+        "summary_only"
+      ],
+      "additional_properties": [],
+      "required_match": true,
+      "native_required": [
+        "date_ranges",
+        "dimensions",
+        "metrics",
+        "pivots",
+        "property_id"
+      ],
+      "upstream_required": [
+        "date_ranges",
+        "dimensions",
+        "metrics",
+        "pivots",
+        "property_id"
+      ],
+      "attribute_differences": [
+        {
+          "field": "date_ranges",
+          "attribute": "items",
+          "native": true,
+          "upstream": {
+            "$ref": "#/$defs/ReportDateRangeSchema"
+          }
+        },
+        {
+          "field": "dimension_filter",
+          "attribute": "description",
+          "native": null,
+          "upstream": "GA FilterExpression. Accepts an object, JSON-object string, or `field==value` shorthand."
+        },
+        {
+          "field": "keep_empty_rows",
+          "attribute": "type",
+          "native": [
+            "boolean",
+            "null"
+          ],
+          "upstream": "boolean"
+        },
+        {
+          "field": "keep_empty_rows",
+          "attribute": "default",
+          "native": null,
+          "upstream": false
+        },
+        {
+          "field": "metric_filter",
+          "attribute": "description",
+          "native": null,
+          "upstream": "GA FilterExpression. Accepts an object or JSON-object string."
+        },
+        {
+          "field": "property_id",
+          "attribute": "type",
+          "native": "string",
+          "upstream": null
+        }
+      ]
+    },
+    {
+      "name": "run_property_access_report",
+      "missing_properties": [
+        "cursor",
+        "max_cell_chars",
+        "max_rows",
+        "output_mode",
+        "summary_only"
+      ],
+      "additional_properties": [],
+      "required_match": true,
+      "native_required": [
+        "date_ranges",
+        "dimensions",
+        "metrics",
+        "property_id"
+      ],
+      "upstream_required": [
+        "date_ranges",
+        "dimensions",
+        "metrics",
+        "property_id"
+      ],
+      "attribute_differences": [
+        {
+          "field": "date_ranges",
+          "attribute": "items",
+          "native": true,
+          "upstream": {
+            "$ref": "#/$defs/ReportDateRangeSchema"
+          }
+        },
+        {
+          "field": "dimension_filter",
+          "attribute": "description",
+          "native": null,
+          "upstream": "GA FilterExpression. Accepts an object, JSON-object string, or `field==value` shorthand."
+        },
+        {
+          "field": "limit",
+          "attribute": "format",
+          "native": "uint32",
+          "upstream": "uint64"
+        },
+        {
+          "field": "metric_filter",
+          "attribute": "description",
+          "native": null,
+          "upstream": "GA FilterExpression. Accepts an object or JSON-object string."
+        },
+        {
+          "field": "property_id",
+          "attribute": "type",
+          "native": "string",
+          "upstream": null
+        }
+      ]
+    },
+    {
+      "name": "run_realtime_report",
+      "missing_properties": [
+        "cursor",
+        "max_cell_chars",
+        "max_rows",
+        "offset",
+        "order_bys",
+        "output_mode",
+        "summary_only"
+      ],
+      "additional_properties": [],
+      "required_match": true,
+      "native_required": [
+        "dimensions",
+        "metrics",
+        "property_id"
+      ],
+      "upstream_required": [
+        "dimensions",
+        "metrics",
+        "property_id"
+      ],
+      "attribute_differences": [
+        {
+          "field": "dimension_filter",
+          "attribute": "description",
+          "native": null,
+          "upstream": "GA FilterExpression. Accepts an object, JSON-object string, or `field==value` shorthand."
+        },
+        {
+          "field": "limit",
+          "attribute": "format",
+          "native": "uint32",
+          "upstream": "uint64"
+        },
+        {
+          "field": "metric_filter",
+          "attribute": "description",
+          "native": null,
+          "upstream": "GA FilterExpression. Accepts an object or JSON-object string."
+        },
+        {
+          "field": "property_id",
+          "attribute": "type",
+          "native": "string",
+          "upstream": null
+        }
+      ]
+    },
+    {
+      "name": "run_report",
+      "missing_properties": [
+        "cursor",
+        "max_cell_chars",
+        "max_rows",
+        "output_mode",
+        "summary_only"
+      ],
+      "additional_properties": [
+        "keep_empty_rows"
+      ],
+      "required_match": true,
+      "native_required": [
+        "date_ranges",
+        "dimensions",
+        "metrics",
+        "property_id"
+      ],
+      "upstream_required": [
+        "date_ranges",
+        "dimensions",
+        "metrics",
+        "property_id"
+      ],
+      "attribute_differences": [
+        {
+          "field": "currency_code",
+          "attribute": "description",
+          "native": "ISO currency code.",
+          "upstream": null
+        },
+        {
+          "field": "date_ranges",
+          "attribute": "description",
+          "native": "Historical date ranges, e.g. [{\"startDate\":\"7daysAgo\",\"endDate\":\"today\"}].",
+          "upstream": null
+        },
+        {
+          "field": "date_ranges",
+          "attribute": "items",
+          "native": true,
+          "upstream": {
+            "$ref": "#/$defs/ReportDateRangeSchema"
+          }
+        },
+        {
+          "field": "dimension_filter",
+          "attribute": "description",
+          "native": "Optional Google FilterExpression.",
+          "upstream": "GA FilterExpression. Accepts an object, JSON-object string, or `field==value` shorthand."
+        },
+        {
+          "field": "dimensions",
+          "attribute": "description",
+          "native": "Names of dimensions (not Dimension objects).",
+          "upstream": null
+        },
+        {
+          "field": "limit",
+          "attribute": "description",
+          "native": "Limit rows returned.",
+          "upstream": null
+        },
+        {
+          "field": "limit",
+          "attribute": "format",
+          "native": "uint32",
+          "upstream": "uint64"
+        },
+        {
+          "field": "metric_filter",
+          "attribute": "description",
+          "native": "Optional Google FilterExpression.",
+          "upstream": "GA FilterExpression. Accepts an object or JSON-object string."
+        },
+        {
+          "field": "metrics",
+          "attribute": "description",
+          "native": "Names of metrics (not Metric objects).",
+          "upstream": null
+        },
+        {
+          "field": "offset",
+          "attribute": "description",
+          "native": "Pagination offset.",
+          "upstream": null
+        },
+        {
+          "field": "order_bys",
+          "attribute": "description",
+          "native": "Optional Google OrderBy structures.",
+          "upstream": null
+        },
+        {
+          "field": "property_id",
+          "attribute": "type",
+          "native": "string",
+          "upstream": null
+        },
+        {
+          "field": "property_id",
+          "attribute": "description",
+          "native": "Positive numeric GA4 property ID or canonical properties/<id>.",
+          "upstream": null
+        },
+        {
+          "field": "return_property_quota",
+          "attribute": "description",
+          "native": "Include GA4 property quota metadata in the provider response (upstream default: true).",
+          "upstream": null
+        }
+      ]
+    },
+    {
+      "name": "scratchpad_close_session",
+      "missing_properties": [],
+      "additional_properties": [],
+      "required_match": true,
+      "native_required": [
+        "session_id"
+      ],
+      "upstream_required": [
+        "session_id"
+      ],
+      "attribute_differences": [
+        {
+          "field": "session_id",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Logical scratchpad session identifier."
+        }
+      ]
+    },
+    {
+      "name": "scratchpad_describe_table",
+      "missing_properties": [
+        "cursor",
+        "max_cell_chars",
+        "max_rows",
+        "output_mode",
+        "summary_only"
+      ],
+      "additional_properties": [],
+      "required_match": true,
+      "native_required": [
+        "session_id",
+        "table_name"
+      ],
+      "upstream_required": [
+        "session_id",
+        "table_name"
+      ],
+      "attribute_differences": [
+        {
+          "field": "session_id",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Logical scratchpad session identifier."
+        },
+        {
+          "field": "table_name",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Scratchpad table to target."
+        }
+      ]
+    },
+    {
+      "name": "scratchpad_drop_table",
+      "missing_properties": [],
+      "additional_properties": [],
+      "required_match": true,
+      "native_required": [
+        "session_id",
+        "table_name"
+      ],
+      "upstream_required": [
+        "session_id",
+        "table_name"
+      ],
+      "attribute_differences": [
+        {
+          "field": "if_exists",
+          "attribute": "description",
+          "native": null,
+          "upstream": "If true, return success when the table is absent."
+        },
+        {
+          "field": "session_id",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Logical scratchpad session identifier."
+        },
+        {
+          "field": "table_name",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Scratchpad table name to drop."
+        }
+      ]
+    },
+    {
+      "name": "scratchpad_export_evidence_bundle",
+      "missing_properties": [],
+      "additional_properties": [],
+      "required_match": true,
+      "native_required": [
+        "session_id"
+      ],
+      "upstream_required": [
+        "session_id"
+      ],
+      "attribute_differences": [
+        {
+          "field": "sample_rows_per_table",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Optional number of sample rows to include per table (default: 20)."
+        },
+        {
+          "field": "session_id",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Logical scratchpad session identifier."
+        },
+        {
+          "field": "table_names",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Optional subset of tables to include; defaults to all session tables (bounded)."
+        }
+      ]
+    },
+    {
+      "name": "scratchpad_get_runtime_limits",
+      "missing_properties": [],
+      "additional_properties": [],
+      "required_match": true,
+      "native_required": [],
+      "upstream_required": [],
+      "attribute_differences": []
+    },
+    {
+      "name": "scratchpad_ingest_realtime_report",
+      "missing_properties": [
+        "cursor",
+        "max_cell_chars",
+        "max_rows",
+        "output_mode",
+        "summary_only"
+      ],
+      "additional_properties": [],
+      "required_match": true,
+      "native_required": [
+        "dimensions",
+        "metrics",
+        "property_id",
+        "session_id",
+        "table_name"
+      ],
+      "upstream_required": [
+        "dimensions",
+        "metrics",
+        "property_id",
+        "session_id",
+        "table_name"
+      ],
+      "attribute_differences": [
+        {
+          "field": "append",
+          "attribute": "description",
+          "native": null,
+          "upstream": "If true, append rows into an existing scratchpad table with identical schema."
+        },
+        {
+          "field": "dimension_filter",
+          "attribute": "description",
+          "native": null,
+          "upstream": "GA FilterExpression. Accepts an object, JSON-object string, or `field==value` shorthand."
+        },
+        {
+          "field": "limit",
+          "attribute": "format",
+          "native": "uint32",
+          "upstream": "uint64"
+        },
+        {
+          "field": "metric_filter",
+          "attribute": "description",
+          "native": null,
+          "upstream": "GA FilterExpression. Accepts an object or JSON-object string."
+        },
+        {
+          "field": "property_id",
+          "attribute": "type",
+          "native": "string",
+          "upstream": null
+        },
+        {
+          "field": "session_id",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Logical scratchpad session identifier."
+        },
+        {
+          "field": "table_name",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Destination scratchpad table name."
+        }
+      ]
+    },
+    {
+      "name": "scratchpad_ingest_report",
+      "missing_properties": [
+        "cursor",
+        "max_cell_chars",
+        "max_rows",
+        "output_mode",
+        "summary_only"
+      ],
+      "additional_properties": [],
+      "required_match": true,
+      "native_required": [
+        "date_ranges",
+        "dimensions",
+        "metrics",
+        "property_id",
+        "session_id",
+        "table_name"
+      ],
+      "upstream_required": [
+        "date_ranges",
+        "dimensions",
+        "metrics",
+        "property_id",
+        "session_id",
+        "table_name"
+      ],
+      "attribute_differences": [
+        {
+          "field": "append",
+          "attribute": "description",
+          "native": null,
+          "upstream": "If true, append rows into an existing scratchpad table with identical schema."
+        },
+        {
+          "field": "date_ranges",
+          "attribute": "items",
+          "native": true,
+          "upstream": {
+            "$ref": "#/$defs/ReportDateRangeSchema"
+          }
+        },
+        {
+          "field": "dimension_filter",
+          "attribute": "description",
+          "native": null,
+          "upstream": "GA FilterExpression. Accepts an object, JSON-object string, or `field==value` shorthand."
+        },
+        {
+          "field": "limit",
+          "attribute": "format",
+          "native": "uint32",
+          "upstream": "uint64"
+        },
+        {
+          "field": "metric_filter",
+          "attribute": "description",
+          "native": null,
+          "upstream": "GA FilterExpression. Accepts an object or JSON-object string."
+        },
+        {
+          "field": "property_id",
+          "attribute": "type",
+          "native": "string",
+          "upstream": null
+        },
+        {
+          "field": "session_id",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Logical scratchpad session identifier."
+        },
+        {
+          "field": "table_name",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Destination scratchpad table name."
+        }
+      ]
+    },
+    {
+      "name": "scratchpad_landing_param_shift_report",
+      "missing_properties": [
+        "max_cell_chars",
+        "max_rows"
+      ],
+      "additional_properties": [],
+      "required_match": true,
+      "native_required": [
+        "release_date",
+        "session_id",
+        "table_name"
+      ],
+      "upstream_required": [
+        "release_date",
+        "session_id",
+        "table_name"
+      ],
+      "attribute_differences": [
+        {
+          "field": "channel_column",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Optional channel column; when unset, all rows are grouped under `all`."
+        },
+        {
+          "field": "cursor",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Opaque pagination cursor from `meta.next_cursor`."
+        },
+        {
+          "field": "date_column",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Optional date column name (defaults to `date_parsed`)."
+        },
+        {
+          "field": "landing_url_column",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Optional landing URL column (defaults to `landingpageplusquerystring`)."
+        },
+        {
+          "field": "output_mode",
+          "attribute": "type",
+          "native": [
+            "string",
+            "null"
+          ],
+          "upstream": null
+        },
+        {
+          "field": "output_mode",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Tabular output shape for the response payload."
+        },
+        {
+          "field": "output_mode",
+          "attribute": "anyOf",
+          "native": null,
+          "upstream": [
+            {
+              "$ref": "#/$defs/TabularOutputMode"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        {
+          "field": "post_days",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Number of post-release days after transition window (default: 7)."
+        },
+        {
+          "field": "pre_days",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Number of baseline days before `release_date` (default: 7)."
+        },
+        {
+          "field": "release_date",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Release date in `YYYY-MM-DD`."
+        },
+        {
+          "field": "session_id",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Logical scratchpad session identifier."
+        },
+        {
+          "field": "source_medium_column",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Optional source/medium column; when unset, all rows are grouped under `all`."
+        },
+        {
+          "field": "summary_only",
+          "attribute": "description",
+          "native": null,
+          "upstream": "If true, omit row payload and return metadata only."
+        },
+        {
+          "field": "table_name",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Scratchpad table to target."
+        },
+        {
+          "field": "top_n",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Maximum number of ranked parameter shifts to return (default: 100)."
+        },
+        {
+          "field": "transition_days",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Number of transition days from `release_date` (default: 1)."
+        }
+      ]
+    },
+    {
+      "name": "scratchpad_list_sessions",
+      "missing_properties": [],
+      "additional_properties": [],
+      "required_match": true,
+      "native_required": [],
+      "upstream_required": [],
+      "attribute_differences": [
+        {
+          "field": "limit",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Optional row cap for inventory listing."
+        }
+      ]
+    },
+    {
+      "name": "scratchpad_list_tables",
+      "missing_properties": [],
+      "additional_properties": [],
+      "required_match": true,
+      "native_required": [
+        "session_id"
+      ],
+      "upstream_required": [
+        "session_id"
+      ],
+      "attribute_differences": [
+        {
+          "field": "limit",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Optional row cap for table inventory listing."
+        },
+        {
+          "field": "session_id",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Logical scratchpad session identifier."
+        }
+      ]
+    },
+    {
+      "name": "scratchpad_open_session",
+      "missing_properties": [],
+      "additional_properties": [],
+      "required_match": true,
+      "native_required": [
+        "session_id"
+      ],
+      "upstream_required": [
+        "session_id"
+      ],
+      "attribute_differences": [
+        {
+          "field": "session_id",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Logical scratchpad session identifier."
+        }
+      ]
+    },
+    {
+      "name": "scratchpad_query",
+      "missing_properties": [],
+      "additional_properties": [],
+      "required_match": true,
+      "native_required": [
+        "session_id",
+        "sql"
+      ],
+      "upstream_required": [
+        "session_id",
+        "sql"
+      ],
+      "attribute_differences": [
+        {
+          "field": "cursor",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Opaque pagination cursor from `meta.next_cursor`."
+        },
+        {
+          "field": "max_cell_chars",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Optional string clipping limit applied to response cell values."
+        },
+        {
+          "field": "max_rows",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Optional response row cap for Contract V1 tabular payloads."
+        },
+        {
+          "field": "output_mode",
+          "attribute": "type",
+          "native": [
+            "string",
+            "null"
+          ],
+          "upstream": null
+        },
+        {
+          "field": "output_mode",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Tabular output shape for the response payload."
+        },
+        {
+          "field": "output_mode",
+          "attribute": "anyOf",
+          "native": null,
+          "upstream": [
+            {
+              "$ref": "#/$defs/TabularOutputMode"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        {
+          "field": "session_id",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Logical scratchpad session identifier."
+        },
+        {
+          "field": "sql",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Read-only SQL query against the scratchpad session."
+        },
+        {
+          "field": "summary_only",
+          "attribute": "description",
+          "native": null,
+          "upstream": "If true, omit row payload and return metadata only."
+        }
+      ]
+    },
+    {
+      "name": "scratchpad_release_regression_report",
+      "missing_properties": [
+        "max_cell_chars",
+        "max_rows"
+      ],
+      "additional_properties": [],
+      "required_match": true,
+      "native_required": [
+        "anchor_event",
+        "comparison_event",
+        "release_date",
+        "session_id",
+        "table_name"
+      ],
+      "upstream_required": [
+        "anchor_event",
+        "comparison_event",
+        "release_date",
+        "session_id",
+        "table_name"
+      ],
+      "attribute_differences": [
+        {
+          "field": "anchor_event",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Anchor event used as the instrumentation signal."
+        },
+        {
+          "field": "comparison_event",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Comparison event used as behavior baseline."
+        },
+        {
+          "field": "cursor",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Opaque pagination cursor from `meta.next_cursor`."
+        },
+        {
+          "field": "date_column",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Optional date column name (defaults to `date`)."
+        },
+        {
+          "field": "event_column",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Optional event-name column (defaults to `event_name`)."
+        },
+        {
+          "field": "metric_column",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Optional numeric metric column (defaults to row-count weighting)."
+        },
+        {
+          "field": "output_mode",
+          "attribute": "type",
+          "native": [
+            "string",
+            "null"
+          ],
+          "upstream": null
+        },
+        {
+          "field": "output_mode",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Tabular output shape for the response payload."
+        },
+        {
+          "field": "output_mode",
+          "attribute": "anyOf",
+          "native": null,
+          "upstream": [
+            {
+              "$ref": "#/$defs/TabularOutputMode"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        {
+          "field": "post_days",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Number of post-release days after transition window (default: 7)."
+        },
+        {
+          "field": "pre_days",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Number of baseline days before `release_date` (default: 7)."
+        },
+        {
+          "field": "release_date",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Release date in `YYYY-MM-DD`."
+        },
+        {
+          "field": "session_id",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Logical scratchpad session identifier."
+        },
+        {
+          "field": "summary_only",
+          "attribute": "description",
+          "native": null,
+          "upstream": "If true, omit row payload and return metadata only."
+        },
+        {
+          "field": "table_name",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Scratchpad table to target."
+        },
+        {
+          "field": "transition_days",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Number of transition days from `release_date` (default: 1)."
+        }
+      ]
+    },
+    {
+      "name": "scratchpad_set_runtime_limits",
+      "missing_properties": [],
+      "additional_properties": [],
+      "required_match": true,
+      "native_required": [],
+      "upstream_required": [],
+      "attribute_differences": [
+        {
+          "field": "max_sessions",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Maximum number of active scratchpad sessions allowed at runtime."
+        },
+        {
+          "field": "max_tables_per_session",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Maximum number of tables allowed per scratchpad session at runtime."
+        }
+      ]
+    },
+    {
+      "name": "scratchpad_summarize_table",
+      "missing_properties": [
+        "cursor",
+        "max_cell_chars",
+        "max_rows",
+        "output_mode",
+        "summary_only"
+      ],
+      "additional_properties": [],
+      "required_match": true,
+      "native_required": [
+        "session_id",
+        "table_name"
+      ],
+      "upstream_required": [
+        "session_id",
+        "table_name"
+      ],
+      "attribute_differences": [
+        {
+          "field": "session_id",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Logical scratchpad session identifier."
+        },
+        {
+          "field": "table_name",
+          "attribute": "description",
+          "native": null,
+          "upstream": "Scratchpad table to target."
+        }
+      ]
+    }
+  ],
+  "official": [
+    {
+      "name": "get_account_summaries",
+      "missing_parameters": [],
+      "additional_parameters": [
+        "max_pages",
+        "page_size"
+      ],
+      "native_required": [],
+      "upstream_required": [],
+      "required_match": true
+    },
+    {
+      "name": "list_google_ads_links",
+      "missing_parameters": [],
+      "additional_parameters": [
+        "max_pages",
+        "page_size"
+      ],
+      "native_required": [
+        "property_id"
+      ],
+      "upstream_required": [
+        "property_id"
+      ],
+      "required_match": true
+    },
+    {
+      "name": "get_property_details",
+      "missing_parameters": [],
+      "additional_parameters": [],
+      "native_required": [
+        "property_id"
+      ],
+      "upstream_required": [
+        "property_id"
+      ],
+      "required_match": true
+    },
+    {
+      "name": "list_property_annotations",
+      "missing_parameters": [],
+      "additional_parameters": [
+        "max_pages",
+        "page_size"
+      ],
+      "native_required": [
+        "property_id"
+      ],
+      "upstream_required": [
+        "property_id"
+      ],
+      "required_match": true
+    },
+    {
+      "name": "create_property_annotation",
+      "missing_parameters": [],
+      "additional_parameters": [],
+      "native_required": [
+        "property_id",
+        "start_date",
+        "title"
+      ],
+      "upstream_required": [
+        "property_id",
+        "start_date",
+        "title"
+      ],
+      "required_match": true
+    },
+    {
+      "name": "get_custom_dimensions_and_metrics",
+      "missing_parameters": [],
+      "additional_parameters": [],
+      "native_required": [
+        "property_id"
+      ],
+      "upstream_required": [
+        "property_id"
+      ],
+      "required_match": true
+    },
+    {
+      "name": "run_report",
+      "missing_parameters": [],
+      "additional_parameters": [
+        "keep_empty_rows"
+      ],
+      "native_required": [
+        "date_ranges",
+        "dimensions",
+        "metrics",
+        "property_id"
+      ],
+      "upstream_required": [
+        "date_ranges",
+        "dimensions",
+        "metrics",
+        "property_id"
+      ],
+      "required_match": true
+    },
+    {
+      "name": "run_realtime_report",
+      "missing_parameters": [
+        "offset",
+        "order_bys"
+      ],
+      "additional_parameters": [],
+      "native_required": [
+        "dimensions",
+        "metrics",
+        "property_id"
+      ],
+      "upstream_required": [
+        "dimensions",
+        "metrics",
+        "property_id"
+      ],
+      "required_match": true
+    },
+    {
+      "name": "run_funnel_report",
+      "missing_parameters": [],
+      "additional_parameters": [],
+      "native_required": [
+        "funnel_steps",
+        "property_id"
+      ],
+      "upstream_required": [
+        "funnel_steps",
+        "property_id"
+      ],
+      "required_match": true
+    },
+    {
+      "name": "run_conversions_report",
+      "missing_parameters": [],
+      "additional_parameters": [],
+      "native_required": [
+        "conversion_spec",
+        "date_ranges",
+        "dimensions",
+        "metrics",
+        "property_id"
+      ],
+      "upstream_required": [
+        "conversion_spec",
+        "date_ranges",
+        "dimensions",
+        "metrics",
+        "property_id"
+      ],
+      "required_match": true
+    }
+  ]
+}

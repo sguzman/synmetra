@@ -2986,12 +2986,12 @@
                 {
                   "text": "Deliver generate exact 36-name tool inventory from server as reviewable repository evidence",
                   "passed": true,
-                  "evidence": "src/main.rs full_capability_profile_matches_exact_pinned_36_tool_union compares Rust MCP router registry to docs/tool-inventory.json, both additive write opt-in and scratchpad enabled; feature-enabled cargo test passed GitHub Actions 40221573543 duckdb job. Tool existence is NOT functional parity."
+                  "evidence": "src/main.rs full_capability_profile_matches_exact_pinned_36_tool_union compares Rust MCP router registry to docs/tool-inventory.json, both additive write opt-in and scratchpad enabled; feature-enabled cargo test passed GitHub Actions 40224261534 duckdb job. Tool existence is NOT functional parity."
                 },
                 {
                   "text": "No missing or unexpected tool names in union gate",
                   "passed": true,
-                  "evidence": "src/main.rs full_capability_profile_matches_exact_pinned_36_tool_union compares Rust MCP router registry to docs/tool-inventory.json, both additive write opt-in and scratchpad enabled; feature-enabled cargo test passed GitHub Actions 40221573543 duckdb job. Tool existence is NOT functional parity."
+                  "evidence": "src/main.rs full_capability_profile_matches_exact_pinned_36_tool_union compares Rust MCP router registry to docs/tool-inventory.json, both additive write opt-in and scratchpad enabled; feature-enabled cargo test passed GitHub Actions 40224261534 duckdb job. Tool existence is NOT functional parity."
                 }
               ]
             },
@@ -2999,16 +2999,18 @@
               "id": "T155",
               "emoji": "📑",
               "name": "Compare required fields defaults descriptions and schemas",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "Diff against both upstream pinned snapshots reviewed",
               "checks": [
                 {
                   "text": "Deliver compare required fields defaults descriptions and schemas as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "spec/audits/native-tool-input-schemas-40224261534.json captures 36 native router schemas from actual feature-enabled passing GitHub Actions 40224261534 (source commit 43a69ecc); spec/audits/input-schema-differences-40224261534.json records machine-readable property names, required sets, and selected raw schema attributes. docs/SCHEMA_PARITY_AUDIT.md explains scope, provenance and remediation categories."
                 },
                 {
                   "text": "Diff against both upstream pinned snapshots reviewed",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "docs/SCHEMA_PARITY_AUDIT.md and spec/audits/input-schema-differences-40224261534.json compare native schema baseline with all 35 pinned SednaLabs JSON schemas and 10 official Google extracted signatures; report preserves all detected differences and explicitly identifies conflicting defaults/feature union and snapshot age. Comparison acceptance does not mean gaps resolved or 36-tool parity complete."
                 }
               ]
             },
@@ -3022,7 +3024,7 @@
                 {
                   "text": "Deliver implement contract v1 ok/data/meta responses as reviewable repository evidence",
                   "passed": true,
-                  "evidence": "src/main.rs `result` success envelope supplies ok/data/meta plus elapsed_ms_measured=false; tests mcp_text_envelopes_have_stable_error_categories_and_explicit_unmeasured_timing passed feature-enabled cargo test on GitHub Actions 40221573543 duckdb job. Response is text, not yet upstream structured MCP parity."
+                  "evidence": "src/main.rs `result` success envelope supplies ok/data/meta plus elapsed_ms_measured=false; tests mcp_text_envelopes_have_stable_error_categories_and_explicit_unmeasured_timing passed feature-enabled cargo test on GitHub Actions 40224261534 duckdb job. Response is text, not yet upstream structured MCP parity."
                 },
                 {
                   "text": "All Rust parity tools produce validated success envelope",
@@ -3040,7 +3042,7 @@
                 {
                   "text": "Deliver implement contract v1 ok/error/meta responses as reviewable repository evidence",
                   "passed": true,
-                  "evidence": "src/main.rs stable code, category, reason, message and optional HTTP status on errors; local_result provides local category; error envelope unit tests passed feature-enabled cargo test GitHub Actions 40221573543 duckdb job. All-tool taxonomy, structured MCP fields, and true elapsed times remain incomplete."
+                  "evidence": "src/main.rs stable code, category, reason, message and optional HTTP status on errors; local_result provides local category; error envelope unit tests passed feature-enabled cargo test GitHub Actions 40224261534 duckdb job. All-tool taxonomy, structured MCP fields, and true elapsed times remain incomplete."
                 },
                 {
                   "text": "Errors have stable status code reason and context fields",

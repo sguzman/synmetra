@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `███░░░░░░░ 28.6%` · **+28.63 percentage points from initial empty repo; +0.22 pp from CI-tested OAuth command options and native CLI flags** · 30/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `███░░░░░░░ 29.1%` · **+29.07 percentage points from initial empty repo; +0.44 pp from verified pinned schema-difference audit** · 31/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -441,7 +441,7 @@
   - ✅ **Gate:** Dependency license architecture and portability reviewed
 
 
-## 🧬 M7 — Tool contract interoperability and parity audits — `███░░░░░░░ 29.4%`
+## 🧬 M7 — Tool contract interoperability and parity audits — `████░░░░░░ 35.3%`
 
 **Scope:** MVP. **Acceptance gate:** All 36 tool schemas and response mappings are independently snapshot-tested against both pinned upstreams.
 
@@ -456,14 +456,14 @@
 - 🗝️ **T153 — Implement ga4_auth_login_command** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Native CLI guidance and MCP schema parity for ga4_auth_login_command · **Evidence (implementation only):** src/main.rs AuthLoginCommandArgs advertises all six pinned optional inputs, compares input schema types/defaults/descriptions/formats to pinned SednaLabs, POSIX-quotes generated commands, and rejects unsupported shared ADC/quota-project options explicitly; src/auth.rs implements CLI --account OAuth login hint, --callback-port, --headless with bounds/duplication tests. GitHub Actions 40225871288 core job passed fmt, tests, strict Clippy, ledger. Runtime parity for shared ADC/quota-project and live auth still pending.
 
-### 📜 P20 — Schema and error contract — `███░░░░░░░ 27.8%`
+### 📜 P20 — Schema and error contract — `████░░░░░░ 38.9%`
 
 **Feature:** Contracts and schemas.
 
 - 🪪 **T154 — Generate exact 36-name tool inventory from server** — `██████████ 100.0%`
-  - ✅ **Gate:** No missing or unexpected tool names in union gate · **Evidence:** src/main.rs full_capability_profile_matches_exact_pinned_36_tool_union compares Rust MCP router registry to docs/tool-inventory.json, both additive write opt-in and scratchpad enabled; feature-enabled cargo test passed GitHub Actions 40221573543 duckdb job. Tool existence is NOT functional parity.
-- 📑 **T155 — Compare required fields defaults descriptions and schemas** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Diff against both upstream pinned snapshots reviewed
+  - ✅ **Gate:** No missing or unexpected tool names in union gate · **Evidence:** src/main.rs full_capability_profile_matches_exact_pinned_36_tool_union compares Rust MCP router registry to docs/tool-inventory.json, both additive write opt-in and scratchpad enabled; feature-enabled cargo test passed GitHub Actions 40224261534 duckdb job. Tool existence is NOT functional parity.
+- 📑 **T155 — Compare required fields defaults descriptions and schemas** — `██████████ 100.0%`
+  - ✅ **Gate:** Diff against both upstream pinned snapshots reviewed · **Evidence:** spec/audits/native-tool-input-schemas-40224261534.json captures 36 native router schemas from actual feature-enabled passing GitHub Actions 40224261534 (source commit 43a69ecc); spec/audits/input-schema-differences-40224261534.json records machine-readable property names, required sets, and selected raw schema attributes. docs/SCHEMA_PARITY_AUDIT.md explains scope, provenance and remediation categories.; docs/SCHEMA_PARITY_AUDIT.md and spec/audits/input-schema-differences-40224261534.json compare native schema baseline with all 35 pinned SednaLabs JSON schemas and 10 official Google extracted signatures; report preserves all detected differences and explicitly identifies conflicting defaults/feature union and snapshot age. Comparison acceptance does not mean gaps resolved or 36-tool parity complete.
 - 🧳 **T156 — Implement Contract V1 ok/data/meta responses** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** All Rust parity tools produce validated success envelope
 - ⚠️ **T157 — Implement Contract V1 ok/error/meta responses** — `█████░░░░░ 50.0%`
