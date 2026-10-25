@@ -126,7 +126,7 @@
   - ✅ **Gate:** Protocol wire fixtures pass multiple clients
 
 
-## 🔑 M2 — Google authentication and credential isolation — `██░░░░░░░░ 21.2%`
+## 🔑 M2 — Google authentication and credential isolation — `██░░░░░░░░ 21.1%`
 
 **Scope:** MVP. **Acceptance gate:** Secure, least-privilege, non-Python auth across interactive, local and service configurations; no secret leaks.
 
@@ -325,7 +325,7 @@
   - ✅ **Gate:** Quotas accessible without leaking tokens
 
 
-## ✍️ M5 — Explicitly gated GA mutation parity — `█████░░░░░ 53.8%`
+## ✍️ M5 — Explicitly gated GA mutation parity — `█████░░░░░ 53.9%`
 
 **Scope:** MVP. **Acceptance gate:** One official write tool operates with analytics.edit and explicit opt-in; ordinary mode cannot mutate GA.
 
