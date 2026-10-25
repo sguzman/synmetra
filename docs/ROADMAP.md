@@ -198,7 +198,7 @@
   - ✅ **Gate:** State cleared without touching unrelated Google apps
 
 
-## 🏢 M3 — Admin API information parity — `██████░░░░ 56.3%`
+## 🏢 M3 — Admin API information parity — `██████░░░░ 56.2%`
 
 **Scope:** MVP. **Acceptance gate:** All administrative read tools and metadata endpoints match pinned signatures and response behavior.
 
