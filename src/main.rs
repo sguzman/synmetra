@@ -1358,7 +1358,10 @@ impl Synmetra {
                 } else {
                     None
                 };
-                (self.api.access_report(&args.property_id, body, false).await, page)
+                (
+                    self.api.access_report(&args.property_id, body, false).await,
+                    page,
+                )
             }
             Err(error) => (Err(error), None),
         };
@@ -1420,7 +1423,10 @@ impl Synmetra {
                 } else {
                     None
                 };
-                (self.api.access_report(&args.account_id, body, true).await, page)
+                (
+                    self.api.access_report(&args.account_id, body, true).await,
+                    page,
+                )
             }
             Err(error) => (Err(error), None),
         };
