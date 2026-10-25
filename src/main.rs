@@ -30,6 +30,7 @@ enum GaResourceIdInput {
 
 /// The pinned SednaLabs JSON Schema names historical dates with snake_case.
 /// Runtime normalization additionally accepts Google camelCase and named ranges.
+#[allow(dead_code)] // Schema-only type: runtime deserialization intentionally retains Value aliases.
 #[derive(JsonSchema)]
 struct ReportDateRangeInput {
     start_date: String,
