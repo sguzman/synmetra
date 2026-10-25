@@ -2608,6 +2608,68 @@ mod tests {
     }
 
     #[test]
+    fn core_reporting_inputs_cover_pinned_contract_without_untracked_fields() {
+        use std::collections::BTreeSet;
+
+        let pinned: Value = serde_json::from_str(include_str!(
+            "../spec/upstream/sednalabs-tool-schema.v1.json"
+        ))
+        .unwrap();
+        let router = Synmetra::tool_router();
+        for name in ["run_report", "run_realtime_report", "run_conversions_report"] {
+            let upstream = pinned["tools"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|tool| tool["name"] == name)
+                .unwrap();
+            let local = router
+                .list_all()
+                .into_iter()
+                .find(|tool| tool.name == name)
+                .unwrap();
+            let expected: BTreeSet<_> = upstream["inputSchema"]["properties"]
+                .as_object()
+                .unwrap()
+                .keys()
+                .map(String::as_str)
+                .collect();
+            let actual: BTreeSet<_> = local.input_schema["properties"]
+                .as_object()
+                .unwrap()
+                .keys()
+                .map(String::as_str)
+                .collect();
+            assert!(expected.is_subset(&actual), "Missing pinned reporting fields: {name}");
+            let extras: Vec<_> = actual.difference(&expected).copied().collect();
+            if name == "run_report" {
+                assert_eq!(extras, ["keep_empty_rows"]);
+            } else {
+                assert!(extras.is_empty(), "Unexpected reporting fields for {name}: {extras:?}");
+            }
+
+            let expected_required: BTreeSet<_> = upstream["inputSchema"]["required"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .filter_map(Value::as_str)
+                .collect();
+            let actual_required: BTreeSet<_> = local.input_schema["required"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .filter_map(Value::as_str)
+                .collect();
+            assert_eq!(actual_required, expected_required, "Required fields differ for {name}");
+            assert_eq!(local.input_schema["properties"]["limit"]["format"], "uint64");
+            assert_eq!(
+                local.input_schema["properties"]["return_property_quota"]["default"],
+                upstream["inputSchema"]["properties"]["return_property_quota"]["default"]
+            );
+        }
+    }
+
+    #[test]
     fn conversion_spec_schema_advertises_pinned_action_and_attribution_fields() {
         let router = Synmetra::tool_router();
         let tool = router
@@ -2686,6 +2748,62 @@ mod tests {
         assert_eq!(payload["meta"]["row_count_returned"], 1);
         assert!(payload["meta"]["next_cursor"].as_str().is_some());
         assert!(!payload.to_string().contains("mock-private-token"));
+    }
+
+    #[tokio::test]
+    async fn conversion_report_denial_and_invalid_spec_fail_without_sensitive_output() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        use tokio::net::TcpListener;
+
+        let fields = json!({
+            "property_id":42,
+            "date_ranges":[{"start_date":"yesterday","end_date":"today"}],
+            "dimensions":["country"],
+            "metrics":["allConversionsByInteractionDate"],
+            "conversion_spec":{"attribution_model":"LAST_CLICK"}
+        });
+        let mut bad = fields.clone();
+        bad["conversion_spec"] = json!({"conversion_actions":["invalid-name"]});
+        let offline = Synmetra::new(GoogleClient::new(None), false)
+            .run_conversions_report(Parameters(serde_json::from_value(bad).unwrap()))
+            .await;
+        assert_eq!(offline.is_error, Some(true));
+        assert_eq!(offline.structured_content.unwrap()["error"]["code"], "INVALID_REQUEST");
+
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let endpoint = format!("http://{}", listener.local_addr().unwrap());
+        let responder = tokio::spawn(async move {
+            let (mut stream, _) = listener.accept().await.unwrap();
+            let mut buffer = [0u8; 4096];
+            let n = stream.read(&mut buffer).await.unwrap();
+            assert!(String::from_utf8_lossy(&buffer[..n])
+                .contains("properties/42:runReport"));
+            let body = r#"{"error":{"message":"sensitive-fixture-detail"}}"#;
+            let response = format!(
+                "HTTP/1.1 403 Forbidden\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                body.len(),
+                body
+            );
+            stream.write_all(response.as_bytes()).await.unwrap();
+        });
+        let server = Synmetra::new(
+            GoogleClient::with_endpoints(
+                Some("sensitive-fixture-token".into()),
+                &endpoint,
+                &endpoint,
+            ),
+            false,
+        );
+        let result = server
+            .run_conversions_report(Parameters(serde_json::from_value(fields).unwrap()))
+            .await;
+        responder.await.unwrap();
+        assert_eq!(result.is_error, Some(true));
+        let payload = result.structured_content.unwrap();
+        assert_eq!(payload["error"]["code"], "GOOGLE_HTTP_ERROR");
+        assert_eq!(payload["error"]["status_code"], 403);
+        assert!(!payload.to_string().contains("sensitive-fixture-token"));
+        assert!(!payload.to_string().contains("sensitive-fixture-detail"));
     }
 
     #[tokio::test]
