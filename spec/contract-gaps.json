@@ -1,0 +1,987 @@
+{
+  "schema": 1,
+  "reference": "sednalabs/ga4-mcp@039fd4620064fc4b76dc6bca641945aba52c14bc",
+  "checked_against": "3c3e993435956267fe0576324a0f26198749d1bd",
+  "method": "Static Rust handler signature/known request struct inspection; not a runtime-equivalence assertion.",
+  "tool_count": 35,
+  "defined_handlers": 27,
+  "missing_handlers": 8,
+  "known_required_field_gaps": 9,
+  "tools": [
+    {
+      "tool": "batch_run_reports",
+      "handler": "RawPropertyRequestArgs",
+      "reference_required": [
+        "property_id",
+        "requests"
+      ],
+      "reference_optional": [],
+      "native_declared_fields": [
+        "property_id",
+        "request"
+      ],
+      "missing_required": [
+        "requests"
+      ],
+      "missing_optional": [],
+      "missing": false
+    },
+    {
+      "tool": "check_report_compatibility",
+      "handler": "RawPropertyRequestArgs",
+      "reference_required": [
+        "property_id",
+        "dimensions",
+        "metrics"
+      ],
+      "reference_optional": [],
+      "native_declared_fields": [
+        "property_id",
+        "request"
+      ],
+      "missing_required": [
+        "dimensions",
+        "metrics"
+      ],
+      "missing_optional": [],
+      "missing": false
+    },
+    {
+      "tool": "ga4_auth_login_command",
+      "handler": "NoArgs",
+      "reference_required": [],
+      "reference_optional": [
+        "account",
+        "callback_port",
+        "client_id_file",
+        "headless",
+        "quota_project",
+        "shared_adc"
+      ],
+      "native_declared_fields": [],
+      "missing_required": [],
+      "missing_optional": [
+        "account",
+        "callback_port",
+        "client_id_file",
+        "headless",
+        "quota_project",
+        "shared_adc"
+      ],
+      "missing": false
+    },
+    {
+      "tool": "ga4_auth_status",
+      "handler": "NoArgs",
+      "reference_required": [],
+      "reference_optional": [
+        "verify_token"
+      ],
+      "native_declared_fields": [],
+      "missing_required": [],
+      "missing_optional": [
+        "verify_token"
+      ],
+      "missing": false
+    },
+    {
+      "tool": "ga4_get_started",
+      "handler": "NoArgs",
+      "reference_required": [],
+      "reference_optional": [],
+      "native_declared_fields": [],
+      "missing_required": [],
+      "missing_optional": [],
+      "missing": false
+    },
+    {
+      "tool": "get_account_data_sharing_settings",
+      "handler": "AccountArgs",
+      "reference_required": [
+        "account_id"
+      ],
+      "reference_optional": [],
+      "native_declared_fields": [
+        "account_id"
+      ],
+      "missing_required": [],
+      "missing_optional": [],
+      "missing": false
+    },
+    {
+      "tool": "get_account_summaries",
+      "handler": "NoArgs",
+      "reference_required": [],
+      "reference_optional": [
+        "max_pages",
+        "page_size"
+      ],
+      "native_declared_fields": [],
+      "missing_required": [],
+      "missing_optional": [
+        "max_pages",
+        "page_size"
+      ],
+      "missing": false
+    },
+    {
+      "tool": "get_custom_dimensions_and_metrics",
+      "handler": "PropertyArgs",
+      "reference_required": [
+        "property_id"
+      ],
+      "reference_optional": [],
+      "native_declared_fields": [
+        "property_id"
+      ],
+      "missing_required": [],
+      "missing_optional": [],
+      "missing": false
+    },
+    {
+      "tool": "get_property_data_retention_settings",
+      "handler": "PropertyArgs",
+      "reference_required": [
+        "property_id"
+      ],
+      "reference_optional": [],
+      "native_declared_fields": [
+        "property_id"
+      ],
+      "missing_required": [],
+      "missing_optional": [],
+      "missing": false
+    },
+    {
+      "tool": "get_property_details",
+      "handler": "PropertyArgs",
+      "reference_required": [
+        "property_id"
+      ],
+      "reference_optional": [],
+      "native_declared_fields": [
+        "property_id"
+      ],
+      "missing_required": [],
+      "missing_optional": [],
+      "missing": false
+    },
+    {
+      "tool": "list_google_ads_links",
+      "handler": "PropertyArgs",
+      "reference_required": [
+        "property_id"
+      ],
+      "reference_optional": [
+        "max_pages",
+        "page_size"
+      ],
+      "native_declared_fields": [
+        "property_id"
+      ],
+      "missing_required": [],
+      "missing_optional": [
+        "max_pages",
+        "page_size"
+      ],
+      "missing": false
+    },
+    {
+      "tool": "list_property_annotations",
+      "handler": "PropertyArgs",
+      "reference_required": [
+        "property_id"
+      ],
+      "reference_optional": [
+        "max_pages",
+        "page_size"
+      ],
+      "native_declared_fields": [
+        "property_id"
+      ],
+      "missing_required": [],
+      "missing_optional": [
+        "max_pages",
+        "page_size"
+      ],
+      "missing": false
+    },
+    {
+      "tool": "preview_report_request",
+      "handler": "ReportArgs",
+      "reference_required": [
+        "property_id",
+        "date_ranges",
+        "dimensions",
+        "metrics"
+      ],
+      "reference_optional": [
+        "currency_code",
+        "cursor",
+        "dimension_filter",
+        "limit",
+        "max_cell_chars",
+        "max_rows",
+        "metric_filter",
+        "offset",
+        "order_bys",
+        "output_mode",
+        "return_property_quota",
+        "summary_only"
+      ],
+      "native_declared_fields": [
+        "property_id",
+        "date_ranges",
+        "dimensions",
+        "metrics",
+        "dimension_filter",
+        "metric_filter",
+        "order_bys",
+        "limit",
+        "offset",
+        "currency_code",
+        "keep_empty_rows"
+      ],
+      "missing_required": [],
+      "missing_optional": [
+        "cursor",
+        "max_cell_chars",
+        "max_rows",
+        "output_mode",
+        "return_property_quota",
+        "summary_only"
+      ],
+      "missing": false
+    },
+    {
+      "tool": "run_account_access_report",
+      "handler": "RawAccountRequestArgs",
+      "reference_required": [
+        "account_id",
+        "date_ranges",
+        "dimensions",
+        "metrics"
+      ],
+      "reference_optional": [
+        "cursor",
+        "dimension_filter",
+        "limit",
+        "max_cell_chars",
+        "max_rows",
+        "metric_filter",
+        "offset",
+        "order_bys",
+        "output_mode",
+        "summary_only",
+        "time_zone"
+      ],
+      "native_declared_fields": [
+        "account_id",
+        "request"
+      ],
+      "missing_required": [
+        "date_ranges",
+        "dimensions",
+        "metrics"
+      ],
+      "missing_optional": [
+        "cursor",
+        "dimension_filter",
+        "limit",
+        "max_cell_chars",
+        "max_rows",
+        "metric_filter",
+        "offset",
+        "order_bys",
+        "output_mode",
+        "summary_only",
+        "time_zone"
+      ],
+      "missing": false
+    },
+    {
+      "tool": "run_conversions_report",
+      "handler": "RawPropertyRequestArgs",
+      "reference_required": [
+        "property_id",
+        "date_ranges",
+        "dimensions",
+        "metrics",
+        "conversion_spec"
+      ],
+      "reference_optional": [
+        "currency_code",
+        "cursor",
+        "dimension_filter",
+        "limit",
+        "max_cell_chars",
+        "max_rows",
+        "metric_filter",
+        "offset",
+        "order_bys",
+        "output_mode",
+        "return_property_quota",
+        "summary_only"
+      ],
+      "native_declared_fields": [
+        "property_id",
+        "request"
+      ],
+      "missing_required": [
+        "date_ranges",
+        "dimensions",
+        "metrics",
+        "conversion_spec"
+      ],
+      "missing_optional": [
+        "currency_code",
+        "cursor",
+        "dimension_filter",
+        "limit",
+        "max_cell_chars",
+        "max_rows",
+        "metric_filter",
+        "offset",
+        "order_bys",
+        "output_mode",
+        "return_property_quota",
+        "summary_only"
+      ],
+      "missing": false
+    },
+    {
+      "tool": "run_funnel_report",
+      "handler": "RawPropertyRequestArgs",
+      "reference_required": [
+        "property_id",
+        "funnel_steps"
+      ],
+      "reference_optional": [
+        "date_ranges",
+        "dimension_filter",
+        "funnel_breakdown",
+        "funnel_next_action",
+        "funnel_visualization_type",
+        "is_open_funnel",
+        "limit",
+        "max_cell_chars",
+        "max_rows",
+        "output_mode",
+        "return_property_quota",
+        "segments",
+        "summary_only"
+      ],
+      "native_declared_fields": [
+        "property_id",
+        "request"
+      ],
+      "missing_required": [
+        "funnel_steps"
+      ],
+      "missing_optional": [
+        "date_ranges",
+        "dimension_filter",
+        "funnel_breakdown",
+        "funnel_next_action",
+        "funnel_visualization_type",
+        "is_open_funnel",
+        "limit",
+        "max_cell_chars",
+        "max_rows",
+        "output_mode",
+        "return_property_quota",
+        "segments",
+        "summary_only"
+      ],
+      "missing": false
+    },
+    {
+      "tool": "run_pivot_report",
+      "handler": "RawPropertyRequestArgs",
+      "reference_required": [
+        "property_id",
+        "date_ranges",
+        "dimensions",
+        "metrics",
+        "pivots"
+      ],
+      "reference_optional": [
+        "currency_code",
+        "cursor",
+        "dimension_filter",
+        "keep_empty_rows",
+        "max_cell_chars",
+        "max_rows",
+        "metric_filter",
+        "order_bys",
+        "output_mode",
+        "return_property_quota",
+        "summary_only"
+      ],
+      "native_declared_fields": [
+        "property_id",
+        "request"
+      ],
+      "missing_required": [
+        "date_ranges",
+        "dimensions",
+        "metrics",
+        "pivots"
+      ],
+      "missing_optional": [
+        "currency_code",
+        "cursor",
+        "dimension_filter",
+        "keep_empty_rows",
+        "max_cell_chars",
+        "max_rows",
+        "metric_filter",
+        "order_bys",
+        "output_mode",
+        "return_property_quota",
+        "summary_only"
+      ],
+      "missing": false
+    },
+    {
+      "tool": "run_property_access_report",
+      "handler": "RawPropertyRequestArgs",
+      "reference_required": [
+        "property_id",
+        "date_ranges",
+        "dimensions",
+        "metrics"
+      ],
+      "reference_optional": [
+        "cursor",
+        "dimension_filter",
+        "limit",
+        "max_cell_chars",
+        "max_rows",
+        "metric_filter",
+        "offset",
+        "order_bys",
+        "output_mode",
+        "summary_only",
+        "time_zone"
+      ],
+      "native_declared_fields": [
+        "property_id",
+        "request"
+      ],
+      "missing_required": [
+        "date_ranges",
+        "dimensions",
+        "metrics"
+      ],
+      "missing_optional": [
+        "cursor",
+        "dimension_filter",
+        "limit",
+        "max_cell_chars",
+        "max_rows",
+        "metric_filter",
+        "offset",
+        "order_bys",
+        "output_mode",
+        "summary_only",
+        "time_zone"
+      ],
+      "missing": false
+    },
+    {
+      "tool": "run_realtime_report",
+      "handler": "RealtimeArgs",
+      "reference_required": [
+        "property_id",
+        "dimensions",
+        "metrics"
+      ],
+      "reference_optional": [
+        "cursor",
+        "dimension_filter",
+        "limit",
+        "max_cell_chars",
+        "max_rows",
+        "metric_filter",
+        "offset",
+        "order_bys",
+        "output_mode",
+        "return_property_quota",
+        "summary_only"
+      ],
+      "native_declared_fields": [
+        "property_id",
+        "dimensions",
+        "metrics",
+        "dimension_filter",
+        "metric_filter",
+        "limit"
+      ],
+      "missing_required": [],
+      "missing_optional": [
+        "cursor",
+        "max_cell_chars",
+        "max_rows",
+        "offset",
+        "order_bys",
+        "output_mode",
+        "return_property_quota",
+        "summary_only"
+      ],
+      "missing": false
+    },
+    {
+      "tool": "run_report",
+      "handler": "ReportArgs",
+      "reference_required": [
+        "property_id",
+        "date_ranges",
+        "dimensions",
+        "metrics"
+      ],
+      "reference_optional": [
+        "currency_code",
+        "cursor",
+        "dimension_filter",
+        "limit",
+        "max_cell_chars",
+        "max_rows",
+        "metric_filter",
+        "offset",
+        "order_bys",
+        "output_mode",
+        "return_property_quota",
+        "summary_only"
+      ],
+      "native_declared_fields": [
+        "property_id",
+        "date_ranges",
+        "dimensions",
+        "metrics",
+        "dimension_filter",
+        "metric_filter",
+        "order_bys",
+        "limit",
+        "offset",
+        "currency_code",
+        "keep_empty_rows"
+      ],
+      "missing_required": [],
+      "missing_optional": [
+        "cursor",
+        "max_cell_chars",
+        "max_rows",
+        "output_mode",
+        "return_property_quota",
+        "summary_only"
+      ],
+      "missing": false
+    },
+    {
+      "tool": "scratchpad_close_session",
+      "handler": "ScratchSessionArgs",
+      "reference_required": [
+        "session_id"
+      ],
+      "reference_optional": [],
+      "native_declared_fields": [
+        "session_id"
+      ],
+      "missing_required": [],
+      "missing_optional": [],
+      "missing": false
+    },
+    {
+      "tool": "scratchpad_describe_table",
+      "handler": "NOT IMPLEMENTED",
+      "reference_required": [
+        "session_id",
+        "table_name"
+      ],
+      "reference_optional": [
+        "cursor",
+        "max_cell_chars",
+        "max_rows",
+        "output_mode",
+        "summary_only"
+      ],
+      "native_declared_fields": [],
+      "missing_required": [
+        "session_id",
+        "table_name"
+      ],
+      "missing_optional": [
+        "cursor",
+        "max_cell_chars",
+        "max_rows",
+        "output_mode",
+        "summary_only"
+      ],
+      "missing": true
+    },
+    {
+      "tool": "scratchpad_drop_table",
+      "handler": "ScratchTableArgs",
+      "reference_required": [
+        "session_id",
+        "table_name"
+      ],
+      "reference_optional": [
+        "if_exists"
+      ],
+      "native_declared_fields": [
+        "session_id",
+        "table"
+      ],
+      "missing_required": [
+        "table_name"
+      ],
+      "missing_optional": [
+        "if_exists"
+      ],
+      "missing": false
+    },
+    {
+      "tool": "scratchpad_export_evidence_bundle",
+      "handler": "NOT IMPLEMENTED",
+      "reference_required": [
+        "session_id"
+      ],
+      "reference_optional": [
+        "sample_rows_per_table",
+        "table_names"
+      ],
+      "native_declared_fields": [],
+      "missing_required": [
+        "session_id"
+      ],
+      "missing_optional": [
+        "sample_rows_per_table",
+        "table_names"
+      ],
+      "missing": true
+    },
+    {
+      "tool": "scratchpad_get_runtime_limits",
+      "handler": "NoArgs",
+      "reference_required": [],
+      "reference_optional": [],
+      "native_declared_fields": [],
+      "missing_required": [],
+      "missing_optional": [],
+      "missing": false
+    },
+    {
+      "tool": "scratchpad_ingest_realtime_report",
+      "handler": "NOT IMPLEMENTED",
+      "reference_required": [
+        "session_id",
+        "table_name",
+        "property_id",
+        "dimensions",
+        "metrics"
+      ],
+      "reference_optional": [
+        "append",
+        "cursor",
+        "dimension_filter",
+        "limit",
+        "max_cell_chars",
+        "max_rows",
+        "metric_filter",
+        "offset",
+        "order_bys",
+        "output_mode",
+        "return_property_quota",
+        "summary_only"
+      ],
+      "native_declared_fields": [],
+      "missing_required": [
+        "session_id",
+        "table_name",
+        "property_id",
+        "dimensions",
+        "metrics"
+      ],
+      "missing_optional": [
+        "append",
+        "cursor",
+        "dimension_filter",
+        "limit",
+        "max_cell_chars",
+        "max_rows",
+        "metric_filter",
+        "offset",
+        "order_bys",
+        "output_mode",
+        "return_property_quota",
+        "summary_only"
+      ],
+      "missing": true
+    },
+    {
+      "tool": "scratchpad_ingest_report",
+      "handler": "NOT IMPLEMENTED",
+      "reference_required": [
+        "session_id",
+        "table_name",
+        "property_id",
+        "date_ranges",
+        "dimensions",
+        "metrics"
+      ],
+      "reference_optional": [
+        "append",
+        "currency_code",
+        "cursor",
+        "dimension_filter",
+        "limit",
+        "max_cell_chars",
+        "max_rows",
+        "metric_filter",
+        "offset",
+        "order_bys",
+        "output_mode",
+        "return_property_quota",
+        "summary_only"
+      ],
+      "native_declared_fields": [],
+      "missing_required": [
+        "session_id",
+        "table_name",
+        "property_id",
+        "date_ranges",
+        "dimensions",
+        "metrics"
+      ],
+      "missing_optional": [
+        "append",
+        "currency_code",
+        "cursor",
+        "dimension_filter",
+        "limit",
+        "max_cell_chars",
+        "max_rows",
+        "metric_filter",
+        "offset",
+        "order_bys",
+        "output_mode",
+        "return_property_quota",
+        "summary_only"
+      ],
+      "missing": true
+    },
+    {
+      "tool": "scratchpad_landing_param_shift_report",
+      "handler": "NOT IMPLEMENTED",
+      "reference_required": [
+        "session_id",
+        "table_name",
+        "release_date"
+      ],
+      "reference_optional": [
+        "channel_column",
+        "cursor",
+        "date_column",
+        "landing_url_column",
+        "max_cell_chars",
+        "max_rows",
+        "output_mode",
+        "post_days",
+        "pre_days",
+        "source_medium_column",
+        "summary_only",
+        "top_n",
+        "transition_days"
+      ],
+      "native_declared_fields": [],
+      "missing_required": [
+        "session_id",
+        "table_name",
+        "release_date"
+      ],
+      "missing_optional": [
+        "channel_column",
+        "cursor",
+        "date_column",
+        "landing_url_column",
+        "max_cell_chars",
+        "max_rows",
+        "output_mode",
+        "post_days",
+        "pre_days",
+        "source_medium_column",
+        "summary_only",
+        "top_n",
+        "transition_days"
+      ],
+      "missing": true
+    },
+    {
+      "tool": "scratchpad_list_sessions",
+      "handler": "NoArgs",
+      "reference_required": [],
+      "reference_optional": [
+        "limit"
+      ],
+      "native_declared_fields": [],
+      "missing_required": [],
+      "missing_optional": [
+        "limit"
+      ],
+      "missing": false
+    },
+    {
+      "tool": "scratchpad_list_tables",
+      "handler": "ScratchSessionArgs",
+      "reference_required": [
+        "session_id"
+      ],
+      "reference_optional": [
+        "limit"
+      ],
+      "native_declared_fields": [
+        "session_id"
+      ],
+      "missing_required": [],
+      "missing_optional": [
+        "limit"
+      ],
+      "missing": false
+    },
+    {
+      "tool": "scratchpad_open_session",
+      "handler": "NoArgs",
+      "reference_required": [
+        "session_id"
+      ],
+      "reference_optional": [],
+      "native_declared_fields": [],
+      "missing_required": [
+        "session_id"
+      ],
+      "missing_optional": [],
+      "missing": false
+    },
+    {
+      "tool": "scratchpad_query",
+      "handler": "NOT IMPLEMENTED",
+      "reference_required": [
+        "session_id",
+        "sql"
+      ],
+      "reference_optional": [
+        "cursor",
+        "max_cell_chars",
+        "max_rows",
+        "output_mode",
+        "summary_only"
+      ],
+      "native_declared_fields": [],
+      "missing_required": [
+        "session_id",
+        "sql"
+      ],
+      "missing_optional": [
+        "cursor",
+        "max_cell_chars",
+        "max_rows",
+        "output_mode",
+        "summary_only"
+      ],
+      "missing": true
+    },
+    {
+      "tool": "scratchpad_release_regression_report",
+      "handler": "NOT IMPLEMENTED",
+      "reference_required": [
+        "session_id",
+        "table_name",
+        "release_date",
+        "anchor_event",
+        "comparison_event"
+      ],
+      "reference_optional": [
+        "cursor",
+        "date_column",
+        "event_column",
+        "max_cell_chars",
+        "max_rows",
+        "metric_column",
+        "output_mode",
+        "post_days",
+        "pre_days",
+        "summary_only",
+        "transition_days"
+      ],
+      "native_declared_fields": [],
+      "missing_required": [
+        "session_id",
+        "table_name",
+        "release_date",
+        "anchor_event",
+        "comparison_event"
+      ],
+      "missing_optional": [
+        "cursor",
+        "date_column",
+        "event_column",
+        "max_cell_chars",
+        "max_rows",
+        "metric_column",
+        "output_mode",
+        "post_days",
+        "pre_days",
+        "summary_only",
+        "transition_days"
+      ],
+      "missing": true
+    },
+    {
+      "tool": "scratchpad_set_runtime_limits",
+      "handler": "ScratchLimitArgs",
+      "reference_required": [],
+      "reference_optional": [
+        "max_sessions",
+        "max_tables_per_session"
+      ],
+      "native_declared_fields": [
+        "max_sessions"
+      ],
+      "missing_required": [],
+      "missing_optional": [
+        "max_tables_per_session"
+      ],
+      "missing": false
+    },
+    {
+      "tool": "scratchpad_summarize_table",
+      "handler": "NOT IMPLEMENTED",
+      "reference_required": [
+        "session_id",
+        "table_name"
+      ],
+      "reference_optional": [
+        "cursor",
+        "max_cell_chars",
+        "max_rows",
+        "output_mode",
+        "summary_only"
+      ],
+      "native_declared_fields": [],
+      "missing_required": [
+        "session_id",
+        "table_name"
+      ],
+      "missing_optional": [
+        "cursor",
+        "max_cell_chars",
+        "max_rows",
+        "output_mode",
+        "summary_only"
+      ],
+      "missing": true
+    }
+  ]
+}
