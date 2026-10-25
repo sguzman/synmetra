@@ -2060,6 +2060,175 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn admin_handlers_preserve_golden_google_json_and_reject_403_without_leakage() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        use tokio::net::TcpListener;
+
+        for name in [
+            "get_account_summaries",
+            "get_property_details",
+            "get_account_data_sharing_settings",
+            "get_property_data_retention_settings",
+            "list_google_ads_links",
+            "list_property_annotations",
+            "get_custom_dimensions_and_metrics",
+        ] {
+            let routes: Vec<(&str, Value)> = match name {
+                "get_account_summaries" => vec![(
+                    "/v1beta/accountSummaries",
+                    json!({"accountSummaries":[{"name":"accounts/42"}]}),
+                )],
+                "get_property_details" => vec![(
+                    "/v1beta/properties/42",
+                    json!({"name":"properties/42","displayName":"Fixture property"}),
+                )],
+                "get_account_data_sharing_settings" => vec![(
+                    "/v1beta/accounts/42/dataSharingSettings",
+                    json!({"name":"accounts/42/dataSharingSettings","sharingWithGoogleSupportEnabled":false}),
+                )],
+                "get_property_data_retention_settings" => vec![(
+                    "/v1beta/properties/42/dataRetentionSettings",
+                    json!({"name":"properties/42/dataRetentionSettings","eventDataRetention":"FOURTEEN_MONTHS"}),
+                )],
+                "list_google_ads_links" => vec![(
+                    "/v1beta/properties/42/googleAdsLinks",
+                    json!({"googleAdsLinks":[{"name":"properties/42/googleAdsLinks/1"}]}),
+                )],
+                "list_property_annotations" => vec![(
+                    "/v1alpha/properties/42/reportingDataAnnotations",
+                    json!({"reportingDataAnnotations":[{"name":"properties/42/reportingDataAnnotations/1"}]}),
+                )],
+                "get_custom_dimensions_and_metrics" => vec![
+                    (
+                        "/v1beta/properties/42/customDimensions",
+                        json!({"customDimensions":[{"name":"properties/42/customDimensions/1"}]}),
+                    ),
+                    (
+                        "/v1beta/properties/42/customMetrics",
+                        json!({"customMetrics":[{"name":"properties/42/customMetrics/1"}]}),
+                    ),
+                ],
+                _ => unreachable!(),
+            };
+            for denied in [false, true] {
+                let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+                let endpoint = format!("http://{}", listener.local_addr().unwrap());
+                let api = GoogleClient::with_endpoints(
+                    Some("private-admin-fixture-token".into()),
+                    &endpoint,
+                    &endpoint,
+                );
+                let active = if denied {
+                    routes.iter().take(1).cloned().collect::<Vec<_>>()
+                } else {
+                    routes.clone()
+                };
+                let responder = tokio::spawn(async move {
+                    for (path, expected) in active {
+                        let (mut stream, _) = listener.accept().await.unwrap();
+                        let mut buffer = [0_u8; 4096];
+                        let read = stream.read(&mut buffer).await.unwrap();
+                        let request = String::from_utf8_lossy(&buffer[..read]);
+                        assert!(request.starts_with("GET "), "{request}");
+                        assert!(request.contains(path), "{request}");
+                        let status = if denied { "403 Forbidden" } else { "200 OK" };
+                        let body = if denied {
+                            json!({"error":{"code":403,"message":"Private fixture denial"}})
+                        } else {
+                            expected
+                        };
+                        let text = body.to_string();
+                        let response = format!(
+                            "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                            text.len(),
+                            text
+                        );
+                        stream.write_all(response.as_bytes()).await.unwrap();
+                    }
+                });
+                let server = Synmetra::new(api, false);
+                let actual = match name {
+                    "get_account_summaries" => {
+                        server
+                            .get_account_summaries(Parameters(CollectionArgs {
+                                page_size: None,
+                                max_pages: None,
+                            }))
+                            .await
+                    }
+                    "get_property_details" => {
+                        server
+                            .get_property_details(Parameters(PropertyArgs {
+                                property_id: "42".into(),
+                            }))
+                            .await
+                    }
+                    "get_account_data_sharing_settings" => {
+                        server
+                            .get_account_data_sharing_settings(Parameters(AccountArgs {
+                                account_id: "42".into(),
+                            }))
+                            .await
+                    }
+                    "get_property_data_retention_settings" => {
+                        server
+                            .get_property_data_retention_settings(Parameters(PropertyArgs {
+                                property_id: "42".into(),
+                            }))
+                            .await
+                    }
+                    "list_google_ads_links" => {
+                        server
+                            .list_google_ads_links(Parameters(PropertyCollectionArgs {
+                                property_id: "42".into(),
+                                page_size: None,
+                                max_pages: None,
+                            }))
+                            .await
+                    }
+                    "list_property_annotations" => {
+                        server
+                            .list_property_annotations(Parameters(PropertyCollectionArgs {
+                                property_id: "42".into(),
+                                page_size: None,
+                                max_pages: None,
+                            }))
+                            .await
+                    }
+                    "get_custom_dimensions_and_metrics" => {
+                        server
+                            .get_custom_dimensions_and_metrics(Parameters(PropertyArgs {
+                                property_id: "42".into(),
+                            }))
+                            .await
+                    }
+                    _ => unreachable!(),
+                };
+                responder.await.unwrap();
+                assert_eq!(actual.is_error, Some(denied), "{name} denied={denied}");
+                let payload = actual.structured_content.unwrap();
+                assert!(!payload.to_string().contains("private-admin-fixture-token"));
+                if denied {
+                    assert_eq!(payload["error"]["code"], "GOOGLE_HTTP_ERROR", "{name}");
+                    assert_eq!(payload["error"]["status_code"], 403, "{name}");
+                    assert_eq!(payload["error"]["category"], "upstream", "{name}");
+                } else if name == "get_custom_dimensions_and_metrics" {
+                    assert_eq!(
+                        payload["data"]["custom_dimensions"],
+                        json!([{"name":"properties/42/customDimensions/1"}])
+                    );
+                    assert_eq!(
+                        payload["data"]["custom_metrics"],
+                        json!([{"name":"properties/42/customMetrics/1"}])
+                    );
+                } else {
+                    assert_eq!(payload["data"], routes[0].1, "{name}");
+                }
+            }
+        }
+    }
+
+    #[tokio::test]
     async fn realtime_mcp_retains_provider_quota_without_fabricating_a_next_cursor() {
         use tokio::io::{AsyncReadExt, AsyncWriteExt};
         use tokio::net::TcpListener;
