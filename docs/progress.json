@@ -1809,7 +1809,7 @@
               "id": "T094",
               "emoji": "🔤",
               "name": "Support flexible dimension and metric filters",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "FilterExpression nested JSON and shorthand cases validated",
               "checks": [
                 {
@@ -1819,7 +1819,8 @@
                 },
                 {
                   "text": "FilterExpression nested JSON and shorthand cases validated",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs; GitHub Actions core job 121240177425 passed nested and shorthand FilterExpression fixtures, 2026-10-25."
                 }
               ]
             },

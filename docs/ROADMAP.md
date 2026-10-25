@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `██░░░░░░░░ 23.4%` · **+23.35 percentage points from initial empty repo; +0.44 pp in the verified bounded-filter round** · 21/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `██░░░░░░░░ 23.6%` · **+23.57 percentage points from initial empty repo; +0.22 pp in the verified shorthand round** · 21/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -245,7 +245,7 @@
   - ✅ **Gate:** No stale cross-principal cache confusion
 
 
-## 📊 M4 — Reporting, preflight and Data API parity — `███░░░░░░░ 25.0%`
+## 📊 M4 — Reporting, preflight and Data API parity — `███░░░░░░░ 26.7%`
 
 **Scope:** MVP. **Acceptance gate:** All report tools return correct GA4 semantics, including documented alpha, pagination and response projections.
 
@@ -270,7 +270,7 @@
 - 👥 **T090 — Implement run_account_access_report** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** MCP schema, Google request, golden output and error cases for run_account_access_report
 
-### 🧭 P11 — Preflight MCP tools — `████░░░░░░ 35.7%`
+### 🧭 P11 — Preflight MCP tools — `████░░░░░░ 42.9%`
 
 **Feature:** Preflight and metadata.
 
@@ -280,8 +280,8 @@
   - ✅ **Gate:** Validate its contract and unsupported metrics without wasteful report requests
 - 🧬 **T093 — Cache and refresh Data API metadata safely** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Metadata cache keys include property and caller
-- 🔤 **T094 — Support flexible dimension and metric filters** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** FilterExpression nested JSON and shorthand cases validated
+- 🔤 **T094 — Support flexible dimension and metric filters** — `██████████ 100.0%`
+  - ✅ **Gate:** FilterExpression nested JSON and shorthand cases validated · **Evidence:** src/google.rs: structured nested dimensionFilter and metricFilter pass unchanged through report_request; bounded recursive validation and valid nested AND/NOT fixture passed 2026-10-25 GitHub Actions core job 121238774791 (run 40216536190). Shorthand filters and live GA4 contract parity still unverified.; src/google.rs; GitHub Actions core job 121240177425 passed nested and shorthand FilterExpression fixtures, 2026-10-25.
 - 📅 **T095 — Validate date ranges and reserved dates** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Multiple ranges and dates behave as Google expects
 - 🧮 **T096 — Implement metric and dimension compatibility checks** — `░░░░░░░░░░ 0.0%`
