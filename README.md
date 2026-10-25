@@ -6,7 +6,7 @@
 
 **Project identity:** `#28BDAD` · CSS `oklch(72% 0.12 184)` — [OKLab color rationale](docs/COLOR.md).
 
-> **Status: experimental native Rust MCP stdio server, not production-ready.** 20 read-only tool handlers and one optional annotation write and native OAuth code compile and pass synthetic tests. No authorized live Google account, end-to-end login, full upstream schema parity, Streamable HTTP or DuckDB scratchpad has been verified. The GitHub repository's owner remains its GitHub account holder; ChatGPT is acting as delegated development steward.
+> **Status: experimental native Rust MCP stdio server, not production-ready.** 20 read-only tool handlers and one optional annotation write and native OAuth code compile and pass synthetic tests. No authorized live Google account, end-to-end login, or full upstream schema parity has been verified. Authenticated loopback HTTP passed a synthetic initialization test; optional DuckDB scratchpad code exists but its feature-enabled build and parity remain unverified. The GitHub repository's owner remains its GitHub account holder; ChatGPT is acting as delegated development steward.
 
 ## 📊 Evidence-backed progress
 
@@ -31,10 +31,10 @@ Detailed milestone, phase, feature and atomic-task progress: [ROADMAP](docs/ROAD
 ## 🦀 Mission and boundaries
 
 - **Single native Rust executable** `synmetra`, built for Linux / EndeavourOS and Codex first, supporting stdio and secure Streamable HTTP MCP.
-- All **36 distinct MCP tools** remain the target: Google's **10** (nine read and one optional gated annotation write), SednaLabs' **35**, **nine shared**. Currently 20 have provisional read-only routes and 1 has a gated mutation route; 15 scratchpad tools remain unimplemented and no route has passed full upstream parity/live GA acceptance.
+- All **36 distinct MCP tools** remain the target: Google's **10** (nine read and one optional gated annotation write), SednaLabs' **35**, **nine shared**. Currently 20 have provisional read-only routes and 1 has a gated mutation route; 7 optional scratchpad lifecycle handlers are implemented provisionally and 8 scratchpad analysis handlers are not implemented. No route has passed full upstream parity/live GA acceptance.
 - Comprehensive Google Analytics Admin + Data API read/report parity, alpha conversions and funnels, optional annotation creation.
 - Full optional DuckDB scratchpad, safe SQL sandbox, lifecycle/quotas, evidence export and release/landing comparisons.
-- Read-only by default, `analytics.readonly` scope, native OAuth/ADC/service account support, `analytics.edit` only on explicit opt-in; inbound HTTP identity and Google identity kept separate.
+- Read-only by default, `analytics.readonly` scope, native Desktop OAuth and short-lived bearer-token support. ADC and service-account support remain planned. `analytics.edit` requires explicit opt-in plus externally authorized credentials; inbound HTTP identity and Google identity are kept separate.
 - Preserve upstream feature semantics and argument coverage, add no surprise telemetry, protect credentials and user analytics.
 - No new runtime dependence on Python, node, npm or gcloud. Embedded DuckDB is a native database dependency and **not pure Rust**; see [architecture](docs/ARCHITECTURE.md).
 
@@ -49,3 +49,5 @@ Detailed milestone, phase, feature and atomic-task progress: [ROADMAP](docs/ROAD
 Build and launch the MCP stdio server with `cargo run --bin synmetra -- serve`. For desktop OAuth, use `synmetra auth login --client-id-file /path/to/desktop-oauth.json`; credentials are isolated to Synmetra and refreshed natively, without Python or npm. See [native MCP status and security caveats](docs/NATIVE_MCP.md). A valid Google Cloud OAuth Desktop client and actual GA4 property permissions are required for live use. Do not expose a remote endpoint or treat this as production-ready software.
 
 **Optional annotation writes:** `synmetra serve --allow-write` exposes `create_property_annotation` only when explicitly requested. The native OAuth flow currently requests read-only access; an authorized `analytics.edit` token and Google property permission are still required. [Write-gating and validation](docs/ANNOTATIONS.md). Remote public deployment is not implemented.
+
+**Optional scratchpad (experimental):** `cargo build --features scratchpad` and `synmetra serve --scratchpad` expose seven provisional in-memory DuckDB lifecycle operations. They are blocked on Streamable HTTP because per-client isolation is unfinished. Feature-enabled native compilation and contract verification remain pending. [Scratchpad limitations](docs/SCRATCHPAD.md) · [Upstream schema gaps](docs/SCHEMA_GAPS.md).
