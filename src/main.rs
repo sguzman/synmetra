@@ -2293,10 +2293,16 @@ mod tests {
             "batch_run_reports",
             "run_property_access_report",
         ] {
-            let tool = router.list_all().into_iter().find(|item| item.name == name).unwrap();
+            let tool = router
+                .list_all()
+                .into_iter()
+                .find(|item| item.name == name)
+                .unwrap();
             let full = serde_json::to_value(&tool.input_schema).unwrap();
             let items = if name == "batch_run_reports" {
-                let item_ref = full["properties"]["requests"]["items"]["$ref"].as_str().unwrap();
+                let item_ref = full["properties"]["requests"]["items"]["$ref"]
+                    .as_str()
+                    .unwrap();
                 let item_name = item_ref.strip_prefix("#/$defs/").unwrap();
                 &full["$defs"][item_name]["properties"]["date_ranges"]["items"]
             } else {
