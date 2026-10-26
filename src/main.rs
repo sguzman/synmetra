@@ -4931,7 +4931,7 @@ mod tests {
         assert_eq!(rejected.is_error, Some(true));
         assert_eq!(
             rejected.structured_content.unwrap()["error"]["code"],
-            "INVALID_REQUEST"
+            "CURSOR_QUERY_MISMATCH"
         );
     }
 

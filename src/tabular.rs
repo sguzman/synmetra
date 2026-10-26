@@ -568,7 +568,7 @@ mod tests {
             failures[1]["source_expected"]["code"],
             "CURSOR_QUERY_MISMATCH"
         );
-        assert_eq!(failures[1]["native_status"], "not_equivalent");
+        assert_eq!(failures[1]["native_status"], "matched_hash_mismatch_only");
     }
 
     #[test]
