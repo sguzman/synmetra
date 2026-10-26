@@ -2931,7 +2931,7 @@
               "id": "T145",
               "emoji": "🌍",
               "name": "Disable remote extensions and filesystem reads",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "No network or arbitrary path escape through DuckDB",
               "checks": [
                 {
@@ -2941,7 +2941,8 @@
                 },
                 {
                   "text": "No network or arbitrary path escape through DuckDB",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/scratchpad.rs opens exclusively in-memory DuckDB, locks enable_external_access=false, autoload_known_extensions=false, autoinstall_known_extensions=false, max_temp_directory_size='0B' and immutable configuration; SQL queries through MCP use the reconstructed SELECT-only grammar. Tests duckdb_engine_denies_external_file_access_beyond_restricted_sql_parser and raw_duckdb_external_file_and_loopback_vectors_leave_no_side_effects directly challenge native read_csv/read_parquet URL and local path access, COPY write, ATTACH, INSTALL/LOAD httpfs, and configuration bypasses, asserting no loopback listener connection and unchanged private sentinel file. The 200+ test native DuckDB suite and strict Clippy passed CI https://github.com/sguzman/synmetra/actions/runs/40389735091. Acceptance applies to the supported constrained engine and tested vectors, not an independent vulnerability audit or protection against OS-level same-user malware."
                 }
               ]
             },
