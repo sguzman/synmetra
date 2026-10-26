@@ -2567,7 +2567,8 @@ mod tests {
             let request = String::from_utf8_lossy(&buffer[..n]).to_ascii_lowercase();
             assert!(request.contains("post /v1beta/properties/42:runreport http/1.1"));
             assert!(request.contains("authorization: bearer synthetic-readonly-scope"));
-            let body = r#"{"error":{"status":"PERMISSION_DENIED","message":"private-property-fixture"}}"#;
+            let body =
+                r#"{"error":{"status":"PERMISSION_DENIED","message":"private-property-fixture"}}"#;
             let response = format!(
                 "HTTP/1.1 403 Forbidden\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
                 body.len(),

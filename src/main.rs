@@ -7434,7 +7434,9 @@ mod tests {
 
     #[test]
     fn local_edit_scope_denial_is_distinct_from_google_property_forbidden() {
-        let scope = result(Err(ApiError::EditScopeRequired)).structured_content.unwrap();
+        let scope = result(Err(ApiError::EditScopeRequired))
+            .structured_content
+            .unwrap();
         let provider = result(Err(ApiError::Http(403))).structured_content.unwrap();
         assert_eq!(scope["error"]["code"], "EDIT_SCOPE_REQUIRED");
         assert_eq!(scope["error"]["category"], "authorization");

@@ -21,7 +21,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          pacman -Syu --noconfirm --needed git rustup base-devel
+          pacman -Syu --noconfirm --needed git rustup base-devel cmake
           useradd --create-home --shell /bin/bash pkgbuild
           mkdir -p /home/pkgbuild/package
       - name: Check out recipe without persisting GitHub credentials
@@ -75,3 +75,39 @@ jobs:
           fi
           test ! -e /usr/bin/synmetra
           command -v git >/dev/null
+      - name: Prove optional bundled DuckDB compiles and runs on a fresh Arch Linux container
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d "$GITHUB_WORKSPACE/src"
+          cp -a "$GITHUB_WORKSPACE" /home/pkgbuild/feature-source
+          chown -R pkgbuild:pkgbuild /home/pkgbuild/feature-source
+          su - pkgbuild -c 'cd ~/feature-source && CARGO_BUILD_JOBS=2 cargo +1.99.1 test --locked --features scratchpad --bin synmetra'
+          su - pkgbuild -c 'cd ~/feature-source && CARGO_BUILD_JOBS=2 cargo +1.99.1 build --locked --features scratchpad --bin synmetra'
+          binary=/home/pkgbuild/feature-source/target/debug/synmetra
+          test -x "$binary"
+          readelf -h "$binary" | grep -Fq 'X86-64'
+          linkage="$(ldd "$binary")"
+          test -n "$linkage"
+          if grep -Fq 'not found' <<< "$linkage"; then
+            echo 'Bundled DuckDB binary has missing native shared libraries' >&2
+            exit 1
+          fi
+          if grep -Eiq 'lib(python|node|ssl|crypto)' <<< "$linkage"; then
+            echo 'Unexpected native runtime dependency in optional DuckDB binary' >&2
+            exit 1
+          fi
+          isolated="$(mktemp -d)"
+          trap 'rm -rf "$isolated"' EXIT
+          cat > "$isolated/request.jsonl" <<'JSON'
+          {"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"arch-duckdb-ci","version":"1"}}}
+          {"jsonrpc":"2.0","method":"notifications/initialized"}
+          {"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}
+          JSON
+          env -i PATH=/nonexistent XDG_CONFIG_HOME="$isolated" \
+            "$binary" serve --scratchpad < "$isolated/request.jsonl" \
+            > "$isolated/replies.jsonl" 2> "$isolated/stderr"
+          grep -Fq '"name":"scratchpad_query"' "$isolated/replies.jsonl"
+          grep -Fq '"name":"scratchpad_export_evidence_bundle"' "$isolated/replies.jsonl"
+          test ! -s "$isolated/stderr"
+          echo 'Fresh Arch bundled DuckDB: feature tests, ELF linkage and offline MCP tool discovery passed'
