@@ -5227,6 +5227,114 @@ mod tests {
 
     #[cfg(feature = "scratchpad")]
     #[test]
+    fn scratchpad_evidence_export_matches_pinned_inputs_and_bounded_json_markdown() {
+        use std::collections::BTreeSet;
+        let server = Synmetra::new(GoogleClient::new(None), false).enable_scratchpad();
+        let pinned: Value = serde_json::from_str(include_str!(
+            "../spec/upstream/sednalabs-tool-schema.v1.json"
+        ))
+        .unwrap();
+        let source = pinned["tools"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|tool| tool["name"] == "scratchpad_export_evidence_bundle")
+            .unwrap();
+        let actual = server
+            .router
+            .list_all()
+            .into_iter()
+            .find(|tool| tool.name == "scratchpad_export_evidence_bundle")
+            .unwrap();
+        let want: BTreeSet<_> = source["inputSchema"]["properties"]
+            .as_object()
+            .unwrap()
+            .keys()
+            .map(String::as_str)
+            .collect();
+        let have: BTreeSet<_> = actual.input_schema["properties"]
+            .as_object()
+            .unwrap()
+            .keys()
+            .map(String::as_str)
+            .collect();
+        assert_eq!(want, have);
+        let required: BTreeSet<_> = actual.input_schema["required"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter_map(Value::as_str)
+            .collect();
+        assert_eq!(required, BTreeSet::from(["session_id"]));
+
+        server
+            .scratchpad
+            .as_ref()
+            .unwrap()
+            .open("safe_fixture")
+            .unwrap();
+        let rows = json!({
+            "dimensionHeaders":[{"name":"country"}],
+            "metricHeaders":[{"name":"activeUsers"}],
+            "rows":[{"dimensionValues":[{"value":"Mexico"}],
+                     "metricValues":[{"value":"5"}]}]
+        });
+        server
+            .scratchpad
+            .as_ref()
+            .unwrap()
+            .ingest_ga_response("safe_fixture", "events", &rows, false)
+            .unwrap();
+        let export = server.scratchpad_export_evidence_bundle(Parameters(ScratchEvidenceArgs {
+            session_id: "safe_fixture".into(),
+            table_names: Some(vec!["events".into()]),
+            sample_rows_per_table: Some(1),
+        }));
+        assert_eq!(export.is_error, Some(false));
+        let content = export.structured_content.unwrap();
+        assert_eq!(content["data"]["provider_called"], false);
+        assert_eq!(content["data"]["tables"][0]["row_count"], 1);
+        assert_eq!(content["data"]["tables"][0]["sample_rows"][0]["country"], "Mexico");
+        assert_eq!(
+            content["data"]["tables"][0]["sample_query_sha256"]
+                .as_str()
+                .unwrap()
+                .len(),
+            64
+        );
+        assert!(content["data"]["markdown"]
+            .as_str()
+            .unwrap()
+            .starts_with("# Synmetra scratchpad evidence"));
+        assert!(serde_json::to_vec(&content["data"]).unwrap().len() <= 256 * 1024);
+        for invalid in [
+            ScratchEvidenceArgs {
+                session_id: "safe_fixture".into(),
+                table_names: Some(vec!["events".into(), "events".into()]),
+                sample_rows_per_table: Some(1),
+            },
+            ScratchEvidenceArgs {
+                session_id: "safe_fixture".into(),
+                table_names: Some(vec!["../secrets".into()]),
+                sample_rows_per_table: Some(1),
+            },
+            ScratchEvidenceArgs {
+                session_id: "safe_fixture".into(),
+                table_names: Some(vec!["events".into()]),
+                sample_rows_per_table: Some(21),
+            },
+        ] {
+            let rejected = server.scratchpad_export_evidence_bundle(Parameters(invalid));
+            assert_eq!(rejected.is_error, Some(true));
+            assert_eq!(
+                rejected.structured_content.unwrap()["error"]["code"],
+                "SCRATCHPAD_ERROR"
+            );
+        }
+    }
+
+    #[cfg(feature = "scratchpad")]
+    #[test]
     fn scratchpad_mcp_lifecycle_limits_and_private_tables_have_stable_envelopes() {
         let server = Synmetra::new(GoogleClient::new(None), false).enable_scratchpad();
         let open = server.scratchpad_open_session(Parameters(ScratchOpenArgs {
