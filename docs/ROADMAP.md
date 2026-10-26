@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `███████░░░ 66.7%` · **+66.74 percentage points from initial empty repo; +0.44 pp from verified OAuth cancellation and serialized retry recovery
+**Overall:** `███████░░░ 67.0%` · **+66.96 percentage points from initial empty repo; +0.22 pp from CI-backed Linux synthetic performance benchmarks
 
 ### 📏 Progress conventions
 
@@ -441,7 +441,7 @@
   - ✅ **Gate:** Dependency license architecture and portability reviewed · **Evidence:** src/main.rs and src/scratchpad.rs; GitHub Actions run 40206168306 successfully completed bundled-DuckDB feature tests (initial seven-route implementation); full strict-Clippy/updated-parameter parity and live GA tests remain separate acceptance gates.; docs/SCRATCHPAD.md, docs/ARCHITECTURE.md, Cargo.toml and src/scratchpad.rs reviewed: optional bundled DuckDB 1.4.2 includes native C/C++ linking with compiler/linker/runtime portability caveats; upstream Rust and native dependency licenses must remain accounted for under T013/T177/T216, and clean-install proof is T200/M9. DuckDB feature test https://github.com/sguzman/synmetra/actions/runs/40264614297 passed.
 
 
-## 🧬 M7 — Tool contract interoperability and parity audits — `███████░░░ 67.7%`
+## 🧬 M7 — Tool contract interoperability and parity audits — `███████░░░ 67.6%`
 
 **Scope:** MVP. **Acceptance gate:** All 36 tool schemas and response mappings are independently snapshot-tested against both pinned upstreams.
 
@@ -495,7 +495,7 @@
   - ✅ **Gate:** Changes open maintenance work rather than silently inflate parity · **Evidence:** .github/workflows/upstream-drift.yml watches exact SednaLabs schema and Google coordinator Git blob SHAs weekly and on reviewed lock/workflow changes; changes trigger stable [upstream-drift] local maintenance issue, never repin automatically. ci/test-upstream-drift-watch.sh executes the actual workflow shell body with mocked curl/gh, verifying unchanged, changed and duplicate issue cases. GitHub Actions drift workflow 40249957815 succeeded.; GitHub Actions 40249957815 offline fixture checks verify an upstream blob change fails the watch and opens exactly one review issue per source; repeat unchanged pin mismatch reuses an existing open issue and a second changed source opens a separate one. Real unchanged upstream watch also passed. No real upstream drift was forced and no real maintenance issue was created; this is synthetic acceptance of the detection/mutation control, not a source parity claim.
 
 
-## 🧪 M8 — Verification, resilience and security acceptance — `████░░░░░░ 39.3%`
+## 🧪 M8 — Verification, resilience and security acceptance — `████░░░░░░ 41.1%`
 
 **Scope:** MVP. **Acceptance gate:** Full offline and authorized live verification including malformed inputs, MCP interoperability and threat model.
 
@@ -547,7 +547,7 @@
 - 🗄️ **T186 — Record redacted reproducible live test ledger** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** All outcomes scoped with date and source SHA
 
-### 🛡️ P24 — Robustness and operational performance — `█████░░░░░ 50.0%`
+### 🛡️ P24 — Robustness and operational performance — `██████░░░░ 55.6%`
 
 **Feature:** Reliability and security.
 
@@ -555,8 +555,8 @@
   - ✅ **Gate:** Documented review of MCP prompt injection and auth vectors · **Evidence:** docs/LOCAL_EXECUTION_THREAT_MODEL.md and revised docs/SECURITY.md review MCP arguments, prompt-injected data, inbound bearer/Google OAuth separation, fixed provider hosts, optional DuckDB SQL and shared stdio session boundaries against src/main.rs, src/http.rs, src/google.rs and src/scratchpad.rs; independent pre-live signoff remains open.
 - 🧪 **T188 — Fuzz resource names filters cursors and JSON parsing** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Fuzz corpus with reproducible seeds and crash guard · **Evidence:** src/tabular.rs deterministic_resource_and_cursor_mutation_corpus_fails_closed supplies a fixed reproducible corpus of 20 invalid Google resource IDs, 12 malformed/cross-boundary pagination cursors and three changed-query cursor attempts, rejecting unsafe values before network access. src/google.rs adversarial_report_filter_corpus_is_bounded_before_google_network_access supplies oversized/nested/invalid JSON filter fixtures; src/http.rs json_rpc_protocol_errors_remain_separate_from_ga_validation_results covers malformed JSON MCP request bodies. The native core suite and canonical formatting passed in https://github.com/sguzman/synmetra/actions/runs/40268415511. This is deterministic mutation/corpus coverage, not a complete coverage-guided fuzz campaign or memory-safety certification.
-- ⏱️ **T189 — Benchmark startup latency peak RSS and tool calls** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Repeatable Linux measurements under no-cache and warm-cache
+- ⏱️ **T189 — Benchmark startup latency peak RSS and tool calls** — `█████░░░░░ 50.0%`
+  - ✅ **Gate:** Repeatable Linux measurements under no-cache and warm-cache · **Evidence:** ci/benchmark-native.sh measures 5 fresh native --help launches, 5 fresh native MCP initialize/list/call round trips and one five-call same-process fixture, with GNU time peak RSS and Linux nanosecond date full-command wall_ms. docs/BENCHMARK.md defines profiles/limitations, and spec/benchmarks/offline-40336644502.json stores all 11 measurements with source SHA. Core CI https://github.com/sguzman/synmetra/actions/runs/40336644502 passed the synthetic benchmark and JSON/RSS/time assertions. No real Google, no machine cache flush or production latency certification.
 - 🧰 **T190 — Handle network outage and Google API failure modes** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Actionable status without unsafe retries · **Evidence:** src/google.rs send_readonly_as and decode_response return typed redacted HTTP/transport errors, bound read-only retries to 3 attempts on 429/5xx, refuse unsafe transport replay and honor request/connect timeouts without retrying mutations. Tests readonly_429_exhausts_three_attempts_with_redacted_error and readonly_socket_drop_fails_without_unsafe_transport_retries passed core CI https://github.com/sguzman/synmetra/actions/runs/40267346239. User-actionable per-error diagnostics and live outage handling remain unaccepted.
 - ♻️ **T191 — Test OAuth refresh and cancellation under concurrency** — `██████████ 100.0%`

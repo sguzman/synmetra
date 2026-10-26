@@ -1,0 +1,110 @@
+{
+  "schema": "synmetra_synthetic_linux_benchmark",
+  "version": 1,
+  "ci_run": "https://github.com/sguzman/synmetra/actions/runs/40336644502",
+  "ci_job": 121619898658,
+  "source_sha": "b278dfd967725d3ca930f0ae6b1e585f0d9bc939",
+  "kernel": "Linux 7.0.0-1017-azure x86_64 GNU/Linux",
+  "binary_profile": "cargo +1.99.1 debug --locked; default features",
+  "profile_notes": "Synthetic offline test; fresh process is not an OS cold page cache. Timings include process startup/teardown and full calls. No latency SLO is claimed.",
+  "measurements": [
+    {
+      "run": 1,
+      "profile": "fresh_help",
+      "elapsed_s": 0,
+      "wall_ms": 14.537,
+      "max_rss_kib": 8996
+    },
+    {
+      "run": 1,
+      "profile": "fresh_mcp_roundtrip",
+      "elapsed_s": 0,
+      "wall_ms": 13.093,
+      "max_rss_kib": 17756
+    },
+    {
+      "run": 2,
+      "profile": "fresh_help",
+      "elapsed_s": 0,
+      "wall_ms": 6.803,
+      "max_rss_kib": 9284
+    },
+    {
+      "run": 2,
+      "profile": "fresh_mcp_roundtrip",
+      "elapsed_s": 0,
+      "wall_ms": 11.805,
+      "max_rss_kib": 17808
+    },
+    {
+      "run": 3,
+      "profile": "fresh_help",
+      "elapsed_s": 0,
+      "wall_ms": 6.788,
+      "max_rss_kib": 9068
+    },
+    {
+      "run": 3,
+      "profile": "fresh_mcp_roundtrip",
+      "elapsed_s": 0,
+      "wall_ms": 12.479,
+      "max_rss_kib": 17900
+    },
+    {
+      "run": 4,
+      "profile": "fresh_help",
+      "elapsed_s": 0,
+      "wall_ms": 6.804,
+      "max_rss_kib": 9204
+    },
+    {
+      "run": 4,
+      "profile": "fresh_mcp_roundtrip",
+      "elapsed_s": 0,
+      "wall_ms": 12.593,
+      "max_rss_kib": 17820
+    },
+    {
+      "run": 5,
+      "profile": "fresh_help",
+      "elapsed_s": 0,
+      "wall_ms": 6.776,
+      "max_rss_kib": 9212
+    },
+    {
+      "run": 5,
+      "profile": "fresh_mcp_roundtrip",
+      "elapsed_s": 0,
+      "wall_ms": 12.829,
+      "max_rss_kib": 17584
+    },
+    {
+      "run": 1,
+      "profile": "same_process_repeated_calls",
+      "calls": 5,
+      "elapsed_s": 0.01,
+      "wall_ms": 14.896,
+      "max_rss_kib": 17692
+    }
+  ],
+  "summary": {
+    "fresh_help": {
+      "median_wall_ms": 6.803,
+      "median_peak_rss_kib": 9204,
+      "min_wall_ms": 6.776,
+      "max_wall_ms": 14.537
+    },
+    "fresh_mcp_roundtrip": {
+      "median_wall_ms": 12.593,
+      "median_peak_rss_kib": 17808,
+      "min_wall_ms": 11.805,
+      "max_wall_ms": 13.093
+    },
+    "same_process_repeated_calls": {
+      "median_wall_ms": 14.896,
+      "median_peak_rss_kib": 17692,
+      "min_wall_ms": 14.896,
+      "max_wall_ms": 14.896
+    }
+  }
+}

@@ -3772,12 +3772,13 @@
               "id": "T189",
               "emoji": "⏱️",
               "name": "Benchmark startup latency peak RSS and tool calls",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Repeatable Linux measurements under no-cache and warm-cache",
               "checks": [
                 {
                   "text": "Deliver benchmark startup latency peak rss and tool calls as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "ci/benchmark-native.sh measures 5 fresh native --help launches, 5 fresh native MCP initialize/list/call round trips and one five-call same-process fixture, with GNU time peak RSS and Linux nanosecond date full-command wall_ms. docs/BENCHMARK.md defines profiles/limitations, and spec/benchmarks/offline-40336644502.json stores all 11 measurements with source SHA. Core CI https://github.com/sguzman/synmetra/actions/runs/40336644502 passed the synthetic benchmark and JSON/RSS/time assertions. No real Google, no machine cache flush or production latency certification."
                 },
                 {
                   "text": "Repeatable Linux measurements under no-cache and warm-cache",

@@ -23,3 +23,15 @@ The default harness executes five independent process rounds (configurable via `
 Because Linux file/dynamic loader caches persist across runs, a *fresh process* is **not** a true `drop_caches` cold run. This harness deliberately does not flush global kernel caches, require root, make live Google requests, or report private tokens. The second T189 acceptance check (repeatable verified cold/no-cache and warm-cache comparisons) stays open until that distinct methodology is independently demonstrated.
 
 Memory figures are process max RSS from GNU time (`%M` KiB); they are not cumulative disk, VRAM, host peak or allocator-only memory. GNU time's `elapsed_s` (`%e`) has only hundredth-second resolution and is unsuitable for very short startup comparisons. `wall_ms` uses Linux `date +%s%N` around the complete measured command and records milliseconds with three fractional digits. It includes process spawning and timer overhead, is wall-clock rather than monotonic, and must not be interpreted as isolated MCP handler latency. Synthetic setup and single local caller cannot predict multi-user or live Google networking.
+
+### CI baseline 40336644502 (synthetic only)
+
+The [passing core CI run 40336644502](https://github.com/sguzman/synmetra/actions/runs/40336644502), using source `b278dfd967725d3ca930f0ae6b1e585f0d9bc939` with default debug features on Linux `7.0.0-1017-azure x86_64`, produced a [machine-readable 11-measurement record](../spec/benchmarks/offline-40336644502.json). Median values over five fresh-process rounds were:
+
+| Profile | Median full-command wall time | Median peak RSS | Samples |
+| --- | ---: | ---: | ---: |
+| Offline `--help` | **6.803 ms** | **9,204 KiB** | 5 |
+| Initialize + list 20 tools + one synthetic MCP call | **12.593 ms** | **17,808 KiB** | 5 |
+| One session, five synthetic calls | **14.896 ms total** | **17,692 KiB** | 1 |
+
+The first help process measured **14.537 ms**, illustrating loader/scheduler/cache sensitivity. The benchmark is repeatable but these particular results represent **one CI runner, one source SHA, one debug build, warmed runner caches**, and a wall-clock timer including shell/process overhead. They do **not** establish per-tool request latency, a cold-cache run, release-build throughput or a speed improvement over either upstream server. T189's cold/warm comparison gate remains open.
