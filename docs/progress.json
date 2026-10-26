@@ -3901,7 +3901,7 @@
               "id": "T195",
               "emoji": "🦺",
               "name": "Exercise build reproducibility and supply-chain pinning",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Signed provenance and dependency audit evidence",
               "checks": [
                 {
@@ -3911,7 +3911,8 @@
                 },
                 {
                   "text": "Signed provenance and dependency audit evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "The release workflow passed two separate pinned Rust 1.99.1/Cargo.lock x86-64 binary SHA-256 comparisons, SHA-pinned actions/attest@v4 Sigstore/SLSA v1 archive attestation, and gh attestation verify -R sguzman/synmetra validating repository identity and SLSA predicate in https://github.com/sguzman/synmetra/actions/runs/40359969759. Independent cargo-deny Rust license/source checks passed https://github.com/sguzman/synmetra/actions/runs/40346651714. This accepts signed provenance and dependency-audit evidence only for an experimental default-feature Linux archive, not clean ARM64/EndeavourOS builds or native C++ compliance."
                 }
               ]
             }
@@ -4284,12 +4285,13 @@
               "id": "T214",
               "emoji": "📦",
               "name": "Publish checksummed Linux release assets",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Checksums and source commit visible",
               "checks": [
                 {
                   "text": "Deliver publish checksummed linux release assets as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "The experimental Linux workflow generated a normalized x86-64 tarball containing the commit SHA and license, verified its SHA-256 sidecar and extracted installed binary, and published these as GitHub Actions artifact 12667318243 in https://github.com/sguzman/synmetra/actions/runs/40359969759. docs/RELEASE_POLICY.md explicitly distinguishes the expiring Actions artifact from a permanent downloadable GitHub Release. The release-publication and durable checksummed-asset gate is still open."
                 },
                 {
                   "text": "Checksums and source commit visible",
@@ -4318,12 +4320,13 @@
               "id": "T216",
               "emoji": "🔏",
               "name": "Publish SBOM and binary dependency inventory",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Explicit native runtime dependencies and license compliance",
               "checks": [
                 {
                   "text": "Deliver publish sbom and binary dependency inventory as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "ci/generate-sbom.sh produces a CycloneDX 1.5 all-features Cargo.lock dependency graph, Rust declared-license metadata, and default-feature x86-64 ELF ldd-native-library inventory tied to source and binary SHA-256. https://github.com/sguzman/synmetra/actions/runs/40359969759 passed generation and JSON validation, with the files published as expiring Actions artifact https://github.com/sguzman/synmetra/actions/runs/40359969759/artifacts/12667318243; docs/SBOM.md explains scopes and limits. Full native DuckDB C++/system-library redistribution license clearance is unaccepted."
                 },
                 {
                   "text": "Explicit native runtime dependencies and license compliance",

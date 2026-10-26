@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `███████░░░ 72.2%` · **+72.25 percentage points from initial empty repo; +0.44 pp from repeatable release hashes and isolated artifact execution**
+**Overall:** `███████░░░ 72.9%` · **+72.91 percentage points from initial empty repo; +0.66 pp from CI-verified SLSA archive attestation, Linux checksum artifact and CycloneDX/native library inventory
 
 ### 📏 Progress conventions
 
@@ -495,7 +495,7 @@
   - ✅ **Gate:** Changes open maintenance work rather than silently inflate parity · **Evidence:** .github/workflows/upstream-drift.yml watches exact SednaLabs schema and Google coordinator Git blob SHAs weekly and on reviewed lock/workflow changes; changes trigger stable [upstream-drift] local maintenance issue, never repin automatically. ci/test-upstream-drift-watch.sh executes the actual workflow shell body with mocked curl/gh, verifying unchanged, changed and duplicate issue cases. GitHub Actions drift workflow 40249957815 succeeded.; GitHub Actions 40249957815 offline fixture checks verify an upstream blob change fails the watch and opens exactly one review issue per source; repeat unchanged pin mismatch reuses an existing open issue and a second changed source opens a separate one. Real unchanged upstream watch also passed. No real upstream drift was forced and no real maintenance issue was created; this is synthetic acceptance of the detection/mutation control, not a source parity claim.
 
 
-## 🧪 M8 — Verification, resilience and security acceptance — `█████░░░░░ 50.0%`
+## 🧪 M8 — Verification, resilience and security acceptance — `█████░░░░░ 51.8%`
 
 **Scope:** MVP. **Acceptance gate:** Full offline and authorized live verification including malformed inputs, MCP interoperability and threat model.
 
@@ -547,7 +547,7 @@
 - 🗄️ **T186 — Record redacted reproducible live test ledger** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** All outcomes scoped with date and source SHA
 
-### 🛡️ P24 — Robustness and operational performance — `███████░░░ 72.2%`
+### 🛡️ P24 — Robustness and operational performance — `████████░░ 77.8%`
 
 **Feature:** Reliability and security.
 
@@ -567,11 +567,11 @@
   - ✅ **Gate:** No account data or tokens in CI artifacts · **Evidence:** src/auth.rs keeps tokens out of public CLI doctor/status, src/google.rs excludes upstream provider body and credentials from typed errors, and src/main.rs keeps MCP stdout clean. Core CI https://github.com/sguzman/synmetra/actions/runs/40266208686 passed synthetic credential-canary checks for stdio, auth doctor, isolated installed native binary and error cases. A dedicated scan of generated CI artifacts remains open.
 - 🛑 **T194 — Document safe remote deployment rejection gates** — `██████████ 100.0%`
   - ✅ **Gate:** No unauthenticated public shared-credential service · **Evidence:** docs/SECURITY.md, docs/HTTP.md and docs/LOCAL_EXECUTION_THREAT_MODEL.md document non-production loopback-only deployment, identity and TLS rejection gates; src/main.rs blocks scratchpad over HTTP. Core CI https://github.com/sguzman/synmetra/actions/runs/40266208686 verified nonloopback-bind rejection and protected local transport.; src/http.rs enforces IPv4 loopback-only binding, constant-time inbound bearer checks, Host/Origin restrictions, and bounded HTTP requests; src/main.rs denies process-shared scratchpad sessions over HTTP. Tests production_http_bind_is_always_ipv4_loopback, loopback_http_rejects_unauthenticated_wrong_host_and_wrong_origin and separate_local_bearer_principals_cannot_replay_foreign_sessions passed in core CI https://github.com/sguzman/synmetra/actions/runs/40266208686. This does not authorize public hosting.
-- 🦺 **T195 — Exercise build reproducibility and supply-chain pinning** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Signed provenance and dependency audit evidence · **Evidence:** Pinned Rust 1.99.1/Cargo.lock source builds an x86-64 release binary in two independent Cargo target directories and compares SHA-256 digests and sizes. The dedicated workflow step passed https://github.com/sguzman/synmetra/actions/runs/40358192285; separate cargo-deny Rust license/source/advisory scans also pass. Cross-runner reproducibility, bundled DuckDB and signed provenance remain distinct pending gates.
+- 🦺 **T195 — Exercise build reproducibility and supply-chain pinning** — `██████████ 100.0%`
+  - ✅ **Gate:** Signed provenance and dependency audit evidence · **Evidence:** Pinned Rust 1.99.1/Cargo.lock source builds an x86-64 release binary in two independent Cargo target directories and compares SHA-256 digests and sizes. The dedicated workflow step passed https://github.com/sguzman/synmetra/actions/runs/40358192285; separate cargo-deny Rust license/source/advisory scans also pass. Cross-runner reproducibility, bundled DuckDB and signed provenance remain distinct pending gates.; The release workflow passed two separate pinned Rust 1.99.1/Cargo.lock x86-64 binary SHA-256 comparisons, SHA-pinned actions/attest@v4 Sigstore/SLSA v1 archive attestation, and gh attestation verify -R sguzman/synmetra validating repository identity and SLSA predicate in https://github.com/sguzman/synmetra/actions/runs/40359969759. Independent cargo-deny Rust license/source checks passed https://github.com/sguzman/synmetra/actions/runs/40346651714. This accepts signed provenance and dependency-audit evidence only for an experimental default-feature Linux archive, not clean ARM64/EndeavourOS builds or native C++ compliance.
 
 
-## 🚀 M9 — Linux release and Codex-ready inauguration — `██████░░░░ 59.1%`
+## 🚀 M9 — Linux release and Codex-ready inauguration — `██████░░░░ 63.6%`
 
 **Scope:** MVP. **Acceptance gate:** A documented stable native binary with 36-tool verified parity and release artifacts; no Python/npm runtime.
 
@@ -615,7 +615,7 @@
 - 🛡️ **T210 — Publish responsible security disclosure policy** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Safe vulnerability contact with no leaked reports · **Evidence:** Root SECURITY.md defines the experimental supported-version scope, GitHub Security Advisory conditional private reporting, metadata-only public contact fallback (never vulnerability details), synthetic evidence expectations, private triage/remediation/disclosure and security boundaries. This is a documented policy; repository private vulnerability reporting configuration is not verified, so safe active contact gate remains open.
 
-### 🏁 P27 — Release acceptance and semantic versions — `█░░░░░░░░░ 14.3%`
+### 🏁 P27 — Release acceptance and semantic versions — `███░░░░░░░ 28.6%`
 
 **Feature:** v1.0 GA4 parity.
 
@@ -625,12 +625,12 @@
   - ✅ **Gate:** Zero uncited 100 percent tasks · **Evidence:** src/bin/synmetra-progress.rs regenerates README.md and docs/ROADMAP.md percentage bars directly from docs/progress.json; .github/workflows/ci.yml runs cargo run --locked --bin synmetra-progress and -- --write-bars followed by git diff --exit-code. Core CI https://github.com/sguzman/synmetra/actions/runs/40343241690 passed both integrity and canonical-bar checks.; src/bin/synmetra-progress.rs rejects fully accepted tasks without two passed, nonempty evidence checks, validates exact tool/task counts and reconciles progress.json with README/ROADMAP. Core CI https://github.com/sguzman/synmetra/actions/runs/40343241690 passed the source-backed validator; zero uncited 100%-accepted tasks were found. This is ledger integrity, not proof of external/live GA parity.
 - 🏷️ **T213 — Tag v1.0.0 only after parity and live QA** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Semver milestone traceable to test artifacts
-- 📦 **T214 — Publish checksummed Linux release assets** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Checksums and source commit visible
+- 📦 **T214 — Publish checksummed Linux release assets** — `█████░░░░░ 50.0%`
+  - ✅ **Gate:** Checksums and source commit visible · **Evidence:** The experimental Linux workflow generated a normalized x86-64 tarball containing the commit SHA and license, verified its SHA-256 sidecar and extracted installed binary, and published these as GitHub Actions artifact 12667318243 in https://github.com/sguzman/synmetra/actions/runs/40359969759. docs/RELEASE_POLICY.md explicitly distinguishes the expiring Actions artifact from a permanent downloadable GitHub Release. The release-publication and durable checksummed-asset gate is still open.
 - 🧾 **T215 — Publish provenance and release notes** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Attributed dependencies and known GA alpha limitations
-- 🔏 **T216 — Publish SBOM and binary dependency inventory** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Explicit native runtime dependencies and license compliance
+- 🔏 **T216 — Publish SBOM and binary dependency inventory** — `█████░░░░░ 50.0%`
+  - ✅ **Gate:** Explicit native runtime dependencies and license compliance · **Evidence:** ci/generate-sbom.sh produces a CycloneDX 1.5 all-features Cargo.lock dependency graph, Rust declared-license metadata, and default-feature x86-64 ELF ldd-native-library inventory tied to source and binary SHA-256. https://github.com/sguzman/synmetra/actions/runs/40359969759 passed generation and JSON validation, with the files published as expiring Actions artifact https://github.com/sguzman/synmetra/actions/runs/40359969759/artifacts/12667318243; docs/SBOM.md explains scopes and limits. Full native DuckDB C++/system-library redistribution license clearance is unaccepted.
 - 🩺 **T217 — Run clean-install and uninstall QA on EndeavourOS** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Does not disturb other installed tools
 
