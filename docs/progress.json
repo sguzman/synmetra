@@ -3807,16 +3807,18 @@
               "id": "T191",
               "emoji": "♻️",
               "name": "Test OAuth refresh and cancellation under concurrency",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "No token duplication or orphan request leaks",
               "checks": [
                 {
                   "text": "Deliver test oauth refresh and cancellation under concurrency as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/auth.rs concurrent_expired_credentials_refresh_once_and_rotate_privately and aborted_oauth_refresh_releases_lock_without_partial_token_rotation test private token persistence, serialized refresh locking, concurrent expired callers, aborting a stalled upstream OAuth refresh and recovery of a queued caller with synthetic loopback token endpoints. Both passed pinned Rust core CI https://github.com/sguzman/synmetra/actions/runs/40330002338; live Google OAuth is not claimed."
                 },
                 {
                   "text": "No token duplication or orphan request leaks",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "Synthetic loopback tests verify one token exchange for two concurrent refresh callers, single private refresh-token rotation, no partial credentials after cancellation, eventual upstream socket closure, and a waiting task's successful fresh token persistence. Passed core CI https://github.com/sguzman/synmetra/actions/runs/40330002338. This does not certify all real-provider revocation/network races."
                 }
               ]
             },

@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `███████░░░ 66.3%` · **+66.30 percentage points from initial empty repo; +0.44 pp from tested official Codex native registration
+**Overall:** `███████░░░ 66.7%` · **+66.74 percentage points from initial empty repo; +0.44 pp from verified OAuth cancellation and serialized retry recovery
 
 ### 📏 Progress conventions
 
@@ -441,7 +441,7 @@
   - ✅ **Gate:** Dependency license architecture and portability reviewed · **Evidence:** src/main.rs and src/scratchpad.rs; GitHub Actions run 40206168306 successfully completed bundled-DuckDB feature tests (initial seven-route implementation); full strict-Clippy/updated-parameter parity and live GA tests remain separate acceptance gates.; docs/SCRATCHPAD.md, docs/ARCHITECTURE.md, Cargo.toml and src/scratchpad.rs reviewed: optional bundled DuckDB 1.4.2 includes native C/C++ linking with compiler/linker/runtime portability caveats; upstream Rust and native dependency licenses must remain accounted for under T013/T177/T216, and clean-install proof is T200/M9. DuckDB feature test https://github.com/sguzman/synmetra/actions/runs/40264614297 passed.
 
 
-## 🧬 M7 — Tool contract interoperability and parity audits — `███████░░░ 67.6%`
+## 🧬 M7 — Tool contract interoperability and parity audits — `███████░░░ 67.7%`
 
 **Scope:** MVP. **Acceptance gate:** All 36 tool schemas and response mappings are independently snapshot-tested against both pinned upstreams.
 
@@ -495,7 +495,7 @@
   - ✅ **Gate:** Changes open maintenance work rather than silently inflate parity · **Evidence:** .github/workflows/upstream-drift.yml watches exact SednaLabs schema and Google coordinator Git blob SHAs weekly and on reviewed lock/workflow changes; changes trigger stable [upstream-drift] local maintenance issue, never repin automatically. ci/test-upstream-drift-watch.sh executes the actual workflow shell body with mocked curl/gh, verifying unchanged, changed and duplicate issue cases. GitHub Actions drift workflow 40249957815 succeeded.; GitHub Actions 40249957815 offline fixture checks verify an upstream blob change fails the watch and opens exactly one review issue per source; repeat unchanged pin mismatch reuses an existing open issue and a second changed source opens a separate one. Real unchanged upstream watch also passed. No real upstream drift was forced and no real maintenance issue was created; this is synthetic acceptance of the detection/mutation control, not a source parity claim.
 
 
-## 🧪 M8 — Verification, resilience and security acceptance — `████░░░░░░ 35.7%`
+## 🧪 M8 — Verification, resilience and security acceptance — `████░░░░░░ 39.3%`
 
 **Scope:** MVP. **Acceptance gate:** Full offline and authorized live verification including malformed inputs, MCP interoperability and threat model.
 
@@ -547,7 +547,7 @@
 - 🗄️ **T186 — Record redacted reproducible live test ledger** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** All outcomes scoped with date and source SHA
 
-### 🛡️ P24 — Robustness and operational performance — `████░░░░░░ 38.9%`
+### 🛡️ P24 — Robustness and operational performance — `█████░░░░░ 50.0%`
 
 **Feature:** Reliability and security.
 
@@ -559,8 +559,8 @@
   - ✅ **Gate:** Repeatable Linux measurements under no-cache and warm-cache
 - 🧰 **T190 — Handle network outage and Google API failure modes** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Actionable status without unsafe retries · **Evidence:** src/google.rs send_readonly_as and decode_response return typed redacted HTTP/transport errors, bound read-only retries to 3 attempts on 429/5xx, refuse unsafe transport replay and honor request/connect timeouts without retrying mutations. Tests readonly_429_exhausts_three_attempts_with_redacted_error and readonly_socket_drop_fails_without_unsafe_transport_retries passed core CI https://github.com/sguzman/synmetra/actions/runs/40267346239. User-actionable per-error diagnostics and live outage handling remain unaccepted.
-- ♻️ **T191 — Test OAuth refresh and cancellation under concurrency** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** No token duplication or orphan request leaks
+- ♻️ **T191 — Test OAuth refresh and cancellation under concurrency** — `██████████ 100.0%`
+  - ✅ **Gate:** No token duplication or orphan request leaks · **Evidence:** src/auth.rs concurrent_expired_credentials_refresh_once_and_rotate_privately and aborted_oauth_refresh_releases_lock_without_partial_token_rotation test private token persistence, serialized refresh locking, concurrent expired callers, aborting a stalled upstream OAuth refresh and recovery of a queued caller with synthetic loopback token endpoints. Both passed pinned Rust core CI https://github.com/sguzman/synmetra/actions/runs/40330002338; live Google OAuth is not claimed.; Synthetic loopback tests verify one token exchange for two concurrent refresh callers, single private refresh-token rotation, no partial credentials after cancellation, eventual upstream socket closure, and a waiting task's successful fresh token persistence. Passed core CI https://github.com/sguzman/synmetra/actions/runs/40330002338. This does not certify all real-provider revocation/network races.
 - 🚧 **T192 — Test untrusted MCP arguments for injection and SSRF** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** No arbitrary networking or destructive file access · **Evidence:** src/google.rs production_google_hosts_are_pinned_and_http_redirects_never_followed and adversarial_report_filter_corpus_is_bounded_before_google_network_access protect fixed HTTPS API origins and reject hostile JSON/filter/resource inputs; src/scratchpad.rs hostile_sql_corpus_and_deterministic_mutations_never_execute and duckdb_engine_denies_external_file_access_beyond_restricted_sql_parser cover SQL/file-path injection. Google regressions passed core CI https://github.com/sguzman/synmetra/actions/runs/40267346239; DuckDB synthetic security cases passed feature CI https://github.com/sguzman/synmetra/actions/runs/40264614297. Independent fuzzing and a broad no-arbitrary-networking guarantee remain unaccepted.
 - 📃 **T193 — Redact logs telemetry and error reports by default** — `█████░░░░░ 50.0%`
