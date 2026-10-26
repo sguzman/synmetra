@@ -94,6 +94,22 @@ jobs:
             echo "Unexpected credential material in MCP stdout" >&2
             exit 1
           fi
+      - name: Reject unbounded unterminated stdio input frames
+        shell: bash
+        run: |
+          # The underlying rmcp stdio reader can otherwise buffer a line
+          # indefinitely. Exercise Synmetra's bounded relay with no newline.
+          if head -c 1050000 /dev/zero | tr '\0' x | \
+             timeout 10s target/debug/synmetra serve \
+               > "$RUNNER_TEMP/synmetra-oversize-stdio.stdout" \
+               2> "$RUNNER_TEMP/synmetra-oversize-stdio.stderr"; then
+            echo 'Oversized stdio input unexpectedly succeeded' >&2
+            exit 1
+          fi
+          grep -Fq 'Rejected oversized MCP stdio frame' \
+            "$RUNNER_TEMP/synmetra-oversize-stdio.stderr"
+          test ! -s "$RUNNER_TEMP/synmetra-oversize-stdio.stdout"
+
       - name: Verify native auth doctor and credential-safe CLI failures
         shell: bash
         run: |

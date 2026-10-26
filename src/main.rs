@@ -2,6 +2,7 @@
 mod auth;
 mod google;
 mod http;
+mod stdio_limit;
 #[cfg(feature = "scratchpad")]
 mod scratchpad;
 mod tabular;
@@ -13,7 +14,6 @@ use rmcp::{
     model::{CallToolResult, ContentBlock},
     schemars::JsonSchema,
     tool, tool_handler, tool_router,
-    transport::stdio,
     ServerHandler, ServiceExt,
 };
 use serde::Deserialize;
@@ -2392,7 +2392,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     if loopback {
         return http::serve_loopback(server).await;
     }
-    server.serve(stdio()).await?.waiting().await?;
+    let (bounded, rejected) = stdio_limit::bounded_reader(tokio::io::stdin());
+    let completed = server
+        .serve((bounded, tokio::io::stdout()))
+        .await?
+        .waiting()
+        .await;
+    if rejected.load(std::sync::atomic::Ordering::Acquire) {
+        return Err("MCP stdio input frame exceeded the 1 MiB limit.".into());
+    }
+    completed?;
     Ok(())
 }
 
