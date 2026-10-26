@@ -473,7 +473,9 @@ fn read_adc_user_at(path: &Path) -> Result<AdcAuthorizedUser, String> {
     if !path.is_absolute() {
         return Err("Google ADC credentials path must be absolute".into());
     }
-    let parent = path.parent().ok_or("Google ADC credentials have no directory")?;
+    let parent = path
+        .parent()
+        .ok_or("Google ADC credentials have no directory")?;
     let dir = fs::symlink_metadata(parent)
         .map_err(|_| "Cannot inspect Google ADC credentials directory")?;
     if !dir.is_dir() || dir.file_type().is_symlink() {
@@ -481,7 +483,12 @@ fn read_adc_user_at(path: &Path) -> Result<AdcAuthorizedUser, String> {
     }
     private_file(path)?;
     let file = fs::File::open(path).map_err(|_| "Cannot open Google ADC credentials")?;
-    if file.metadata().map_err(|_| "Cannot stat Google ADC credentials")?.len() > 32 * 1024 {
+    if file
+        .metadata()
+        .map_err(|_| "Cannot stat Google ADC credentials")?
+        .len()
+        > 32 * 1024
+    {
         return Err("Google ADC credentials exceed the 32 KiB limit".into());
     }
     let mut content = String::new();
@@ -1105,11 +1112,10 @@ mod tests {
         let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
         let endpoint = format!("http://{}/token", listener.local_addr().unwrap());
         let server = tokio::spawn(async move {
-            let (mut socket, _) =
-                tokio::time::timeout(Duration::from_secs(5), listener.accept())
-                    .await
-                    .unwrap()
-                    .unwrap();
+            let (mut socket, _) = tokio::time::timeout(Duration::from_secs(5), listener.accept())
+                .await
+                .unwrap()
+                .unwrap();
             let mut buffer = [0u8; 8192];
             let n = socket.read(&mut buffer).await.unwrap();
             assert!(String::from_utf8_lossy(&buffer[..n]).starts_with("POST /token "));
@@ -1142,7 +1148,10 @@ mod tests {
         assert_eq!(second.unwrap(), "synthetic-adc-access");
         server.await.unwrap();
         assert_eq!(fs::read_to_string(&path).unwrap(), source);
-        assert_eq!(lock.lock().await.as_ref().unwrap().active_refresh_token, "synthetic-rotated-refresh");
+        assert_eq!(
+            lock.lock().await.as_ref().unwrap().active_refresh_token,
+            "synthetic-rotated-refresh"
+        );
         fs::remove_dir_all(root).unwrap();
     }
 
