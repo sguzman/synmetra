@@ -235,19 +235,23 @@ impl GoogleClient {
         }
     }
 
-    fn with_quota_header(
-        &self,
-        request: reqwest::RequestBuilder,
-    ) -> Result<reqwest::RequestBuilder, ApiError> {
+    fn validated_quota_project(&self) -> Result<Option<&str>, ApiError> {
         let quota = self
             .quota_project
             .as_ref()
             .map_err(Clone::clone)?
             .as_deref();
-        if let Some(project) = quota {
-            if !valid_quota_project(project) {
-                return Err(ApiError::InvalidQuotaProject);
-            }
+        if quota.is_some_and(|project| !valid_quota_project(project)) {
+            return Err(ApiError::InvalidQuotaProject);
+        }
+        Ok(quota)
+    }
+
+    fn with_quota_header(
+        &self,
+        request: reqwest::RequestBuilder,
+    ) -> Result<reqwest::RequestBuilder, ApiError> {
+        if let Some(project) = self.validated_quota_project()? {
             return Ok(request.header("x-goog-user-project", project));
         }
         Ok(request)
@@ -279,7 +283,9 @@ impl GoogleClient {
     }
 
     async fn send_readonly(&self, req: reqwest::RequestBuilder) -> Result<Value, ApiError> {
-        let req = self.with_quota_header(req)?;
+        // Fail closed before refreshing OAuth; attach the header exactly once
+        // in send_readonly_as, which also handles controlled retries.
+        let _ = self.validated_quota_project()?;
         let bearer = self.token().await?;
         self.send_readonly_as(req, &bearer).await
     }
@@ -1670,6 +1676,7 @@ mod tests {
                 let headers = request.to_ascii_lowercase();
                 assert!(request.starts_with(&format!("{method} {path} HTTP/1.1")));
                 assert!(headers.contains("x-goog-user-project: quota-project-123"));
+                assert_eq!(headers.matches("x-goog-user-project:").count(), 1);
                 assert!(headers.contains("authorization: bearer synthetic-google-token"));
                 assert!(!headers.contains("synthetic-inbound-mcp-token"));
                 let reply = format!(
