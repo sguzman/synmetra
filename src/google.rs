@@ -3209,6 +3209,125 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn retention_defaults_and_sparse_optional_fields_remain_provider_owned() {
+        for payload in [
+            r#"{"name":"properties/42/dataRetentionSettings"}"#,
+            r#"{"name":"properties/42/dataRetentionSettings","eventDataRetention":"TWO_MONTHS"}"#,
+            r#"{"name":"properties/42/dataRetentionSettings","eventDataRetention":"FOURTEEN_MONTHS","resetUserDataOnNewActivity":false}"#,
+        ] {
+            let (url, handle) = once(payload).await;
+            let client = GoogleClient::with_endpoints(
+                Some("test-only-token".into()),
+                &url,
+                "http://127.0.0.1:9",
+            );
+            let actual = client.retention_settings("properties/42").await.unwrap();
+            let expected: Value = serde_json::from_str(payload).unwrap();
+            assert_eq!(actual, expected);
+            assert_eq!(actual.get("resetUserDataOnNewActivity"), expected.get("resetUserDataOnNewActivity"));
+            let request = handle.await.unwrap();
+            assert!(request.starts_with(
+                "GET /v1beta/properties/42/dataRetentionSettings HTTP/1.1"
+            ));
+        }
+    }
+
+    #[tokio::test]
+    async fn custom_catalogs_paginate_scopes_and_preserve_reserved_names() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        use tokio::net::TcpListener;
+
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let admin_host = format!("http://{}", listener.local_addr().unwrap());
+        let responder = tokio::spawn(async move {
+            for (index, expected_path, payload) in [
+                (
+                    0,
+                    "/v1beta/properties/42/customDimensions",
+                    json!({
+                        "customDimensions":[
+                            {"name":"properties/42/customDimensions/1","parameterName":"customer_tier","scope":"USER"},
+                            {"name":"properties/42/customDimensions/2","parameterName":"item_group","scope":"ITEM"}
+                        ],
+                        "nextPageToken":"dim-next"
+                    }),
+                ),
+                (
+                    1,
+                    "/v1beta/properties/42/customDimensions",
+                    json!({
+                        "customDimensions":[
+                            {"name":"properties/42/customDimensions/3","parameterName":"session_id","scope":"EVENT"}
+                        ]
+                    }),
+                ),
+                (
+                    2,
+                    "/v1beta/properties/42/customMetrics",
+                    json!({
+                        "customMetrics":[
+                            {"name":"properties/42/customMetrics/4","parameterName":"order_margin","scope":"EVENT","measurementUnit":"CURRENCY"}
+                        ],
+                        "nextPageToken":"metric-next"
+                    }),
+                ),
+                (
+                    3,
+                    "/v1beta/properties/42/customMetrics",
+                    json!({
+                        "customMetrics":[
+                            {"name":"properties/42/customMetrics/5","parameterName":"reserved_revenue","scope":"EVENT","measurementUnit":"STANDARD"}
+                        ]
+                    }),
+                ),
+            ] {
+                let (mut stream, _) = listener.accept().await.unwrap();
+                let mut buffer = [0_u8; 4096];
+                let count = stream.read(&mut buffer).await.unwrap();
+                let request = String::from_utf8_lossy(&buffer[..count]);
+                assert!(request.starts_with(&format!("GET {expected_path}")));
+                if index == 1 {
+                    assert!(request.contains("pageToken=dim-next"));
+                }
+                if index == 3 {
+                    assert!(request.contains("pageToken=metric-next"));
+                }
+                let body = payload.to_string();
+                let reply = format!(
+                    "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                    body.len(),
+                    body
+                );
+                stream.write_all(reply.as_bytes()).await.unwrap();
+            }
+        });
+        let client = GoogleClient::with_endpoints(
+            Some("test-only-token".into()),
+            &admin_host,
+            "http://127.0.0.1:9",
+        );
+        let catalog = client.custom_definitions("42").await.unwrap();
+        responder.await.unwrap();
+        let dimensions = catalog["custom_dimensions"].as_array().unwrap();
+        let metrics = catalog["custom_metrics"].as_array().unwrap();
+        assert_eq!(dimensions.len(), 3);
+        assert_eq!(metrics.len(), 2);
+        assert_eq!(dimensions[0]["scope"], "USER");
+        assert_eq!(dimensions[1]["scope"], "ITEM");
+        assert_eq!(dimensions[2]["scope"], "EVENT");
+        // A catalog listing preserves even a name that overlaps a built-in field:
+        // it must not silently rename, discard, or claim the field is query-safe.
+        assert_eq!(dimensions[2]["parameterName"], "session_id");
+        assert_eq!(metrics[0]["measurementUnit"], "CURRENCY");
+        assert_eq!(metrics[1]["parameterName"], "reserved_revenue");
+        assert_eq!(
+            dimensions[2]["name"],
+            "properties/42/customDimensions/3"
+        );
+        assert!(catalog.get("nextPageToken").is_none());
+    }
+
+    #[tokio::test]
     async fn access_reports_are_scoped_to_account_or_property() {
         for (id, account) in [("accounts/16", true), ("properties/82", false)] {
             let (url, handle) = once(r#"{"rowCount":0}"#).await;
