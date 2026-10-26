@@ -1313,10 +1313,7 @@ mod tests {
             state.summarize_table("row_cap", "synthetic").unwrap()["row_count"],
             20000
         );
-        assert_eq!(
-            state.tables("row_cap", None).unwrap()["total_tables"],
-            1
-        );
+        assert_eq!(state.tables("row_cap", None).unwrap()["total_tables"], 1);
         assert!(state.describe_table("row_cap", "overflow").is_err());
 
         state.close("row_cap").unwrap();
