@@ -1313,7 +1313,10 @@ mod tests {
             state.summarize_table("row_cap", "synthetic").unwrap()["row_count"],
             20000
         );
-        assert_eq!(state.tables("row_cap", None).unwrap()["total_tables"], 1);
+        assert_eq!(
+            state.tables("row_cap", None).unwrap()["total_tables"],
+            1
+        );
         assert!(state.describe_table("row_cap", "overflow").is_err());
 
         state.close("row_cap").unwrap();
@@ -1344,10 +1347,11 @@ mod tests {
         assert_eq!(first["tables"][0]["sample_rows"][0]["event_name"], "Apple");
         assert_eq!(first["tables"][0]["sample_rows"][1]["event_name"], "Middle");
         assert_eq!(first["tables"][0]["row_count"], 3);
-        assert_eq!(first["tables"][0]["sample_rows"].as_array().unwrap().len(), 2);
-        let hash = first["tables"][0]["sample_query_sha256"]
-            .as_str()
-            .unwrap();
+        assert_eq!(
+            first["tables"][0]["sample_rows"].as_array().unwrap().len(),
+            2
+        );
+        let hash = first["tables"][0]["sample_query_sha256"].as_str().unwrap();
         assert_eq!(hash.len(), 64);
     }
 
@@ -1776,7 +1780,10 @@ mod tests {
                 row.get(0)
             })
             .unwrap();
-        assert!(locked, "DuckDB sandbox settings must be immutable after setup");
+        assert!(
+            locked,
+            "DuckDB sandbox settings must be immutable after setup"
+        );
         for hostile in [
             "SELECT * FROM read_csv_auto('/etc/passwd')",
             "SELECT * FROM read_text('/etc/hostname')",
@@ -1801,7 +1808,10 @@ mod tests {
                 false
             )
             .is_err());
-        assert_eq!(state.tables("external_gate", None).unwrap()["total_tables"], 0);
+        assert_eq!(
+            state.tables("external_gate", None).unwrap()["total_tables"],
+            0
+        );
     }
 
     #[test]
