@@ -5717,11 +5717,9 @@ mod tests {
                     "Unexpected route for {method}"
                 );
                 assert!(request.contains(r#""limit":"1000""#));
-                assert!(
-                    request
-                        .to_ascii_lowercase()
-                        .contains("authorization: bearer synthetic-scratchpad-bearer")
-                );
+                assert!(request
+                    .to_ascii_lowercase()
+                    .contains("authorization: bearer synthetic-scratchpad-bearer"));
                 let body = json!({
                     "dimensionHeaders":[{"name":"country"}],
                     "metricHeaders":[{"name":"activeUsers","type":"TYPE_INTEGER"}],
@@ -5885,13 +5883,12 @@ mod tests {
                 .is_error,
             Some(false)
         );
-        let after_close = server.scratchpad_export_evidence_bundle(Parameters(
-            ScratchEvidenceArgs {
+        let after_close =
+            server.scratchpad_export_evidence_bundle(Parameters(ScratchEvidenceArgs {
                 session_id: "session_fixture".into(),
                 table_names: Some(vec!["historical".into()]),
                 sample_rows_per_table: Some(1),
-            },
-        ));
+            }));
         assert_eq!(after_close.is_error, Some(true));
     }
 
