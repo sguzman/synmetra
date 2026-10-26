@@ -135,6 +135,13 @@ jobs:
             echo "Unexpected OpenSSL or Python dynamic runtime linkage" >&2
             exit 1
           fi
+      - name: Conform two independent raw MCP client protocol profiles
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash -n ci/test-mcp-clients.sh
+          bash ci/test-mcp-clients.sh target/debug/synmetra
+
       - name: Verify real stdio negotiation, tool discovery, calls, and clean stdout
         shell: bash
         run: |
