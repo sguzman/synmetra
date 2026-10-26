@@ -912,6 +912,70 @@ fn result_with_tabular_projection(
     }
 }
 
+/// Predict the report's tabular and scratchpad column mapping without calling
+/// Google. Names are descriptive only; field compatibility remains unverified.
+fn preview_report_projection(dimensions: &[String], metrics: &[String]) -> Value {
+    use std::collections::HashMap;
+
+    fn next_name(base: &str, used: &mut HashMap<String, usize>) -> String {
+        let count = used.entry(base.to_owned()).or_insert(0);
+        *count += 1;
+        if *count == 1 {
+            base.to_owned()
+        } else {
+            format!("{base}_{count}")
+        }
+    }
+
+    let mut columns = Vec::new();
+    let mut ingest = Vec::new();
+    let mut used = HashMap::new();
+    for (index, (name, logical_type)) in dimensions
+        .iter()
+        .map(|name| (name, "string"))
+        .chain(metrics.iter().map(|name| (name, "number")))
+        .enumerate()
+    {
+        columns.push(json!({"name":name,"logical_type":logical_type,"nullable":true}));
+        let mut base = name
+            .chars()
+            .map(|c| if c.is_ascii_alphanumeric() { c.to_ascii_lowercase() } else { '_' })
+            .collect::<String>();
+        base = base.trim_matches('_').to_owned();
+        if base.is_empty() {
+            base = format!("col_{}", index + 1);
+        }
+        if base.starts_with(|c: char| c.is_ascii_digit()) {
+            base.insert(0, '_');
+        }
+        ingest.push(json!({
+            "source_name":name,
+            "target_name":next_name(&base, &mut used),
+            "logical_type":logical_type,
+            "transform":"identity"
+        }));
+        let canonical = name
+            .chars()
+            .filter(char::is_ascii_alphanumeric)
+            .collect::<String>()
+            .to_ascii_lowercase();
+        let derived = match canonical.as_str() {
+            "date" => Some(("date", "parse_ga_date")),
+            "datehour" => Some(("timestamp", "parse_ga_date_hour")),
+            _ => None,
+        };
+        if let Some((derived_type, transform)) = derived {
+            ingest.push(json!({
+                "source_name":name,
+                "target_name":next_name(&format!("{base}_parsed"), &mut used),
+                "logical_type":derived_type,
+                "transform":transform
+            }));
+        }
+    }
+    json!({"tabular_columns":columns,"ingest_columns":ingest})
+}
+
 fn result(r: Result<Value, ApiError>) -> CallToolResult {
     // elapsed_ms = 0 is an explicit *unmeasured* sentinel here, not a
     // claim of zero tool latency. Per-tool timing is a separate parity gate.
@@ -1596,8 +1660,8 @@ impl Synmetra {
         let validation = controls
             .request_limit(args.limit)
             .and_then(|effective_limit| {
-                google::property_name(&args.property_id)?;
-                let args_limit = effective_limit;
+                let property = google::property_name(&args.property_id)?;
+                let projection = preview_report_projection(&args.dimensions, &args.metrics);
                 let mut request = report_request(
                     Some(args.date_ranges),
                     args.dimensions,
@@ -1606,7 +1670,7 @@ impl Synmetra {
                         ("dimensionFilter", args.dimension_filter),
                         ("metricFilter", args.metric_filter),
                         ("orderBys", args.order_bys.map(|x| json!(x))),
-                        ("limit", args_limit.map(|x| json!(x.to_string()))),
+                        ("limit", effective_limit.map(|x| json!(x.to_string()))),
                         ("offset", args.offset.map(|x| json!(x.to_string()))),
                         ("currencyCode", args.currency_code.map(|x| json!(x))),
                         ("keepEmptyRows", args.keep_empty_rows.map(|x| json!(x))),
@@ -1616,17 +1680,37 @@ impl Synmetra {
                         ),
                     ],
                 )?;
-                if controls.active() {
-                    tabular::prepare_historical(
-                        &mut request,
-                        &args.property_id,
-                        args.cursor.as_deref(),
-                        args.offset,
-                    )?;
-                }
-                Ok(request)
+                let page = tabular::prepare_historical(
+                    &mut request,
+                    &args.property_id,
+                    args.cursor.as_deref(),
+                    args.offset,
+                )?;
+                Ok(json!({
+                    "request":request,
+                    "provider_called":false,
+                    "preview":{
+                        "tool":"run_report",
+                        "property":property,
+                        "query_hash":page.query_hash,
+                        "pagination":{
+                            "requested_limit":args.limit,
+                            "requested_offset":args.offset.unwrap_or(0),
+                            "max_rows":args.max_rows,
+                            "effective_limit":effective_limit,
+                            "effective_offset":page.offset,
+                            "cursor_supplied":args.cursor.is_some()
+                        },
+                        "compatibility_checked":false
+                    },
+                    "projection":projection,
+                    "hints":[
+                        "No Google Analytics API call was made.",
+                        "Field names and combinations are not verified; use check_report_compatibility before large data requests."
+                    ]
+                }))
             });
-        result(validation.map(|body| json!({"request":body, "provider_called":false})))
+        result(validation)
     }
 
     #[tool(
@@ -2628,6 +2712,52 @@ mod tests {
         };
         let result = server.preview_report_request(Parameters(bad)).await;
         assert_eq!(result.is_error, Some(true));
+    }
+
+    #[tokio::test]
+    async fn offline_preview_returns_query_bound_projection_without_google_credentials() {
+        let server = Synmetra::new(GoogleClient::new(None), false);
+        let input = json!({
+            "property_id":42,
+            "date_ranges":[{"start_date":"yesterday","end_date":"today"}],
+            "dimensions":["date","dateHour","landingPagePlusQueryString"],
+            "metrics":["activeUsers"],
+            "max_rows":2,
+            "output_mode":"compact"
+        });
+        let first = server
+            .preview_report_request(Parameters(serde_json::from_value(input.clone()).unwrap()))
+            .await;
+        assert_eq!(first.is_error, Some(false));
+        let data = first.structured_content.unwrap()["data"].clone();
+        assert_eq!(data["provider_called"], false);
+        assert_eq!(data["preview"]["property"], "properties/42");
+        assert_eq!(data["preview"]["pagination"]["effective_limit"], 2);
+        assert_eq!(data["request"]["limit"], "2");
+        assert_eq!(data["preview"]["compatibility_checked"], false);
+        assert_eq!(data["projection"]["tabular_columns"][0]["logical_type"], "string");
+        assert_eq!(data["projection"]["tabular_columns"][3]["logical_type"], "number");
+        assert_eq!(data["projection"]["ingest_columns"][1]["transform"], "parse_ga_date");
+        assert_eq!(
+            data["projection"]["ingest_columns"][3]["transform"],
+            "parse_ga_date_hour"
+        );
+        let second = server
+            .preview_report_request(Parameters(serde_json::from_value(input.clone()).unwrap()))
+            .await;
+        assert_eq!(
+            data["preview"]["query_hash"],
+            second.structured_content.unwrap()["data"]["preview"]["query_hash"]
+        );
+        let mut changed = input;
+        changed["metrics"] = json!(["screenPageViews"]);
+        let third = server
+            .preview_report_request(Parameters(serde_json::from_value(changed).unwrap()))
+            .await;
+        assert_ne!(
+            data["preview"]["query_hash"],
+            third.structured_content.unwrap()["data"]["preview"]["query_hash"]
+        );
     }
 
     #[tokio::test]
