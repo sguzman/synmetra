@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `███████░░░ 72.9%` · **+72.91 percentage points from initial empty repo; +0.66 pp from CI-verified SLSA archive attestation, Linux checksum artifact and CycloneDX/native library inventory
+**Overall:** `███████░░░ 73.4%` · **+73.35 percentage points from initial empty repo; +0.44 pp from the 36-tool permission matrix and verified revoked/invalid OAuth token fixtures
 
 ### 📏 Progress conventions
 
@@ -126,7 +126,7 @@
   - ✅ **Gate:** Protocol wire fixtures pass multiple clients
 
 
-## 🔑 M2 — Google authentication and credential isolation — `█████░░░░░ 50.0%`
+## 🔑 M2 — Google authentication and credential isolation — `█████░░░░░ 53.8%`
 
 **Scope:** MVP. **Acceptance gate:** Secure, least-privilege, non-Python auth across interactive, local and service configurations; no secret leaks.
 
@@ -174,14 +174,14 @@
 - ⏳ **T057 — Guard clock skew and rotation races** — `██████████ 100.0%`
   - ✅ **Gate:** Expiring secrets renew safely during concurrent calls · **Evidence:** src/auth.rs access_token_at re-reads credentials within an async refresh lock, renews 120 seconds before expiry and rotates refresh tokens using private atomic persistence; the concurrent_expired_credentials_refresh_once_and_rotate_privately test passed in core CI https://github.com/sguzman/synmetra/actions/runs/40266208686.; src/auth.rs concurrent_expired_credentials_refresh_once_and_rotate_privately verifies two concurrent callers perform exactly one local OAuth token exchange, both receive the new access token, rotated refresh token persists privately, and later calls reuse the refreshed credential; core CI https://github.com/sguzman/synmetra/actions/runs/40266208686 passed. This does not certify live Google refresh/revocation behavior.
 
-### 🛡️ P07 — Inbound versus upstream trust — `███████░░░ 66.7%`
+### 🛡️ P07 — Inbound versus upstream trust — `████████░░ 77.8%`
 
 **Feature:** Identity security.
 
 - 🚪 **T058 — Separate inbound MCP identity from Google identity** — `██████████ 100.0%`
   - ✅ **Gate:** No identity-conflation in HTTP transport · **Evidence:** src/http.rs uses SYNMETRA_MCP_BEARER_TOKEN for inbound requests while src/google.rs and src/auth.rs independently load SYNMETRA_GOOGLE_ACCESS_TOKEN or isolated private OAuth credentials for Google API calls; src/main.rs denies scratchpad HTTP. Core CI https://github.com/sguzman/synmetra/actions/runs/40266208686 passed local identity boundary tests. Separate explicit end-to-end identity-conflation regression remains open.; src/http.rs local_mcp_bearer_is_not_forwarded_to_google_api exercises an authenticated 2025-11-25 MCP initialization, notification and tools/call with one inbound token and a separate local mock Google API endpoint with a different upstream token; it asserts the Google request contains only the upstream bearer and neither token enters the MCP response. Core CI https://github.com/sguzman/synmetra/actions/runs/40267346239 passed. This is a synthetic local isolation test, not multi-tenant hosted security certification.
-- 🧾 **T059 — Define capability authorization matrices** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Google and local permissions checked per tool call
+- 🧾 **T059 — Define capability authorization matrices** — `█████░░░░░ 50.0%`
+  - ✅ **Gate:** Google and local permissions checked per tool call · **Evidence:** docs/LIVE_ACCEPTANCE_MATRIX.md inventories every one of the pinned 36 tool names, separates local-only, GA Data/Admin read, privileged Admin access reports, opt-in analytics.edit annotation writes and Google-to-local DuckDB ingest, and records intended scope, property role, trust boundary and explicit live-eligibility limitations. The inventory name equality and permission-boundary checks have CI protection in .github/workflows/ci.yml; the existing 36-name check passed https://github.com/sguzman/synmetra/actions/runs/40359970293. Per-call Google scope/role enforcement against live identities remains unaccepted.
 - 💼 **T060 — Avoid credential exposure in crash logs and traces** — `██████████ 100.0%`
   - ✅ **Gate:** Secret scanner fixtures remain clean · **Evidence:** ci/test-secret-scanner.sh runs a disposable tracked Git repository with dynamically assembled fake GitHub, Google, OpenAI and PEM signatures, proving ci/scan-secrets.sh rejects each match without printing it. The native core test step exercises status/doctor/invalid CLI failure output with private synthetic Google/MCP bearer canaries and asserts no disclosure. Core CI https://github.com/sguzman/synmetra/actions/runs/40348154909 passed. This is synthetic local failure/diagnostics and source redaction, not proof against every panic, crash dump or telemetry sink.; The standalone Public source secret-heuristic check https://github.com/sguzman/synmetra/actions/runs/40348154251 passed on the identical source SHA: all generated credential-shaped negative fixtures were rejected with suppressed match details, harmless/near-miss controls passed, and the complete tracked repository scan found no recognized high-confidence signatures. No actual credentials were generated or stored. This does not inspect Git history, binary artifacts, arbitrary CI logs or unknown secret formats.
 - 🔍 **T061 — Validate Google scope and role errors distinctly** — `░░░░░░░░░░ 0.0%`
@@ -190,8 +190,8 @@
   - ✅ **Gate:** No world-readable files and atomic writes · **Evidence:** src/auth.rs private_file/read_credentials/persist_credentials reject symlinks and world-readable files; CI 40202015488 compilation; security tests pending; Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.
 - 🚫 **T063 — Block SSRF via URLs in config or request arguments** — `██████████ 100.0%`
   - ✅ **Gate:** Only pinned Google API hosts are contacted by default · **Evidence:** src/google.rs hardcoded HTTPS Google API origins; property/account resource name sanitation; CI 40202015488 tests and fixed-host synthetic requests; src/google.rs GoogleClient::new pins analyticsadmin.googleapis.com and analyticsdata.googleapis.com via HTTPS with redirect policy none; production_google_hosts_are_pinned_and_http_redirects_never_followed verifies both hosts, rejects URL/authority/path injection in property/account identifiers, and checks an isolated 302 response is terminal rather than redirecting authorization headers. Only test-local with_endpoints can substitute loopback origins. GitHub Actions 40240180552 core Rust fmt, tests, Clippy, ledger and native DuckDB job passed; actual live Google identity/access remains a separate acceptance gate.
-- 🧪 **T064 — Exercise expired revoked and invalid credentials** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** All modes fail safely with stable errors
+- 🧪 **T064 — Exercise expired revoked and invalid credentials** — `█████░░░░░ 50.0%`
+  - ✅ **Gate:** All modes fail safely with stable errors · **Evidence:** src/auth.rs rejected_and_malformed_oauth_refreshes_preserve_private_credentials covers synthetic refresh rejection HTTP 400 invalid_grant, HTTP 401 invalid_client, malformed JSON, empty access token and zero expiration. missing_or_corrupt_local_credentials_do_not_trigger_network_refresh covers missing and malformed private files; all verify sanitized errors, unchanged persisted tokens or no network refresh. Both passed native core CI https://github.com/sguzman/synmetra/actions/runs/40366778439. Live Google revocation, identity-mode breadth and authorized account acceptance remain open.
 - 📦 **T065 — Ensure no auth dependency on gcloud installation** — `██████████ 100.0%`
   - ✅ **Gate:** Native test environment lacks gcloud Python and npm · **Evidence:** src/auth.rs implements native Rust auth doctor/status/command/login/logout with Desktop OAuth JSON, loopback PKCE, no gcloud/Python/npm process dependency; CI `.github/workflows/ci.yml` runs the installed native binary with PATH=/nonexistent, using isolated XDG_CONFIG_HOME and checks local auth commands without executable PATH. GitHub Actions 40249518327 core and scratchpad workflow completed green.; CI 40249398665 and 40249518327 confirmed auth doctor, status, command, missing-client login failure, and logout under `env -i PATH=/nonexistent` with no gcloud, Python or npm available as executables; `cargo tree` and `ldd` check no Python dynamic dependency. No authorized live Google authorization was attempted or claimed (separate T178/T048).
 - 🧯 **T066 — Implement safe logout and credential revocation guidance** — `██████████ 100.0%`

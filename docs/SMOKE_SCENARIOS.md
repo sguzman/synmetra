@@ -8,6 +8,7 @@
 | --- | --- | --- | --- |
 | Read-only help | `synmetra --help`, `synmetra serve --help`, `synmetra auth --help` | Offline, no native external command dependency, no secrets | A real Google account can log in |
 | Setup diagnosis | `synmetra auth doctor` and `auth status` with temporary `XDG_CONFIG_HOME` | No token values or OAuth client secrets on stdout | Google-side scopes/roles are valid |
+| Rejected OAuth refresh | `rejected_and_malformed_oauth_refreshes_preserve_private_credentials`, `missing_or_corrupt_local_credentials_do_not_trigger_network_refresh` | Mock 400/401, malformed/empty tokens and absent/corrupt private credentials return redacted errors without token rotation or unintended network calls | Live Google revocation, quota-project and service-account identity modes |
 | Native installation | CI `cargo install --path . --locked --debug --bin synmetra --root TMPDIR` then uninstall | Installed program works with `PATH=/nonexistent`; only designated root is removed | Full EndeavourOS/makepkg clean-machine installation |
 | MCP stdio | CI initializes, lists tools, and calls `ga4_get_started` using synthetic canary token | Valid JSON-RPC stdout, 20 default read-only tools, no token reflection | Codex/Inspector live client interoperability |
 | Local MCP HTTP | Tests `loopback_http_rejects_unauthenticated_wrong_host_and_wrong_origin` and `local_mcp_bearer_is_not_forwarded_to_google_api` | Local bearer and Google token remain independent, non-loopback access rejected | Multi-user service or public TLS |

@@ -52,6 +52,22 @@ jobs:
           test "$(wc -l < "$RUNNER_TEMP/eligibility-names")" -eq 36
           diff -u "$RUNNER_TEMP/union-names" "$RUNNER_TEMP/eligibility-names"
           grep -Fq 'No live Google Analytics OAuth/property/role QA has been accepted' docs/LIVE_ACCEPTANCE_MATRIX.md
+          awk -F '|' '
+            /^[|] `[^`]+` [|]/ {
+              name = $2; boundary = $3; permission = $4; status = $5; gate = $6
+              gsub(/^[[:space:]]+|[[:space:]]+$/, "", name)
+              gsub(/^[[:space:]]+|[[:space:]]+$/, "", boundary)
+              gsub(/^[[:space:]]+|[[:space:]]+$/, "", permission)
+              gsub(/^[[:space:]]+|[[:space:]]+$/, "", status)
+              gsub(/^[[:space:]]+|[[:space:]]+$/, "", gate)
+              count++
+              if (!length(boundary) || !length(permission) || !length(status) || !length(gate)) exit 9
+              if (name ~ /create_property_annotation/ && (permission !~ /analytics.edit/ || permission !~ /--allow-write/)) exit 10
+              if (name ~ /scratchpad_ingest_/ && (permission !~ /analytics.readonly/ || permission !~ /scratchpad/)) exit 11
+              if (boundary ~ /^Local/ && status !~ /Not applicable/) exit 12
+            }
+            END { if (count != 36) exit 13 }
+          ' docs/LIVE_ACCEPTANCE_MATRIX.md
 
       - name: Validate changelog version and evidence-gated release policy
         shell: bash

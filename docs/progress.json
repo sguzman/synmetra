@@ -1184,12 +1184,13 @@
               "id": "T059",
               "emoji": "🧾",
               "name": "Define capability authorization matrices",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Google and local permissions checked per tool call",
               "checks": [
                 {
                   "text": "Deliver define capability authorization matrices as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "docs/LIVE_ACCEPTANCE_MATRIX.md inventories every one of the pinned 36 tool names, separates local-only, GA Data/Admin read, privileged Admin access reports, opt-in analytics.edit annotation writes and Google-to-local DuckDB ingest, and records intended scope, property role, trust boundary and explicit live-eligibility limitations. The inventory name equality and permission-boundary checks have CI protection in .github/workflows/ci.yml; the existing 36-name check passed https://github.com/sguzman/synmetra/actions/runs/40359970293. Per-call Google scope/role enforcement against live identities remains unaccepted."
                 },
                 {
                   "text": "Google and local permissions checked per tool call",
@@ -1275,12 +1276,13 @@
               "id": "T064",
               "emoji": "🧪",
               "name": "Exercise expired revoked and invalid credentials",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "All modes fail safely with stable errors",
               "checks": [
                 {
                   "text": "Deliver exercise expired revoked and invalid credentials as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/auth.rs rejected_and_malformed_oauth_refreshes_preserve_private_credentials covers synthetic refresh rejection HTTP 400 invalid_grant, HTTP 401 invalid_client, malformed JSON, empty access token and zero expiration. missing_or_corrupt_local_credentials_do_not_trigger_network_refresh covers missing and malformed private files; all verify sanitized errors, unchanged persisted tokens or no network refresh. Both passed native core CI https://github.com/sguzman/synmetra/actions/runs/40366778439. Live Google revocation, identity-mode breadth and authorized account acceptance remain open."
                 },
                 {
                   "text": "All modes fail safely with stable errors",
