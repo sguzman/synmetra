@@ -42,6 +42,21 @@ jobs:
             count=$((count + 1))
           done < spec/upstream/schema-lock.tsv
           test "$count" -eq 4 || { echo "Wrong pinned fixture count" >&2; exit 1; }
+      - name: Validate changelog version and evidence-gated release policy
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f CHANGELOG.md
+          test -f docs/RELEASE_POLICY.md
+          test -f docs/INSTALL.md
+          test -f .github/workflows/linux-release.yml
+          version="$(grep -m1 '^version = ' Cargo.toml | cut -d '"' -f2)"
+          grep -Fq "## [$version]" CHANGELOG.md
+          grep -Fq 'Rust 1.99.1' docs/RELEASE_POLICY.md
+          grep -Fq 'No production parity release is authorized' docs/RELEASE_POLICY.md
+          grep -Fq 'independent' docs/RELEASE_POLICY.md
+          grep -Fq '36-tool' docs/RELEASE_POLICY.md
+
       - name: Verify committed canonical formatting
         run: cargo fmt --all -- --check
       - name: Run default Rust MCP tests
