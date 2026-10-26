@@ -11,20 +11,18 @@
 
 ## Current input-field differences to account for
 
-A direct **property-name-only** comparison of the 35 pinned SednaLabs schemas to the captured native router has **8 tools with differing property sets**, **24 SednaLabs inputs not advertised natively**, and **2 native-only properties**. This is a narrower and newer assessment than the historical [SCHEMA_PARITY_AUDIT.md](SCHEMA_PARITY_AUDIT.md), which measured 75 missing fields before subsequent implementation. It does **not** compare nested types/defaults or prove behavioral equivalence.
+A direct **property-name-only** comparison of the 35 pinned SednaLabs schemas to the reviewed native schema lock (with table metadata projection now added; native feature CI required) has **6 tools with differing property sets**, **14 SednaLabs inputs not advertised natively**, and **2 native-only properties**. This is a narrower and newer assessment than the historical [SCHEMA_PARITY_AUDIT.md](SCHEMA_PARITY_AUDIT.md), which measured 75 missing fields before subsequent implementation. It does **not** compare nested types/defaults or prove behavioral equivalence.
 
 | Tool(s) | SednaLabs inputs currently absent from native schema |
 | --- | --- |
-| `scratchpad_describe_table` | `cursor`, `max_cell_chars`, `max_rows`, `output_mode`, `summary_only` |
 | `scratchpad_ingest_realtime_report` | `cursor`, `max_cell_chars`, `max_rows`, `output_mode`, `summary_only` |
 | `scratchpad_ingest_report` | `cursor`, `max_cell_chars`, `max_rows`, `output_mode`, `summary_only` |
-| `scratchpad_summarize_table` | `cursor`, `max_cell_chars`, `max_rows`, `output_mode`, `summary_only` |
 | `scratchpad_landing_param_shift_report` | `max_cell_chars`, `max_rows` |
 | `scratchpad_release_regression_report` | `max_cell_chars`, `max_rows` |
 
 `preview_report_request` and `run_report` additionally advertise a native `keep_empty_rows` option. The **10 official extracted Google function signature parameter names have no missing native names** in this capture, but Google's fixture does not include full dynamic MCP type/default/output schemas. In particular, the official Python realtime tool declares `offset`, while Google's v1beta realtime API does not; Synmetra rejects nonzero realtime offsets rather than silently pretending to page.
 
-**Do not silently forward removed/unsupported controls.** Update caller expectations explicitly and keep existing servers available during parallel non-production checks. Restoring the absent scratchpad output controls and documenting intentional compatibility choices remains tracked by T164–T165.
+**Do not silently forward removed/unsupported controls.** Update caller expectations explicitly and keep existing servers available during parallel non-production checks. The table description and summary tools now have bounded column metadata projections with cursor/session/schema fingerprints; remaining ingest and analytical output controls and version compatibility choices stay tracked by T164–T165. This does not imply all upstream output semantics match.
 
 ## Tool output and error behavior
 

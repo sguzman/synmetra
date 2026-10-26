@@ -145,10 +145,20 @@ struct ScratchTableArgs {
 }
 
 #[cfg(feature = "scratchpad")]
-#[derive(Debug, Deserialize, JsonSchema)]
+#[derive(Debug, Deserialize, JsonSchema, Default)]
 struct ScratchReadTableArgs {
     session_id: String,
     table_name: String,
+    #[serde(default)]
+    cursor: Option<String>,
+    #[serde(default)]
+    max_rows: Option<usize>,
+    #[serde(default)]
+    max_cell_chars: Option<usize>,
+    #[serde(default)]
+    output_mode: Option<String>,
+    #[serde(default)]
+    summary_only: bool,
 }
 
 #[cfg(feature = "scratchpad")]
@@ -299,6 +309,135 @@ struct ScratchLimitArgs {
     max_sessions: Option<usize>,
     #[serde(default)]
     max_tables_per_session: Option<usize>,
+}
+
+#[cfg(feature = "scratchpad")]
+fn project_scratchpad_table_catalog(
+    mut data: Value,
+    args: &ScratchReadTableArgs,
+) -> Result<Value, String> {
+    use sha2::{Digest, Sha256};
+
+    // Unchanged legacy callers receive the previous local table response.
+    // Projection is opt-in and must not change the source DuckDB table.
+    if args.cursor.is_none()
+        && args.max_rows.is_none()
+        && args.max_cell_chars.is_none()
+        && args.output_mode.is_none()
+        && !args.summary_only
+    {
+        return Ok(data);
+    }
+    let row_cap = args.max_rows.unwrap_or(32);
+    let cell_cap = args.max_cell_chars.unwrap_or(2048);
+    if row_cap == 0 || row_cap > 1000 || cell_cap == 0 || cell_cap > 2048 {
+        return Err("Table metadata bounds must be 1-1000 rows and 1-2048 characters".into());
+    }
+    let mode = args.output_mode.as_deref().unwrap_or("rows");
+    if !matches!(mode, "rows" | "tuples" | "compact" | "scalar") {
+        return Err("Unknown table metadata output_mode".into());
+    }
+    let columns = data["columns"]
+        .as_array()
+        .cloned()
+        .ok_or("Table schema lacks column metadata")?;
+    let fingerprint = format!(
+        "{:x}",
+        Sha256::digest(
+            serde_json::to_vec(&json!({
+                "session_id":args.session_id,
+                "table_name":args.table_name,
+                "columns":columns
+            }))
+            .map_err(|_| "Could not encode table schema for pagination")?
+        )
+    );
+    let offset = if let Some(cursor) = &args.cursor {
+        let parts: Vec<_> = cursor.split(':').collect();
+        if cursor.len() > 100
+            || parts.len() != 3
+            || parts[0] != "v1"
+            || parts[1] != fingerprint
+            || parts[2].is_empty()
+            || !parts[2].bytes().all(|byte| byte.is_ascii_digit())
+        {
+            return Err("Table metadata cursor is invalid or bound to another schema".into());
+        }
+        let n = parts[2]
+            .parse::<usize>()
+            .map_err(|_| "Table metadata cursor offset is invalid")?;
+        if n > columns.len() {
+            return Err("Table metadata cursor exceeds available columns".into());
+        }
+        n
+    } else {
+        0
+    };
+    let end = columns
+        .len()
+        .min(offset.saturating_add(if mode == "scalar" { 1 } else { row_cap }));
+    let mut rows = Vec::with_capacity(end.saturating_sub(offset));
+    for source in &columns[offset..end] {
+        let mut cell = source.clone();
+        if let Some(object) = cell.as_object_mut() {
+            for value in object.values_mut() {
+                if let Some(text) = value.as_str() {
+                    if text.chars().count() > cell_cap {
+                        *value = json!(text.chars().take(cell_cap).collect::<String>());
+                    }
+                }
+            }
+        }
+        rows.push(cell);
+    }
+    let returned = if args.summary_only { 0 } else { rows.len() };
+    let next_cursor = if !args.summary_only && end < columns.len() {
+        Some(format!("v1:{fingerprint}:{end}"))
+    } else {
+        None
+    };
+    let output = if args.summary_only {
+        Value::Null
+    } else {
+        let tuples = rows
+            .iter()
+            .map(|col| {
+                json!([
+                    col["name"],
+                    col["data_type"],
+                    col["nullable"]
+                ])
+            })
+            .collect::<Vec<_>>();
+        match mode {
+            "rows" => Value::Array(rows),
+            "tuples" => Value::Array(tuples),
+            "compact" => json!({
+                "columns":["name","data_type","nullable"],
+                "tuples":tuples,
+                "row_count":returned
+            }),
+            "scalar" => rows
+                .first()
+                .map(|col| col["name"].clone())
+                .unwrap_or(Value::Null),
+            _ => unreachable!(),
+        }
+    };
+    let original_truncated = data["columns_truncated"].as_bool().unwrap_or(false);
+    data["columns"] = output;
+    data["column_count_returned"] = json!(returned);
+    data["meta"] = json!({
+        "output_mode":mode,
+        "summary_only":args.summary_only,
+        "column_count_total":columns.len(),
+        "column_count_total_known":!original_truncated,
+        "column_count_returned":returned,
+        "next_cursor":next_cursor,
+        "query_hash":fingerprint,
+        "truncated":original_truncated || end < columns.len()
+    });
+    Ok(data)
 }
 
 #[cfg(feature = "scratchpad")]
@@ -2070,7 +2209,8 @@ impl Synmetra {
             self.scratchpad
                 .as_ref()
                 .expect("scratchpad capability required")
-                .describe_table(&args.session_id, &args.table_name),
+                .describe_table(&args.session_id, &args.table_name)
+                .and_then(|data| project_scratchpad_table_catalog(data, &args)),
         )
     }
 
@@ -2091,7 +2231,8 @@ impl Synmetra {
             self.scratchpad
                 .as_ref()
                 .expect("scratchpad capability required")
-                .summarize_table(&args.session_id, &args.table_name),
+                .summarize_table(&args.session_id, &args.table_name)
+                .and_then(|data| project_scratchpad_table_catalog(data, &args)),
         )
     }
 
@@ -5240,6 +5381,7 @@ mod tests {
         let table = server.scratchpad_summarize_table(Parameters(ScratchReadTableArgs {
             session_id: "session_fixture".into(),
             table_name: "realtime".into(),
+            ..Default::default()
         }));
         assert_eq!(table.structured_content.unwrap()["data"]["row_count"], 1);
         let query = server.scratchpad_query(Parameters(ScratchQueryArgs {
@@ -5468,6 +5610,7 @@ mod tests {
         let describe = server.scratchpad_describe_table(Parameters(ScratchReadTableArgs {
             session_id: "fixture_a".into(),
             table_name: "events".into(),
+            ..Default::default()
         }));
         assert_eq!(
             describe.structured_content.unwrap()["data"]["columns"]
@@ -5479,6 +5622,7 @@ mod tests {
         let summary = server.scratchpad_summarize_table(Parameters(ScratchReadTableArgs {
             session_id: "fixture_a".into(),
             table_name: "events".into(),
+            ..Default::default()
         }));
         assert_eq!(summary.structured_content.unwrap()["data"]["row_count"], 1);
         let query = server.scratchpad_query(Parameters(ScratchQueryArgs {
@@ -5757,6 +5901,89 @@ mod tests {
         assert_eq!(enabled.router.list_all().len(), 35);
         assert!(enabled.router.has_route("scratchpad_drop_table"));
         assert!(!enabled.router.has_route("create_property_annotation"));
+    }
+
+    #[cfg(feature = "scratchpad")]
+    #[test]
+    fn table_metadata_projection_is_bounded_and_cursor_bound_to_exact_schema() {
+        let schema = json!({
+            "session_id":"local_fixture",
+            "table_name":"synthetic",
+            "columns":[
+                {"name":"country","data_type":"VARCHAR","nullable":false},
+                {"name":"activeUsers","data_type":"BIGINT","nullable":true},
+                {"name":"sessions","data_type":"BIGINT","nullable":false}
+            ],
+            "column_count_returned":3,
+            "columns_truncated":false
+        });
+        let base: ScratchReadTableArgs = serde_json::from_value(json!({
+            "session_id":"local_fixture",
+            "table_name":"synthetic",
+            "max_rows":1,
+            "max_cell_chars":4
+        }))
+        .unwrap();
+        let first = project_scratchpad_table_catalog(schema.clone(), &base).unwrap();
+        assert_eq!(first["columns"][0]["name"], "coun");
+        assert_eq!(first["column_count_returned"], 1);
+        assert_eq!(first["meta"]["column_count_total"], 3);
+        assert_eq!(first["meta"]["truncated"], true);
+        let token = first["meta"]["next_cursor"].as_str().unwrap().to_owned();
+
+        let second: ScratchReadTableArgs = serde_json::from_value(json!({
+            "session_id":"local_fixture",
+            "table_name":"synthetic",
+            "cursor":token,
+            "max_rows":2,
+            "output_mode":"compact"
+        }))
+        .unwrap();
+        let result = project_scratchpad_table_catalog(schema.clone(), &second).unwrap();
+        assert_eq!(result["columns"]["row_count"], 2);
+        assert_eq!(result["columns"]["tuples"][0][0], "activeUsers");
+        assert!(result["meta"]["next_cursor"].is_null());
+
+        let mismatch: ScratchReadTableArgs = serde_json::from_value(json!({
+            "session_id":"other_fixture",
+            "table_name":"synthetic",
+            "cursor":token
+        }))
+        .unwrap();
+        assert!(project_scratchpad_table_catalog(schema.clone(), &mismatch).is_err());
+
+        let summary: ScratchReadTableArgs = serde_json::from_value(json!({
+            "session_id":"local_fixture",
+            "table_name":"synthetic",
+            "summary_only":true
+        }))
+        .unwrap();
+        let result = project_scratchpad_table_catalog(schema.clone(), &summary).unwrap();
+        assert!(result["columns"].is_null());
+        assert_eq!(result["meta"]["column_count_total"], 3);
+        assert_eq!(result["meta"]["column_count_returned"], 0);
+
+        let invalid: ScratchReadTableArgs = serde_json::from_value(json!({
+            "session_id":"local_fixture",
+            "table_name":"synthetic",
+            "max_rows":0
+        }))
+        .unwrap();
+        assert!(project_scratchpad_table_catalog(schema.clone(), &invalid).is_err());
+        let invalid_mode: ScratchReadTableArgs = serde_json::from_value(json!({
+            "session_id":"local_fixture",
+            "table_name":"synthetic",
+            "output_mode":"arbitrary_sql"
+        }))
+        .unwrap();
+        assert!(project_scratchpad_table_catalog(schema.clone(), &invalid_mode).is_err());
+
+        let legacy: ScratchReadTableArgs = serde_json::from_value(json!({
+            "session_id":"local_fixture",
+            "table_name":"synthetic"
+        }))
+        .unwrap();
+        assert_eq!(project_scratchpad_table_catalog(schema.clone(), &legacy).unwrap(), schema);
     }
 
     #[cfg(feature = "scratchpad")]

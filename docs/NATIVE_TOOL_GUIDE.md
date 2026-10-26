@@ -471,18 +471,21 @@ The same native contract may be carried as JSON-RPC structured content and legac
 
 ### `scratchpad_describe_table`
 
-**Required inputs:** `session_id`, `table_name`. **Optional inputs:** none.
+**Required inputs:** `session_id`, `table_name`. **Optional inputs:** `cursor`, `max_cell_chars`, `max_rows`, `output_mode`, `summary_only`.
 
 **Output:** Local DuckDB operation; result is an MCP ok/data/meta envelope with bounded local structured data, not a Google provider response.
 
-**Limits / permissions:** Only with --features scratchpad and serve --scratchpad on trusted stdio; in-memory session max 20000 rows; feature security gates still open.
+**Limits / permissions:** Local trusted stdio only. The DuckDB schema is limited to 32 visible columns. Opt-in projection supports rows/tuples/compact/scalar, UTF-8-safe clipping at 1–2048 characters, 1–1000 requested rows (at most 32 visible columns), summary-only omission, and query-hash-bound `v1` cursors that reject changed schema/session/table. If the table has more than 32 columns, completeness remains explicitly unknown; this is not a row-data pagination API.
 
 **Synthetic example arguments:**
 
 ```json
 {
   "session_id": "fixture_session",
-  "table_name": "events"
+  "table_name": "events",
+  "max_rows": 2,
+  "max_cell_chars": 64,
+  "output_mode": "compact"
 }
 ```
 
@@ -707,18 +710,21 @@ The same native contract may be carried as JSON-RPC structured content and legac
 
 ### `scratchpad_summarize_table`
 
-**Required inputs:** `session_id`, `table_name`. **Optional inputs:** none.
+**Required inputs:** `session_id`, `table_name`. **Optional inputs:** `cursor`, `max_cell_chars`, `max_rows`, `output_mode`, `summary_only`.
 
 **Output:** Local DuckDB operation; result is an MCP ok/data/meta envelope with bounded local structured data, not a Google provider response.
 
-**Limits / permissions:** Only with --features scratchpad and serve --scratchpad on trusted stdio; in-memory session max 20000 rows; feature security gates still open.
+**Limits / permissions:** Local trusted stdio only. The DuckDB schema is limited to 32 visible columns. Opt-in projection supports rows/tuples/compact/scalar, UTF-8-safe clipping at 1–2048 characters, 1–1000 requested rows (at most 32 visible columns), summary-only omission, and query-hash-bound `v1` cursors that reject changed schema/session/table. If the table has more than 32 columns, completeness remains explicitly unknown; this is not a row-data pagination API.
 
 **Synthetic example arguments:**
 
 ```json
 {
   "session_id": "fixture_session",
-  "table_name": "events"
+  "table_name": "events",
+  "max_rows": 2,
+  "max_cell_chars": 64,
+  "output_mode": "compact"
 }
 ```
 
