@@ -39,3 +39,7 @@ Tests in `src/scratchpad.rs` cover session quotas, overflow rollback, determinis
 - No authorized live Google Analytics ingestion or clean native release/install has been certified. Do not claim full upstream behavioral parity from fixture tests.
 
 See [SECURITY.md](SECURITY.md), [LOCAL_EXECUTION_THREAT_MODEL.md](LOCAL_EXECUTION_THREAT_MODEL.md), and the [acceptance ledger](progress.json).
+
+## Bounded historical multi-page ingestion (synthetic verification required)
+
+`scratchpad_ingest_report` accepts explicit `limit` from 1 to 20,000 and fetches no more than 20 sequential Google Data API pages; each page is capped by `max_rows` (1–1000) and the collected JSON is capped at 2 MiB. The implementation checks response headers, limits and aggregate size before one local DuckDB transaction. A later API failure or page schema mismatch cannot leave an incomplete created or appended table. Its receipt reports `pages_fetched`, `initial_offset`, `final_offset`, `row_count_returned` and `complete`. This does not offer a point-in-time Google data snapshot and cannot establish live-account parity from fixture tests. Realtime ingestion remains limited to one request because it has no Google offset-pagination support; non-rows output modes, non-null cursors and `summary_only=true` remain explicitly rejected.

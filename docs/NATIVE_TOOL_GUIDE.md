@@ -569,7 +569,7 @@ The same native contract may be carried as JSON-RPC structured content and legac
 
 **Output:** Authorized Google Data API request followed by an opt-in local DuckDB write; output includes local ingestion status, not raw live data in this guide.
 
-**Limits / permissions:** Only with --features scratchpad and serve --scratchpad on trusted stdio; in-memory session max 20000 rows; feature security gates still open. Input `cursor` and `summary_only=true` are explicitly rejected as in the pinned upstream implementation. `max_rows` (1–1000) caps the current native one-page API request; larger requested `limit` yields an explicit incomplete-ingestion receipt rather than silent completion. `max_cell_chars` (1–2048) clips receipt string cells, not persisted DuckDB rows. Only `output_mode=rows` is currently supported; alternate modes error before Google network access. Full bounded multi-page parity is open.
+**Limits / permissions:** Only with --features scratchpad and serve --scratchpad on trusted stdio; in-memory session max 20000 rows; feature security gates still open. Input `cursor` and `summary_only=true` are explicitly rejected as in the pinned upstream implementation. `max_rows` (1–1000) caps each historical Google API page; an explicit `limit` of 1–20,000 may collect at most 20 pages and 2 MiB of response JSON before a single atomic DuckDB insert. Pagination receipts report actual page count and completeness. `max_cell_chars` (1–2048) clips receipt string cells, not persisted DuckDB rows. Only `output_mode=rows` is currently supported; alternate modes error before Google network access. Full bounded multi-page parity is open.
 
 **Synthetic example arguments:**
 

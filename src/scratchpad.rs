@@ -630,8 +630,12 @@ impl ScratchState {
         let response_rows = response["rows"]
             .as_array()
             .ok_or("GA4 response is missing rows")?;
-        if response_rows.len() > 1_000 {
-            return Err("GA4 ingest accepts at most 1000 rows per request".into());
+        // A single transaction may contain several separately bounded Google
+        // report pages. Callers must enforce the per-request 1,000-row limit
+        // before combining pages; this final atomic batch remains capped by
+        // the 20,000-row session quota and the 2 MiB serialized-input budget.
+        if response_rows.len() > 20_000 {
+            return Err("GA4 ingest atomic batch exceeds 20000 rows".into());
         }
         let mut parsed_rows = Vec::with_capacity(response_rows.len());
         for row in response_rows {
@@ -2409,6 +2413,47 @@ mod tests {
         assert!(state
             .ingest_ga_response("missing", "new", &response, false)
             .is_err());
+    }
+
+    #[test]
+    fn multiple_google_pages_can_be_committed_as_one_bounded_atomic_batch() {
+        let state = ScratchState::new();
+        state.open("historical_batch").unwrap();
+        let page_row = json!({
+            "dimensionValues":[{"value":"Mexico"}],
+            "metricValues":[{"value":"7"}]
+        });
+        let payload = json!({
+            "dimensionHeaders":[{"name":"country"}],
+            "metricHeaders":[{"name":"activeUsers","type":"TYPE_INTEGER"}],
+            "rows":vec![page_row.clone(); 1500]
+        });
+        assert_eq!(
+            state
+                .ingest_ga_response("historical_batch", "events", &payload, false)
+                .unwrap()["rows_ingested"],
+            1500
+        );
+        assert_eq!(
+            state
+                .summarize_table("historical_batch", "events")
+                .unwrap()["row_count"],
+            1500
+        );
+        let bad = json!({
+            "dimensionHeaders":[{"name":"country"}],
+            "metricHeaders":[{"name":"activeUsers"}],
+            "rows":vec![page_row; 20_001]
+        });
+        assert!(state
+            .ingest_ga_response("historical_batch", "events", &bad, true)
+            .is_err());
+        assert_eq!(
+            state
+                .summarize_table("historical_batch", "events")
+                .unwrap()["row_count"],
+            1500
+        );
     }
 
     #[test]

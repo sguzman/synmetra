@@ -212,8 +212,8 @@ jobs:
             and .summary.raw_field_shape_differences == (.raw_field_differences | length)
           ' spec/audits/native-upstream-diff.v1.json > /dev/null
           grep -Fq 'second T164 acceptance gate and T165 remain open' docs/CANONICAL_CONTRACT_DECISION.md
-          grep -Fq 'One-page GA ingestion' docs/CANONICAL_CONTRACT_DECISION.md || \
-            grep -Fq 'one page' docs/CANONICAL_CONTRACT_DECISION.md
+          grep -Fq 'bounded multi-page collection' docs/CANONICAL_CONTRACT_DECISION.md
+          grep -Fq 'one DuckDB transaction' docs/CANONICAL_CONTRACT_DECISION.md
 
       - name: Validate 36 documented native tools and JSON examples
         shell: bash
