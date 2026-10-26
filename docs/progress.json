@@ -347,16 +347,18 @@
               "id": "T017",
               "emoji": "🗒️",
               "name": "Create changelog and reproducible release policy",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "Document semver and provenance gates",
               "checks": [
                 {
                   "text": "Deliver create changelog and reproducible release policy as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "CHANGELOG.md defines an Unreleased section and the experimental 0.0.1 baseline; docs/RELEASE_POLICY.md defines SemVer, immutable source and lockfile pinning, secure provenance requirements, live Google gating and non-production CI artifacts; README links both. GitHub Actions 40259902417 core checked manifest/changelog version and required policy gates."
                 },
                 {
                   "text": "Document semver and provenance gates",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "docs/RELEASE_POLICY.md explains independent reproducibility, checksums, source SHA and release promotion requirements and distinguishes a successful CI build from a signed/stable release. CI 40259902417 changelog/version policy validation passed; actual reproducible binary acceptance remains an independent M9 task."
                 }
               ]
             }
@@ -3873,12 +3875,13 @@
               "id": "T196",
               "emoji": "🏗️",
               "name": "Build reproducible x86-64 Linux binary",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Artifact installs without Python npm or node",
               "checks": [
                 {
                   "text": "Deliver build reproducible x86-64 linux binary as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": ".github/workflows/linux-release.yml builds the default Rust 1.99.1 release binary from Cargo.lock, verifies dynamic native dependencies, normalizes a tarball with source SHA, license and install instructions, checks SHA-256, then extracts and invokes the binary with PATH=/nonexistent. GitHub Actions 40259842341 succeeded and uploaded experimental x86-64 artifact ID 12623622345. Independent two-run binary hash reproducibility has NOT been proven; acceptance remains partial."
                 },
                 {
                   "text": "Artifact installs without Python npm or node",
@@ -3909,12 +3912,13 @@
               "id": "T198",
               "emoji": "📦",
               "name": "Provide Arch PKGBUILD or local packaging recipe",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Pacman-managed or local user installation path tested",
               "checks": [
                 {
                   "text": "Deliver provide arch pkgbuild or local packaging recipe as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "packaging/arch/PKGBUILD implements a locally pinned immutable Git commit package with Rust 1.99.1, locked/offline release compilation, default-feature tests, and pacman-staged binary/license/docs; docs/INSTALL.md distinguishes it from the verified Cargo path. GitHub Actions 40260186967 core passed bash -n and source/metadata/build/package recipe checks. Actual Arch makepkg package installation has NOT been exercised, so full acceptance remains open."
                 },
                 {
                   "text": "Pacman-managed or local user installation path tested",

@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `█████░░░░░ 53.1%` · **+53.08 percentage points from initial empty repo; +0.44 pp from bounded MCP stdio/HTTP transport and malformed input rejection** · 104/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `█████░░░░░ 54.0%` · **+53.96 percentage points from initial empty repo; +0.88 pp from verified release policy, experimental Linux binary and Arch recipe** · 105/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -11,7 +11,7 @@
 - On each stewardship round, report total and actively worked milestone/phase/task bars plus the **signed delta in percentage points** against the previous verified committed ledger; completed 100% tasks can be omitted in ongoing status updates.
 - **No progress padding.** Upstream feature inventory, planning and brand assets count only for their specific documentation tasks; GA4 functionality starts at 0% until tests establish otherwise. Real Google access, credentials and live tests are separate explicit gates.
 
-## 🧭 M0 — Reference baseline and project governance — `█████████░ 85.3%`
+## 🧭 M0 — Reference baseline and project governance — `█████████░ 91.2%`
 
 **Scope:** MVP. **Acceptance gate:** Audited pinned feature-union inventory, color identity, public-safe policies and reproducible plan. Foundation is not runtime parity.
 
@@ -36,7 +36,7 @@
 - 🔁 **T008 — Set up upstream drift tracking and version pin policy** — `██████████ 100.0%`
   - ✅ **Gate:** CI alerts on name/signature deltas without silent breaking changes · **Evidence:** docs/UPSTREAM.md, docs/PROVENANCE.md, docs/tool-inventory.json and src/bin/synmetra-progress.rs: pinned source revisions and CI-checked 36-name union; GitHub Actions 40211821382 passed; upstream signature drift alert automation remains open.; .github/workflows/upstream-drift.yml now checks pinned upstream signature-bearing source blobs on weekly schedule, manual dispatch and changes to the watch/lock; spec/upstream/drift-lock.json pins SednaLabs schema snapshot blob 646c0baa and Google coordinator blob a1e7936a at separately documented source commits; drift produces a failed GitHub Actions job and review guidance without silently updating the baseline. docs/UPSTREAM.md documents the conservative source-change policy and its limitations. GitHub Actions 40241902469 verified both public current blobs against the pins; 40241902503 core and DuckDB passed. The watch detects file changes for review, not automatic parsing of Google's entire dynamic runtime schema.
 
-### 🦀 P01 — Native scaffold and quality gates — `███████░░░ 72.2%`
+### 🦀 P01 — Native scaffold and quality gates — `████████░░ 83.3%`
 
 **Feature:** Rust foundation.
 
@@ -56,8 +56,8 @@
   - ✅ **Gate:** Actionable diagnostics and typed failures without exposing secrets · **Evidence:** src/auth.rs implements native `auth doctor`, `auth command`, `auth status`, `auth login`, `auth logout`; public_status redacts token values and offline unit tests passed core run 40212316165; live Google authorization and full operator QA remain unverified.; src/auth.rs CLI offers private read-only auth doctor/status/command, typed malformed login validation and revocation guidance. GitHub Actions 40244436625 built the actual synmetra executable and passed Verify native auth doctor and credential-safe CLI failures, with isolated XDG_CONFIG_HOME, no configured credentials, synthetic override-token canary never disclosed, actionable Admin/Data API prerequisites, failed headless login without --client-id-file, and logout guidance. This accepts local CLI diagnostics, not an authorized live OAuth login.
 - 🔏 **T016 — Threat-model local execution and its credential boundary** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Review accepted before live Google credentials · **Evidence (baseline only):** docs/LOCAL_EXECUTION_THREAT_MODEL.md audits assets, actors, stdio/HTTP bearer boundaries, native OAuth callback/PKCE, on-disk credential isolation, Google request validation, opt-in writes, DuckDB SQL restrictions, upstream CI, misuse scenarios and residual/security-release gates, grounded in src/main.rs src/http.rs src/auth.rs src/google.rs src/scratchpad.rs. Independent pre-live review and live-account acceptance remain unverified.
-- 🗒️ **T017 — Create changelog and reproducible release policy** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Document semver and provenance gates
+- 🗒️ **T017 — Create changelog and reproducible release policy** — `██████████ 100.0%`
+  - ✅ **Gate:** Document semver and provenance gates · **Evidence:** CHANGELOG.md defines an Unreleased section and the experimental 0.0.1 baseline; docs/RELEASE_POLICY.md defines SemVer, immutable source and lockfile pinning, secure provenance requirements, live Google gating and non-production CI artifacts; README links both. GitHub Actions 40259902417 core checked manifest/changelog version and required policy gates.; docs/RELEASE_POLICY.md explains independent reproducibility, checksums, source SHA and release promotion requirements and distinguishes a successful CI build from a signed/stable release. CI 40259902417 changelog/version policy validation passed; actual reproducible binary acceptance remains an independent M9 task.
 
 
 ## 🔌 M1 — MCP protocol and transport fidelity — `███████░░░ 65.2%`
@@ -571,20 +571,20 @@
   - ✅ **Gate:** Signed provenance and dependency audit evidence
 
 
-## 🚀 M9 — Linux release and Codex-ready inauguration — `░░░░░░░░░░ 4.5%`
+## 🚀 M9 — Linux release and Codex-ready inauguration — `█░░░░░░░░░ 9.1%`
 
 **Scope:** MVP. **Acceptance gate:** A documented stable native binary with 36-tool verified parity and release artifacts; no Python/npm runtime.
 
-### 📦 P25 — Packaging and installation — `█░░░░░░░░░ 14.3%`
+### 📦 P25 — Packaging and installation — `███░░░░░░░ 28.6%`
 
 **Feature:** Native packaging.
 
-- 🏗️ **T196 — Build reproducible x86-64 Linux binary** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Artifact installs without Python npm or node
+- 🏗️ **T196 — Build reproducible x86-64 Linux binary** — `█████░░░░░ 50.0%`
+  - ✅ **Gate:** Artifact installs without Python npm or node · **Evidence (implementation only):** .github/workflows/linux-release.yml builds the default Rust 1.99.1 release binary from Cargo.lock, verifies dynamic native dependencies, normalizes a tarball with source SHA, license and install instructions, checks SHA-256, then extracts and invokes the binary with PATH=/nonexistent. GitHub Actions 40259842341 succeeded and uploaded experimental x86-64 artifact ID 12623622345. Independent two-run binary hash reproducibility has NOT been proven; acceptance remains partial.
 - 🦀 **T197 — Provide rustup and cargo-based source installation** — `██████████ 100.0%`
   - ✅ **Gate:** Native build documented for Arch and other Linux · **Evidence:** docs/INSTALL.md documents pinning Rust 1.99.1, Arch pacman prerequisites, Cargo --locked --bin synmetra install into a user-local root, Fish PATH, other Linux build prerequisites, isolated diagnostics, optional DuckDB boundary, upgrade and uninstall; linked from README. Main commit 866847051.; GitHub Actions 40258199187 core job successfully ran an isolated Cargo +1.99.1 install --path . --locked --debug --bin synmetra to a temp root, verified installed executable without progress utility, invoked native auth doctor with PATH=/nonexistent and isolated XDG_CONFIG_HOME, checked no credential-value leakage, then uninstalled cleanly; DuckDB and core jobs both passed. Smoke was on Ubuntu Linux; Arch package prerequisites are documented but native Arch packaging is T198.
-- 📦 **T198 — Provide Arch PKGBUILD or local packaging recipe** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Pacman-managed or local user installation path tested
+- 📦 **T198 — Provide Arch PKGBUILD or local packaging recipe** — `█████░░░░░ 50.0%`
+  - ✅ **Gate:** Pacman-managed or local user installation path tested · **Evidence (implementation only):** packaging/arch/PKGBUILD implements a locally pinned immutable Git commit package with Rust 1.99.1, locked/offline release compilation, default-feature tests, and pacman-staged binary/license/docs; docs/INSTALL.md distinguishes it from the verified Cargo path. GitHub Actions 40260186967 core passed bash -n and source/metadata/build/package recipe checks. Actual Arch makepkg package installation has NOT been exercised, so full acceptance remains open.
 - 🧷 **T199 — Offer optional ARM64 Linux release binary** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Aarch64 CI artifact smoke test and linked library audit
 - 📏 **T200 — Document DuckDB native shared/static requirements** — `░░░░░░░░░░ 0.0%`
