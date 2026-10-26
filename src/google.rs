@@ -226,7 +226,7 @@ impl GoogleClient {
             // A request carrying a streaming or unclonable body is not retried.
             let replay = req.try_clone();
             let response = req
-                .bearer_auth(&bearer)
+                .bearer_auth(bearer)
                 .header(reqwest::header::ACCEPT, "application/json")
                 .send()
                 .await
