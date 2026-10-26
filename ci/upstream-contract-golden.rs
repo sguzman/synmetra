@@ -41,10 +41,18 @@ fn capture_pinned_contract_v1_goldens() {
     assert_eq!(compact["meta"]["row_count_total"], 100);
     assert_eq!(compact["meta"]["row_count_returned"], 25);
     assert_eq!(compact["meta"]["next_cursor"], "v1:abcd:25");
+    assert_eq!(compact["meta"]["output_mode"], "compact");
+    assert_eq!(compact["meta"]["elapsed_ms"], 8);
+    assert_eq!(compact["data"][0]["event_name"], "page_view");
     assert!(summary["data"].is_null());
     assert_eq!(summary["meta"]["next_cursor"], "v1:abc:5");
+    assert_eq!(summary["meta"]["summary_only"], true);
+    assert_eq!(summary["meta"]["elapsed_ms"], 9);
     assert_eq!(denied["error"]["code"], "POLICY_DENIED");
+    assert_eq!(denied["error"]["category"], "policy");
+    assert_eq!(cursor_error["error"]["code"], "CURSOR_QUERY_MISMATCH");
     assert_eq!(cursor_error["error"]["reason"], "invalid_cursor");
+    assert_eq!(cursor_error["error"]["category"], "cursor");
 
     let artifact = json!({
         "schema":"synmetra_pinned_executed_upstream_contract_v1",
