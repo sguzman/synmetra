@@ -169,6 +169,28 @@ jobs:
             > "$RUNNER_TEMP/synmetra-logout.txt"
           grep -Fq 'Revoke access in your Google account' "$RUNNER_TEMP/synmetra-logout.txt"
 
+      - name: Verify isolated Cargo source install and native CLI lifecycle
+        shell: bash
+        run: |
+          root="$RUNNER_TEMP/synmetra-installed"
+          mkdir -p "$root"
+          CARGO_TARGET_DIR="$GITHUB_WORKSPACE/target" \
+            cargo +1.99.1 install --path . --locked --debug --bin synmetra --root "$root"
+          test -x "$root/bin/synmetra"
+          test ! -e "$root/bin/synmetra-progress"
+          config_root="$(mktemp -d "$RUNNER_TEMP/synmetra-install-smoke.XXXXXX")"
+          trap 'rm -rf "$config_root"' EXIT
+          env -i PATH=/nonexistent XDG_CONFIG_HOME="$config_root" \
+            "$root/bin/synmetra" auth doctor > "$RUNNER_TEMP/synmetra-installed-doctor.txt"
+          grep -Fq 'To configure native OAuth:' "$RUNNER_TEMP/synmetra-installed-doctor.txt"
+          if grep -Eiq 'refresh_token|client_secret|access_token": "' \
+            "$RUNNER_TEMP/synmetra-installed-doctor.txt"; then
+            echo 'Sensitive credential value in native install smoke' >&2
+            exit 1
+          fi
+          cargo +1.99.1 uninstall --root "$root" synmetra
+          test ! -e "$root/bin/synmetra"
+
       - name: Reject unsupported public MCP bind overrides before network startup
         shell: bash
         run: |
