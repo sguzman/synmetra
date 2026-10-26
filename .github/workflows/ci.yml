@@ -121,6 +121,21 @@ jobs:
             > "$RUNNER_TEMP/synmetra-auth-command.txt"
           grep -Fq 'synmetra auth login --client-id-file' "$RUNNER_TEMP/synmetra-auth-command.txt"
 
+          # Verify native operator diagnostics work without any gcloud, Python,
+          # npm, external shell utilities or executable PATH in the child process.
+          env -i PATH=/nonexistent XDG_CONFIG_HOME="$config_root" \
+            target/debug/synmetra auth doctor \
+            > "$RUNNER_TEMP/synmetra-doctor-isolated.txt"
+          grep -Fq 'To configure native OAuth:' "$RUNNER_TEMP/synmetra-doctor-isolated.txt"
+          env -i PATH=/nonexistent XDG_CONFIG_HOME="$config_root" \
+            target/debug/synmetra auth status \
+            > "$RUNNER_TEMP/synmetra-status-isolated.txt"
+          grep -Fq 'no saved OAuth credentials' "$RUNNER_TEMP/synmetra-status-isolated.txt"
+          env -i PATH=/nonexistent XDG_CONFIG_HOME="$config_root" \
+            target/debug/synmetra auth command \
+            > "$RUNNER_TEMP/synmetra-command-isolated.txt"
+          grep -Fq 'synmetra auth login --client-id-file' "$RUNNER_TEMP/synmetra-command-isolated.txt"
+
           if XDG_CONFIG_HOME="$config_root" target/debug/synmetra auth login --headless \
             > "$RUNNER_TEMP/synmetra-auth-bad.stdout" \
             2> "$RUNNER_TEMP/synmetra-auth-bad.stderr"; then
