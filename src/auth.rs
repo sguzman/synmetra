@@ -605,13 +605,14 @@ async fn login(options: &LoginOptions) -> Result<(), String> {
 // Confirm the exact native OAuth scope granted by Google without exposing the
 // token or refreshing credentials. This is not a Google property-role check.
 fn granted_scope_contains_edit(scope: &str) -> bool {
-    scope.split_ascii_whitespace().any(|part| part == SCOPE_EDIT)
+    scope
+        .split_ascii_whitespace()
+        .any(|part| part == SCOPE_EDIT)
 }
 
 pub(crate) fn native_edit_scope_granted() -> Result<Option<bool>, String> {
-    read_credentials().map(|stored| {
-        stored.map(|config| granted_scope_contains_edit(&config.granted_scope))
-    })
+    read_credentials()
+        .map(|stored| stored.map(|config| granted_scope_contains_edit(&config.granted_scope)))
 }
 
 pub fn public_status() -> serde_json::Value {
@@ -1347,8 +1348,12 @@ mod tests {
         ));
         assert!(!granted_scope_contains_edit("analytics.edit"));
         assert!(granted_scope_contains_edit(SCOPE_EDIT));
-        assert!(granted_scope_contains_edit(&format!("{SCOPE}  {SCOPE_EDIT}")));
-        assert!(granted_scope_contains_edit(&format!("{SCOPE_EDIT}\n{SCOPE}")));
+        assert!(granted_scope_contains_edit(&format!(
+            "{SCOPE}  {SCOPE_EDIT}"
+        )));
+        assert!(granted_scope_contains_edit(&format!(
+            "{SCOPE_EDIT}\n{SCOPE}"
+        )));
     }
 
     #[test]

@@ -7449,9 +7449,7 @@ mod tests {
             "color":"BLUE"
         }))
         .unwrap();
-        let response = server
-            .create_property_annotation(Parameters(input))
-            .await;
+        let response = server.create_property_annotation(Parameters(input)).await;
         assert_eq!(response.is_error, Some(true));
         let payload = response.structured_content.unwrap();
         assert_eq!(payload["error"]["code"], "EDIT_SCOPE_REQUIRED");
