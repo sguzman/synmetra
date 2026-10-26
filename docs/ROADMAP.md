@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `████████░░ 79.5%` · **+79.52 percentage points from initial empty repo; +0.44 pp from passing raw-wire and Rust SDK MCP cross-client conformance
+**Overall:** `████████░░ 79.7%` · **+79.74 percentage points from initial empty repo; +0.22 pp from CI-verified 36-tool synthetic MCP invocation coverage
 
 ### 📏 Progress conventions
 
@@ -495,11 +495,11 @@
   - ✅ **Gate:** Changes open maintenance work rather than silently inflate parity · **Evidence:** .github/workflows/upstream-drift.yml watches exact SednaLabs schema and Google coordinator Git blob SHAs weekly and on reviewed lock/workflow changes; changes trigger stable [upstream-drift] local maintenance issue, never repin automatically. ci/test-upstream-drift-watch.sh executes the actual workflow shell body with mocked curl/gh, verifying unchanged, changed and duplicate issue cases. GitHub Actions drift workflow 40249957815 succeeded.; GitHub Actions 40249957815 offline fixture checks verify an upstream blob change fails the watch and opens exactly one review issue per source; repeat unchanged pin mismatch reuses an existing open issue and a second changed source opens a separate one. Real unchanged upstream watch also passed. No real upstream drift was forced and no real maintenance issue was created; this is synthetic acceptance of the detection/mutation control, not a source parity claim.
 
 
-## 🧪 M8 — Verification, resilience and security acceptance — `██████░░░░ 58.9%`
+## 🧪 M8 — Verification, resilience and security acceptance — `██████░░░░ 60.7%`
 
 **Scope:** MVP. **Acceptance gate:** Full offline and authorized live verification including malformed inputs, MCP interoperability and threat model.
 
-### 🧫 P22 — Deterministic tests — `████████░░ 80.0%`
+### 🧫 P22 — Deterministic tests — `█████████░ 85.0%`
 
 **Feature:** Offline QA.
 
@@ -511,8 +511,8 @@
   - ✅ **Gate:** Adversarial payload corpus is bounded and rejected · **Evidence:** src/google.rs: exhaustive bounded filter tests reject excess nesting, too many nodes, long strings, oversize JSON, and invalid filter shapes; GitHub Actions core 40218035242. Full adversarial fuzz corpus remains unaccepted.; src/google.rs adversarial_report_filter_corpus_is_bounded_before_google_network_access tests deterministic invalid JSON and filter corpus: empty/primitive roots, empty nested filters, breadth 65, 1025-byte strings, 17-kibibyte serialized inputs, 129-byte keys, over 256 nested nodes, and depth over 12. Both bounded filter validation and report_request reject the corpus with INVALID_REQUEST before Google credentials/network access. Supplements existing historic/complex filter tests; GitHub Actions 40240559437 core fmt, Rust tests, Clippy succeeded. This is deterministic corpus coverage, not a stochastic fuzzing or live Google claim.
 - 📚 **T171 — Differentially compare upstream response projections** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Normalized golden fixtures generated from pinned baseline · **Evidence:** src/tabular.rs pinned_upstream_response_goldens_expose_shared_fields_and_real_divergences compares two source-derived pinned SednaLabs Contract V1 success fixtures (compact and summary-only) against a synthetic native projection, asserts equal shared row-count/cursor metadata, and explicitly preserves non-equivalent compact data, elapsed-time and cursor-taxonomy limits. spec/fixtures/sednalabs-response-differential.v1.json and docs/RESPONSE_DIFFERENTIAL.md retain upstream SHA, source-test identities, negative findings and fixture limits. The default Rust MCP tests and CI source-golden guard passed in GitHub Actions https://github.com/sguzman/synmetra/actions/runs/40373806570 (core steps); native DuckDB job also passed. The pinned upstream executable has not been run; the second executable-golden acceptance gate stays open.
-- 🪟 **T172 — Exercise stdio tools under an MCP inspector** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Every advertised tool can be called with synthetic fixtures
+- 🪟 **T172 — Exercise stdio tools under an MCP inspector** — `█████░░░░░ 50.0%`
+  - ✅ **Gate:** Every advertised tool can be called with synthetic fixtures · **Evidence:** src/main.rs all_36_registered_mcp_tools_accept_synthetic_fixture_invocations uses spec/fixtures/native-all-tool-smoke.v1.json to enumerate and invoke all 36 advertised MCP tools through a real rmcp client session with feature-enabled in-memory DuckDB. Each invocation returns structured typed success or error metadata under an eight-second timeout, and the synthetic Google token is not reflected. Every Google provider request is redirected to a local fake 403 responder, never a live account. The optional DuckDB job passed https://github.com/sguzman/synmetra/actions/runs/40415340670; docs/MCP_CONFORMANCE.md records the evidence. The actual MCP Inspector tool has not been run, so T172's separate first check remains open.
 - 🛰️ **T173 — Exercise protected Streamable HTTP end-to-end** — `██████████ 100.0%`
   - ✅ **Gate:** Valid and invalid sessions checked over loopback · **Evidence:** Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.; src/http.rs authenticated_http_session_lists_and_calls_tools_but_rejects_invalid_sessions verifies a real Axum loopback HTTP server with rmcp legacy sessions, returned Mcp-Session-Id, initialized notification, authenticated tools/list (20 default read-only tools), successful ga4_get_started tools/call and structured payload, and rejection of unknown session, wrong bearer and wrong origin. mcp_json_response handles legacy SSE transport safely. GitHub Actions 40245367526 core and DuckDB passed. No live Google property was accessed; session termination/lifetime and modern stateless performance are separate hardening gates.
 - 🧹 **T174 — Enforce schema/roadmap ledger consistency in CI** — `██████████ 100.0%`

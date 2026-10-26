@@ -12,6 +12,12 @@
 
 The raw clients and Rust SDK exercise two **different client implementations**, while the raw profiles exercise two negotiated protocol versions. Each raw client creates a new process and private config directory, never contacts Google, clears ambient Google and MCP bearer overrides, uses `timeout`, checks JSON-RPC IDs/response counts, and requires no npm, Python, Node or `gcloud`. The client fixtures do **not** pretend a failed, uncredentialed Google request is an authorized success.
 
+## Full 36-tool synthetic invocation pass (not an Inspector)
+
+The optional bundled-DuckDB feature test `all_36_registered_mcp_tools_accept_synthetic_fixture_invocations` in `src/main.rs` loads [36 named JSON argument fixtures](../spec/fixtures/native-all-tool-smoke.v1.json), compares them with every advertised tool returned from a real `rmcp` client session, and invokes **all 36 routes** through the client, with an eight-second deadline per call. It verifies a typed structured `ok/data/meta` or `ok/error/meta` outcome, MCP tool-error status where appropriate, and absence of its synthetic Google bearer from response bodies.
+
+A local, ephemeral `127.0.0.1` fake Google endpoint deliberately returns HTTP 403 rather than using a live account, while DuckDB tools run only in process-local scratchpad memory. The full feature-enabled test passed [DuckDB CI 40415340670](https://github.com/sguzman/synmetra/actions/runs/40415340670). This satisfies the **synthetic all-tool invocation** criterion of T172 but **not** its external MCP Inspector criterion: neither the official Inspector nor an authorized Google provider was invoked. That independent Inspector gate remains open.
+
 ## Contract checks and exclusions
 
 - The initialize response must identify `synmetra` and advertise a tools capability; tool listing must expose exactly 20 default read-only tools and no annotation write.

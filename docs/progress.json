@@ -3495,7 +3495,7 @@
               "id": "T172",
               "emoji": "🪟",
               "name": "Exercise stdio tools under an MCP inspector",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Every advertised tool can be called with synthetic fixtures",
               "checks": [
                 {
@@ -3504,7 +3504,8 @@
                 },
                 {
                   "text": "Every advertised tool can be called with synthetic fixtures",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs all_36_registered_mcp_tools_accept_synthetic_fixture_invocations uses spec/fixtures/native-all-tool-smoke.v1.json to enumerate and invoke all 36 advertised MCP tools through a real rmcp client session with feature-enabled in-memory DuckDB. Each invocation returns structured typed success or error metadata under an eight-second timeout, and the synthetic Google token is not reflected. Every Google provider request is redirected to a local fake 403 responder, never a live account. The optional DuckDB job passed https://github.com/sguzman/synmetra/actions/runs/40415340670; docs/MCP_CONFORMANCE.md records the evidence. The actual MCP Inspector tool has not been run, so T172's separate first check remains open."
                 }
               ]
             },
