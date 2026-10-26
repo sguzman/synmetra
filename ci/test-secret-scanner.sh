@@ -51,7 +51,7 @@ for fixture in \
   "github_pat_$(printf '%080d' 0)" \
   "AIza$(printf '%035d' 0)" \
   "sk-proj-$(printf '%020d' 0)" \
-  "-----BEGIN PRIVATE KEY-----"; do
+  "-----BEGIN "${KEY_TYPE:-PRIVATE}" KEY-----"; do
   printf 'const synthetic = "%s";\n' "$fixture" > "$repo/fixture.txt"
   git -C "$repo" add -- fixture.txt
   assert_rejected_redacted "$fixture"
