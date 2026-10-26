@@ -39,7 +39,11 @@
           "ref": "#/$defs/PropertyId",
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "$ref": "#/$defs/PropertyId"
+          }
         },
         {
           "name": "requests",
@@ -54,7 +58,14 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "items": {
+              "$ref": "#/$defs/BatchRunReportItemArgs"
+            },
+            "type": "array"
+          }
         }
       ],
       "google_signature_parameters": [],
@@ -68,6 +79,163 @@
       "error_contract": {
         "sednalabs": "No per-tool error schema in pinned input schema; response envelope lives in separately pinned payload-contract fixture",
         "google": "Not present in extracted official function signatures"
+      },
+      "sednalabs_defs": {
+        "BatchRunReportItemArgs": {
+          "properties": {
+            "currency_code": {
+              "default": null,
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "cursor": {
+              "default": null,
+              "description": "Opaque pagination cursor from `meta.next_cursor`.",
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "date_ranges": {
+              "items": {
+                "$ref": "#/$defs/ReportDateRangeSchema"
+              },
+              "type": "array"
+            },
+            "dimension_filter": {
+              "default": null,
+              "description": "GA FilterExpression. Accepts an object, JSON-object string, or `field==value` shorthand."
+            },
+            "dimensions": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "limit": {
+              "default": null,
+              "format": "uint64",
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "max_cell_chars": {
+              "default": null,
+              "description": "Optional string clipping limit applied to response cell values.",
+              "format": "uint",
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "max_rows": {
+              "default": null,
+              "description": "Optional response row cap for Contract V1 tabular payloads.",
+              "format": "uint",
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "metric_filter": {
+              "default": null,
+              "description": "GA FilterExpression. Accepts an object or JSON-object string."
+            },
+            "metrics": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "offset": {
+              "default": null,
+              "format": "uint64",
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "order_bys": {
+              "default": null,
+              "items": true,
+              "type": [
+                "array",
+                "null"
+              ]
+            },
+            "output_mode": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/TabularOutputMode"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Tabular output shape for the response payload."
+            },
+            "return_property_quota": {
+              "default": true,
+              "type": "boolean"
+            },
+            "summary_only": {
+              "default": false,
+              "description": "If true, omit row payload and return metadata only.",
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "date_ranges",
+            "dimensions",
+            "metrics"
+          ],
+          "type": "object"
+        },
+        "PropertyId": {
+          "anyOf": [
+            {
+              "format": "uint64",
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "ReportDateRangeSchema": {
+          "properties": {
+            "end_date": {
+              "description": "Inclusive end date (for example `2026-02-07`, `yesterday`).",
+              "type": "string"
+            },
+            "start_date": {
+              "description": "Inclusive start date (for example `2026-02-01`, `7daysAgo`).",
+              "type": "string"
+            }
+          },
+          "required": [
+            "start_date",
+            "end_date"
+          ],
+          "type": "object"
+        },
+        "TabularOutputMode": {
+          "enum": [
+            "rows",
+            "tuples",
+            "scalar",
+            "compact"
+          ],
+          "type": "string"
+        }
       }
     },
     {
@@ -91,7 +259,15 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Requested dimensions for preflight compatibility checks."
+          "description": "Requested dimensions for preflight compatibility checks.",
+          "format": null,
+          "raw_schema": {
+            "description": "Requested dimensions for preflight compatibility checks.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
         },
         {
           "name": "metrics",
@@ -106,7 +282,15 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Requested metrics for preflight compatibility checks."
+          "description": "Requested metrics for preflight compatibility checks.",
+          "format": null,
+          "raw_schema": {
+            "description": "Requested metrics for preflight compatibility checks.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
         },
         {
           "name": "property_id",
@@ -121,7 +305,12 @@
           "ref": "#/$defs/PropertyId",
           "oneOf": null,
           "anyOf": null,
-          "description": "The Google Analytics property id as integer or \"properties/<id>\"."
+          "description": "The Google Analytics property id as integer or \"properties/<id>\".",
+          "format": null,
+          "raw_schema": {
+            "$ref": "#/$defs/PropertyId",
+            "description": "The Google Analytics property id as integer or \"properties/<id>\"."
+          }
         }
       ],
       "google_signature_parameters": [],
@@ -136,6 +325,20 @@
       "error_contract": {
         "sednalabs": "No per-tool error schema in pinned input schema; response envelope lives in separately pinned payload-contract fixture",
         "google": "Not present in extracted official function signatures"
+      },
+      "sednalabs_defs": {
+        "PropertyId": {
+          "anyOf": [
+            {
+              "format": "uint64",
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        }
       }
     },
     {
@@ -224,7 +427,16 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Optional Google account hint for browser login."
+          "description": "Optional Google account hint for browser login.",
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "description": "Optional Google account hint for browser login.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
         },
         {
           "name": "callback_port",
@@ -242,7 +454,19 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Optional fixed loopback callback port for direct browser OAuth."
+          "description": "Optional fixed loopback callback port for direct browser OAuth.",
+          "format": "uint16",
+          "raw_schema": {
+            "default": null,
+            "description": "Optional fixed loopback callback port for direct browser OAuth.",
+            "format": "uint16",
+            "maximum": 65535,
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "client_id_file",
@@ -260,7 +484,16 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Optional Google OAuth client id file for direct browser OAuth."
+          "description": "Optional Google OAuth client id file for direct browser OAuth.",
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "description": "Optional Google OAuth client id file for direct browser OAuth.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
         },
         {
           "name": "headless",
@@ -275,7 +508,13 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Include the headless browser flag for SSH or remote environments."
+          "description": "Include the headless browser flag for SSH or remote environments.",
+          "format": null,
+          "raw_schema": {
+            "default": false,
+            "description": "Include the headless browser flag for SSH or remote environments.",
+            "type": "boolean"
+          }
         },
         {
           "name": "quota_project",
@@ -293,7 +532,16 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Optional quota project to include as a follow-up command."
+          "description": "Optional quota project to include as a follow-up command.",
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "description": "Optional quota project to include as a follow-up command.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
         },
         {
           "name": "shared_adc",
@@ -311,7 +559,16 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Use the conventional shared gcloud ADC file instead of the server-specific file."
+          "description": "Use the conventional shared gcloud ADC file instead of the server-specific file.",
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "description": "Use the conventional shared gcloud ADC file instead of the server-specific file.",
+            "type": [
+              "boolean",
+              "null"
+            ]
+          }
         }
       ],
       "google_signature_parameters": [],
@@ -329,7 +586,8 @@
       "error_contract": {
         "sednalabs": "No per-tool error schema in pinned input schema; response envelope lives in separately pinned payload-contract fixture",
         "google": "Not present in extracted official function signatures"
-      }
+      },
+      "sednalabs_defs": {}
     },
     {
       "name": "ga4_auth_status",
@@ -352,7 +610,13 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "When true, acquire a Google access token and call GA account summaries. The token is never returned."
+          "description": "When true, acquire a Google access token and call GA account summaries. The token is never returned.",
+          "format": null,
+          "raw_schema": {
+            "default": false,
+            "description": "When true, acquire a Google access token and call GA account summaries. The token is never returned.",
+            "type": "boolean"
+          }
         }
       ],
       "google_signature_parameters": [],
@@ -365,7 +629,8 @@
       "error_contract": {
         "sednalabs": "No per-tool error schema in pinned input schema; response envelope lives in separately pinned payload-contract fixture",
         "google": "Not present in extracted official function signatures"
-      }
+      },
+      "sednalabs_defs": {}
     },
     {
       "name": "ga4_get_started",
@@ -383,7 +648,8 @@
       "error_contract": {
         "sednalabs": "No per-tool error schema in pinned input schema; response envelope lives in separately pinned payload-contract fixture",
         "google": "Not present in extracted official function signatures"
-      }
+      },
+      "sednalabs_defs": {}
     },
     {
       "name": "get_account_data_sharing_settings",
@@ -406,7 +672,12 @@
           "ref": "#/$defs/AccountId",
           "oneOf": null,
           "anyOf": null,
-          "description": "The Google Analytics account id as integer or \"accounts/<id>\"."
+          "description": "The Google Analytics account id as integer or \"accounts/<id>\".",
+          "format": null,
+          "raw_schema": {
+            "$ref": "#/$defs/AccountId",
+            "description": "The Google Analytics account id as integer or \"accounts/<id>\"."
+          }
         }
       ],
       "google_signature_parameters": [],
@@ -419,6 +690,20 @@
       "error_contract": {
         "sednalabs": "No per-tool error schema in pinned input schema; response envelope lives in separately pinned payload-contract fixture",
         "google": "Not present in extracted official function signatures"
+      },
+      "sednalabs_defs": {
+        "AccountId": {
+          "anyOf": [
+            {
+              "format": "uint64",
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        }
       }
     },
     {
@@ -445,7 +730,18 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Optional max pages to fetch before stopping."
+          "description": "Optional max pages to fetch before stopping.",
+          "format": "uint32",
+          "raw_schema": {
+            "default": null,
+            "description": "Optional max pages to fetch before stopping.",
+            "format": "uint32",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "page_size",
@@ -463,7 +759,18 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Optional page size used during pagination. Defaults to server max."
+          "description": "Optional page size used during pagination. Defaults to server max.",
+          "format": "uint32",
+          "raw_schema": {
+            "default": null,
+            "description": "Optional page size used during pagination. Defaults to server max.",
+            "format": "uint32",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         }
       ],
       "google_signature_parameters": [],
@@ -477,7 +784,8 @@
       "error_contract": {
         "sednalabs": "No per-tool error schema in pinned input schema; response envelope lives in separately pinned payload-contract fixture",
         "google": "Not present in extracted official function signatures"
-      }
+      },
+      "sednalabs_defs": {}
     },
     {
       "name": "get_custom_dimensions_and_metrics",
@@ -500,7 +808,12 @@
           "ref": "#/$defs/PropertyId",
           "oneOf": null,
           "anyOf": null,
-          "description": "The Google Analytics property id as integer or \"properties/<id>\"."
+          "description": "The Google Analytics property id as integer or \"properties/<id>\".",
+          "format": null,
+          "raw_schema": {
+            "$ref": "#/$defs/PropertyId",
+            "description": "The Google Analytics property id as integer or \"properties/<id>\"."
+          }
         }
       ],
       "google_signature_parameters": [
@@ -545,6 +858,20 @@
       "error_contract": {
         "sednalabs": "No per-tool error schema in pinned input schema; response envelope lives in separately pinned payload-contract fixture",
         "google": "Not present in extracted official function signatures"
+      },
+      "sednalabs_defs": {
+        "PropertyId": {
+          "anyOf": [
+            {
+              "format": "uint64",
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        }
       }
     },
     {
@@ -568,7 +895,12 @@
           "ref": "#/$defs/PropertyId",
           "oneOf": null,
           "anyOf": null,
-          "description": "The Google Analytics property id as integer or \"properties/<id>\"."
+          "description": "The Google Analytics property id as integer or \"properties/<id>\".",
+          "format": null,
+          "raw_schema": {
+            "$ref": "#/$defs/PropertyId",
+            "description": "The Google Analytics property id as integer or \"properties/<id>\"."
+          }
         }
       ],
       "google_signature_parameters": [],
@@ -581,6 +913,20 @@
       "error_contract": {
         "sednalabs": "No per-tool error schema in pinned input schema; response envelope lives in separately pinned payload-contract fixture",
         "google": "Not present in extracted official function signatures"
+      },
+      "sednalabs_defs": {
+        "PropertyId": {
+          "anyOf": [
+            {
+              "format": "uint64",
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        }
       }
     },
     {
@@ -604,7 +950,12 @@
           "ref": "#/$defs/PropertyId",
           "oneOf": null,
           "anyOf": null,
-          "description": "The Google Analytics property id as integer or \"properties/<id>\"."
+          "description": "The Google Analytics property id as integer or \"properties/<id>\".",
+          "format": null,
+          "raw_schema": {
+            "$ref": "#/$defs/PropertyId",
+            "description": "The Google Analytics property id as integer or \"properties/<id>\"."
+          }
         }
       ],
       "google_signature_parameters": [
@@ -649,6 +1000,20 @@
       "error_contract": {
         "sednalabs": "No per-tool error schema in pinned input schema; response envelope lives in separately pinned payload-contract fixture",
         "google": "Not present in extracted official function signatures"
+      },
+      "sednalabs_defs": {
+        "PropertyId": {
+          "anyOf": [
+            {
+              "format": "uint64",
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        }
       }
     },
     {
@@ -675,7 +1040,18 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Optional max pages to fetch before stopping."
+          "description": "Optional max pages to fetch before stopping.",
+          "format": "uint32",
+          "raw_schema": {
+            "default": null,
+            "description": "Optional max pages to fetch before stopping.",
+            "format": "uint32",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "page_size",
@@ -693,7 +1069,18 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Optional page size used during pagination. Defaults to server max."
+          "description": "Optional page size used during pagination. Defaults to server max.",
+          "format": "uint32",
+          "raw_schema": {
+            "default": null,
+            "description": "Optional page size used during pagination. Defaults to server max.",
+            "format": "uint32",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "property_id",
@@ -708,7 +1095,12 @@
           "ref": "#/$defs/PropertyId",
           "oneOf": null,
           "anyOf": null,
-          "description": "The Google Analytics property id as integer or \"properties/<id>\"."
+          "description": "The Google Analytics property id as integer or \"properties/<id>\".",
+          "format": null,
+          "raw_schema": {
+            "$ref": "#/$defs/PropertyId",
+            "description": "The Google Analytics property id as integer or \"properties/<id>\"."
+          }
         }
       ],
       "google_signature_parameters": [
@@ -756,6 +1148,20 @@
       "error_contract": {
         "sednalabs": "No per-tool error schema in pinned input schema; response envelope lives in separately pinned payload-contract fixture",
         "google": "Not present in extracted official function signatures"
+      },
+      "sednalabs_defs": {
+        "PropertyId": {
+          "anyOf": [
+            {
+              "format": "uint64",
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        }
       }
     },
     {
@@ -782,7 +1188,18 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Optional max pages to fetch before stopping."
+          "description": "Optional max pages to fetch before stopping.",
+          "format": "uint32",
+          "raw_schema": {
+            "default": null,
+            "description": "Optional max pages to fetch before stopping.",
+            "format": "uint32",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "page_size",
@@ -800,7 +1217,18 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Optional page size used during pagination. Defaults to server max."
+          "description": "Optional page size used during pagination. Defaults to server max.",
+          "format": "uint32",
+          "raw_schema": {
+            "default": null,
+            "description": "Optional page size used during pagination. Defaults to server max.",
+            "format": "uint32",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "property_id",
@@ -815,7 +1243,12 @@
           "ref": "#/$defs/PropertyId",
           "oneOf": null,
           "anyOf": null,
-          "description": "The Google Analytics property id as integer or \"properties/<id>\"."
+          "description": "The Google Analytics property id as integer or \"properties/<id>\".",
+          "format": null,
+          "raw_schema": {
+            "$ref": "#/$defs/PropertyId",
+            "description": "The Google Analytics property id as integer or \"properties/<id>\"."
+          }
         }
       ],
       "google_signature_parameters": [
@@ -863,6 +1296,20 @@
       "error_contract": {
         "sednalabs": "No per-tool error schema in pinned input schema; response envelope lives in separately pinned payload-contract fixture",
         "google": "Not present in extracted official function signatures"
+      },
+      "sednalabs_defs": {
+        "PropertyId": {
+          "anyOf": [
+            {
+              "format": "uint64",
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        }
       }
     },
     {
@@ -889,7 +1336,15 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          }
         },
         {
           "name": "cursor",
@@ -907,7 +1362,16 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Opaque pagination cursor from `meta.next_cursor`."
+          "description": "Opaque pagination cursor from `meta.next_cursor`.",
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "description": "Opaque pagination cursor from `meta.next_cursor`.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
         },
         {
           "name": "date_ranges",
@@ -922,7 +1386,14 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "items": {
+              "$ref": "#/$defs/ReportDateRangeSchema"
+            },
+            "type": "array"
+          }
         },
         {
           "name": "dimension_filter",
@@ -937,7 +1408,12 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "GA FilterExpression. Accepts an object, JSON-object string, or `field==value` shorthand."
+          "description": "GA FilterExpression. Accepts an object, JSON-object string, or `field==value` shorthand.",
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "description": "GA FilterExpression. Accepts an object, JSON-object string, or `field==value` shorthand."
+          }
         },
         {
           "name": "dimensions",
@@ -952,7 +1428,14 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
         },
         {
           "name": "limit",
@@ -970,7 +1453,17 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": "uint64",
+          "raw_schema": {
+            "default": null,
+            "format": "uint64",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "max_cell_chars",
@@ -988,7 +1481,18 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Optional string clipping limit applied to response cell values."
+          "description": "Optional string clipping limit applied to response cell values.",
+          "format": "uint",
+          "raw_schema": {
+            "default": null,
+            "description": "Optional string clipping limit applied to response cell values.",
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "max_rows",
@@ -1006,7 +1510,18 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Optional response row cap for Contract V1 tabular payloads."
+          "description": "Optional response row cap for Contract V1 tabular payloads.",
+          "format": "uint",
+          "raw_schema": {
+            "default": null,
+            "description": "Optional response row cap for Contract V1 tabular payloads.",
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "metric_filter",
@@ -1021,7 +1536,12 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "GA FilterExpression. Accepts an object or JSON-object string."
+          "description": "GA FilterExpression. Accepts an object or JSON-object string.",
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "description": "GA FilterExpression. Accepts an object or JSON-object string."
+          }
         },
         {
           "name": "metrics",
@@ -1036,7 +1556,14 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
         },
         {
           "name": "offset",
@@ -1054,7 +1581,17 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": "uint64",
+          "raw_schema": {
+            "default": null,
+            "format": "uint64",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "order_bys",
@@ -1072,7 +1609,16 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "items": true,
+            "type": [
+              "array",
+              "null"
+            ]
+          }
         },
         {
           "name": "output_mode",
@@ -1094,7 +1640,19 @@
               "type": "null"
             }
           ],
-          "description": "Tabular output shape for the response payload."
+          "description": "Tabular output shape for the response payload.",
+          "format": null,
+          "raw_schema": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/TabularOutputMode"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Tabular output shape for the response payload."
+          }
         },
         {
           "name": "property_id",
@@ -1109,7 +1667,11 @@
           "ref": "#/$defs/PropertyId",
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "$ref": "#/$defs/PropertyId"
+          }
         },
         {
           "name": "return_property_quota",
@@ -1124,7 +1686,12 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "default": true,
+            "type": "boolean"
+          }
         },
         {
           "name": "summary_only",
@@ -1139,7 +1706,13 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "If true, omit row payload and return metadata only."
+          "description": "If true, omit row payload and return metadata only.",
+          "format": null,
+          "raw_schema": {
+            "default": false,
+            "description": "If true, omit row payload and return metadata only.",
+            "type": "boolean"
+          }
         }
       ],
       "google_signature_parameters": [],
@@ -1167,6 +1740,46 @@
       "error_contract": {
         "sednalabs": "No per-tool error schema in pinned input schema; response envelope lives in separately pinned payload-contract fixture",
         "google": "Not present in extracted official function signatures"
+      },
+      "sednalabs_defs": {
+        "PropertyId": {
+          "anyOf": [
+            {
+              "format": "uint64",
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "ReportDateRangeSchema": {
+          "properties": {
+            "end_date": {
+              "description": "Inclusive end date (for example `2026-02-07`, `yesterday`).",
+              "type": "string"
+            },
+            "start_date": {
+              "description": "Inclusive start date (for example `2026-02-01`, `7daysAgo`).",
+              "type": "string"
+            }
+          },
+          "required": [
+            "start_date",
+            "end_date"
+          ],
+          "type": "object"
+        },
+        "TabularOutputMode": {
+          "enum": [
+            "rows",
+            "tuples",
+            "scalar",
+            "compact"
+          ],
+          "type": "string"
+        }
       }
     },
     {
@@ -1190,7 +1803,11 @@
           "ref": "#/$defs/AccountId",
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "$ref": "#/$defs/AccountId"
+          }
         },
         {
           "name": "cursor",
@@ -1208,7 +1825,16 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Opaque pagination cursor from `meta.next_cursor`."
+          "description": "Opaque pagination cursor from `meta.next_cursor`.",
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "description": "Opaque pagination cursor from `meta.next_cursor`.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
         },
         {
           "name": "date_ranges",
@@ -1223,7 +1849,14 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "items": {
+              "$ref": "#/$defs/ReportDateRangeSchema"
+            },
+            "type": "array"
+          }
         },
         {
           "name": "dimension_filter",
@@ -1238,7 +1871,12 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "GA FilterExpression. Accepts an object, JSON-object string, or `field==value` shorthand."
+          "description": "GA FilterExpression. Accepts an object, JSON-object string, or `field==value` shorthand.",
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "description": "GA FilterExpression. Accepts an object, JSON-object string, or `field==value` shorthand."
+          }
         },
         {
           "name": "dimensions",
@@ -1253,7 +1891,14 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
         },
         {
           "name": "limit",
@@ -1271,7 +1916,17 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": "uint64",
+          "raw_schema": {
+            "default": null,
+            "format": "uint64",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "max_cell_chars",
@@ -1289,7 +1944,18 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Optional string clipping limit applied to response cell values."
+          "description": "Optional string clipping limit applied to response cell values.",
+          "format": "uint",
+          "raw_schema": {
+            "default": null,
+            "description": "Optional string clipping limit applied to response cell values.",
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "max_rows",
@@ -1307,7 +1973,18 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Optional response row cap for Contract V1 tabular payloads."
+          "description": "Optional response row cap for Contract V1 tabular payloads.",
+          "format": "uint",
+          "raw_schema": {
+            "default": null,
+            "description": "Optional response row cap for Contract V1 tabular payloads.",
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "metric_filter",
@@ -1322,7 +1999,12 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "GA FilterExpression. Accepts an object or JSON-object string."
+          "description": "GA FilterExpression. Accepts an object or JSON-object string.",
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "description": "GA FilterExpression. Accepts an object or JSON-object string."
+          }
         },
         {
           "name": "metrics",
@@ -1337,7 +2019,14 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
         },
         {
           "name": "offset",
@@ -1355,7 +2044,17 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": "uint64",
+          "raw_schema": {
+            "default": null,
+            "format": "uint64",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "order_bys",
@@ -1373,7 +2072,16 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "items": true,
+            "type": [
+              "array",
+              "null"
+            ]
+          }
         },
         {
           "name": "output_mode",
@@ -1395,7 +2103,19 @@
               "type": "null"
             }
           ],
-          "description": "Tabular output shape for the response payload."
+          "description": "Tabular output shape for the response payload.",
+          "format": null,
+          "raw_schema": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/TabularOutputMode"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Tabular output shape for the response payload."
+          }
         },
         {
           "name": "summary_only",
@@ -1410,7 +2130,13 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "If true, omit row payload and return metadata only."
+          "description": "If true, omit row payload and return metadata only.",
+          "format": null,
+          "raw_schema": {
+            "default": false,
+            "description": "If true, omit row payload and return metadata only.",
+            "type": "boolean"
+          }
         },
         {
           "name": "time_zone",
@@ -1428,7 +2154,15 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          }
         }
       ],
       "google_signature_parameters": [],
@@ -1455,6 +2189,46 @@
       "error_contract": {
         "sednalabs": "No per-tool error schema in pinned input schema; response envelope lives in separately pinned payload-contract fixture",
         "google": "Not present in extracted official function signatures"
+      },
+      "sednalabs_defs": {
+        "AccountId": {
+          "anyOf": [
+            {
+              "format": "uint64",
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "ReportDateRangeSchema": {
+          "properties": {
+            "end_date": {
+              "description": "Inclusive end date (for example `2026-02-07`, `yesterday`).",
+              "type": "string"
+            },
+            "start_date": {
+              "description": "Inclusive start date (for example `2026-02-01`, `7daysAgo`).",
+              "type": "string"
+            }
+          },
+          "required": [
+            "start_date",
+            "end_date"
+          ],
+          "type": "object"
+        },
+        "TabularOutputMode": {
+          "enum": [
+            "rows",
+            "tuples",
+            "scalar",
+            "compact"
+          ],
+          "type": "string"
+        }
       }
     },
     {
@@ -1478,7 +2252,11 @@
           "ref": "#/$defs/ConversionSpecArgs",
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "$ref": "#/$defs/ConversionSpecArgs"
+          }
         },
         {
           "name": "currency_code",
@@ -1496,7 +2274,15 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          }
         },
         {
           "name": "cursor",
@@ -1514,7 +2300,16 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Opaque pagination cursor from `meta.next_cursor`."
+          "description": "Opaque pagination cursor from `meta.next_cursor`.",
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "description": "Opaque pagination cursor from `meta.next_cursor`.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
         },
         {
           "name": "date_ranges",
@@ -1529,7 +2324,14 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "items": {
+              "$ref": "#/$defs/ReportDateRangeSchema"
+            },
+            "type": "array"
+          }
         },
         {
           "name": "dimension_filter",
@@ -1544,7 +2346,12 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "GA FilterExpression. Accepts an object, JSON-object string, or `field==value` shorthand."
+          "description": "GA FilterExpression. Accepts an object, JSON-object string, or `field==value` shorthand.",
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "description": "GA FilterExpression. Accepts an object, JSON-object string, or `field==value` shorthand."
+          }
         },
         {
           "name": "dimensions",
@@ -1559,7 +2366,15 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Conversion-report dimensions. See the tool description for the supported names."
+          "description": "Conversion-report dimensions. See the tool description for the supported names.",
+          "format": null,
+          "raw_schema": {
+            "description": "Conversion-report dimensions. See the tool description for the supported names.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
         },
         {
           "name": "limit",
@@ -1577,7 +2392,17 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": "uint64",
+          "raw_schema": {
+            "default": null,
+            "format": "uint64",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "max_cell_chars",
@@ -1595,7 +2420,18 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Optional string clipping limit applied to response cell values."
+          "description": "Optional string clipping limit applied to response cell values.",
+          "format": "uint",
+          "raw_schema": {
+            "default": null,
+            "description": "Optional string clipping limit applied to response cell values.",
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "max_rows",
@@ -1613,7 +2449,18 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Optional response row cap for Contract V1 tabular payloads."
+          "description": "Optional response row cap for Contract V1 tabular payloads.",
+          "format": "uint",
+          "raw_schema": {
+            "default": null,
+            "description": "Optional response row cap for Contract V1 tabular payloads.",
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "metric_filter",
@@ -1628,7 +2475,12 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "GA FilterExpression. Accepts an object or JSON-object string."
+          "description": "GA FilterExpression. Accepts an object or JSON-object string.",
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "description": "GA FilterExpression. Accepts an object or JSON-object string."
+          }
         },
         {
           "name": "metrics",
@@ -1643,7 +2495,15 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Conversion-report metrics. See the tool description for the supported names."
+          "description": "Conversion-report metrics. See the tool description for the supported names.",
+          "format": null,
+          "raw_schema": {
+            "description": "Conversion-report metrics. See the tool description for the supported names.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
         },
         {
           "name": "offset",
@@ -1661,7 +2521,17 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": "uint64",
+          "raw_schema": {
+            "default": null,
+            "format": "uint64",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "order_bys",
@@ -1679,7 +2549,16 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "items": true,
+            "type": [
+              "array",
+              "null"
+            ]
+          }
         },
         {
           "name": "output_mode",
@@ -1701,7 +2580,19 @@
               "type": "null"
             }
           ],
-          "description": "Tabular output shape for the response payload."
+          "description": "Tabular output shape for the response payload.",
+          "format": null,
+          "raw_schema": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/TabularOutputMode"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Tabular output shape for the response payload."
+          }
         },
         {
           "name": "property_id",
@@ -1716,7 +2607,11 @@
           "ref": "#/$defs/PropertyId",
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "$ref": "#/$defs/PropertyId"
+          }
         },
         {
           "name": "return_property_quota",
@@ -1731,7 +2626,12 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "default": false,
+            "type": "boolean"
+          }
         },
         {
           "name": "summary_only",
@@ -1746,7 +2646,13 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "If true, omit row payload and return metadata only."
+          "description": "If true, omit row payload and return metadata only.",
+          "format": null,
+          "raw_schema": {
+            "default": false,
+            "description": "If true, omit row payload and return metadata only.",
+            "type": "boolean"
+          }
         }
       ],
       "google_signature_parameters": [
@@ -2161,6 +3067,79 @@
       "error_contract": {
         "sednalabs": "No per-tool error schema in pinned input schema; response envelope lives in separately pinned payload-contract fixture",
         "google": "Not present in extracted official function signatures"
+      },
+      "sednalabs_defs": {
+        "AttributionModel": {
+          "enum": [
+            "DATA_DRIVEN",
+            "LAST_CLICK"
+          ],
+          "type": "string"
+        },
+        "ConversionSpecArgs": {
+          "additionalProperties": false,
+          "properties": {
+            "attribution_model": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/AttributionModel"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Attribution model. Google defaults to DATA_DRIVEN when omitted."
+            },
+            "conversion_actions": {
+              "default": [],
+              "description": "Conversion action resource names such as `conversionActions/1234`. An empty list means all conversions.",
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "type": "object"
+        },
+        "PropertyId": {
+          "anyOf": [
+            {
+              "format": "uint64",
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "ReportDateRangeSchema": {
+          "properties": {
+            "end_date": {
+              "description": "Inclusive end date (for example `2026-02-07`, `yesterday`).",
+              "type": "string"
+            },
+            "start_date": {
+              "description": "Inclusive start date (for example `2026-02-01`, `7daysAgo`).",
+              "type": "string"
+            }
+          },
+          "required": [
+            "start_date",
+            "end_date"
+          ],
+          "type": "object"
+        },
+        "TabularOutputMode": {
+          "enum": [
+            "rows",
+            "tuples",
+            "scalar",
+            "compact"
+          ],
+          "type": "string"
+        }
       }
     },
     {
@@ -2184,7 +3163,16 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Optional report date ranges."
+          "description": "Optional report date ranges.",
+          "format": null,
+          "raw_schema": {
+            "default": [],
+            "description": "Optional report date ranges.",
+            "items": {
+              "$ref": "#/$defs/ReportDateRangeSchema"
+            },
+            "type": "array"
+          }
         },
         {
           "name": "dimension_filter",
@@ -2199,7 +3187,12 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "GA FilterExpression applied to dimensions. Accepts an object, JSON-object string, or `field==value` shorthand."
+          "description": "GA FilterExpression applied to dimensions. Accepts an object, JSON-object string, or `field==value` shorthand.",
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "description": "GA FilterExpression applied to dimensions. Accepts an object, JSON-object string, or `field==value` shorthand."
+          }
         },
         {
           "name": "funnel_breakdown",
@@ -2221,7 +3214,19 @@
               "type": "null"
             }
           ],
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/FunnelBreakdownArgs"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
         },
         {
           "name": "funnel_next_action",
@@ -2243,7 +3248,19 @@
               "type": "null"
             }
           ],
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/FunnelNextActionArgs"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
         },
         {
           "name": "funnel_steps",
@@ -2258,7 +3275,15 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Ordered funnel steps. Each step must set exactly one of `event` or `filter_expression`."
+          "description": "Ordered funnel steps. Each step must set exactly one of `event` or `filter_expression`.",
+          "format": null,
+          "raw_schema": {
+            "description": "Ordered funnel steps. Each step must set exactly one of `event` or `filter_expression`.",
+            "items": {
+              "$ref": "#/$defs/FunnelStepArgs"
+            },
+            "type": "array"
+          }
         },
         {
           "name": "funnel_visualization_type",
@@ -2280,7 +3305,19 @@
               "type": "null"
             }
           ],
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/FunnelVisualizationType"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
         },
         {
           "name": "is_open_funnel",
@@ -2295,7 +3332,13 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Allow users to enter at any funnel step. Defaults to a closed funnel."
+          "description": "Allow users to enter at any funnel step. Defaults to a closed funnel.",
+          "format": null,
+          "raw_schema": {
+            "default": false,
+            "description": "Allow users to enter at any funnel step. Defaults to a closed funnel.",
+            "type": "boolean"
+          }
         },
         {
           "name": "limit",
@@ -2313,7 +3356,18 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Maximum rows requested from Google. Must be 1 through 250,000."
+          "description": "Maximum rows requested from Google. Must be 1 through 250,000.",
+          "format": "uint64",
+          "raw_schema": {
+            "default": null,
+            "description": "Maximum rows requested from Google. Must be 1 through 250,000.",
+            "format": "uint64",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "max_cell_chars",
@@ -2331,7 +3385,18 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Optional string clipping limit applied to subreport cell values."
+          "description": "Optional string clipping limit applied to subreport cell values.",
+          "format": "uint",
+          "raw_schema": {
+            "default": null,
+            "description": "Optional string clipping limit applied to subreport cell values.",
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "max_rows",
@@ -2349,7 +3414,18 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Per-subreport response row cap. Defaults to 200 and is also used to bound the upstream request."
+          "description": "Per-subreport response row cap. Defaults to 200 and is also used to bound the upstream request.",
+          "format": "uint",
+          "raw_schema": {
+            "default": null,
+            "description": "Per-subreport response row cap. Defaults to 200 and is also used to bound the upstream request.",
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "output_mode",
@@ -2371,7 +3447,19 @@
               "type": "null"
             }
           ],
-          "description": "Tabular output shape applied independently to the table and visualization subreports."
+          "description": "Tabular output shape applied independently to the table and visualization subreports.",
+          "format": null,
+          "raw_schema": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/TabularOutputMode"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Tabular output shape applied independently to the table and visualization subreports."
+          }
         },
         {
           "name": "property_id",
@@ -2386,7 +3474,11 @@
           "ref": "#/$defs/PropertyId",
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "$ref": "#/$defs/PropertyId"
+          }
         },
         {
           "name": "return_property_quota",
@@ -2401,7 +3493,12 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "default": false,
+            "type": "boolean"
+          }
         },
         {
           "name": "segments",
@@ -2419,7 +3516,17 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Optional GA segment objects. Google permits at most four."
+          "description": "Optional GA segment objects. Google permits at most four.",
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "description": "Optional GA segment objects. Google permits at most four.",
+            "items": true,
+            "type": [
+              "array",
+              "null"
+            ]
+          }
         },
         {
           "name": "summary_only",
@@ -2434,7 +3541,13 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "If true, omit both subreport row payloads and return metadata only."
+          "description": "If true, omit both subreport row payloads and return metadata only.",
+          "format": null,
+          "raw_schema": {
+            "default": false,
+            "description": "If true, omit both subreport row payloads and return metadata only.",
+            "type": "boolean"
+          }
         }
       ],
       "google_signature_parameters": [
@@ -2697,6 +3810,136 @@
       "error_contract": {
         "sednalabs": "No per-tool error schema in pinned input schema; response envelope lives in separately pinned payload-contract fixture",
         "google": "Not present in extracted official function signatures"
+      },
+      "sednalabs_defs": {
+        "FunnelBreakdownArgs": {
+          "additionalProperties": false,
+          "properties": {
+            "breakdown_dimension": {
+              "description": "Dimension used to break down each funnel step, such as `deviceCategory`.",
+              "type": "string"
+            },
+            "limit": {
+              "default": null,
+              "description": "Maximum distinct breakdown values. Must be 1 through 15.",
+              "format": "uint64",
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "breakdown_dimension"
+          ],
+          "type": "object"
+        },
+        "FunnelNextActionArgs": {
+          "additionalProperties": false,
+          "properties": {
+            "limit": {
+              "default": null,
+              "description": "Maximum distinct next-action values. Must be 1 through 5.",
+              "format": "uint64",
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "next_action_dimension": {
+              "description": "Dimension used to analyze the next action, such as `eventName` or `pagePath`.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "next_action_dimension"
+          ],
+          "type": "object"
+        },
+        "FunnelStepArgs": {
+          "additionalProperties": false,
+          "properties": {
+            "event": {
+              "description": "Simple event-name shorthand. Mutually exclusive with `filter_expression`.",
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "filter_expression": {
+              "description": "Complete GA FunnelFilterExpression. Mutually exclusive with `event`."
+            },
+            "is_directly_followed_by": {
+              "description": "Require this step to directly follow the prior step.",
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "name": {
+              "description": "Display name for the funnel step.",
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "within_duration_from_prior_step": {
+              "description": "Protobuf duration such as `3600s` relative to the prior step.",
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "type": "object"
+        },
+        "FunnelVisualizationType": {
+          "enum": [
+            "STANDARD_FUNNEL",
+            "TRENDED_FUNNEL"
+          ],
+          "type": "string"
+        },
+        "PropertyId": {
+          "anyOf": [
+            {
+              "format": "uint64",
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "ReportDateRangeSchema": {
+          "properties": {
+            "end_date": {
+              "description": "Inclusive end date (for example `2026-02-07`, `yesterday`).",
+              "type": "string"
+            },
+            "start_date": {
+              "description": "Inclusive start date (for example `2026-02-01`, `7daysAgo`).",
+              "type": "string"
+            }
+          },
+          "required": [
+            "start_date",
+            "end_date"
+          ],
+          "type": "object"
+        },
+        "TabularOutputMode": {
+          "enum": [
+            "rows",
+            "tuples",
+            "scalar",
+            "compact"
+          ],
+          "type": "string"
+        }
       }
     },
     {
@@ -2723,7 +3966,15 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          }
         },
         {
           "name": "cursor",
@@ -2741,7 +3992,16 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Opaque pagination cursor from `meta.next_cursor`."
+          "description": "Opaque pagination cursor from `meta.next_cursor`.",
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "description": "Opaque pagination cursor from `meta.next_cursor`.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
         },
         {
           "name": "date_ranges",
@@ -2756,7 +4016,14 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "items": {
+              "$ref": "#/$defs/ReportDateRangeSchema"
+            },
+            "type": "array"
+          }
         },
         {
           "name": "dimension_filter",
@@ -2771,7 +4038,12 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "GA FilterExpression. Accepts an object, JSON-object string, or `field==value` shorthand."
+          "description": "GA FilterExpression. Accepts an object, JSON-object string, or `field==value` shorthand.",
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "description": "GA FilterExpression. Accepts an object, JSON-object string, or `field==value` shorthand."
+          }
         },
         {
           "name": "dimensions",
@@ -2786,7 +4058,14 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
         },
         {
           "name": "keep_empty_rows",
@@ -2801,7 +4080,12 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "default": false,
+            "type": "boolean"
+          }
         },
         {
           "name": "max_cell_chars",
@@ -2819,7 +4103,18 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Optional string clipping limit applied to response cell values."
+          "description": "Optional string clipping limit applied to response cell values.",
+          "format": "uint",
+          "raw_schema": {
+            "default": null,
+            "description": "Optional string clipping limit applied to response cell values.",
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "max_rows",
@@ -2837,7 +4132,18 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Optional response row cap for Contract V1 tabular payloads."
+          "description": "Optional response row cap for Contract V1 tabular payloads.",
+          "format": "uint",
+          "raw_schema": {
+            "default": null,
+            "description": "Optional response row cap for Contract V1 tabular payloads.",
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "metric_filter",
@@ -2852,7 +4158,12 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "GA FilterExpression. Accepts an object or JSON-object string."
+          "description": "GA FilterExpression. Accepts an object or JSON-object string.",
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "description": "GA FilterExpression. Accepts an object or JSON-object string."
+          }
         },
         {
           "name": "metrics",
@@ -2867,7 +4178,14 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
         },
         {
           "name": "order_bys",
@@ -2885,7 +4203,16 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "items": true,
+            "type": [
+              "array",
+              "null"
+            ]
+          }
         },
         {
           "name": "output_mode",
@@ -2907,7 +4234,19 @@
               "type": "null"
             }
           ],
-          "description": "Tabular output shape for the response payload."
+          "description": "Tabular output shape for the response payload.",
+          "format": null,
+          "raw_schema": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/TabularOutputMode"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Tabular output shape for the response payload."
+          }
         },
         {
           "name": "pivots",
@@ -2922,7 +4261,12 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "items": true,
+            "type": "array"
+          }
         },
         {
           "name": "property_id",
@@ -2937,7 +4281,11 @@
           "ref": "#/$defs/PropertyId",
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "$ref": "#/$defs/PropertyId"
+          }
         },
         {
           "name": "return_property_quota",
@@ -2952,7 +4300,12 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "default": true,
+            "type": "boolean"
+          }
         },
         {
           "name": "summary_only",
@@ -2967,7 +4320,13 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "If true, omit row payload and return metadata only."
+          "description": "If true, omit row payload and return metadata only.",
+          "format": null,
+          "raw_schema": {
+            "default": false,
+            "description": "If true, omit row payload and return metadata only.",
+            "type": "boolean"
+          }
         }
       ],
       "google_signature_parameters": [],
@@ -2995,6 +4354,46 @@
       "error_contract": {
         "sednalabs": "No per-tool error schema in pinned input schema; response envelope lives in separately pinned payload-contract fixture",
         "google": "Not present in extracted official function signatures"
+      },
+      "sednalabs_defs": {
+        "PropertyId": {
+          "anyOf": [
+            {
+              "format": "uint64",
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "ReportDateRangeSchema": {
+          "properties": {
+            "end_date": {
+              "description": "Inclusive end date (for example `2026-02-07`, `yesterday`).",
+              "type": "string"
+            },
+            "start_date": {
+              "description": "Inclusive start date (for example `2026-02-01`, `7daysAgo`).",
+              "type": "string"
+            }
+          },
+          "required": [
+            "start_date",
+            "end_date"
+          ],
+          "type": "object"
+        },
+        "TabularOutputMode": {
+          "enum": [
+            "rows",
+            "tuples",
+            "scalar",
+            "compact"
+          ],
+          "type": "string"
+        }
       }
     },
     {
@@ -3021,7 +4420,16 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Opaque pagination cursor from `meta.next_cursor`."
+          "description": "Opaque pagination cursor from `meta.next_cursor`.",
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "description": "Opaque pagination cursor from `meta.next_cursor`.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
         },
         {
           "name": "date_ranges",
@@ -3036,7 +4444,14 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "items": {
+              "$ref": "#/$defs/ReportDateRangeSchema"
+            },
+            "type": "array"
+          }
         },
         {
           "name": "dimension_filter",
@@ -3051,7 +4466,12 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "GA FilterExpression. Accepts an object, JSON-object string, or `field==value` shorthand."
+          "description": "GA FilterExpression. Accepts an object, JSON-object string, or `field==value` shorthand.",
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "description": "GA FilterExpression. Accepts an object, JSON-object string, or `field==value` shorthand."
+          }
         },
         {
           "name": "dimensions",
@@ -3066,7 +4486,14 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
         },
         {
           "name": "limit",
@@ -3084,7 +4511,17 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": "uint64",
+          "raw_schema": {
+            "default": null,
+            "format": "uint64",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "max_cell_chars",
@@ -3102,7 +4539,18 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Optional string clipping limit applied to response cell values."
+          "description": "Optional string clipping limit applied to response cell values.",
+          "format": "uint",
+          "raw_schema": {
+            "default": null,
+            "description": "Optional string clipping limit applied to response cell values.",
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "max_rows",
@@ -3120,7 +4568,18 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Optional response row cap for Contract V1 tabular payloads."
+          "description": "Optional response row cap for Contract V1 tabular payloads.",
+          "format": "uint",
+          "raw_schema": {
+            "default": null,
+            "description": "Optional response row cap for Contract V1 tabular payloads.",
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "metric_filter",
@@ -3135,7 +4594,12 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "GA FilterExpression. Accepts an object or JSON-object string."
+          "description": "GA FilterExpression. Accepts an object or JSON-object string.",
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "description": "GA FilterExpression. Accepts an object or JSON-object string."
+          }
         },
         {
           "name": "metrics",
@@ -3150,7 +4614,14 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
         },
         {
           "name": "offset",
@@ -3168,7 +4639,17 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": "uint64",
+          "raw_schema": {
+            "default": null,
+            "format": "uint64",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "order_bys",
@@ -3186,7 +4667,16 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "items": true,
+            "type": [
+              "array",
+              "null"
+            ]
+          }
         },
         {
           "name": "output_mode",
@@ -3208,7 +4698,19 @@
               "type": "null"
             }
           ],
-          "description": "Tabular output shape for the response payload."
+          "description": "Tabular output shape for the response payload.",
+          "format": null,
+          "raw_schema": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/TabularOutputMode"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Tabular output shape for the response payload."
+          }
         },
         {
           "name": "property_id",
@@ -3223,7 +4725,11 @@
           "ref": "#/$defs/PropertyId",
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "$ref": "#/$defs/PropertyId"
+          }
         },
         {
           "name": "summary_only",
@@ -3238,7 +4744,13 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "If true, omit row payload and return metadata only."
+          "description": "If true, omit row payload and return metadata only.",
+          "format": null,
+          "raw_schema": {
+            "default": false,
+            "description": "If true, omit row payload and return metadata only.",
+            "type": "boolean"
+          }
         },
         {
           "name": "time_zone",
@@ -3256,7 +4768,15 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          }
         }
       ],
       "google_signature_parameters": [],
@@ -3283,6 +4803,46 @@
       "error_contract": {
         "sednalabs": "No per-tool error schema in pinned input schema; response envelope lives in separately pinned payload-contract fixture",
         "google": "Not present in extracted official function signatures"
+      },
+      "sednalabs_defs": {
+        "PropertyId": {
+          "anyOf": [
+            {
+              "format": "uint64",
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "ReportDateRangeSchema": {
+          "properties": {
+            "end_date": {
+              "description": "Inclusive end date (for example `2026-02-07`, `yesterday`).",
+              "type": "string"
+            },
+            "start_date": {
+              "description": "Inclusive start date (for example `2026-02-01`, `7daysAgo`).",
+              "type": "string"
+            }
+          },
+          "required": [
+            "start_date",
+            "end_date"
+          ],
+          "type": "object"
+        },
+        "TabularOutputMode": {
+          "enum": [
+            "rows",
+            "tuples",
+            "scalar",
+            "compact"
+          ],
+          "type": "string"
+        }
       }
     },
     {
@@ -3309,7 +4869,16 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Opaque pagination cursor from `meta.next_cursor`."
+          "description": "Opaque pagination cursor from `meta.next_cursor`.",
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "description": "Opaque pagination cursor from `meta.next_cursor`.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
         },
         {
           "name": "dimension_filter",
@@ -3324,7 +4893,12 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "GA FilterExpression. Accepts an object, JSON-object string, or `field==value` shorthand."
+          "description": "GA FilterExpression. Accepts an object, JSON-object string, or `field==value` shorthand.",
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "description": "GA FilterExpression. Accepts an object, JSON-object string, or `field==value` shorthand."
+          }
         },
         {
           "name": "dimensions",
@@ -3339,7 +4913,14 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
         },
         {
           "name": "limit",
@@ -3357,7 +4938,17 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": "uint64",
+          "raw_schema": {
+            "default": null,
+            "format": "uint64",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "max_cell_chars",
@@ -3375,7 +4966,18 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Optional string clipping limit applied to response cell values."
+          "description": "Optional string clipping limit applied to response cell values.",
+          "format": "uint",
+          "raw_schema": {
+            "default": null,
+            "description": "Optional string clipping limit applied to response cell values.",
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "max_rows",
@@ -3393,7 +4995,18 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Optional response row cap for Contract V1 tabular payloads."
+          "description": "Optional response row cap for Contract V1 tabular payloads.",
+          "format": "uint",
+          "raw_schema": {
+            "default": null,
+            "description": "Optional response row cap for Contract V1 tabular payloads.",
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "metric_filter",
@@ -3408,7 +5021,12 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "GA FilterExpression. Accepts an object or JSON-object string."
+          "description": "GA FilterExpression. Accepts an object or JSON-object string.",
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "description": "GA FilterExpression. Accepts an object or JSON-object string."
+          }
         },
         {
           "name": "metrics",
@@ -3423,7 +5041,14 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
         },
         {
           "name": "offset",
@@ -3441,7 +5066,17 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": "uint64",
+          "raw_schema": {
+            "default": null,
+            "format": "uint64",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "order_bys",
@@ -3459,7 +5094,16 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "items": true,
+            "type": [
+              "array",
+              "null"
+            ]
+          }
         },
         {
           "name": "output_mode",
@@ -3481,7 +5125,19 @@
               "type": "null"
             }
           ],
-          "description": "Tabular output shape for the response payload."
+          "description": "Tabular output shape for the response payload.",
+          "format": null,
+          "raw_schema": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/TabularOutputMode"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Tabular output shape for the response payload."
+          }
         },
         {
           "name": "property_id",
@@ -3496,7 +5152,11 @@
           "ref": "#/$defs/PropertyId",
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "$ref": "#/$defs/PropertyId"
+          }
         },
         {
           "name": "return_property_quota",
@@ -3511,7 +5171,12 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "default": true,
+            "type": "boolean"
+          }
         },
         {
           "name": "summary_only",
@@ -3526,7 +5191,13 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "If true, omit row payload and return metadata only."
+          "description": "If true, omit row payload and return metadata only.",
+          "format": null,
+          "raw_schema": {
+            "default": false,
+            "description": "If true, omit row payload and return metadata only.",
+            "type": "boolean"
+          }
         }
       ],
       "google_signature_parameters": [
@@ -3842,6 +5513,29 @@
       "error_contract": {
         "sednalabs": "No per-tool error schema in pinned input schema; response envelope lives in separately pinned payload-contract fixture",
         "google": "Not present in extracted official function signatures"
+      },
+      "sednalabs_defs": {
+        "PropertyId": {
+          "anyOf": [
+            {
+              "format": "uint64",
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "TabularOutputMode": {
+          "enum": [
+            "rows",
+            "tuples",
+            "scalar",
+            "compact"
+          ],
+          "type": "string"
+        }
       }
     },
     {
@@ -3868,7 +5562,15 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          }
         },
         {
           "name": "cursor",
@@ -3886,7 +5588,16 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Opaque pagination cursor from `meta.next_cursor`."
+          "description": "Opaque pagination cursor from `meta.next_cursor`.",
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "description": "Opaque pagination cursor from `meta.next_cursor`.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
         },
         {
           "name": "date_ranges",
@@ -3901,7 +5612,14 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "items": {
+              "$ref": "#/$defs/ReportDateRangeSchema"
+            },
+            "type": "array"
+          }
         },
         {
           "name": "dimension_filter",
@@ -3916,7 +5634,12 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "GA FilterExpression. Accepts an object, JSON-object string, or `field==value` shorthand."
+          "description": "GA FilterExpression. Accepts an object, JSON-object string, or `field==value` shorthand.",
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "description": "GA FilterExpression. Accepts an object, JSON-object string, or `field==value` shorthand."
+          }
         },
         {
           "name": "dimensions",
@@ -3931,7 +5654,14 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
         },
         {
           "name": "limit",
@@ -3949,7 +5679,17 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": "uint64",
+          "raw_schema": {
+            "default": null,
+            "format": "uint64",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "max_cell_chars",
@@ -3967,7 +5707,18 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Optional string clipping limit applied to response cell values."
+          "description": "Optional string clipping limit applied to response cell values.",
+          "format": "uint",
+          "raw_schema": {
+            "default": null,
+            "description": "Optional string clipping limit applied to response cell values.",
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "max_rows",
@@ -3985,7 +5736,18 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Optional response row cap for Contract V1 tabular payloads."
+          "description": "Optional response row cap for Contract V1 tabular payloads.",
+          "format": "uint",
+          "raw_schema": {
+            "default": null,
+            "description": "Optional response row cap for Contract V1 tabular payloads.",
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "metric_filter",
@@ -4000,7 +5762,12 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "GA FilterExpression. Accepts an object or JSON-object string."
+          "description": "GA FilterExpression. Accepts an object or JSON-object string.",
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "description": "GA FilterExpression. Accepts an object or JSON-object string."
+          }
         },
         {
           "name": "metrics",
@@ -4015,7 +5782,14 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
         },
         {
           "name": "offset",
@@ -4033,7 +5807,17 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": "uint64",
+          "raw_schema": {
+            "default": null,
+            "format": "uint64",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "order_bys",
@@ -4051,7 +5835,16 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "items": true,
+            "type": [
+              "array",
+              "null"
+            ]
+          }
         },
         {
           "name": "output_mode",
@@ -4073,7 +5866,19 @@
               "type": "null"
             }
           ],
-          "description": "Tabular output shape for the response payload."
+          "description": "Tabular output shape for the response payload.",
+          "format": null,
+          "raw_schema": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/TabularOutputMode"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Tabular output shape for the response payload."
+          }
         },
         {
           "name": "property_id",
@@ -4088,7 +5893,11 @@
           "ref": "#/$defs/PropertyId",
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "$ref": "#/$defs/PropertyId"
+          }
         },
         {
           "name": "return_property_quota",
@@ -4103,7 +5912,12 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "default": true,
+            "type": "boolean"
+          }
         },
         {
           "name": "summary_only",
@@ -4118,7 +5932,13 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "If true, omit row payload and return metadata only."
+          "description": "If true, omit row payload and return metadata only.",
+          "format": null,
+          "raw_schema": {
+            "default": false,
+            "description": "If true, omit row payload and return metadata only.",
+            "type": "boolean"
+          }
         }
       ],
       "google_signature_parameters": [
@@ -4501,6 +6321,46 @@
       "error_contract": {
         "sednalabs": "No per-tool error schema in pinned input schema; response envelope lives in separately pinned payload-contract fixture",
         "google": "Not present in extracted official function signatures"
+      },
+      "sednalabs_defs": {
+        "PropertyId": {
+          "anyOf": [
+            {
+              "format": "uint64",
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "ReportDateRangeSchema": {
+          "properties": {
+            "end_date": {
+              "description": "Inclusive end date (for example `2026-02-07`, `yesterday`).",
+              "type": "string"
+            },
+            "start_date": {
+              "description": "Inclusive start date (for example `2026-02-01`, `7daysAgo`).",
+              "type": "string"
+            }
+          },
+          "required": [
+            "start_date",
+            "end_date"
+          ],
+          "type": "object"
+        },
+        "TabularOutputMode": {
+          "enum": [
+            "rows",
+            "tuples",
+            "scalar",
+            "compact"
+          ],
+          "type": "string"
+        }
       }
     },
     {
@@ -4524,7 +6384,12 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Logical scratchpad session identifier."
+          "description": "Logical scratchpad session identifier.",
+          "format": null,
+          "raw_schema": {
+            "description": "Logical scratchpad session identifier.",
+            "type": "string"
+          }
         }
       ],
       "google_signature_parameters": [],
@@ -4537,7 +6402,8 @@
       "error_contract": {
         "sednalabs": "No per-tool error schema in pinned input schema; response envelope lives in separately pinned payload-contract fixture",
         "google": "Not present in extracted official function signatures"
-      }
+      },
+      "sednalabs_defs": {}
     },
     {
       "name": "scratchpad_describe_table",
@@ -4563,7 +6429,16 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Opaque pagination cursor from `meta.next_cursor`."
+          "description": "Opaque pagination cursor from `meta.next_cursor`.",
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "description": "Opaque pagination cursor from `meta.next_cursor`.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
         },
         {
           "name": "max_cell_chars",
@@ -4581,7 +6456,18 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Optional string clipping limit applied to response cell values."
+          "description": "Optional string clipping limit applied to response cell values.",
+          "format": "uint",
+          "raw_schema": {
+            "default": null,
+            "description": "Optional string clipping limit applied to response cell values.",
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "max_rows",
@@ -4599,7 +6485,18 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Optional response row cap for Contract V1 tabular payloads."
+          "description": "Optional response row cap for Contract V1 tabular payloads.",
+          "format": "uint",
+          "raw_schema": {
+            "default": null,
+            "description": "Optional response row cap for Contract V1 tabular payloads.",
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "output_mode",
@@ -4621,7 +6518,19 @@
               "type": "null"
             }
           ],
-          "description": "Tabular output shape for the response payload."
+          "description": "Tabular output shape for the response payload.",
+          "format": null,
+          "raw_schema": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/TabularOutputMode"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Tabular output shape for the response payload."
+          }
         },
         {
           "name": "session_id",
@@ -4636,7 +6545,12 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Logical scratchpad session identifier."
+          "description": "Logical scratchpad session identifier.",
+          "format": null,
+          "raw_schema": {
+            "description": "Logical scratchpad session identifier.",
+            "type": "string"
+          }
         },
         {
           "name": "summary_only",
@@ -4651,7 +6565,13 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "If true, omit row payload and return metadata only."
+          "description": "If true, omit row payload and return metadata only.",
+          "format": null,
+          "raw_schema": {
+            "default": false,
+            "description": "If true, omit row payload and return metadata only.",
+            "type": "boolean"
+          }
         },
         {
           "name": "table_name",
@@ -4666,7 +6586,12 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Scratchpad table to target."
+          "description": "Scratchpad table to target.",
+          "format": null,
+          "raw_schema": {
+            "description": "Scratchpad table to target.",
+            "type": "string"
+          }
         }
       ],
       "google_signature_parameters": [],
@@ -4685,6 +6610,17 @@
       "error_contract": {
         "sednalabs": "No per-tool error schema in pinned input schema; response envelope lives in separately pinned payload-contract fixture",
         "google": "Not present in extracted official function signatures"
+      },
+      "sednalabs_defs": {
+        "TabularOutputMode": {
+          "enum": [
+            "rows",
+            "tuples",
+            "scalar",
+            "compact"
+          ],
+          "type": "string"
+        }
       }
     },
     {
@@ -4708,7 +6644,13 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "If true, return success when the table is absent."
+          "description": "If true, return success when the table is absent.",
+          "format": null,
+          "raw_schema": {
+            "default": false,
+            "description": "If true, return success when the table is absent.",
+            "type": "boolean"
+          }
         },
         {
           "name": "session_id",
@@ -4723,7 +6665,12 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Logical scratchpad session identifier."
+          "description": "Logical scratchpad session identifier.",
+          "format": null,
+          "raw_schema": {
+            "description": "Logical scratchpad session identifier.",
+            "type": "string"
+          }
         },
         {
           "name": "table_name",
@@ -4738,7 +6685,12 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Scratchpad table name to drop."
+          "description": "Scratchpad table name to drop.",
+          "format": null,
+          "raw_schema": {
+            "description": "Scratchpad table name to drop.",
+            "type": "string"
+          }
         }
       ],
       "google_signature_parameters": [],
@@ -4753,7 +6705,8 @@
       "error_contract": {
         "sednalabs": "No per-tool error schema in pinned input schema; response envelope lives in separately pinned payload-contract fixture",
         "google": "Not present in extracted official function signatures"
-      }
+      },
+      "sednalabs_defs": {}
     },
     {
       "name": "scratchpad_export_evidence_bundle",
@@ -4779,7 +6732,18 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Optional number of sample rows to include per table (default: 20)."
+          "description": "Optional number of sample rows to include per table (default: 20).",
+          "format": "uint",
+          "raw_schema": {
+            "default": null,
+            "description": "Optional number of sample rows to include per table (default: 20).",
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "session_id",
@@ -4794,7 +6758,12 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Logical scratchpad session identifier."
+          "description": "Logical scratchpad session identifier.",
+          "format": null,
+          "raw_schema": {
+            "description": "Logical scratchpad session identifier.",
+            "type": "string"
+          }
         },
         {
           "name": "table_names",
@@ -4812,7 +6781,19 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Optional subset of tables to include; defaults to all session tables (bounded)."
+          "description": "Optional subset of tables to include; defaults to all session tables (bounded).",
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "description": "Optional subset of tables to include; defaults to all session tables (bounded).",
+            "items": {
+              "type": "string"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          }
         }
       ],
       "google_signature_parameters": [],
@@ -4827,7 +6808,8 @@
       "error_contract": {
         "sednalabs": "No per-tool error schema in pinned input schema; response envelope lives in separately pinned payload-contract fixture",
         "google": "Not present in extracted official function signatures"
-      }
+      },
+      "sednalabs_defs": {}
     },
     {
       "name": "scratchpad_get_runtime_limits",
@@ -4845,7 +6827,8 @@
       "error_contract": {
         "sednalabs": "No per-tool error schema in pinned input schema; response envelope lives in separately pinned payload-contract fixture",
         "google": "Not present in extracted official function signatures"
-      }
+      },
+      "sednalabs_defs": {}
     },
     {
       "name": "scratchpad_ingest_realtime_report",
@@ -4868,7 +6851,13 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "If true, append rows into an existing scratchpad table with identical schema."
+          "description": "If true, append rows into an existing scratchpad table with identical schema.",
+          "format": null,
+          "raw_schema": {
+            "default": false,
+            "description": "If true, append rows into an existing scratchpad table with identical schema.",
+            "type": "boolean"
+          }
         },
         {
           "name": "cursor",
@@ -4886,7 +6875,16 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Opaque pagination cursor from `meta.next_cursor`."
+          "description": "Opaque pagination cursor from `meta.next_cursor`.",
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "description": "Opaque pagination cursor from `meta.next_cursor`.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
         },
         {
           "name": "dimension_filter",
@@ -4901,7 +6899,12 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "GA FilterExpression. Accepts an object, JSON-object string, or `field==value` shorthand."
+          "description": "GA FilterExpression. Accepts an object, JSON-object string, or `field==value` shorthand.",
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "description": "GA FilterExpression. Accepts an object, JSON-object string, or `field==value` shorthand."
+          }
         },
         {
           "name": "dimensions",
@@ -4916,7 +6919,14 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
         },
         {
           "name": "limit",
@@ -4934,7 +6944,17 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": "uint64",
+          "raw_schema": {
+            "default": null,
+            "format": "uint64",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "max_cell_chars",
@@ -4952,7 +6972,18 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Optional string clipping limit applied to response cell values."
+          "description": "Optional string clipping limit applied to response cell values.",
+          "format": "uint",
+          "raw_schema": {
+            "default": null,
+            "description": "Optional string clipping limit applied to response cell values.",
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "max_rows",
@@ -4970,7 +7001,18 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Optional response row cap for Contract V1 tabular payloads."
+          "description": "Optional response row cap for Contract V1 tabular payloads.",
+          "format": "uint",
+          "raw_schema": {
+            "default": null,
+            "description": "Optional response row cap for Contract V1 tabular payloads.",
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "metric_filter",
@@ -4985,7 +7027,12 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "GA FilterExpression. Accepts an object or JSON-object string."
+          "description": "GA FilterExpression. Accepts an object or JSON-object string.",
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "description": "GA FilterExpression. Accepts an object or JSON-object string."
+          }
         },
         {
           "name": "metrics",
@@ -5000,7 +7047,14 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
         },
         {
           "name": "offset",
@@ -5018,7 +7072,17 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": "uint64",
+          "raw_schema": {
+            "default": null,
+            "format": "uint64",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "order_bys",
@@ -5036,7 +7100,16 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "items": true,
+            "type": [
+              "array",
+              "null"
+            ]
+          }
         },
         {
           "name": "output_mode",
@@ -5058,7 +7131,19 @@
               "type": "null"
             }
           ],
-          "description": "Tabular output shape for the response payload."
+          "description": "Tabular output shape for the response payload.",
+          "format": null,
+          "raw_schema": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/TabularOutputMode"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Tabular output shape for the response payload."
+          }
         },
         {
           "name": "property_id",
@@ -5073,7 +7158,11 @@
           "ref": "#/$defs/PropertyId",
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "$ref": "#/$defs/PropertyId"
+          }
         },
         {
           "name": "return_property_quota",
@@ -5088,7 +7177,12 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "default": true,
+            "type": "boolean"
+          }
         },
         {
           "name": "session_id",
@@ -5103,7 +7197,12 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Logical scratchpad session identifier."
+          "description": "Logical scratchpad session identifier.",
+          "format": null,
+          "raw_schema": {
+            "description": "Logical scratchpad session identifier.",
+            "type": "string"
+          }
         },
         {
           "name": "summary_only",
@@ -5118,7 +7217,13 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "If true, omit row payload and return metadata only."
+          "description": "If true, omit row payload and return metadata only.",
+          "format": null,
+          "raw_schema": {
+            "default": false,
+            "description": "If true, omit row payload and return metadata only.",
+            "type": "boolean"
+          }
         },
         {
           "name": "table_name",
@@ -5133,7 +7238,12 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Destination scratchpad table name."
+          "description": "Destination scratchpad table name.",
+          "format": null,
+          "raw_schema": {
+            "description": "Destination scratchpad table name.",
+            "type": "string"
+          }
         }
       ],
       "google_signature_parameters": [],
@@ -5162,6 +7272,29 @@
       "error_contract": {
         "sednalabs": "No per-tool error schema in pinned input schema; response envelope lives in separately pinned payload-contract fixture",
         "google": "Not present in extracted official function signatures"
+      },
+      "sednalabs_defs": {
+        "PropertyId": {
+          "anyOf": [
+            {
+              "format": "uint64",
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "TabularOutputMode": {
+          "enum": [
+            "rows",
+            "tuples",
+            "scalar",
+            "compact"
+          ],
+          "type": "string"
+        }
       }
     },
     {
@@ -5185,7 +7318,13 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "If true, append rows into an existing scratchpad table with identical schema."
+          "description": "If true, append rows into an existing scratchpad table with identical schema.",
+          "format": null,
+          "raw_schema": {
+            "default": false,
+            "description": "If true, append rows into an existing scratchpad table with identical schema.",
+            "type": "boolean"
+          }
         },
         {
           "name": "currency_code",
@@ -5203,7 +7342,15 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          }
         },
         {
           "name": "cursor",
@@ -5221,7 +7368,16 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Opaque pagination cursor from `meta.next_cursor`."
+          "description": "Opaque pagination cursor from `meta.next_cursor`.",
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "description": "Opaque pagination cursor from `meta.next_cursor`.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
         },
         {
           "name": "date_ranges",
@@ -5236,7 +7392,14 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "items": {
+              "$ref": "#/$defs/ReportDateRangeSchema"
+            },
+            "type": "array"
+          }
         },
         {
           "name": "dimension_filter",
@@ -5251,7 +7414,12 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "GA FilterExpression. Accepts an object, JSON-object string, or `field==value` shorthand."
+          "description": "GA FilterExpression. Accepts an object, JSON-object string, or `field==value` shorthand.",
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "description": "GA FilterExpression. Accepts an object, JSON-object string, or `field==value` shorthand."
+          }
         },
         {
           "name": "dimensions",
@@ -5266,7 +7434,14 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
         },
         {
           "name": "limit",
@@ -5284,7 +7459,17 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": "uint64",
+          "raw_schema": {
+            "default": null,
+            "format": "uint64",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "max_cell_chars",
@@ -5302,7 +7487,18 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Optional string clipping limit applied to response cell values."
+          "description": "Optional string clipping limit applied to response cell values.",
+          "format": "uint",
+          "raw_schema": {
+            "default": null,
+            "description": "Optional string clipping limit applied to response cell values.",
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "max_rows",
@@ -5320,7 +7516,18 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Optional response row cap for Contract V1 tabular payloads."
+          "description": "Optional response row cap for Contract V1 tabular payloads.",
+          "format": "uint",
+          "raw_schema": {
+            "default": null,
+            "description": "Optional response row cap for Contract V1 tabular payloads.",
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "metric_filter",
@@ -5335,7 +7542,12 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "GA FilterExpression. Accepts an object or JSON-object string."
+          "description": "GA FilterExpression. Accepts an object or JSON-object string.",
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "description": "GA FilterExpression. Accepts an object or JSON-object string."
+          }
         },
         {
           "name": "metrics",
@@ -5350,7 +7562,14 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
         },
         {
           "name": "offset",
@@ -5368,7 +7587,17 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": "uint64",
+          "raw_schema": {
+            "default": null,
+            "format": "uint64",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "order_bys",
@@ -5386,7 +7615,16 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "items": true,
+            "type": [
+              "array",
+              "null"
+            ]
+          }
         },
         {
           "name": "output_mode",
@@ -5408,7 +7646,19 @@
               "type": "null"
             }
           ],
-          "description": "Tabular output shape for the response payload."
+          "description": "Tabular output shape for the response payload.",
+          "format": null,
+          "raw_schema": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/TabularOutputMode"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Tabular output shape for the response payload."
+          }
         },
         {
           "name": "property_id",
@@ -5423,7 +7673,11 @@
           "ref": "#/$defs/PropertyId",
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "$ref": "#/$defs/PropertyId"
+          }
         },
         {
           "name": "return_property_quota",
@@ -5438,7 +7692,12 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": null
+          "description": null,
+          "format": null,
+          "raw_schema": {
+            "default": true,
+            "type": "boolean"
+          }
         },
         {
           "name": "session_id",
@@ -5453,7 +7712,12 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Logical scratchpad session identifier."
+          "description": "Logical scratchpad session identifier.",
+          "format": null,
+          "raw_schema": {
+            "description": "Logical scratchpad session identifier.",
+            "type": "string"
+          }
         },
         {
           "name": "summary_only",
@@ -5468,7 +7732,13 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "If true, omit row payload and return metadata only."
+          "description": "If true, omit row payload and return metadata only.",
+          "format": null,
+          "raw_schema": {
+            "default": false,
+            "description": "If true, omit row payload and return metadata only.",
+            "type": "boolean"
+          }
         },
         {
           "name": "table_name",
@@ -5483,7 +7753,12 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Destination scratchpad table name."
+          "description": "Destination scratchpad table name.",
+          "format": null,
+          "raw_schema": {
+            "description": "Destination scratchpad table name.",
+            "type": "string"
+          }
         }
       ],
       "google_signature_parameters": [],
@@ -5514,6 +7789,46 @@
       "error_contract": {
         "sednalabs": "No per-tool error schema in pinned input schema; response envelope lives in separately pinned payload-contract fixture",
         "google": "Not present in extracted official function signatures"
+      },
+      "sednalabs_defs": {
+        "PropertyId": {
+          "anyOf": [
+            {
+              "format": "uint64",
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "ReportDateRangeSchema": {
+          "properties": {
+            "end_date": {
+              "description": "Inclusive end date (for example `2026-02-07`, `yesterday`).",
+              "type": "string"
+            },
+            "start_date": {
+              "description": "Inclusive start date (for example `2026-02-01`, `7daysAgo`).",
+              "type": "string"
+            }
+          },
+          "required": [
+            "start_date",
+            "end_date"
+          ],
+          "type": "object"
+        },
+        "TabularOutputMode": {
+          "enum": [
+            "rows",
+            "tuples",
+            "scalar",
+            "compact"
+          ],
+          "type": "string"
+        }
       }
     },
     {
@@ -5540,7 +7855,16 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Optional channel column; when unset, all rows are grouped under `all`."
+          "description": "Optional channel column; when unset, all rows are grouped under `all`.",
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "description": "Optional channel column; when unset, all rows are grouped under `all`.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
         },
         {
           "name": "cursor",
@@ -5558,7 +7882,16 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Opaque pagination cursor from `meta.next_cursor`."
+          "description": "Opaque pagination cursor from `meta.next_cursor`.",
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "description": "Opaque pagination cursor from `meta.next_cursor`.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
         },
         {
           "name": "date_column",
@@ -5576,7 +7909,16 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Optional date column name (defaults to `date_parsed`)."
+          "description": "Optional date column name (defaults to `date_parsed`).",
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "description": "Optional date column name (defaults to `date_parsed`).",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
         },
         {
           "name": "landing_url_column",
@@ -5594,7 +7936,16 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Optional landing URL column (defaults to `landingpageplusquerystring`)."
+          "description": "Optional landing URL column (defaults to `landingpageplusquerystring`).",
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "description": "Optional landing URL column (defaults to `landingpageplusquerystring`).",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
         },
         {
           "name": "max_cell_chars",
@@ -5612,7 +7963,18 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Optional string clipping limit applied to response cell values."
+          "description": "Optional string clipping limit applied to response cell values.",
+          "format": "uint",
+          "raw_schema": {
+            "default": null,
+            "description": "Optional string clipping limit applied to response cell values.",
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "max_rows",
@@ -5630,7 +7992,18 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Optional response row cap for Contract V1 tabular payloads."
+          "description": "Optional response row cap for Contract V1 tabular payloads.",
+          "format": "uint",
+          "raw_schema": {
+            "default": null,
+            "description": "Optional response row cap for Contract V1 tabular payloads.",
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "output_mode",
@@ -5652,7 +8025,19 @@
               "type": "null"
             }
           ],
-          "description": "Tabular output shape for the response payload."
+          "description": "Tabular output shape for the response payload.",
+          "format": null,
+          "raw_schema": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/TabularOutputMode"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Tabular output shape for the response payload."
+          }
         },
         {
           "name": "post_days",
@@ -5670,7 +8055,18 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Number of post-release days after transition window (default: 7)."
+          "description": "Number of post-release days after transition window (default: 7).",
+          "format": "uint32",
+          "raw_schema": {
+            "default": null,
+            "description": "Number of post-release days after transition window (default: 7).",
+            "format": "uint32",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "pre_days",
@@ -5688,7 +8084,18 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Number of baseline days before `release_date` (default: 7)."
+          "description": "Number of baseline days before `release_date` (default: 7).",
+          "format": "uint32",
+          "raw_schema": {
+            "default": null,
+            "description": "Number of baseline days before `release_date` (default: 7).",
+            "format": "uint32",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "release_date",
@@ -5703,7 +8110,12 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Release date in `YYYY-MM-DD`."
+          "description": "Release date in `YYYY-MM-DD`.",
+          "format": null,
+          "raw_schema": {
+            "description": "Release date in `YYYY-MM-DD`.",
+            "type": "string"
+          }
         },
         {
           "name": "session_id",
@@ -5718,7 +8130,12 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Logical scratchpad session identifier."
+          "description": "Logical scratchpad session identifier.",
+          "format": null,
+          "raw_schema": {
+            "description": "Logical scratchpad session identifier.",
+            "type": "string"
+          }
         },
         {
           "name": "source_medium_column",
@@ -5736,7 +8153,16 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Optional source/medium column; when unset, all rows are grouped under `all`."
+          "description": "Optional source/medium column; when unset, all rows are grouped under `all`.",
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "description": "Optional source/medium column; when unset, all rows are grouped under `all`.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
         },
         {
           "name": "summary_only",
@@ -5751,7 +8177,13 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "If true, omit row payload and return metadata only."
+          "description": "If true, omit row payload and return metadata only.",
+          "format": null,
+          "raw_schema": {
+            "default": false,
+            "description": "If true, omit row payload and return metadata only.",
+            "type": "boolean"
+          }
         },
         {
           "name": "table_name",
@@ -5766,7 +8198,12 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Scratchpad table to target."
+          "description": "Scratchpad table to target.",
+          "format": null,
+          "raw_schema": {
+            "description": "Scratchpad table to target.",
+            "type": "string"
+          }
         },
         {
           "name": "top_n",
@@ -5784,7 +8221,18 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Maximum number of ranked parameter shifts to return (default: 100)."
+          "description": "Maximum number of ranked parameter shifts to return (default: 100).",
+          "format": "uint",
+          "raw_schema": {
+            "default": null,
+            "description": "Maximum number of ranked parameter shifts to return (default: 100).",
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "transition_days",
@@ -5802,7 +8250,18 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Number of transition days from `release_date` (default: 1)."
+          "description": "Number of transition days from `release_date` (default: 1).",
+          "format": "uint32",
+          "raw_schema": {
+            "default": null,
+            "description": "Number of transition days from `release_date` (default: 1).",
+            "format": "uint32",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         }
       ],
       "google_signature_parameters": [],
@@ -5830,6 +8289,17 @@
       "error_contract": {
         "sednalabs": "No per-tool error schema in pinned input schema; response envelope lives in separately pinned payload-contract fixture",
         "google": "Not present in extracted official function signatures"
+      },
+      "sednalabs_defs": {
+        "TabularOutputMode": {
+          "enum": [
+            "rows",
+            "tuples",
+            "scalar",
+            "compact"
+          ],
+          "type": "string"
+        }
       }
     },
     {
@@ -5856,7 +8326,18 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Optional row cap for inventory listing."
+          "description": "Optional row cap for inventory listing.",
+          "format": "uint",
+          "raw_schema": {
+            "default": null,
+            "description": "Optional row cap for inventory listing.",
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         }
       ],
       "google_signature_parameters": [],
@@ -5869,7 +8350,8 @@
       "error_contract": {
         "sednalabs": "No per-tool error schema in pinned input schema; response envelope lives in separately pinned payload-contract fixture",
         "google": "Not present in extracted official function signatures"
-      }
+      },
+      "sednalabs_defs": {}
     },
     {
       "name": "scratchpad_list_tables",
@@ -5895,7 +8377,18 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Optional row cap for table inventory listing."
+          "description": "Optional row cap for table inventory listing.",
+          "format": "uint",
+          "raw_schema": {
+            "default": null,
+            "description": "Optional row cap for table inventory listing.",
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "session_id",
@@ -5910,7 +8403,12 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Logical scratchpad session identifier."
+          "description": "Logical scratchpad session identifier.",
+          "format": null,
+          "raw_schema": {
+            "description": "Logical scratchpad session identifier.",
+            "type": "string"
+          }
         }
       ],
       "google_signature_parameters": [],
@@ -5924,7 +8422,8 @@
       "error_contract": {
         "sednalabs": "No per-tool error schema in pinned input schema; response envelope lives in separately pinned payload-contract fixture",
         "google": "Not present in extracted official function signatures"
-      }
+      },
+      "sednalabs_defs": {}
     },
     {
       "name": "scratchpad_open_session",
@@ -5947,7 +8446,12 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Logical scratchpad session identifier."
+          "description": "Logical scratchpad session identifier.",
+          "format": null,
+          "raw_schema": {
+            "description": "Logical scratchpad session identifier.",
+            "type": "string"
+          }
         }
       ],
       "google_signature_parameters": [],
@@ -5960,7 +8464,8 @@
       "error_contract": {
         "sednalabs": "No per-tool error schema in pinned input schema; response envelope lives in separately pinned payload-contract fixture",
         "google": "Not present in extracted official function signatures"
-      }
+      },
+      "sednalabs_defs": {}
     },
     {
       "name": "scratchpad_query",
@@ -5986,7 +8491,16 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Opaque pagination cursor from `meta.next_cursor`."
+          "description": "Opaque pagination cursor from `meta.next_cursor`.",
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "description": "Opaque pagination cursor from `meta.next_cursor`.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
         },
         {
           "name": "max_cell_chars",
@@ -6004,7 +8518,18 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Optional string clipping limit applied to response cell values."
+          "description": "Optional string clipping limit applied to response cell values.",
+          "format": "uint",
+          "raw_schema": {
+            "default": null,
+            "description": "Optional string clipping limit applied to response cell values.",
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "max_rows",
@@ -6022,7 +8547,18 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Optional response row cap for Contract V1 tabular payloads."
+          "description": "Optional response row cap for Contract V1 tabular payloads.",
+          "format": "uint",
+          "raw_schema": {
+            "default": null,
+            "description": "Optional response row cap for Contract V1 tabular payloads.",
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "output_mode",
@@ -6044,7 +8580,19 @@
               "type": "null"
             }
           ],
-          "description": "Tabular output shape for the response payload."
+          "description": "Tabular output shape for the response payload.",
+          "format": null,
+          "raw_schema": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/TabularOutputMode"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Tabular output shape for the response payload."
+          }
         },
         {
           "name": "session_id",
@@ -6059,7 +8607,12 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Logical scratchpad session identifier."
+          "description": "Logical scratchpad session identifier.",
+          "format": null,
+          "raw_schema": {
+            "description": "Logical scratchpad session identifier.",
+            "type": "string"
+          }
         },
         {
           "name": "sql",
@@ -6074,7 +8627,12 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Read-only SQL query against the scratchpad session."
+          "description": "Read-only SQL query against the scratchpad session.",
+          "format": null,
+          "raw_schema": {
+            "description": "Read-only SQL query against the scratchpad session.",
+            "type": "string"
+          }
         },
         {
           "name": "summary_only",
@@ -6089,7 +8647,13 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "If true, omit row payload and return metadata only."
+          "description": "If true, omit row payload and return metadata only.",
+          "format": null,
+          "raw_schema": {
+            "default": false,
+            "description": "If true, omit row payload and return metadata only.",
+            "type": "boolean"
+          }
         }
       ],
       "google_signature_parameters": [],
@@ -6108,6 +8672,17 @@
       "error_contract": {
         "sednalabs": "No per-tool error schema in pinned input schema; response envelope lives in separately pinned payload-contract fixture",
         "google": "Not present in extracted official function signatures"
+      },
+      "sednalabs_defs": {
+        "TabularOutputMode": {
+          "enum": [
+            "rows",
+            "tuples",
+            "scalar",
+            "compact"
+          ],
+          "type": "string"
+        }
       }
     },
     {
@@ -6131,7 +8706,12 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Anchor event used as the instrumentation signal."
+          "description": "Anchor event used as the instrumentation signal.",
+          "format": null,
+          "raw_schema": {
+            "description": "Anchor event used as the instrumentation signal.",
+            "type": "string"
+          }
         },
         {
           "name": "comparison_event",
@@ -6146,7 +8726,12 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Comparison event used as behavior baseline."
+          "description": "Comparison event used as behavior baseline.",
+          "format": null,
+          "raw_schema": {
+            "description": "Comparison event used as behavior baseline.",
+            "type": "string"
+          }
         },
         {
           "name": "cursor",
@@ -6164,7 +8749,16 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Opaque pagination cursor from `meta.next_cursor`."
+          "description": "Opaque pagination cursor from `meta.next_cursor`.",
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "description": "Opaque pagination cursor from `meta.next_cursor`.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
         },
         {
           "name": "date_column",
@@ -6182,7 +8776,16 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Optional date column name (defaults to `date`)."
+          "description": "Optional date column name (defaults to `date`).",
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "description": "Optional date column name (defaults to `date`).",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
         },
         {
           "name": "event_column",
@@ -6200,7 +8803,16 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Optional event-name column (defaults to `event_name`)."
+          "description": "Optional event-name column (defaults to `event_name`).",
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "description": "Optional event-name column (defaults to `event_name`).",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
         },
         {
           "name": "max_cell_chars",
@@ -6218,7 +8830,18 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Optional string clipping limit applied to response cell values."
+          "description": "Optional string clipping limit applied to response cell values.",
+          "format": "uint",
+          "raw_schema": {
+            "default": null,
+            "description": "Optional string clipping limit applied to response cell values.",
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "max_rows",
@@ -6236,7 +8859,18 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Optional response row cap for Contract V1 tabular payloads."
+          "description": "Optional response row cap for Contract V1 tabular payloads.",
+          "format": "uint",
+          "raw_schema": {
+            "default": null,
+            "description": "Optional response row cap for Contract V1 tabular payloads.",
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "metric_column",
@@ -6254,7 +8888,16 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Optional numeric metric column (defaults to row-count weighting)."
+          "description": "Optional numeric metric column (defaults to row-count weighting).",
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "description": "Optional numeric metric column (defaults to row-count weighting).",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
         },
         {
           "name": "output_mode",
@@ -6276,7 +8919,19 @@
               "type": "null"
             }
           ],
-          "description": "Tabular output shape for the response payload."
+          "description": "Tabular output shape for the response payload.",
+          "format": null,
+          "raw_schema": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/TabularOutputMode"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Tabular output shape for the response payload."
+          }
         },
         {
           "name": "post_days",
@@ -6294,7 +8949,18 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Number of post-release days after transition window (default: 7)."
+          "description": "Number of post-release days after transition window (default: 7).",
+          "format": "uint32",
+          "raw_schema": {
+            "default": null,
+            "description": "Number of post-release days after transition window (default: 7).",
+            "format": "uint32",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "pre_days",
@@ -6312,7 +8978,18 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Number of baseline days before `release_date` (default: 7)."
+          "description": "Number of baseline days before `release_date` (default: 7).",
+          "format": "uint32",
+          "raw_schema": {
+            "default": null,
+            "description": "Number of baseline days before `release_date` (default: 7).",
+            "format": "uint32",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "release_date",
@@ -6327,7 +9004,12 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Release date in `YYYY-MM-DD`."
+          "description": "Release date in `YYYY-MM-DD`.",
+          "format": null,
+          "raw_schema": {
+            "description": "Release date in `YYYY-MM-DD`.",
+            "type": "string"
+          }
         },
         {
           "name": "session_id",
@@ -6342,7 +9024,12 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Logical scratchpad session identifier."
+          "description": "Logical scratchpad session identifier.",
+          "format": null,
+          "raw_schema": {
+            "description": "Logical scratchpad session identifier.",
+            "type": "string"
+          }
         },
         {
           "name": "summary_only",
@@ -6357,7 +9044,13 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "If true, omit row payload and return metadata only."
+          "description": "If true, omit row payload and return metadata only.",
+          "format": null,
+          "raw_schema": {
+            "default": false,
+            "description": "If true, omit row payload and return metadata only.",
+            "type": "boolean"
+          }
         },
         {
           "name": "table_name",
@@ -6372,7 +9065,12 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Scratchpad table to target."
+          "description": "Scratchpad table to target.",
+          "format": null,
+          "raw_schema": {
+            "description": "Scratchpad table to target.",
+            "type": "string"
+          }
         },
         {
           "name": "transition_days",
@@ -6390,7 +9088,18 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Number of transition days from `release_date` (default: 1)."
+          "description": "Number of transition days from `release_date` (default: 1).",
+          "format": "uint32",
+          "raw_schema": {
+            "default": null,
+            "description": "Number of transition days from `release_date` (default: 1).",
+            "format": "uint32",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         }
       ],
       "google_signature_parameters": [],
@@ -6418,6 +9127,17 @@
       "error_contract": {
         "sednalabs": "No per-tool error schema in pinned input schema; response envelope lives in separately pinned payload-contract fixture",
         "google": "Not present in extracted official function signatures"
+      },
+      "sednalabs_defs": {
+        "TabularOutputMode": {
+          "enum": [
+            "rows",
+            "tuples",
+            "scalar",
+            "compact"
+          ],
+          "type": "string"
+        }
       }
     },
     {
@@ -6444,7 +9164,18 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Maximum number of active scratchpad sessions allowed at runtime."
+          "description": "Maximum number of active scratchpad sessions allowed at runtime.",
+          "format": "uint",
+          "raw_schema": {
+            "default": null,
+            "description": "Maximum number of active scratchpad sessions allowed at runtime.",
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "max_tables_per_session",
@@ -6462,7 +9193,18 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Maximum number of tables allowed per scratchpad session at runtime."
+          "description": "Maximum number of tables allowed per scratchpad session at runtime.",
+          "format": "uint",
+          "raw_schema": {
+            "default": null,
+            "description": "Maximum number of tables allowed per scratchpad session at runtime.",
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         }
       ],
       "google_signature_parameters": [],
@@ -6476,7 +9218,8 @@
       "error_contract": {
         "sednalabs": "No per-tool error schema in pinned input schema; response envelope lives in separately pinned payload-contract fixture",
         "google": "Not present in extracted official function signatures"
-      }
+      },
+      "sednalabs_defs": {}
     },
     {
       "name": "scratchpad_summarize_table",
@@ -6502,7 +9245,16 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Opaque pagination cursor from `meta.next_cursor`."
+          "description": "Opaque pagination cursor from `meta.next_cursor`.",
+          "format": null,
+          "raw_schema": {
+            "default": null,
+            "description": "Opaque pagination cursor from `meta.next_cursor`.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
         },
         {
           "name": "max_cell_chars",
@@ -6520,7 +9272,18 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Optional string clipping limit applied to response cell values."
+          "description": "Optional string clipping limit applied to response cell values.",
+          "format": "uint",
+          "raw_schema": {
+            "default": null,
+            "description": "Optional string clipping limit applied to response cell values.",
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "max_rows",
@@ -6538,7 +9301,18 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Optional response row cap for Contract V1 tabular payloads."
+          "description": "Optional response row cap for Contract V1 tabular payloads.",
+          "format": "uint",
+          "raw_schema": {
+            "default": null,
+            "description": "Optional response row cap for Contract V1 tabular payloads.",
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
         },
         {
           "name": "output_mode",
@@ -6560,7 +9334,19 @@
               "type": "null"
             }
           ],
-          "description": "Tabular output shape for the response payload."
+          "description": "Tabular output shape for the response payload.",
+          "format": null,
+          "raw_schema": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/TabularOutputMode"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Tabular output shape for the response payload."
+          }
         },
         {
           "name": "session_id",
@@ -6575,7 +9361,12 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Logical scratchpad session identifier."
+          "description": "Logical scratchpad session identifier.",
+          "format": null,
+          "raw_schema": {
+            "description": "Logical scratchpad session identifier.",
+            "type": "string"
+          }
         },
         {
           "name": "summary_only",
@@ -6590,7 +9381,13 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "If true, omit row payload and return metadata only."
+          "description": "If true, omit row payload and return metadata only.",
+          "format": null,
+          "raw_schema": {
+            "default": false,
+            "description": "If true, omit row payload and return metadata only.",
+            "type": "boolean"
+          }
         },
         {
           "name": "table_name",
@@ -6605,7 +9402,12 @@
           "ref": null,
           "oneOf": null,
           "anyOf": null,
-          "description": "Scratchpad table to target."
+          "description": "Scratchpad table to target.",
+          "format": null,
+          "raw_schema": {
+            "description": "Scratchpad table to target.",
+            "type": "string"
+          }
         }
       ],
       "google_signature_parameters": [],
@@ -6624,7 +9426,27 @@
       "error_contract": {
         "sednalabs": "No per-tool error schema in pinned input schema; response envelope lives in separately pinned payload-contract fixture",
         "google": "Not present in extracted official function signatures"
+      },
+      "sednalabs_defs": {
+        "TabularOutputMode": {
+          "enum": [
+            "rows",
+            "tuples",
+            "scalar",
+            "compact"
+          ],
+          "type": "string"
+        }
       }
     }
-  ]
+  ],
+  "methodology": {
+    "exact": "All SednaLabs input property JSON Schema fragments and tool-local $defs are copied unchanged from the pinned fixture. Google source supplies names/required status only. Explicit null in normalized comparison fields does not establish upstream default:null unless has_explicit_default=true.",
+    "unavailable": [
+      "Google Python function annotations/defaults",
+      "per-tool Google runtime input/output JSON Schemas",
+      "cross-source error response schema and live provider behavior"
+    ],
+    "dynamic_checks": "Rust test cross-checks tool names, property names and required status against both frozen upstream fixtures."
+  }
 }
