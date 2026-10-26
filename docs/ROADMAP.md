@@ -130,7 +130,7 @@
 
 **Scope:** MVP. **Acceptance gate:** Secure, least-privilege, non-Python auth across interactive, local and service configurations; no secret leaks.
 
-### 🪪 P05 — Native OAuth login and operators — `████░░░░░░ 43.8%`
+### 🪪 P05 — Native OAuth login and operators — `█████░░░░░ 50.0%`
 
 **Feature:** Native OAuth.
 
