@@ -2819,9 +2819,7 @@ mod tests {
             "metrics":["unsupportedCustomMetric"]
         }))
         .unwrap();
-        let compatibility = server
-            .check_report_compatibility(Parameters(checked))
-            .await;
+        let compatibility = server.check_report_compatibility(Parameters(checked)).await;
         responder.await.unwrap();
         assert_eq!(compatibility.is_error, Some(false));
         let content = compatibility.structured_content.unwrap();
@@ -2829,7 +2827,9 @@ mod tests {
             content["data"]["metricCompatibilities"][0]["compatibility"],
             "INCOMPATIBLE"
         );
-        assert!(!content.to_string().contains("private-metadata-fixture-token"));
+        assert!(!content
+            .to_string()
+            .contains("private-metadata-fixture-token"));
 
         let preview: ReportArgs = serde_json::from_value(json!({
             "property_id":42,
@@ -2846,7 +2846,10 @@ mod tests {
             preview_payload["data"]["preview"]["compatibility_checked"],
             false
         );
-        assert_eq!(preview_payload["data"]["request"]["metrics"][0]["name"], "unsupportedCustomMetric");
+        assert_eq!(
+            preview_payload["data"]["request"]["metrics"][0]["name"],
+            "unsupportedCustomMetric"
+        );
     }
 
     #[tokio::test]
