@@ -43,3 +43,15 @@ The source-controlled `ci/benchmark-native.sh` now supports `SYNMETRA_BENCH_CACH
 For each cleared-cache measurement, the script runs `sync` and uses noninteractive CI-only `sudo` to write `3` to Linux `/proc/sys/vm/drop_caches`. If access is denied, the benchmark **fails closed** rather than silently labeling warm data as cold. This resets Linux page, dentry and inode caches; it does not clear CPU caches, control GitHub VM load, isolate shell startup overhead or claim a new hardware boot. The same compiled debug binary and single CI VM are used in both conditions. The warm samples run after the cleared-cache phase. Neither is an independent cross-machine production-performance baseline.
 
 No performance comparison or T189 second-gate credit is claimed until the CI cache-reset step actually passes, the resulting values are checked, and a pinned machine-readable source-run record is committed. The earlier unqualified warmed-runner baseline remains separate.
+
+## Verified page-cache-cleared vs warm result (2026-10-26)
+
+Source `8b172cc91deae38afed1133c32bc7c4ace03f11b` passed [GitHub Actions workflow 40383288358](https://github.com/sguzman/synmetra/actions/runs/40383288358), including a successful noninteractive CI-only Linux `/proc/sys/vm/drop_caches` reset. The exact 14 synthetic measurement rows, OS identification, source SHA and method caveats are retained in [spec/benchmarks/cache-cleared-40383288358.json](../spec/benchmarks/cache-cleared-40383288358.json).
+
+| Synthetic profile | Linux cache-cleared median wall time | Same-runner warmed median | Samples per condition |
+| --- | ---: | ---: | ---: |
+| Fresh `--help` process | **44.177 ms** | **7.790 ms** | 3 |
+| Fresh MCP initialize, list and one local call | **89.886 ms** | **14.022 ms** | 3 |
+| One process, three local calls | 87.602 ms | 74.102 ms | 1 |
+
+Median peak RSS for the fresh MCP profile was **16,364 KiB** under the cache-cleared condition and **16,880 KiB** warmed. Clearing the Linux page/dentry/inode caches made file-backed startup appreciably slower on this runner, but no statistically powered throughput or cross-host speedup claim follows from three samples. The wall timer includes child process and shell overhead; it does not isolate the Rust handler or guarantee no hardware/CPU cache, kernel scheduler jitter or guest virtualization cache. `sudo` was used only on the explicitly guarded ephemeral GitHub-hosted runner, never on a personal workstation. T189's **Linux page-cache-cleared vs warm synthetic comparison** is accepted within this tested scope; production profiling and native EndeavourOS install QA remain separate.

@@ -3797,7 +3797,7 @@
               "id": "T189",
               "emoji": "⏱️",
               "name": "Benchmark startup latency peak RSS and tool calls",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Repeatable Linux measurements under no-cache and warm-cache",
               "checks": [
                 {
@@ -3807,7 +3807,8 @@
                 },
                 {
                   "text": "Repeatable Linux measurements under no-cache and warm-cache",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "ci/benchmark-native.sh explicitly restricts page-cache resets to GITHUB_ACTIONS=true, RUNNER_ENVIRONMENT=github-hosted and SYNMETRA_ALLOW_GLOBAL_CACHE_FLUSH=ci-only; it uses sync plus sudo to clear Linux page/dentry/inode caches before each synthetic process and fails closed if reset is unsupported. Core CI https://github.com/sguzman/synmetra/actions/runs/40383288358 passed three fresh startup and MCP round-trip samples per cleared/warmed mode and one repeated-call process per mode, on one source-identical Linux VM. spec/benchmarks/cache-cleared-40383288358.json retains 14 measured rows and source/kernel metadata; docs/BENCHMARK.md reports 89.886 ms vs 14.022 ms median full MCP round trips. No CPU-cache, cross-runner, or live Google latency claim is made."
                 }
               ]
             },

@@ -1,0 +1,165 @@
+{
+  "schema": "synmetra_linux_page_cache_comparison",
+  "version": 1,
+  "ci_run": "https://github.com/sguzman/synmetra/actions/runs/40383288358",
+  "ci_job": 121784847009,
+  "verified_step": "Measure cache-cleared versus warm Linux startup (ephemeral CI only)",
+  "source_sha": "8b172cc91deae38afed1133c32bc7c4ace03f11b",
+  "kernel": "Linux 7.0.0-1017-azure x86_64 GNU/Linux",
+  "methodology": "Separate source-identical samples on one ephemeral GitHub runner; Linux page/dentry/inode caches were explicitly cleared before each cold measurement. No CPU-cache, live Google API or cross-runner guarantee.",
+  "limitations": "GitHub-hosted single ephemeral VM; three page-cache resets per fresh-process profile and three sequential warmed samples, one repeated-call process per mode; debug build, no CPU cache reset, no true first-boot baseline, no end-user machine and no live Google API.",
+  "measurements": {
+    "cache_cleared": [
+      {
+        "run": 1,
+        "profile": "fresh_help",
+        "elapsed_s": 0.01,
+        "wall_ms": 24.941,
+        "max_rss_kib": 7140
+      },
+      {
+        "run": 1,
+        "profile": "fresh_mcp_roundtrip",
+        "elapsed_s": 0.04,
+        "wall_ms": 57.852,
+        "max_rss_kib": 16364
+      },
+      {
+        "run": 2,
+        "profile": "fresh_help",
+        "elapsed_s": 0.03,
+        "wall_ms": 44.177,
+        "max_rss_kib": 7108
+      },
+      {
+        "run": 2,
+        "profile": "fresh_mcp_roundtrip",
+        "elapsed_s": 0.05,
+        "wall_ms": 89.886,
+        "max_rss_kib": 16204
+      },
+      {
+        "run": 3,
+        "profile": "fresh_help",
+        "elapsed_s": 0.04,
+        "wall_ms": 54.824,
+        "max_rss_kib": 7092
+      },
+      {
+        "run": 3,
+        "profile": "fresh_mcp_roundtrip",
+        "elapsed_s": 0.08,
+        "wall_ms": 95.267,
+        "max_rss_kib": 16396
+      },
+      {
+        "run": 1,
+        "profile": "same_process_repeated_calls",
+        "calls": 3,
+        "elapsed_s": 0.07,
+        "wall_ms": 87.602,
+        "max_rss_kib": 16496
+      }
+    ],
+    "warmed": [
+      {
+        "run": 1,
+        "profile": "fresh_help",
+        "elapsed_s": 0,
+        "wall_ms": 7.809,
+        "max_rss_kib": 7712
+      },
+      {
+        "run": 1,
+        "profile": "fresh_mcp_roundtrip",
+        "elapsed_s": 0.01,
+        "wall_ms": 14.022,
+        "max_rss_kib": 16948
+      },
+      {
+        "run": 2,
+        "profile": "fresh_help",
+        "elapsed_s": 0,
+        "wall_ms": 7.79,
+        "max_rss_kib": 7980
+      },
+      {
+        "run": 2,
+        "profile": "fresh_mcp_roundtrip",
+        "elapsed_s": 0.01,
+        "wall_ms": 14.102,
+        "max_rss_kib": 16608
+      },
+      {
+        "run": 3,
+        "profile": "fresh_help",
+        "elapsed_s": 0,
+        "wall_ms": 7.504,
+        "max_rss_kib": 7760
+      },
+      {
+        "run": 3,
+        "profile": "fresh_mcp_roundtrip",
+        "elapsed_s": 0.01,
+        "wall_ms": 13.851,
+        "max_rss_kib": 16880
+      },
+      {
+        "run": 1,
+        "profile": "same_process_repeated_calls",
+        "calls": 3,
+        "elapsed_s": 0.06,
+        "wall_ms": 74.102,
+        "max_rss_kib": 16820
+      }
+    ]
+  },
+  "summary": {
+    "cache_cleared": {
+      "fresh_help": {
+        "samples": 3,
+        "median_wall_ms": 44.177,
+        "median_rss_kib": 7108,
+        "min_wall_ms": 24.941,
+        "max_wall_ms": 54.824
+      },
+      "fresh_mcp_roundtrip": {
+        "samples": 3,
+        "median_wall_ms": 89.886,
+        "median_rss_kib": 16364,
+        "min_wall_ms": 57.852,
+        "max_wall_ms": 95.267
+      },
+      "same_process_repeated_calls": {
+        "samples": 1,
+        "median_wall_ms": 87.602,
+        "median_rss_kib": 16496,
+        "min_wall_ms": 87.602,
+        "max_wall_ms": 87.602
+      }
+    },
+    "warmed": {
+      "fresh_help": {
+        "samples": 3,
+        "median_wall_ms": 7.79,
+        "median_rss_kib": 7760,
+        "min_wall_ms": 7.504,
+        "max_wall_ms": 7.809
+      },
+      "fresh_mcp_roundtrip": {
+        "samples": 3,
+        "median_wall_ms": 14.022,
+        "median_rss_kib": 16880,
+        "min_wall_ms": 13.851,
+        "max_wall_ms": 14.102
+      },
+      "same_process_repeated_calls": {
+        "samples": 1,
+        "median_wall_ms": 74.102,
+        "median_rss_kib": 16820,
+        "min_wall_ms": 74.102,
+        "max_wall_ms": 74.102
+      }
+    }
+  }
+}
