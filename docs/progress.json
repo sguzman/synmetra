@@ -3682,16 +3682,18 @@
               "id": "T183",
               "emoji": "🗃️",
               "name": "Confirm scratchpad ingest query and export lifecycle",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "Synthetic or sanitized GA evidence kept private",
               "checks": [
                 {
                   "text": "Deliver confirm scratchpad ingest query and export lifecycle as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs scratchpad_ga_ingest_round_trips_historical_realtime_and_private_evidence exercises one local mock Google Data API loopback server for synthetic property 42, bounded historical/realtime ingestion to two in-memory DuckDB tables, SELECT query, JSON/Markdown evidence export and lifecycle closing. Additional tests scratchpad_evidence_export_matches_pinned_inputs_and_bounded_json_markdown and scratchpad_mcp_lifecycle_limits_and_private_tables_have_stable_envelopes verify tool envelopes and quotas. Native DuckDB CI https://github.com/sguzman/synmetra/actions/runs/40381252760 passed. docs/SYNTHETIC_SCRATCHPAD_LIFECYCLE.md records scope and reproducible synthetic fixture; live Google T178–T186 remain open."
                 },
                 {
                   "text": "Synthetic or sanitized GA evidence kept private",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "The passing native feature test at https://github.com/sguzman/synmetra/actions/runs/40381252760 validates fake upstream-only country/count rows, no real property or token, synthetic bearer redaction in receipts/query/export/errors, an export <=256 KiB with provider_called=false, session-table separation, oversized ingest rejection before table creation, and inaccessible export after session close. Only fabricated loopback responses are used; no live GA or customer data are committed and no per-user HTTP isolation is claimed."
                 }
               ]
             },
@@ -4309,16 +4311,18 @@
               "id": "T215",
               "emoji": "🧾",
               "name": "Publish provenance and release notes",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "Attributed dependencies and known GA alpha limitations",
               "checks": [
                 {
                   "text": "Deliver publish provenance and release notes as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "docs/EXPERIMENTAL_RELEASE_NOTES.md, CHANGELOG.md, docs/PROVENANCE.md, docs/RELEASE_POLICY.md and docs/SBOM.md publish project/source attribution, untagged 0.0.1 development capabilities, license references, historical experimental Linux artifact provenance, supported trust boundaries, and explicit future tagged release evidence requirements. Core CI https://github.com/sguzman/synmetra/actions/runs/40381252760 passed the release-note validation. This is an experimental source-tree preview, not a production release or tagged v1.0.0."
                 },
                 {
                   "text": "Attributed dependencies and known GA alpha limitations",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "The experimental notes attribute independent project MIT licensing and pinned Google/SednaLabs Apache-2.0 references, exact source SHAs, CycloneDX and default ELF dependency inventory, optional DuckDB native C/C++ redistribution caveats, and unaccepted Google Data/Admin v1alpha funnel/conversion eligibility, access-role and mutation requirements. Core CI https://github.com/sguzman/synmetra/actions/runs/40381252760 verifies attribution, alpha caveats, no live-account claim and the untagged-release warning. No full native dependency license audit or live Google success is implied."
                 }
               ]
             },

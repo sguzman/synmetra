@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `███████░░░ 74.2%` · **+74.23 percentage points from initial empty repo; +0.22 pp from CI-verified Streamable HTTP cancellation resource cleanup
+**Overall:** `████████░░ 75.1%` · **+75.11 percentage points from initial empty repo; +0.88 pp from verified synthetic DuckDB lifecycle and attributed experimental release notes
 
 ### 📏 Progress conventions
 
@@ -126,7 +126,7 @@
   - ✅ **Gate:** Protocol wire fixtures pass multiple clients
 
 
-## 🔑 M2 — Google authentication and credential isolation — `█████░░░░░ 53.9%`
+## 🔑 M2 — Google authentication and credential isolation — `█████░░░░░ 53.8%`
 
 **Scope:** MVP. **Acceptance gate:** Secure, least-privilege, non-Python auth across interactive, local and service configurations; no secret leaks.
 
@@ -495,7 +495,7 @@
   - ✅ **Gate:** Changes open maintenance work rather than silently inflate parity · **Evidence:** .github/workflows/upstream-drift.yml watches exact SednaLabs schema and Google coordinator Git blob SHAs weekly and on reviewed lock/workflow changes; changes trigger stable [upstream-drift] local maintenance issue, never repin automatically. ci/test-upstream-drift-watch.sh executes the actual workflow shell body with mocked curl/gh, verifying unchanged, changed and duplicate issue cases. GitHub Actions drift workflow 40249957815 succeeded.; GitHub Actions 40249957815 offline fixture checks verify an upstream blob change fails the watch and opens exactly one review issue per source; repeat unchanged pin mismatch reuses an existing open issue and a second changed source opens a separate one. Real unchanged upstream watch also passed. No real upstream drift was forced and no real maintenance issue was created; this is synthetic acceptance of the detection/mutation control, not a source parity claim.
 
 
-## 🧪 M8 — Verification, resilience and security acceptance — `█████░░░░░ 53.6%`
+## 🧪 M8 — Verification, resilience and security acceptance — `██████░░░░ 57.1%`
 
 **Scope:** MVP. **Acceptance gate:** Full offline and authorized live verification including malformed inputs, MCP interoperability and threat model.
 
@@ -524,7 +524,7 @@
 - 🔐 **T177 — Run dependency secret and license scanners** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** No accidental credentials or prohibited licenses in repository · **Evidence:** The independent ci/scan-secrets.sh high-confidence, non-printing tracked-source heuristic scanner passed https://github.com/sguzman/synmetra/actions/runs/40346651673. SHA-pinned cargo-deny license/advisory/bans/source checks passed https://github.com/sguzman/synmetra/actions/runs/40346651714, with policy and limitations documented. Comprehensive historical, native C++ and credential-disclosure coverage remain unaccepted.
 
-### 🔬 P23 — Authorized live Google acceptance — `░░░░░░░░░░ 0.0%`
+### 🔬 P23 — Authorized live Google acceptance — `█░░░░░░░░░ 11.1%`
 
 **Feature:** Live GA gates.
 
@@ -538,8 +538,8 @@
   - ✅ **Gate:** Expected success or documented Google restriction captured
 - 📈 **T182 — Confirm pivot batch and property access reports** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Authorized scoped live evidence and no sensitive data committed
-- 🗃️ **T183 — Confirm scratchpad ingest query and export lifecycle** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Synthetic or sanitized GA evidence kept private
+- 🗃️ **T183 — Confirm scratchpad ingest query and export lifecycle** — `██████████ 100.0%`
+  - ✅ **Gate:** Synthetic or sanitized GA evidence kept private · **Evidence:** src/main.rs scratchpad_ga_ingest_round_trips_historical_realtime_and_private_evidence exercises one local mock Google Data API loopback server for synthetic property 42, bounded historical/realtime ingestion to two in-memory DuckDB tables, SELECT query, JSON/Markdown evidence export and lifecycle closing. Additional tests scratchpad_evidence_export_matches_pinned_inputs_and_bounded_json_markdown and scratchpad_mcp_lifecycle_limits_and_private_tables_have_stable_envelopes verify tool envelopes and quotas. Native DuckDB CI https://github.com/sguzman/synmetra/actions/runs/40381252760 passed. docs/SYNTHETIC_SCRATCHPAD_LIFECYCLE.md records scope and reproducible synthetic fixture; live Google T178–T186 remain open.; The passing native feature test at https://github.com/sguzman/synmetra/actions/runs/40381252760 validates fake upstream-only country/count rows, no real property or token, synthetic bearer redaction in receipts/query/export/errors, an export <=256 KiB with provider_called=false, session-table separation, oversized ingest rejection before table creation, and inaccessible export after session close. Only fabricated loopback responses are used; no live GA or customer data are committed and no per-user HTTP isolation is claimed.
 - ✍️ **T184 — Opt-in annotation write and disable workflow** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Test property only after explicit operator authorization
 - 🧬 **T185 — Smoke test Codex multi-tool use with local MCP** — `░░░░░░░░░░ 0.0%`
@@ -571,7 +571,7 @@
   - ✅ **Gate:** Signed provenance and dependency audit evidence · **Evidence:** Pinned Rust 1.99.1/Cargo.lock source builds an x86-64 release binary in two independent Cargo target directories and compares SHA-256 digests and sizes. The dedicated workflow step passed https://github.com/sguzman/synmetra/actions/runs/40358192285; separate cargo-deny Rust license/source/advisory scans also pass. Cross-runner reproducibility, bundled DuckDB and signed provenance remain distinct pending gates.; The release workflow passed two separate pinned Rust 1.99.1/Cargo.lock x86-64 binary SHA-256 comparisons, SHA-pinned actions/attest@v4 Sigstore/SLSA v1 archive attestation, and gh attestation verify -R sguzman/synmetra validating repository identity and SLSA predicate in https://github.com/sguzman/synmetra/actions/runs/40359969759. Independent cargo-deny Rust license/source checks passed https://github.com/sguzman/synmetra/actions/runs/40346651714. This accepts signed provenance and dependency-audit evidence only for an experimental default-feature Linux archive, not clean ARM64/EndeavourOS builds or native C++ compliance.
 
 
-## 🚀 M9 — Linux release and Codex-ready inauguration — `███████░░░ 65.9%`
+## 🚀 M9 — Linux release and Codex-ready inauguration — `███████░░░ 70.4%`
 
 **Scope:** MVP. **Acceptance gate:** A documented stable native binary with 36-tool verified parity and release artifacts; no Python/npm runtime.
 
@@ -615,7 +615,7 @@
 - 🛡️ **T210 — Publish responsible security disclosure policy** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Safe vulnerability contact with no leaked reports · **Evidence:** Root SECURITY.md defines the experimental supported-version scope, GitHub Security Advisory conditional private reporting, metadata-only public contact fallback (never vulnerability details), synthetic evidence expectations, private triage/remediation/disclosure and security boundaries. This is a documented policy; repository private vulnerability reporting configuration is not verified, so safe active contact gate remains open.
 
-### 🏁 P27 — Release acceptance and semantic versions — `███░░░░░░░ 28.6%`
+### 🏁 P27 — Release acceptance and semantic versions — `████░░░░░░ 42.9%`
 
 **Feature:** v1.0 GA4 parity.
 
@@ -627,8 +627,8 @@
   - ✅ **Gate:** Semver milestone traceable to test artifacts
 - 📦 **T214 — Publish checksummed Linux release assets** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Checksums and source commit visible · **Evidence:** The experimental Linux workflow generated a normalized x86-64 tarball containing the commit SHA and license, verified its SHA-256 sidecar and extracted installed binary, and published these as GitHub Actions artifact 12667318243 in https://github.com/sguzman/synmetra/actions/runs/40359969759. docs/RELEASE_POLICY.md explicitly distinguishes the expiring Actions artifact from a permanent downloadable GitHub Release. The release-publication and durable checksummed-asset gate is still open.
-- 🧾 **T215 — Publish provenance and release notes** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Attributed dependencies and known GA alpha limitations
+- 🧾 **T215 — Publish provenance and release notes** — `██████████ 100.0%`
+  - ✅ **Gate:** Attributed dependencies and known GA alpha limitations · **Evidence:** docs/EXPERIMENTAL_RELEASE_NOTES.md, CHANGELOG.md, docs/PROVENANCE.md, docs/RELEASE_POLICY.md and docs/SBOM.md publish project/source attribution, untagged 0.0.1 development capabilities, license references, historical experimental Linux artifact provenance, supported trust boundaries, and explicit future tagged release evidence requirements. Core CI https://github.com/sguzman/synmetra/actions/runs/40381252760 passed the release-note validation. This is an experimental source-tree preview, not a production release or tagged v1.0.0.; The experimental notes attribute independent project MIT licensing and pinned Google/SednaLabs Apache-2.0 references, exact source SHAs, CycloneDX and default ELF dependency inventory, optional DuckDB native C/C++ redistribution caveats, and unaccepted Google Data/Admin v1alpha funnel/conversion eligibility, access-role and mutation requirements. Core CI https://github.com/sguzman/synmetra/actions/runs/40381252760 verifies attribution, alpha caveats, no live-account claim and the untagged-release warning. No full native dependency license audit or live Google success is implied.
 - 🔏 **T216 — Publish SBOM and binary dependency inventory** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Explicit native runtime dependencies and license compliance · **Evidence:** ci/generate-sbom.sh produces a CycloneDX 1.5 all-features Cargo.lock dependency graph, Rust declared-license metadata, and default-feature x86-64 ELF ldd-native-library inventory tied to source and binary SHA-256. https://github.com/sguzman/synmetra/actions/runs/40359969759 passed generation and JSON validation, with the files published as expiring Actions artifact https://github.com/sguzman/synmetra/actions/runs/40359969759/artifacts/12667318243; docs/SBOM.md explains scopes and limits. Full native DuckDB C++/system-library redistribution license clearance is unaccepted.
 - 🩺 **T217 — Run clean-install and uninstall QA on EndeavourOS** — `░░░░░░░░░░ 0.0%`

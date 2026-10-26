@@ -10,20 +10,20 @@
 
 ## 📊 Evidence-backed progress
 
-**Overall:** `███████░░░ 74.2%` · **overall delta: +74.23 percentage points** from initial 0% (**latest accepted round: +0.22 pp**). **35/35 SednaLabs tool names implemented provisionally plus 1 opt-in annotation handler; 0/36 fully accepted upstream parity.** Real Google account acceptance and full tool schemas remain pending.
+**Overall:** `████████░░ 75.1%` · **overall delta: +75.11 percentage points** from initial 0% (**latest accepted round: +0.88 pp**). **35/35 SednaLabs tool names implemented provisionally plus 1 opt-in annotation handler; 0/36 fully accepted upstream parity.** Real Google account acceptance and full tool schemas remain pending.
 
 | Milestone | Progress | Gate |
 | --- | --- | --- |
 | 🧭 M0 Reference baseline and project governance | `██████████ 97.1%` | MVP |
 | 🔌 M1 MCP protocol and transport fidelity | `████████░░ 82.6%` | MVP |
-| 🔑 M2 Google authentication and credential isolation | `█████░░░░░ 53.9%` | MVP |
+| 🔑 M2 Google authentication and credential isolation | `█████░░░░░ 53.8%` | MVP |
 | 🏢 M3 Admin API information parity | `██████████ 100.0%` | MVP |
 | 📊 M4 Reporting, preflight and Data API parity | `██████████ 100.0%` | MVP |
 | ✍️ M5 Explicitly gated GA mutation parity | `████████░░ 84.6%` | MVP |
 | 🗃️ M6 DuckDB scratchpad and advanced analytics parity | `████████░░ 80.0%` | MVP |
 | 🧬 M7 Tool contract interoperability and parity audits | `███████░░░ 73.5%` | MVP |
-| 🧪 M8 Verification, resilience and security acceptance | `█████░░░░░ 53.6%` | MVP |
-| 🚀 M9 Linux release and Codex-ready inauguration | `███████░░░ 65.9%` | MVP |
+| 🧪 M8 Verification, resilience and security acceptance | `██████░░░░ 57.1%` | MVP |
+| 🚀 M9 Linux release and Codex-ready inauguration | `███████░░░ 70.4%` | MVP |
 | 🔭 M10 Post-MVP extensions and sustained stewardship | `░░░░░░░░░░ 0.0%` | POST_MVP |
 
 The [pinned upstream parameter-union audit](docs/UPSTREAM_PARAMETER_AUDIT.md) preserves all source fields and their known compatibility limits. The [pinned native input-schema parity audit](docs/SCHEMA_PARITY_AUDIT.md) documents measured argument/schema gaps from an earlier feature-enabled CI run; these gaps are tracked separately from the 36-name inventory and are not yet all resolved.
@@ -42,7 +42,7 @@ Detailed milestone, phase, feature and atomic-task progress: [ROADMAP](docs/ROAD
 
 ## 📚 Canonical documents
 
-[🦀 Linux installation](docs/INSTALL.md) · [⌨️ CLI and Fish](docs/CLI.md) · [🔑 Cloud setup](docs/GOOGLE_CLOUD.md) · [🧪 Smoke QA](docs/SMOKE_SCENARIOS.md) · [⏱️ Offline performance](docs/BENCHMARK.md) · [📚 36-tool native guide](docs/NATIVE_TOOL_GUIDE.md) · [🔬 Source differential](docs/RESPONSE_DIFFERENTIAL.md) · [🧱 Canonical union policy](docs/CANONICAL_CONTRACT_DECISION.md) · [🧪 Payload differential](docs/PAYLOAD_DIFFERENTIAL.md) · [🤖 Codex registration](docs/CODEX.md) · [🔌 MCP clients](docs/MCP_CLIENTS.md) · [🔀 Upstream migration](docs/MIGRATION.md) · [📦 Release evidence](docs/RELEASE_POLICY.md) · [🗺️ Roadmap](docs/ROADMAP.md) · [📌 Upstream feature audit](docs/UPSTREAM.md) · [🏗️ Architecture](docs/ARCHITECTURE.md) · [🔐 Security](docs/SECURITY.md) · [🧷 Dependency audit](docs/DEPENDENCY_AUDIT.md) · [📋 SBOM inventory](docs/SBOM.md) · [🎨 Color](docs/COLOR.md) · [⚖️ Provenance](docs/PROVENANCE.md) · [📋 Governance](docs/GOVERNANCE.md).
+[🦀 Linux installation](docs/INSTALL.md) · [⌨️ CLI and Fish](docs/CLI.md) · [🔑 Cloud setup](docs/GOOGLE_CLOUD.md) · [🧪 Smoke QA](docs/SMOKE_SCENARIOS.md) · [⏱️ Offline performance](docs/BENCHMARK.md) · [📚 36-tool native guide](docs/NATIVE_TOOL_GUIDE.md) · [🔬 Source differential](docs/RESPONSE_DIFFERENTIAL.md) · [🧱 Canonical union policy](docs/CANONICAL_CONTRACT_DECISION.md) · [🧪 Payload differential](docs/PAYLOAD_DIFFERENTIAL.md) · [🤖 Codex registration](docs/CODEX.md) · [🔌 MCP clients](docs/MCP_CLIENTS.md) · [🔀 Upstream migration](docs/MIGRATION.md) · [🧪 Synthetic ingest lifecycle](docs/SYNTHETIC_SCRATCHPAD_LIFECYCLE.md) · [🧾 Experimental release notes](docs/EXPERIMENTAL_RELEASE_NOTES.md) · [📦 Release evidence](docs/RELEASE_POLICY.md) · [🗺️ Roadmap](docs/ROADMAP.md) · [📌 Upstream feature audit](docs/UPSTREAM.md) · [🏗️ Architecture](docs/ARCHITECTURE.md) · [🔐 Security](docs/SECURITY.md) · [🧷 Dependency audit](docs/DEPENDENCY_AUDIT.md) · [📋 SBOM inventory](docs/SBOM.md) · [🎨 Color](docs/COLOR.md) · [⚖️ Provenance](docs/PROVENANCE.md) · [📋 Governance](docs/GOVERNANCE.md).
 
 **License:** MIT. The Google and SednaLabs reference repositories are Apache-2.0. This project independently implements their documented behavior; copying their code requires preserving their copyright/license notices and tracking provenance.
 
