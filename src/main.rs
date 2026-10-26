@@ -939,7 +939,13 @@ fn preview_report_projection(dimensions: &[String], metrics: &[String]) -> Value
         columns.push(json!({"name":name,"logical_type":logical_type,"nullable":true}));
         let mut base = name
             .chars()
-            .map(|c| if c.is_ascii_alphanumeric() { c.to_ascii_lowercase() } else { '_' })
+            .map(|c| {
+                if c.is_ascii_alphanumeric() {
+                    c.to_ascii_lowercase()
+                } else {
+                    '_'
+                }
+            })
             .collect::<String>();
         base = base.trim_matches('_').to_owned();
         if base.is_empty() {
@@ -2735,9 +2741,18 @@ mod tests {
         assert_eq!(data["preview"]["pagination"]["effective_limit"], 2);
         assert_eq!(data["request"]["limit"], "2");
         assert_eq!(data["preview"]["compatibility_checked"], false);
-        assert_eq!(data["projection"]["tabular_columns"][0]["logical_type"], "string");
-        assert_eq!(data["projection"]["tabular_columns"][3]["logical_type"], "number");
-        assert_eq!(data["projection"]["ingest_columns"][1]["transform"], "parse_ga_date");
+        assert_eq!(
+            data["projection"]["tabular_columns"][0]["logical_type"],
+            "string"
+        );
+        assert_eq!(
+            data["projection"]["tabular_columns"][3]["logical_type"],
+            "number"
+        );
+        assert_eq!(
+            data["projection"]["ingest_columns"][1]["transform"],
+            "parse_ga_date"
+        );
         assert_eq!(
             data["projection"]["ingest_columns"][3]["transform"],
             "parse_ga_date_hour"
