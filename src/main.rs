@@ -302,6 +302,27 @@ struct ScratchLimitArgs {
 }
 
 #[cfg(feature = "scratchpad")]
+fn diagnostic_summary_only(
+    response: Result<Value, String>,
+    requested: bool,
+    rows_field: Option<&str>,
+) -> Result<Value, String> {
+    response.map(|mut data| {
+        if requested {
+            // A summary-only response must not silently retain a full ranked
+            // row payload. Keep scalar totals and warnings for the caller.
+            if let Some(field) = rows_field {
+                if let Some(object) = data.as_object_mut() {
+                    object.remove(field);
+                }
+            }
+            data["summary_only"] = json!(true);
+        }
+        data
+    })
+}
+
+#[cfg(feature = "scratchpad")]
 fn local_result(value: Result<Value, String>) -> CallToolResult {
     match value {
         Ok(data) => result(Ok(data)),
@@ -2272,13 +2293,14 @@ impl Synmetra {
             transition_days: args.transition_days,
             post_days: args.post_days,
         };
-        let _summary_only = args.summary_only;
-        local_result(
+        local_result(diagnostic_summary_only(
             self.scratchpad
                 .as_ref()
                 .expect("scratchpad capability required")
                 .release_regression(&config),
-        )
+            args.summary_only,
+            None,
+        ))
     }
     #[tool(
         description = "Compare landing URL query-parameter key frequency before and after a release across optional channel and source/medium groups.",
@@ -2311,13 +2333,14 @@ impl Synmetra {
             post_days: args.post_days,
             top_n: args.top_n,
         };
-        let _summary_only = args.summary_only;
-        local_result(
+        local_result(diagnostic_summary_only(
             self.scratchpad
                 .as_ref()
                 .expect("scratchpad capability required")
                 .landing_param_shift(&config),
-        )
+            args.summary_only,
+            Some("shifts"),
+        ))
     }
 }
 
@@ -5734,6 +5757,79 @@ mod tests {
         assert_eq!(enabled.router.list_all().len(), 35);
         assert!(enabled.router.has_route("scratchpad_drop_table"));
         assert!(!enabled.router.has_route("create_property_annotation"));
+    }
+
+    #[cfg(feature = "scratchpad")]
+    #[test]
+    fn local_diagnostic_summary_only_excludes_ranked_rows_and_retains_totals() {
+        let server = Synmetra::new(GoogleClient::new(None), false).enable_scratchpad();
+        let scratch = server.scratchpad.as_ref().unwrap();
+        scratch.open("summary_fixture").unwrap();
+        scratch
+            .ingest_ga_response(
+                "summary_fixture",
+                "landings",
+                &json!({
+                    "dimensionHeaders":[
+                        {"name":"date_parsed"},
+                        {"name":"landingpageplusquerystring"}
+                    ],
+                    "metricHeaders":[],
+                    "rows":[
+                        {"dimensionValues":[{"value":"2026-10-23"},{"value":"/home?utm_source=old"}],"metricValues":[]},
+                        {"dimensionValues":[{"value":"2026-10-28"},{"value":"/home?utm_source=new&gclid=123"}],"metricValues":[]}
+                    ]
+                }),
+                false,
+            )
+            .unwrap();
+
+        let base = json!({
+            "session_id":"summary_fixture",
+            "table_name":"landings",
+            "release_date":"2026-10-25"
+        });
+        let args: ScratchLandingArgs = serde_json::from_value(base.clone()).unwrap();
+        let normal = server
+            .scratchpad_landing_param_shift_report(Parameters(args))
+            .structured_content
+            .unwrap()["data"]
+            .clone();
+        assert!(normal["shifts"].as_array().unwrap().len() >= 2);
+        assert!(normal.get("summary_only").is_none());
+
+        let mut summary_args = base;
+        summary_args["summary_only"] = json!(true);
+        let args: ScratchLandingArgs = serde_json::from_value(summary_args).unwrap();
+        let summary = server
+            .scratchpad_landing_param_shift_report(Parameters(args))
+            .structured_content
+            .unwrap()["data"]
+            .clone();
+        assert!(summary.get("shifts").is_none());
+        assert_eq!(summary["summary_only"], true);
+        assert_eq!(summary["groups_total"], normal["groups_total"]);
+        assert_eq!(summary["pre_rows"], normal["pre_rows"]);
+        assert_eq!(summary["post_rows"], normal["post_rows"]);
+        assert_eq!(summary["truncated"], normal["truncated"]);
+
+        let release = diagnostic_summary_only(
+            Ok(json!({"assessment":"low_sample","pre_anchor":2.0})),
+            true,
+            None,
+        )
+        .unwrap();
+        assert_eq!(release["assessment"], "low_sample");
+        assert_eq!(release["pre_anchor"], 2.0);
+        assert_eq!(release["summary_only"], true);
+        let passthrough = diagnostic_summary_only(
+            Ok(json!({"shifts":[{"parameter":"utm_source"}]})),
+            false,
+            Some("shifts"),
+        )
+        .unwrap();
+        assert!(passthrough["shifts"].is_array());
+        assert!(passthrough.get("summary_only").is_none());
     }
 
     #[cfg(feature = "scratchpad")]
