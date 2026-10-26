@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `█████░░░░░ 48.9%` · **+48.90 percentage points from initial empty repo; +0.88 pp from CI-verified Admin API version routing and paginated annotation fidelity** · 94/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `█████░░░░░ 49.8%` · **+49.78 percentage points from initial empty repo; +0.88 pp from verified retention and paginated custom-catalog fidelity** · 96/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -198,7 +198,7 @@
   - ✅ **Gate:** State cleared without touching unrelated Google apps · **Evidence:** src/auth.rs logout removes only Synmetra credential file after private-file check; Actions 40202015488 compiled; src/auth.rs clear_credentials_at deletes only private Synmetra credentials in a non-symlinked private auth directory, treats a missing file idempotently, refuses symlinked credentials/directories or world-readable credentials, and distinguishes unexpected filesystem errors. Unit test logout_removes_only_private_synmetra_credentials_without_touching_neighbors verifies removal, idempotence, no unrelated Google app data changes, and adversarial symlink/insecure-file rejection. Native CLI auth logout provides explicit Google-account revocation guidance without claiming server-side revocation. GitHub Actions 40244722883 core and DuckDB passed; no live Google session was accessed.
 
 
-## 🏢 M3 — Admin API information parity — `███████░░░ 68.8%`
+## 🏢 M3 — Admin API information parity — `████████░░ 81.2%`
 
 **Scope:** MVP. **Acceptance gate:** All administrative read tools and metadata endpoints match pinned signatures and response behavior.
 
@@ -221,7 +221,7 @@
 - 🧬 **T073 — Implement get_custom_dimensions_and_metrics** — `██████████ 100.0%`
   - ✅ **Gate:** Golden Admin API mock response and auth-denial case for get_custom_dimensions_and_metrics · **Evidence:** src/main.rs implemented get_custom_dimensions_and_metrics MCP handler plus src/google.rs request route/validation; Rust unit and in-memory MCP tests passed Actions 40202015488; full upstream schema/live GA parity remains open; src/main.rs admin_handlers_preserve_golden_google_json_and_reject_403_without_leakage exercises get_custom_dimensions_and_metrics over isolated loopback HTTP with canonical mock Admin API JSON and HTTP 403 denial; verifies exact method/path, MCP structured response and stable GOOGLE_HTTP_ERROR/status 403 without the fixture bearer token. GitHub Actions 40227511758 core passed tests, fmt and strict Clippy. These synthetic fixtures do not certify authorized live Google or full upstream schema parity.
 
-### 🏷️ P09 — Administrative edge cases — `████░░░░░░ 44.4%`
+### 🏷️ P09 — Administrative edge cases — `███████░░░ 66.7%`
 
 **Feature:** Admin fidelity.
 
@@ -231,10 +231,10 @@
   - ✅ **Gate:** Numeric and canonical IDs round-trip · **Evidence:** src/google.rs: scoped_name, property_name, account_name restrict and normalize positive resource IDs. Test rejects_property_path_and_zero passed GitHub Actions core 40218035242; complete account ID equivalence and live boundary QA remain open.; src/google.rs property_name and account_name normalize both positive bare numeric IDs and canonical properties/ or accounts/ resource names, rejecting path traversal, zero and malformed input. Test rejects_property_path_and_zero passed GitHub Actions core run 40218415190, 2026-10-25.
 - 🧱 **T076 — Handle GA4 property account hierarchy and time zones** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Correct property selection and permissions
-- ⏳ **T077 — Preserve property data retention and reset semantics** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Sparse optional values and defaults tested
-- 🧩 **T078 — Support custom dimension and metric catalogs** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Custom-scoped names and reserved field handling correct
+- ⏳ **T077 — Preserve property data retention and reset semantics** — `██████████ 100.0%`
+  - ✅ **Gate:** Sparse optional values and defaults tested · **Evidence:** src/google.rs retention_settings returns Google v1beta property dataRetentionSettings without synthesizing optional fields or defaults; retention_defaults_and_sparse_optional_fields_remain_provider_owned verifies sparse payload and explicit TWO_MONTHS/FOURTEEN_MONTHS, false reset flag, and exact scoped path. GitHub Actions 40255975470 core and DuckDB succeeded.; src/google.rs retention_defaults_and_sparse_optional_fields_remain_provider_owned checks three independent Admin mock responses: minimal name-only settings, retention configured without reset, and explicit resetUserDataOnNewActivity=false; omitted keys stay omitted, explicit false stays false and output equals provider JSON. GitHub Actions 40255975470 passed. Authorized live-property tests remain separate.
+- 🧩 **T078 — Support custom dimension and metric catalogs** — `██████████ 100.0%`
+  - ✅ **Gate:** Custom-scoped names and reserved field handling correct · **Evidence:** src/google.rs custom_definitions uses two distinct Admin v1beta paginated collections for customDimensions and customMetrics and returns scoped catalog fields in custom_dimensions/custom_metrics without filtering reserved parameter names. custom_catalogs_paginate_scopes_and_preserve_reserved_names passed full GitHub Actions 40255975470.; src/google.rs custom_catalogs_paginate_scopes_and_preserve_reserved_names verifies four sequential paginated mock responses, both distinct continuation tokens, all USER/ITEM/EVENT dimension scopes, EVENT metrics, currency and standard units, full canonical catalog resource names, and preservation of a built-in-overlapping session_id parameter without silently declaring it query-safe. GitHub Actions 40255975470 passed.
 - 🏷️ **T079 — Support annotation listing and date intervals** — `██████████ 100.0%`
   - ✅ **Gate:** All pages and annotation color enums round-trip · **Evidence:** src/google.rs annotations_with_options exposes v1alpha reportingDataAnnotations collection, with bounded page_size and max_pages, preserving provider annotationDate or annotationDateRange objects. Tests admin_beta_and_alpha_routes_retain_versioned_payloads and annotation_pages_preserve_all_color_enums_and_inclusive_date_targets passed full GitHub Actions 40255498957, both core and DuckDB.; annotation_pages_preserve_all_color_enums_and_inclusive_date_targets simulates two separately fetched Admin v1alpha pages (pageSize 4; pageToken second), asserts all eight official Color enums round-trip including system-generated ORANGE and inclusive single-date/date-range targets with no lost rows. Google Admin v1alpha resource enum: https://googleapis.dev/python/analyticsadmin/latest/admin_v1alpha/types_.html. Full CI 40255498957 passed; authorized live Google tests remain a separate gate.
 - 🪪 **T080 — Handle GA Admin API beta versus alpha resources** — `██████████ 100.0%`

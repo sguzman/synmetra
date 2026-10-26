@@ -1520,16 +1520,18 @@
               "id": "T077",
               "emoji": "⏳",
               "name": "Preserve property data retention and reset semantics",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "Sparse optional values and defaults tested",
               "checks": [
                 {
                   "text": "Deliver preserve property data retention and reset semantics as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs retention_settings returns Google v1beta property dataRetentionSettings without synthesizing optional fields or defaults; retention_defaults_and_sparse_optional_fields_remain_provider_owned verifies sparse payload and explicit TWO_MONTHS/FOURTEEN_MONTHS, false reset flag, and exact scoped path. GitHub Actions 40255975470 core and DuckDB succeeded."
                 },
                 {
                   "text": "Sparse optional values and defaults tested",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs retention_defaults_and_sparse_optional_fields_remain_provider_owned checks three independent Admin mock responses: minimal name-only settings, retention configured without reset, and explicit resetUserDataOnNewActivity=false; omitted keys stay omitted, explicit false stays false and output equals provider JSON. GitHub Actions 40255975470 passed. Authorized live-property tests remain separate."
                 }
               ]
             },
@@ -1537,16 +1539,18 @@
               "id": "T078",
               "emoji": "🧩",
               "name": "Support custom dimension and metric catalogs",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "Custom-scoped names and reserved field handling correct",
               "checks": [
                 {
                   "text": "Deliver support custom dimension and metric catalogs as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs custom_definitions uses two distinct Admin v1beta paginated collections for customDimensions and customMetrics and returns scoped catalog fields in custom_dimensions/custom_metrics without filtering reserved parameter names. custom_catalogs_paginate_scopes_and_preserve_reserved_names passed full GitHub Actions 40255975470."
                 },
                 {
                   "text": "Custom-scoped names and reserved field handling correct",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs custom_catalogs_paginate_scopes_and_preserve_reserved_names verifies four sequential paginated mock responses, both distinct continuation tokens, all USER/ITEM/EVENT dimension scopes, EVENT metrics, currency and standard units, full canonical catalog resource names, and preservation of a built-in-overlapping session_id parameter without silently declaring it query-safe. GitHub Actions 40255975470 passed."
                 }
               ]
             },
