@@ -3116,8 +3116,14 @@ mod tests {
         let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
         let admin_host = format!("http://{}", listener.local_addr().unwrap());
         let colors = [
-            "COLOR_UNSPECIFIED", "PURPLE", "BROWN", "BLUE",
-            "GREEN", "RED", "CYAN", "ORANGE",
+            "COLOR_UNSPECIFIED",
+            "PURPLE",
+            "BROWN",
+            "BLUE",
+            "GREEN",
+            "RED",
+            "CYAN",
+            "ORANGE",
         ];
         let responder = tokio::spawn(async move {
             for page in 0..2 {
@@ -3125,9 +3131,7 @@ mod tests {
                 let mut bytes = [0_u8; 4096];
                 let count = socket.read(&mut bytes).await.unwrap();
                 let request = String::from_utf8_lossy(&bytes[..count]);
-                assert!(request.starts_with(
-                    "GET /v1alpha/properties/42/reportingDataAnnotations?"
-                ));
+                assert!(request.starts_with("GET /v1alpha/properties/42/reportingDataAnnotations?"));
                 assert!(request.contains("pageSize=4"));
                 if page == 0 {
                     assert!(!request.contains("pageToken="));
@@ -3178,7 +3182,10 @@ mod tests {
             &admin_host,
             "http://127.0.0.1:9",
         );
-        let data = client.annotations_with_options("42", Some(4), Some(2)).await.unwrap();
+        let data = client
+            .annotations_with_options("42", Some(4), Some(2))
+            .await
+            .unwrap();
         responder.await.unwrap();
         let annotations = data["reportingDataAnnotations"].as_array().unwrap();
         assert_eq!(annotations.len(), 8);
