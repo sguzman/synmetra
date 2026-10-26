@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `███████░░░ 73.4%` · **+73.35 percentage points from initial empty repo; +0.44 pp from the 36-tool permission matrix and verified revoked/invalid OAuth token fixtures
+**Overall:** `███████░░░ 73.3%` · **+73.35 percentage points from initial empty repo; +0.44 pp from the 36-tool permission matrix and verified revoked/invalid OAuth token fixtures
 
 ### 📏 Progress conventions
 
@@ -126,7 +126,7 @@
   - ✅ **Gate:** Protocol wire fixtures pass multiple clients
 
 
-## 🔑 M2 — Google authentication and credential isolation — `█████░░░░░ 53.8%`
+## 🔑 M2 — Google authentication and credential isolation — `█████░░░░░ 53.9%`
 
 **Scope:** MVP. **Acceptance gate:** Secure, least-privilege, non-Python auth across interactive, local and service configurations; no secret leaks.
 
