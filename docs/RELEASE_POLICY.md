@@ -25,6 +25,14 @@ Even a passing comparison does **not** establish byte-for-byte reproducibility a
 
 Do not publish a stable or production release until independent checks pass for upstream tool contract semantics, authorized Google login and reports, permissions and opt-in writes, client transport compatibility, DuckDB security, native Linux packaging and the release artifact lifecycle.
 
+
+
+## Optional native ARM64 experimental artifact (unverified pending CI)
+
+[The ARM64 workflow](../.github/workflows/linux-arm64.yml) uses GitHub's native `ubuntu-24.04-arm` public runner rather than an emulated x86 cross-build. It pins Rust 1.99.1 and Cargo.lock, runs the native default-feature tests, builds a release ELF, asserts its AArch64 machine type, audits dynamic shared-library resolution, rejects absent native dependencies and unexpected OpenSSL/Python/Node linkage, and exercises the extracted executable offline with an isolated XDG configuration and no configured credentials. It generates a normalized archive with license and full source commit, verifies a SHA-256 sidecar, creates and independently verifies a repository-bound SLSA build attestation, then uploads a **30-day expiring GitHub Actions artifact**.
+
+This is a separately optional **default-feature** architecture build; it does not include the bundled DuckDB native C/C++ feature, an ARM64 EndeavourOS installation, a permanent GitHub Release, or production parity certification. No ARM64 pass is credited until the exact workflow's test, packaging, dependency-audit and uploaded-artifact jobs succeed. An experimental archive remains an expiring CI build, never `v1.0.0`.
+
 ## Changelog rule
 
 For each tagged version, add a dated entry in [CHANGELOG.md](../CHANGELOG.md) with changed features, breaking MCP contracts, upstream SHA changes, security work, test evidence and known limitations. Unreleased work stays under the Unreleased heading.

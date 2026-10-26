@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `████████░░ 76.7%` · **+76.65 percentage points from initial empty repo; +0.22 pp from CI-verified native quota-project header routing
+**Overall:** `████████░░ 76.9%` · **+76.87 percentage points from initial empty repo; +0.22 pp from CI-tested annotation native OAuth edit-scope preflight
 
 ### 📏 Progress conventions
 
@@ -325,11 +325,11 @@
   - ✅ **Gate:** Quotas accessible without leaking tokens · **Evidence:** src/main.rs result preserves the provider JSON data without dropping propertyQuota and never echoes the access token; realtime_mcp_retains_provider_quota_without_fabricating_a_next_cursor verifies quota remaining=9 and absence of the mock bearer token in MCP structured output. CI 40227043192 core passed. Structured warning metadata and full cross-tool quota/error behavior remain unaccepted.; src/main.rs default provider-shaped result retains Google propertyQuota; src/tabular.rs opt-in output retains provider propertyQuota and warnings inside meta.ga4, with source token excluded from structured/text content. Tests realtime_mcp_retains_provider_quota_without_fabricating_a_next_cursor, historical_report_opt_in_projection_preserves_metadata_and_previews_offline, projections_keep_true_counts_and_upstream_quota confirm quota counts and warnings. GitHub Actions 40230044045 both core and DuckDB jobs passed. This is metadata pass-through acceptance, not a claim of all 36 upstream response projections. · **Evidence (quota only):** src/main.rs result preserves the provider JSON data without dropping propertyQuota and never echoes the access token; realtime_mcp_retains_provider_quota_without_fabricating_a_next_cursor verifies quota remaining=9 and absence of the mock bearer token in MCP structured output. CI 40227043192 core passed. Structured warning metadata and full cross-tool quota/error behavior remain unaccepted.
 
 
-## ✍️ M5 — Explicitly gated GA mutation parity — `████████░░ 84.6%`
+## ✍️ M5 — Explicitly gated GA mutation parity — `█████████░ 88.5%`
 
 **Scope:** MVP. **Acceptance gate:** One official write tool operates with analytics.edit and explicit opt-in; ordinary mode cannot mutate GA.
 
-### 📝 P13 — Annotation creation parity — `████████░░ 75.0%`
+### 📝 P13 — Annotation creation parity — `████████░░ 81.2%`
 
 **Feature:** One opt-in Google write tool.
 
@@ -343,8 +343,8 @@
   - ✅ **Gate:** 60-character title and 150-character description bounds respected · **Evidence:** Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.; Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.
 - 🔐 **T117 — Require explicit allow-write startup capability** — `██████████ 100.0%`
   - ✅ **Gate:** Default tools/list and tools/call cannot write · **Evidence:** Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.; Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.
-- 🪪 **T118 — Demand analytics.edit scope and sufficient property role** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Clear denial without escalating OAuth permissions
+- 🪪 **T118 — Demand analytics.edit scope and sufficient property role** — `█████░░░░░ 50.0%`
+  - ✅ **Gate:** Clear denial without escalating OAuth permissions · **Evidence:** src/main.rs create_property_annotation now fail-closes before outbound Google network unless src/auth.rs exact-grant inspection proves native private OAuth analytics.edit; externally overridden bearer tokens cannot prove their scopes locally and are read-only for writes. src/google.rs adds redacted EDIT_SCOPE_REQUIRED authorization error and preserves separately gated --allow-write visibility. Synthetic tests native_edit_scope_parser_requires_exact_granted_scope_not_a_prefix, native_mutation_scope_is_verified_against_private_persisted_oauth_grants and write_profile_rejects_unverified_external_bearer_before_google_network passed Rust 1.99.1 core and DuckDB CI https://github.com/sguzman/synmetra/actions/runs/40399768987; no live Google role/consent proof is claimed.
 - ✋ **T119 — Require user confirmation at client boundary when supported** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** High-impact writes annotated and host approval guidance explicit
 - 🧪 **T120 — Test write denial and optional live opt-in acceptance** — `██████████ 100.0%`
@@ -571,7 +571,7 @@
   - ✅ **Gate:** Signed provenance and dependency audit evidence · **Evidence:** Pinned Rust 1.99.1/Cargo.lock source builds an x86-64 release binary in two independent Cargo target directories and compares SHA-256 digests and sizes. The dedicated workflow step passed https://github.com/sguzman/synmetra/actions/runs/40358192285; separate cargo-deny Rust license/source/advisory scans also pass. Cross-runner reproducibility, bundled DuckDB and signed provenance remain distinct pending gates.; The release workflow passed two separate pinned Rust 1.99.1/Cargo.lock x86-64 binary SHA-256 comparisons, SHA-pinned actions/attest@v4 Sigstore/SLSA v1 archive attestation, and gh attestation verify -R sguzman/synmetra validating repository identity and SLSA predicate in https://github.com/sguzman/synmetra/actions/runs/40359969759. Independent cargo-deny Rust license/source checks passed https://github.com/sguzman/synmetra/actions/runs/40346651714. This accepts signed provenance and dependency-audit evidence only for an experimental default-feature Linux archive, not clean ARM64/EndeavourOS builds or native C++ compliance.
 
 
-## 🚀 M9 — Linux release and Codex-ready inauguration — `███████░░░ 70.5%`
+## 🚀 M9 — Linux release and Codex-ready inauguration — `███████░░░ 70.4%`
 
 **Scope:** MVP. **Acceptance gate:** A documented stable native binary with 36-tool verified parity and release artifacts; no Python/npm runtime.
 

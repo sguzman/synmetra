@@ -1,0 +1,128 @@
+name: Experimental native Linux aarch64 artifact
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/linux-arm64.yml"
+      - "src/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "ci/scan-public-artifacts.sh"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: synmetra-arm64-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  native-arm64:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 75
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+      artifact-metadata: write
+    env:
+      CARGO_BUILD_JOBS: 2
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify native ARM64 and pinned Rust toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(uname -m)" = aarch64
+          rustup toolchain install 1.99.1 --profile minimal
+          rustc +1.99.1 --version | grep -F 'rustc 1.99.1'
+      - uses: Swatinem/rust-cache@v2
+      - name: Build and test native ARM64 release from Cargo.lock
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo +1.99.1 test --locked --bin synmetra
+          cargo +1.99.1 build --release --locked --bin synmetra
+          test -x target/release/synmetra
+          readelf -h target/release/synmetra | grep -F 'AArch64'
+          test "$(file -b target/release/synmetra | grep -c 'ARM aarch64')" -ge 1
+      - name: Audit linked libraries and forbid absent or unexpected runtime languages
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          test -z "$(ldd target/release/synmetra | grep 'not found' || true)"
+          if ldd target/release/synmetra | grep -Eiq 'lib(ssl|crypto|python|node)'; then
+            echo 'Unexpected runtime native crypto/Python/Node library' >&2
+            exit 1
+          fi
+          printf 'source_sha=%s\narch=%s\n' "$(git rev-parse HEAD)" "$(uname -m)" \
+            > dist/synmetra-aarch64-native-linkage.txt
+          ldd target/release/synmetra >> dist/synmetra-aarch64-native-linkage.txt
+          if grep -Eiq 'not found|SYNMETRA_GOOGLE_ACCESS_TOKEN=' dist/synmetra-aarch64-native-linkage.txt; then
+            echo 'Unsafe runtime linkage inventory' >&2
+            exit 1
+          fi
+      - name: Package and smoke-test checksum-protected native ARM64 executable
+        shell: bash
+        run: |
+          set -euo pipefail
+          stage="$(mktemp -d "$RUNNER_TEMP/synmetra-aarch64-stage.XXXXXX")"
+          unpacked="$(mktemp -d "$RUNNER_TEMP/synmetra-aarch64-unpack.XXXXXX")"
+          config="$(mktemp -d "$RUNNER_TEMP/synmetra-aarch64-config.XXXXXX")"
+          trap 'rm -rf "$stage" "$unpacked" "$config"' EXIT
+          source_sha="$(git rev-parse HEAD)"
+          epoch="$(git show -s --format=%ct "$source_sha")"
+          version="$(grep -m1 '^version = ' Cargo.toml | cut -d '"' -f2)"
+          install -Dm755 target/release/synmetra "$stage/synmetra"
+          install -Dm644 LICENSE "$stage/LICENSE"
+          install -Dm644 README.md "$stage/README.md"
+          install -Dm644 docs/INSTALL.md "$stage/INSTALL.md"
+          printf '%s\n' "$source_sha" > "$stage/SOURCE_COMMIT"
+          archive=synmetra-experimental-linux-aarch64.tar.gz
+          tar -C "$stage" --sort=name --mtime="@$epoch" \
+            --owner=0 --group=0 --numeric-owner -cf - . | gzip -n > "dist/$archive"
+          (cd dist && sha256sum "$archive" > "$archive.sha256" && sha256sum --check "$archive.sha256")
+          tar -xzf "dist/$archive" -C "$unpacked"
+          test -x "$unpacked/synmetra"
+          test "$(cat "$unpacked/SOURCE_COMMIT")" = "$source_sha"
+          readelf -h "$unpacked/synmetra" | grep -F 'AArch64'
+          env -i PATH=/nonexistent XDG_CONFIG_HOME="$config" \
+            "$unpacked/synmetra" --version > "$RUNNER_TEMP/aarch64-version.txt"
+          grep -Fq "synmetra $version" "$RUNNER_TEMP/aarch64-version.txt"
+          env -i PATH=/nonexistent XDG_CONFIG_HOME="$config" \
+            "$unpacked/synmetra" auth doctor > "$RUNNER_TEMP/aarch64-doctor.txt"
+          grep -Fq 'To configure native OAuth:' "$RUNNER_TEMP/aarch64-doctor.txt"
+          if grep -Eq 'refresh_token|client_secret|access_token": "' "$RUNNER_TEMP/aarch64-doctor.txt"; then
+            echo 'Synthetic ARM64 doctor output contains a credential field' >&2
+            exit 1
+          fi
+      - name: Attest experimental ARM64 source provenance
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
+        with:
+          subject-path: dist/synmetra-experimental-linux-aarch64.tar.gz
+      - name: Verify ARM64 attestation bound to this repository
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh attestation verify dist/synmetra-experimental-linux-aarch64.tar.gz \
+            -R "$GITHUB_REPOSITORY" --format json > "$RUNNER_TEMP/aarch64-attestation.json"
+          jq -e 'type == "array" and length > 0
+            and any(.[]; .verificationResult.statement.predicateType == "https://slsa.dev/provenance/v1")' \
+            "$RUNNER_TEMP/aarch64-attestation.json" > /dev/null
+      - name: Publish expiring experimental ARM64 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: synmetra-experimental-linux-aarch64
+          if-no-files-found: error
+          retention-days: 30
+          path: |
+            dist/synmetra-experimental-linux-aarch64.tar.gz
+            dist/synmetra-experimental-linux-aarch64.tar.gz.sha256
+            dist/synmetra-aarch64-native-linkage.txt

@@ -10,7 +10,7 @@
 
 ## 📊 Evidence-backed progress
 
-**Overall:** `████████░░ 76.7%` · **overall delta: +76.65 percentage points** from initial 0% (**latest accepted round: +0.22 pp**). **35/35 SednaLabs tool names implemented provisionally plus 1 opt-in annotation handler; 0/36 fully accepted upstream parity.** Real Google account acceptance and full tool schemas remain pending.
+**Overall:** `████████░░ 76.9%` · **overall delta: +76.87 percentage points** from initial 0% (**latest accepted round: +0.22 pp**). **35/35 SednaLabs tool names implemented provisionally plus 1 opt-in annotation handler; 0/36 fully accepted upstream parity.** Real Google account acceptance and full tool schemas remain pending.
 
 | Milestone | Progress | Gate |
 | --- | --- | --- |
@@ -19,11 +19,11 @@
 | 🔑 M2 Google authentication and credential isolation | `██████░░░░ 57.7%` | MVP |
 | 🏢 M3 Admin API information parity | `██████████ 100.0%` | MVP |
 | 📊 M4 Reporting, preflight and Data API parity | `██████████ 100.0%` | MVP |
-| ✍️ M5 Explicitly gated GA mutation parity | `████████░░ 84.6%` | MVP |
+| ✍️ M5 Explicitly gated GA mutation parity | `█████████░ 88.5%` | MVP |
 | 🗃️ M6 DuckDB scratchpad and advanced analytics parity | `█████████░ 88.0%` | MVP |
 | 🧬 M7 Tool contract interoperability and parity audits | `███████░░░ 73.5%` | MVP |
 | 🧪 M8 Verification, resilience and security acceptance | `██████░░░░ 58.9%` | MVP |
-| 🚀 M9 Linux release and Codex-ready inauguration | `███████░░░ 70.5%` | MVP |
+| 🚀 M9 Linux release and Codex-ready inauguration | `███████░░░ 70.4%` | MVP |
 | 🔭 M10 Post-MVP extensions and sustained stewardship | `░░░░░░░░░░ 0.0%` | POST_MVP |
 
 The [pinned upstream parameter-union audit](docs/UPSTREAM_PARAMETER_AUDIT.md) preserves all source fields and their known compatibility limits. The [pinned native input-schema parity audit](docs/SCHEMA_PARITY_AUDIT.md) documents measured argument/schema gaps from an earlier feature-enabled CI run; these gaps are tracked separately from the 36-name inventory and are not yet all resolved.

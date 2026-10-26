@@ -2379,12 +2379,13 @@
               "id": "T118",
               "emoji": "🪪",
               "name": "Demand analytics.edit scope and sufficient property role",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Clear denial without escalating OAuth permissions",
               "checks": [
                 {
                   "text": "Deliver demand analytics.edit scope and sufficient property role as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs create_property_annotation now fail-closes before outbound Google network unless src/auth.rs exact-grant inspection proves native private OAuth analytics.edit; externally overridden bearer tokens cannot prove their scopes locally and are read-only for writes. src/google.rs adds redacted EDIT_SCOPE_REQUIRED authorization error and preserves separately gated --allow-write visibility. Synthetic tests native_edit_scope_parser_requires_exact_granted_scope_not_a_prefix, native_mutation_scope_is_verified_against_private_persisted_oauth_grants and write_profile_rejects_unverified_external_bearer_before_google_network passed Rust 1.99.1 core and DuckDB CI https://github.com/sguzman/synmetra/actions/runs/40399768987; no live Google role/consent proof is claimed."
                 },
                 {
                   "text": "Clear denial without escalating OAuth permissions",
