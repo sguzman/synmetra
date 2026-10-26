@@ -136,6 +136,27 @@ jobs:
             > "$RUNNER_TEMP/synmetra-command-isolated.txt"
           grep -Fq 'synmetra auth login --client-id-file' "$RUNNER_TEMP/synmetra-command-isolated.txt"
 
+          # Enter the native login implementation (not merely its usage parser)
+          # with no executable PATH. An unreadable Desktop client must fail
+          # locally and must not invoke gcloud, Python, npm or a browser.
+          if env -i PATH=/nonexistent XDG_CONFIG_HOME="$config_root" \\
+            target/debug/synmetra auth login --headless \\
+              --client-id-file "$config_root/missing-desktop-client.json" \\
+            > "$RUNNER_TEMP/synmetra-login-isolated.stdout" \\
+            2> "$RUNNER_TEMP/synmetra-login-isolated.stderr"; then
+            echo "Invalid isolated OAuth client unexpectedly succeeded" >&2
+            exit 1
+          fi
+          grep -Fq 'Cannot read Google OAuth Desktop client JSON' \\
+            "$RUNNER_TEMP/synmetra-login-isolated.stderr"
+          test ! -s "$RUNNER_TEMP/synmetra-login-isolated.stdout"
+
+          env -i PATH=/nonexistent XDG_CONFIG_HOME="$config_root" \\
+            target/debug/synmetra auth logout \\
+            > "$RUNNER_TEMP/synmetra-logout-isolated.txt"
+          grep -Fq 'Synmetra local credentials cleared' \\
+            "$RUNNER_TEMP/synmetra-logout-isolated.txt"
+
           if XDG_CONFIG_HOME="$config_root" target/debug/synmetra auth login --headless \
             > "$RUNNER_TEMP/synmetra-auth-bad.stdout" \
             2> "$RUNNER_TEMP/synmetra-auth-bad.stderr"; then
