@@ -596,10 +596,7 @@ mod tests {
         assert_eq!(output.len(), 4);
         for scenario in source_cases["cases"].as_array().unwrap() {
             let name = scenario["name"].as_str().unwrap();
-            let source = output
-                .iter()
-                .find(|case| case["name"] == name)
-                .unwrap();
+            let source = output.iter().find(|case| case["name"] == name).unwrap();
             let upstream = &source["structured_content"];
             assert_eq!(upstream["ok"], true);
             let expected = scenario["shared_expected"].as_object().unwrap();
