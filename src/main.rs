@@ -7580,6 +7580,74 @@ mod tests {
     }
 
     #[test]
+    fn every_native_api_error_has_a_stable_redacted_structured_and_text_envelope() {
+        let cases = [
+            (ApiError::MissingCredentials, "AUTH_NOT_CONFIGURED", "authentication", None),
+            (ApiError::AuthenticationFailed, "AUTHENTICATION_FAILED", "authentication", None),
+            (ApiError::InvalidIdentifier, "INVALID_IDENTIFIER", "validation", None),
+            (ApiError::InvalidRequest, "INVALID_REQUEST", "validation", None),
+            (ApiError::CursorQueryMismatch, "CURSOR_QUERY_MISMATCH", "cursor", None),
+            (ApiError::UnsupportedAuthOption, "UNSUPPORTED_AUTH_OPTION", "validation", None),
+            (ApiError::InvalidQuotaProject, "INVALID_QUOTA_PROJECT", "validation", None),
+            (ApiError::UnsupportedRealtimeOffset, "UNSUPPORTED_REALTIME_OFFSET", "validation", None),
+            (ApiError::InvalidAnnotation, "INVALID_ANNOTATION", "validation", None),
+            (ApiError::EditScopeRequired, "EDIT_SCOPE_REQUIRED", "authorization", None),
+            (ApiError::RequestFailed, "UPSTREAM_UNAVAILABLE", "transport", None),
+            (ApiError::Http(400), "GOOGLE_HTTP_ERROR", "upstream", Some(400_u16)),
+            (ApiError::Http(401), "GOOGLE_HTTP_ERROR", "upstream", Some(401)),
+            (ApiError::Http(403), "GOOGLE_HTTP_ERROR", "upstream", Some(403)),
+            (ApiError::Http(429), "GOOGLE_HTTP_ERROR", "upstream", Some(429)),
+            (ApiError::Http(500), "GOOGLE_HTTP_ERROR", "upstream", Some(500)),
+            (ApiError::ResponseTooLarge, "RESPONSE_TOO_LARGE", "limits", None),
+            (ApiError::CollectionTooLarge, "COLLECTION_TOO_LARGE", "limits", None),
+            (ApiError::TooManyPages, "PAGINATION_LIMIT", "limits", None),
+            (ApiError::InvalidResponse, "INVALID_UPSTREAM_RESPONSE", "upstream", None),
+        ];
+        for (error, code, category, status) in cases {
+            let output = result(Err(error));
+            assert_eq!(output.is_error, Some(true));
+            let body = output.content[0].as_text().unwrap().text.as_str();
+            let payload: Value = serde_json::from_str(body).unwrap();
+            assert_eq!(output.structured_content.as_ref(), Some(&payload));
+            assert_eq!(payload["ok"], false);
+            assert_eq!(payload["error"]["code"], code);
+            assert_eq!(payload["error"]["category"], category);
+            assert_eq!(
+                payload["error"]["reason"],
+                if code == "CURSOR_QUERY_MISMATCH" {
+                    "invalid_cursor".to_owned()
+                } else {
+                    code.to_ascii_lowercase()
+                }
+            );
+            assert_eq!(payload["meta"]["elapsed_ms"], 0);
+            assert_eq!(payload["meta"]["elapsed_ms_measured"], false);
+            assert!(payload["error"]["message"].as_str().is_some_and(|m| !m.is_empty()));
+            assert_eq!(
+                payload["error"].get("status_code").and_then(Value::as_u64),
+                status.map(u64::from)
+            );
+            for sensitive in ["synthetic-private-token", "refresh_token", "client_secret"] {
+                assert!(!body.contains(sensitive), "Sensitive string leaked into {code}");
+            }
+        }
+
+        #[cfg(feature = "scratchpad")]
+        {
+            let local = local_result(Err("Synthetic bounded scratchpad error".into()));
+            let body: Value =
+                serde_json::from_str(&local.content[0].as_text().unwrap().text).unwrap();
+            assert_eq!(local.is_error, Some(true));
+            assert_eq!(local.structured_content.as_ref(), Some(&body));
+            assert_eq!(body["ok"], false);
+            assert_eq!(body["error"]["code"], "SCRATCHPAD_ERROR");
+            assert_eq!(body["error"]["reason"], "scratchpad_error");
+            assert_eq!(body["error"]["category"], "local");
+            assert!(body["error"].get("status_code").is_none());
+        }
+    }
+
+    #[test]
     fn tool_errors_are_mcp_tool_errors() {
         let result = super::result(Err(ApiError::InvalidIdentifier));
         assert_eq!(result.is_error, Some(true));
