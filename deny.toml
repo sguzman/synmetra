@@ -44,3 +44,10 @@ allow = [
   "BSL-1.0",
   "OpenSSL",
 ]
+
+# The CA trust-anchor metadata shipped by webpki-roots has its own
+# permissive data license; do not blanket-allow it for arbitrary crates.
+[[licenses.exceptions]]
+name = "webpki-roots"
+version = "=1.0.11"
+allow = ["CDLA-Permissive-2.0"]
