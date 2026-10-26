@@ -3272,12 +3272,13 @@
               "id": "T166",
               "emoji": "📚",
               "name": "Keep per-tool source-to-Rust test reference links",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Each one of 36 tools has provenance and acceptance evidence",
               "checks": [
                 {
                   "text": "Deliver keep per-tool source-to-rust test reference links as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "docs/TOOL_PROVENANCE.md maps every name from docs/tool-inventory.json (36 union) to pinned SednaLabs and/or Google source, native Rust handler/Google/DuckDB code, implementation task ID/progress, and source or CI evidence link from accepted progress.json checks. Current mapping: 36/36 source links, 35/36 at least one accepted synthetic/source check; scratchpad_export_evidence_bundle T140 lacks acceptance, so the all-tool completion gate stays open."
                 },
                 {
                   "text": "Each one of 36 tools has provenance and acceptance evidence",

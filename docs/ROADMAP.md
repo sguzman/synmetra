@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `█████░░░░░ 46.3%` · **+46.26 percentage points from initial empty repo; +0.22 pp from reviewable local credential threat-model baseline** · 88/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `█████░░░░░ 46.5%` · **+46.48 percentage points from initial empty repo; +0.22 pp from 36-tool pinned source/test provenance index** · 88/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -441,7 +441,7 @@
   - ✅ **Gate:** Dependency license architecture and portability reviewed
 
 
-## 🧬 M7 — Tool contract interoperability and parity audits — `████░░░░░░ 44.1%`
+## 🧬 M7 — Tool contract interoperability and parity audits — `█████░░░░░ 47.1%`
 
 **Scope:** MVP. **Acceptance gate:** All 36 tool schemas and response mappings are independently snapshot-tested against both pinned upstreams.
 
@@ -479,7 +479,7 @@
 - 🧯 **T162 — Avoid false confidence from mocked-only parity** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Document live coverage by tool and account eligibility
 
-### 🔀 P21 — Feature-union conflict resolution — `██░░░░░░░░ 20.0%`
+### 🔀 P21 — Feature-union conflict resolution — `███░░░░░░░ 30.0%`
 
 **Feature:** Compatibility governance.
 
@@ -489,8 +489,8 @@
   - ✅ **Gate:** All documented upstream inputs remain expressible
 - ⚙️ **T165 — Version compatibility adapters and response projections** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Legacy tool expectations and version policy documented
-- 📚 **T166 — Keep per-tool source-to-Rust test reference links** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Each one of 36 tools has provenance and acceptance evidence
+- 📚 **T166 — Keep per-tool source-to-Rust test reference links** — `█████░░░░░ 50.0%`
+  - ✅ **Gate:** Each one of 36 tools has provenance and acceptance evidence · **Evidence (partial):** docs/TOOL_PROVENANCE.md maps every name from docs/tool-inventory.json (36 union) to pinned SednaLabs and/or Google source, native Rust handler/Google/DuckDB code, implementation task ID/progress, and source or CI evidence link from accepted progress.json checks. Current mapping: 36/36 source links, 35/36 at least one accepted synthetic/source check; scratchpad_export_evidence_bundle T140 lacks acceptance, so the all-tool completion gate stays open.
 - 🕵️ **T167 — Detect new upstream tools and changes in CI** — `██████████ 100.0%`
   - ✅ **Gate:** Changes open maintenance work rather than silently inflate parity · **Evidence:** .github/workflows/upstream-drift.yml watches exact SednaLabs schema and Google coordinator Git blob SHAs weekly and on reviewed lock/workflow changes; changes trigger stable [upstream-drift] local maintenance issue, never repin automatically. ci/test-upstream-drift-watch.sh executes the actual workflow shell body with mocked curl/gh, verifying unchanged, changed and duplicate issue cases. GitHub Actions drift workflow 40249957815 succeeded.; GitHub Actions 40249957815 offline fixture checks verify an upstream blob change fails the watch and opens exactly one review issue per source; repeat unchanged pin mismatch reuses an existing open issue and a second changed source opens a separate one. Real unchanged upstream watch also passed. No real upstream drift was forced and no real maintenance issue was created; this is synthetic acceptance of the detection/mutation control, not a source parity claim.
 
