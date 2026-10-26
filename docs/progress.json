@@ -3977,7 +3977,7 @@
               "id": "T198",
               "emoji": "📦",
               "name": "Provide Arch PKGBUILD or local packaging recipe",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Pacman-managed or local user installation path tested",
               "checks": [
                 {
@@ -3987,7 +3987,8 @@
                 },
                 {
                   "text": "Pacman-managed or local user installation path tested",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "Native Arch makepkg install/uninstall QA GitHub Actions https://github.com/sguzman/synmetra/actions/runs/40369257171 passed on disposable archlinux:base-devel: built immutable source revision d6ce2322d6f073d59844ea3d07e4d1a0c0886b54 as non-root pkgbuild user with pinned Rust 1.99.1 and locked dependencies, installed with pacman -U, verified package ownership and binary --version, ran credential-free auth doctor with isolated XDG and PATH, checked linked runtime libraries, and removed with pacman -R with no executable remaining. This certifies Arch container packaging recipe, NOT an external clean EndeavourOS install or native feature-enabled DuckDB package."
                 }
               ]
             },

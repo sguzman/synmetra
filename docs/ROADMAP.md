@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `███████░░░ 73.3%` · **+73.35 percentage points from initial empty repo; +0.44 pp from the 36-tool permission matrix and verified revoked/invalid OAuth token fixtures
+**Overall:** `███████░░░ 73.6%` · **+73.57 percentage points from initial empty repo; +0.22 pp from verified Arch PKGBUILD package build, install and uninstall
 
 ### 📏 Progress conventions
 
@@ -126,7 +126,7 @@
   - ✅ **Gate:** Protocol wire fixtures pass multiple clients
 
 
-## 🔑 M2 — Google authentication and credential isolation — `█████░░░░░ 53.9%`
+## 🔑 M2 — Google authentication and credential isolation — `█████░░░░░ 53.8%`
 
 **Scope:** MVP. **Acceptance gate:** Secure, least-privilege, non-Python auth across interactive, local and service configurations; no secret leaks.
 
@@ -571,11 +571,11 @@
   - ✅ **Gate:** Signed provenance and dependency audit evidence · **Evidence:** Pinned Rust 1.99.1/Cargo.lock source builds an x86-64 release binary in two independent Cargo target directories and compares SHA-256 digests and sizes. The dedicated workflow step passed https://github.com/sguzman/synmetra/actions/runs/40358192285; separate cargo-deny Rust license/source/advisory scans also pass. Cross-runner reproducibility, bundled DuckDB and signed provenance remain distinct pending gates.; The release workflow passed two separate pinned Rust 1.99.1/Cargo.lock x86-64 binary SHA-256 comparisons, SHA-pinned actions/attest@v4 Sigstore/SLSA v1 archive attestation, and gh attestation verify -R sguzman/synmetra validating repository identity and SLSA predicate in https://github.com/sguzman/synmetra/actions/runs/40359969759. Independent cargo-deny Rust license/source checks passed https://github.com/sguzman/synmetra/actions/runs/40346651714. This accepts signed provenance and dependency-audit evidence only for an experimental default-feature Linux archive, not clean ARM64/EndeavourOS builds or native C++ compliance.
 
 
-## 🚀 M9 — Linux release and Codex-ready inauguration — `██████░░░░ 63.6%`
+## 🚀 M9 — Linux release and Codex-ready inauguration — `███████░░░ 65.9%`
 
 **Scope:** MVP. **Acceptance gate:** A documented stable native binary with 36-tool verified parity and release artifacts; no Python/npm runtime.
 
-### 📦 P25 — Packaging and installation — `██████░░░░ 64.3%`
+### 📦 P25 — Packaging and installation — `███████░░░ 71.4%`
 
 **Feature:** Native packaging.
 
@@ -583,8 +583,8 @@
   - ✅ **Gate:** Artifact installs without Python npm or node · **Evidence:** .github/workflows/linux-release.yml builds the default Rust 1.99.1 release binary from Cargo.lock, verifies dynamic native dependencies, normalizes a tarball with source SHA, license and install instructions, checks SHA-256, then extracts and invokes the binary with PATH=/nonexistent. GitHub Actions 40259842341 succeeded and uploaded experimental x86-64 artifact ID 12623622345. Independent two-run binary hash reproducibility has NOT been proven; acceptance remains partial.; GitHub Actions https://github.com/sguzman/synmetra/actions/runs/40358192285 passed two independent Cargo target-directory release builds with matching SHA-256 hashes, a normalized checksum-verified tarball, archive extraction and CLI auth doctor/version checks under env -i PATH=/nonexistent. ldd rejects libssl/libcrypto/libpython/libnode runtime linkage, and the experimental artifact was uploaded. This is Ubuntu x86-64 CI evidence, not EndeavourOS or cross-runner proof.
 - 🦀 **T197 — Provide rustup and cargo-based source installation** — `██████████ 100.0%`
   - ✅ **Gate:** Native build documented for Arch and other Linux · **Evidence:** docs/INSTALL.md documents pinning Rust 1.99.1, Arch pacman prerequisites, Cargo --locked --bin synmetra install into a user-local root, Fish PATH, other Linux build prerequisites, isolated diagnostics, optional DuckDB boundary, upgrade and uninstall; linked from README. Main commit 866847051.; GitHub Actions 40258199187 core job successfully ran an isolated Cargo +1.99.1 install --path . --locked --debug --bin synmetra to a temp root, verified installed executable without progress utility, invoked native auth doctor with PATH=/nonexistent and isolated XDG_CONFIG_HOME, checked no credential-value leakage, then uninstalled cleanly; DuckDB and core jobs both passed. Smoke was on Ubuntu Linux; Arch package prerequisites are documented but native Arch packaging is T198.
-- 📦 **T198 — Provide Arch PKGBUILD or local packaging recipe** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Pacman-managed or local user installation path tested · **Evidence (implementation only):** packaging/arch/PKGBUILD implements a locally pinned immutable Git commit package with Rust 1.99.1, locked/offline release compilation, default-feature tests, and pacman-staged binary/license/docs; docs/INSTALL.md distinguishes it from the verified Cargo path. GitHub Actions 40260186967 core passed bash -n and source/metadata/build/package recipe checks. Actual Arch makepkg package installation has NOT been exercised, so full acceptance remains open.
+- 📦 **T198 — Provide Arch PKGBUILD or local packaging recipe** — `██████████ 100.0%`
+  - ✅ **Gate:** Pacman-managed or local user installation path tested · **Evidence:** packaging/arch/PKGBUILD implements a locally pinned immutable Git commit package with Rust 1.99.1, locked/offline release compilation, default-feature tests, and pacman-staged binary/license/docs; docs/INSTALL.md distinguishes it from the verified Cargo path. GitHub Actions 40260186967 core passed bash -n and source/metadata/build/package recipe checks. Actual Arch makepkg package installation has NOT been exercised, so full acceptance remains open.; Native Arch makepkg install/uninstall QA GitHub Actions https://github.com/sguzman/synmetra/actions/runs/40369257171 passed on disposable archlinux:base-devel: built immutable source revision d6ce2322d6f073d59844ea3d07e4d1a0c0886b54 as non-root pkgbuild user with pinned Rust 1.99.1 and locked dependencies, installed with pacman -U, verified package ownership and binary --version, ran credential-free auth doctor with isolated XDG and PATH, checked linked runtime libraries, and removed with pacman -R with no executable remaining. This certifies Arch container packaging recipe, NOT an external clean EndeavourOS install or native feature-enabled DuckDB package.
 - 🧷 **T199 — Offer optional ARM64 Linux release binary** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Aarch64 CI artifact smoke test and linked library audit
 - 📏 **T200 — Document DuckDB native shared/static requirements** — `█████░░░░░ 50.0%`

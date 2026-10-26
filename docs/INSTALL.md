@@ -7,7 +7,7 @@ Synmetra is an **experimental GA4 MCP server**, not yet a parity-certified relea
 Install the native build tools with the distribution package manager:
 
 ```fish
-sudo pacman -S --needed git rustup base-devel pkgconf
+yay -S --needed git rustup base-devel pkgconf
 rustup toolchain install 1.99.1 --profile minimal
 git clone https://github.com/sguzman/synmetra.git
 cd synmetra
@@ -22,7 +22,7 @@ The build uses the checked-in `Cargo.lock` and the explicitly requested Rust 1.9
 
 An independently pinned [local PKGBUILD](../packaging/arch/PKGBUILD) is available for users who want pacman to own Synmetra rather than Cargo's user-local root. It references a full reviewed Git commit, fetches locked Rust dependencies, builds offline, runs default Rust tests, and stages the executable and documentation. Install Rust 1.99.1 before running `makepkg -si` from the recipe directory.
 
-The PKGBUILD has static shell and metadata verification in CI. A native Arch makepkg build/install smoke has **not yet been accepted**; the verified Cargo source installation above is the currently tested Linux route.
+The pinned PKGBUILD has now passed a non-root `makepkg` build, package installation, native library linkage inspection, offline `auth doctor` and complete package uninstall inside a disposable Arch Linux container in [GitHub Actions run 40369257171](https://github.com/sguzman/synmetra/actions/runs/40369257171). The test used Arch's `pacman -U/-R` internally; for an interactive EndeavourOS system, `yay` can install a locally built `.pkg.tar.zst` using `yay -U ./synmetra-0.0.1-1-x86_64.pkg.tar.zst`. This is **not yet** a clean host EndeavourOS install (T217), and the package builds the default feature profile without DuckDB.
 
 ## Other Linux distributions
 
