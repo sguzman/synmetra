@@ -4,7 +4,14 @@
 use chrono::{Datelike, NaiveDate};
 use futures_util::StreamExt;
 use serde_json::{json, Map, Value};
-use std::{collections::HashSet, fmt, time::Duration};
+use sha2::{Digest, Sha256};
+use std::{
+    collections::{HashMap, HashSet},
+    fmt,
+    sync::Arc,
+    time::{Duration, Instant},
+};
+use tokio::sync::Mutex;
 
 const ADMIN: &str = "https://analyticsadmin.googleapis.com";
 const DATA: &str = "https://analyticsdata.googleapis.com";
@@ -13,6 +20,10 @@ const MAX_COLLECTION_BYTES: usize = 16 * 1024 * 1024;
 const MAX_COLLECTION_ITEMS: usize = 10_000;
 const MAX_PAGE_TOKEN_BYTES: usize = 1024;
 const MAX_PAGES: usize = 100;
+const COMPATIBILITY_CACHE_TTL: Duration = Duration::from_secs(30);
+const MAX_COMPATIBILITY_CACHE_ENTRIES: usize = 64;
+const MAX_COMPATIBILITY_CACHE_RESPONSE_BYTES: usize = 128 * 1024;
+type CompatibilityCache = HashMap<[u8; 32], (Instant, Value)>;
 
 #[derive(Clone)]
 pub struct GoogleClient {
@@ -20,6 +31,7 @@ pub struct GoogleClient {
     bearer: Option<String>,
     admin_base: String,
     data_base: String,
+    compatibility_cache: Arc<Mutex<CompatibilityCache>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -171,6 +183,7 @@ impl GoogleClient {
             bearer: bearer.filter(|t| !t.trim().is_empty()),
             admin_base: admin.to_owned(),
             data_base: data.to_owned(),
+            compatibility_cache: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 
@@ -200,6 +213,14 @@ impl GoogleClient {
 
     async fn send_readonly(&self, req: reqwest::RequestBuilder) -> Result<Value, ApiError> {
         let bearer = self.token().await?;
+        self.send_readonly_as(req, &bearer).await
+    }
+
+    async fn send_readonly_as(
+        &self,
+        req: reqwest::RequestBuilder,
+        bearer: &str,
+    ) -> Result<Value, ApiError> {
         let mut req = req;
         for attempt in 0..3 {
             // A request carrying a streaming or unclonable body is not retried.
@@ -486,6 +507,60 @@ impl GoogleClient {
             return Err(ApiError::InvalidRequest);
         }
         let url = format!("{}/v1beta/{property}:{method}", self.data_base);
+        if method == "checkCompatibility" {
+            // A cached compatibility result is caller-specific and property-specific.
+            // The same bearer is used to authorize the actual Google request and
+            // construct its cache key, so refresh races cannot cross identities.
+            let bearer = self.token().await?;
+            let bytes = serde_json::to_vec(&request).map_err(|_| ApiError::InvalidRequest)?;
+            let mut digest = Sha256::new();
+            for part in [
+                b"synmetra-compat-v1".as_slice(),
+                self.data_base.as_bytes(),
+                property.as_bytes(),
+                bearer.as_bytes(),
+                bytes.as_slice(),
+            ] {
+                digest.update((part.len() as u64).to_be_bytes());
+                digest.update(part);
+            }
+            let key: [u8; 32] = digest.finalize().into();
+            {
+                let cache = self.compatibility_cache.lock().await;
+                if let Some((created, cached)) = cache.get(&key) {
+                    if created.elapsed() <= COMPATIBILITY_CACHE_TTL {
+                        return Ok(cached.clone());
+                    }
+                }
+            }
+            let response = self
+                .send_readonly_as(self.http.post(url).json(&request), &bearer)
+                .await?;
+            // Only bounded, successful, structurally plausible metadata is cached.
+            // Quota snapshots and failed authorization are never cached.
+            let is_compatible_payload = response.is_object()
+                && (response["metricCompatibilities"].is_array()
+                    || response["dimensionCompatibilities"].is_array());
+            if is_compatible_payload
+                && response.get("propertyQuota").is_none()
+                && serde_json::to_vec(&response)
+                    .is_ok_and(|body| body.len() <= MAX_COMPATIBILITY_CACHE_RESPONSE_BYTES)
+            {
+                let mut cache = self.compatibility_cache.lock().await;
+                cache.retain(|_, (created, _)| created.elapsed() <= COMPATIBILITY_CACHE_TTL);
+                if cache.len() >= MAX_COMPATIBILITY_CACHE_ENTRIES {
+                    if let Some(oldest) = cache
+                        .iter()
+                        .min_by_key(|(_, (created, _))| *created)
+                        .map(|(key, _)| *key)
+                    {
+                        cache.remove(&oldest);
+                    }
+                }
+                cache.insert(key, (Instant::now(), response.clone()));
+            }
+            return Ok(response);
+        }
         let response = self
             .send_readonly(self.http.post(url).json(&request))
             .await?;
@@ -2776,6 +2851,89 @@ mod tests {
                 .unwrap()
                 .starts_with(&format!("POST /v1beta/properties/77:{method} HTTP/1.1")));
         }
+    }
+
+    #[tokio::test]
+    async fn compatibility_cache_is_isolated_by_property_and_credential_identity() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        use tokio::net::TcpListener;
+
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let endpoint = format!("http://{}", listener.local_addr().unwrap());
+        let responder = tokio::spawn(async move {
+            for (index, expected_property, expected_token) in [
+                (1, "42", "token-for-caller-a"),
+                (2, "43", "token-for-caller-a"),
+                (3, "42", "token-for-caller-b"),
+            ] {
+                let (mut stream, _) = listener.accept().await.unwrap();
+                let mut buffer = [0_u8; 4096];
+                let read = stream.read(&mut buffer).await.unwrap();
+                let request = String::from_utf8_lossy(&buffer[..read]);
+                assert!(request.contains(&format!(
+                    "/v1beta/properties/{expected_property}:checkCompatibility"
+                )));
+                assert!(request.contains(&format!("Bearer {expected_token}")));
+                let body = json!({
+                    "metricCompatibilities":[{
+                        "metricMetadata":{"apiName":format!("metric{index}")},
+                        "compatibility":"COMPATIBLE"
+                    }]
+                })
+                .to_string();
+                let response = format!(
+                    "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                    body.len(),
+                    body
+                );
+                stream.write_all(response.as_bytes()).await.unwrap();
+            }
+        });
+        let first = GoogleClient::with_endpoints(
+            Some("token-for-caller-a".into()),
+            &endpoint,
+            &endpoint,
+        );
+        let mut second = GoogleClient::with_endpoints(
+            Some("token-for-caller-b".into()),
+            &endpoint,
+            &endpoint,
+        );
+        // Simulate an intentionally shared cache across client instances; the
+        // bearer fingerprint must prevent cross-caller result reuse.
+        second.compatibility_cache = first.compatibility_cache.clone();
+        let request = json!({
+            "metrics":[{"name":"activeUsers"}],
+            "dimensions":[{"name":"country"}]
+        });
+        let one = first
+            .data_operation("42", request.clone(), "checkCompatibility")
+            .await
+            .unwrap();
+        let cached = first
+            .data_operation("42", request.clone(), "checkCompatibility")
+            .await
+            .unwrap();
+        assert_eq!(cached, one);
+        let other_property = first
+            .data_operation("43", request.clone(), "checkCompatibility")
+            .await
+            .unwrap();
+        let other_caller = second
+            .data_operation("42", request, "checkCompatibility")
+            .await
+            .unwrap();
+        responder.await.unwrap();
+        assert_eq!(one["metricCompatibilities"][0]["metricMetadata"]["apiName"], "metric1");
+        assert_eq!(
+            other_property["metricCompatibilities"][0]["metricMetadata"]["apiName"],
+            "metric2"
+        );
+        assert_eq!(
+            other_caller["metricCompatibilities"][0]["metricMetadata"]["apiName"],
+            "metric3"
+        );
+        assert_eq!(first.compatibility_cache.lock().await.len(), 3);
     }
 
     #[tokio::test]
