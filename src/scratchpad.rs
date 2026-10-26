@@ -1680,6 +1680,38 @@ mod tests {
     }
 
     #[test]
+    fn duckdb_engine_denies_external_file_access_beyond_restricted_sql_parser() {
+        let state = ScratchState::new();
+        state.open("external_gate").unwrap();
+        let mut inner = state.guard().unwrap();
+        let db = &mut inner.sessions.get_mut("external_gate").unwrap().db;
+        let external: bool = db
+            .query_row(
+                "SELECT current_setting('enable_external_access')",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert!(!external, "DuckDB must keep external access disabled");
+        for hostile in [
+            "SELECT * FROM read_csv_auto('/etc/passwd')",
+            "SELECT * FROM read_text('/etc/hostname')",
+            "COPY (SELECT 'synthetic') TO '/dev/null'",
+            "SET enable_external_access=true",
+        ] {
+            assert!(
+                db.execute_batch(hostile).is_err(),
+                "DuckDB accepted external operation despite sandboxing"
+            );
+        }
+        drop(inner);
+        assert!(state
+            .query_bounded("external_gate", "SELECT * FROM read_csv('/etc/passwd')", None, None, false)
+            .is_err());
+        assert_eq!(state.tables("external_gate", None).unwrap()["total_tables"], 0);
+    }
+
+    #[test]
     fn hostile_sql_corpus_and_deterministic_mutations_never_execute() {
         let state = ScratchState::new();
         state.open("hostile_sql").unwrap();
