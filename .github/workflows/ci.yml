@@ -527,6 +527,12 @@ jobs:
             and all(.[]; .wall_ms > 0)
           ' "$RUNNER_TEMP/synmetra-benchmark.json" > /dev/null
 
+      - name: Guard candidate release artifacts with redacted synthetic canary
+        shell: bash
+        run: |
+          bash -n ci/scan-public-artifacts.sh
+          bash ci/scan-public-artifacts.sh --self-test
+
       - name: Verify progress ledger and pinned contracts
         run: cargo run --locked --bin synmetra-progress
       - name: Verify README and roadmap bars regenerate reproducibly

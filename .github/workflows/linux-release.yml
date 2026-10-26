@@ -7,6 +7,7 @@ on:
     paths:
       - .github/workflows/linux-release.yml
       - ci/generate-sbom.sh
+      - ci/scan-public-artifacts.sh
   workflow_dispatch:
 
 permissions:
@@ -115,6 +116,14 @@ jobs:
             echo 'SBOM disclosed an absolute checkout path' >&2
             exit 1
           fi
+
+      - name: Refuse unsafe release manifest or high-confidence credential markers
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash -n ci/scan-public-artifacts.sh
+          bash ci/scan-public-artifacts.sh \
+            dist/synmetra-experimental-linux-x86_64.tar.gz dist
 
       - name: Sign experimental artifact SLSA build provenance
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
