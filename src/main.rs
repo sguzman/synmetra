@@ -4678,6 +4678,144 @@ mod tests {
     }
 
     #[cfg(feature = "scratchpad")]
+    #[tokio::test]
+    async fn every_pinned_tool_name_dispatches_through_real_mcp_transport() {
+        use rmcp::model::CallToolRequestParams;
+        use std::collections::BTreeSet;
+
+        fn fixture(name: &str) -> serde_json::Map<String, Value> {
+            let historical = json!({
+                "property_id":42,
+                "date_ranges":[{"start_date":"yesterday","end_date":"today"}],
+                "dimensions":["country"],
+                "metrics":["activeUsers"]
+            });
+            let property = json!({"property_id":42});
+            let account = json!({"account_id":42});
+            let scratch = json!({"session_id":"dispatch-missing-session"});
+            let raw = match name {
+                "ga4_get_started" | "ga4_auth_status" | "ga4_auth_login_command"
+                | "get_account_summaries" | "scratchpad_get_runtime_limits"
+                | "scratchpad_list_sessions" | "scratchpad_set_runtime_limits" => json!({}),
+                "get_account_data_sharing_settings" => account,
+                "get_property_data_retention_settings" | "get_property_details"
+                | "get_custom_dimensions_and_metrics" | "list_google_ads_links"
+                | "list_property_annotations" => property,
+                "create_property_annotation" => json!({
+                    "property_id":42,
+                    "title":"Synthetic routing fixture",
+                    "start_date":"2026-10-25"
+                }),
+                "check_report_compatibility" => json!({
+                    "property_id":0,"dimensions":[],"metrics":[]
+                }),
+                "run_realtime_report" => json!({
+                    "property_id":42,"dimensions":["country"],"metrics":["activeUsers"]
+                }),
+                "run_report" | "preview_report_request" => historical,
+                "run_conversions_report" => {
+                    let mut obj = historical;
+                    obj["conversion_spec"] = json!({"attribution_model":"LAST_CLICK"});
+                    obj
+                }
+                "run_pivot_report" => {
+                    let mut obj = historical;
+                    obj["pivots"] = json!([]);
+                    obj
+                }
+                "run_funnel_report" => json!({
+                    "property_id":42,"funnel_steps":[]
+                }),
+                "batch_run_reports" => json!({"property_id":42,"requests":[]}),
+                "run_property_access_report" => historical,
+                "run_account_access_report" => json!({
+                    "account_id":42,
+                    "date_ranges":[{"start_date":"yesterday","end_date":"today"}],
+                    "dimensions":["userEmail"],"metrics":["accessCount"]
+                }),
+                "scratchpad_open_session" => json!({"session_id":"dispatch-new-session"}),
+                "scratchpad_close_session" | "scratchpad_list_tables"
+                | "scratchpad_export_evidence_bundle" => scratch,
+                "scratchpad_describe_table" | "scratchpad_summarize_table" => json!({
+                    "session_id":"dispatch-missing-session","table_name":"events"
+                }),
+                "scratchpad_drop_table" => json!({
+                    "session_id":"dispatch-missing-session","table_name":"events",
+                    "if_exists":true
+                }),
+                "scratchpad_query" => json!({
+                    "session_id":"dispatch-missing-session","sql":"SELECT 1"
+                }),
+                "scratchpad_ingest_report" => json!({
+                    "session_id":"dispatch-missing-session","table_name":"events",
+                    "property_id":42,
+                    "date_ranges":[{"start_date":"yesterday","end_date":"today"}],
+                    "dimensions":["country"],"metrics":["activeUsers"]
+                }),
+                "scratchpad_ingest_realtime_report" => json!({
+                    "session_id":"dispatch-missing-session","table_name":"events",
+                    "property_id":42,"dimensions":["country"],"metrics":["activeUsers"]
+                }),
+                "scratchpad_release_regression_report" => json!({
+                    "session_id":"dispatch-missing-session","table_name":"events",
+                    "release_date":"2026-10-25",
+                    "anchor_event":"session_start","comparison_event":"purchase"
+                }),
+                "scratchpad_landing_param_shift_report" => json!({
+                    "session_id":"dispatch-missing-session","table_name":"events",
+                    "release_date":"2026-10-25"
+                }),
+                unknown => panic!("Pinned 36-name catalog gained an unhandled fixture: {unknown}"),
+            };
+            serde_json::from_value(raw).unwrap()
+        }
+
+        let (server_stream, client_stream) = tokio::io::duplex(1_048_576);
+        let worker = tokio::spawn(async move {
+            Synmetra::new(GoogleClient::new(None), true)
+                .enable_scratchpad()
+                .serve(server_stream)
+                .await
+                .unwrap()
+                .waiting()
+                .await
+                .unwrap();
+        });
+        let client = ().serve(client_stream).await.unwrap();
+        let inventory: Value =
+            serde_json::from_str(include_str!("../docs/tool-inventory.json")).unwrap();
+        let pinned: BTreeSet<_> = inventory["union"]["tools"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|entry| entry["name"].as_str().unwrap().to_owned())
+            .collect();
+        let advertised = client.list_all_tools().await.unwrap();
+        let actual: BTreeSet<_> = advertised.iter().map(|t| t.name.to_string()).collect();
+        assert_eq!(actual, pinned);
+        assert_eq!(actual.len(), 36);
+        for name in actual {
+            let request = CallToolRequestParams::new(name.clone()).with_arguments(fixture(&name));
+            let call = tokio::time::timeout(
+                std::time::Duration::from_secs(8),
+                client.call_tool(request),
+            )
+            .await
+            .unwrap_or_else(|_| panic!("MCP tool dispatch timed out: {name}"))
+            .unwrap_or_else(|error| panic!("MCP transport/argument dispatch failed for {name}: {error}"));
+            let structured = call
+                .structured_content
+                .unwrap_or_else(|| panic!("MCP tool {name} returned no structured envelope"));
+            assert!(
+                structured["ok"].is_boolean(),
+                "Tool {name} omitted the Contract V1 ok flag: {structured}"
+            );
+        }
+        client.cancel().await.unwrap();
+        worker.await.unwrap();
+    }
+
+    #[cfg(feature = "scratchpad")]
     #[test]
     fn scratchpad_tools_are_hidden_without_explicit_capability() {
         let base = Synmetra::new(GoogleClient::new(None), false);
