@@ -2031,6 +2031,75 @@ mod tests {
     }
 
     #[test]
+    fn raw_duckdb_external_file_and_loopback_vectors_leave_no_side_effects() {
+        use std::io::ErrorKind;
+        use std::net::TcpListener;
+        use std::os::unix::fs::DirBuilderExt;
+        use std::time::{SystemTime, UNIX_EPOCH};
+
+        // The test endpoint is loopback-only. The native engine must not
+        // connect, even if passed an apparent URL outside the SQL parser.
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        listener.set_nonblocking(true).unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let entropy = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let base = std::env::temp_dir().join(format!(
+            "synmetra-duckdb-sandbox-{}-{entropy}",
+            std::process::id()
+        ));
+        std::fs::DirBuilder::new()
+            .mode(0o700)
+            .create(&base)
+            .unwrap();
+        let sentinel = base.join("sentinel.csv");
+        let original = b"synthetic-existing-contents\n";
+        std::fs::write(&sentinel, original).unwrap();
+
+        let state = ScratchState::new();
+        state.open("raw_external_probe").unwrap();
+        let mut lock = state.guard().unwrap();
+        let db = &mut lock.sessions.get_mut("raw_external_probe").unwrap().db;
+
+        let forbidden = [
+            format!(
+                "COPY (SELECT 'malicious') TO '{}' (FORMAT CSV)",
+                sentinel.display()
+            ),
+            format!("SELECT * FROM read_csv_auto('{}')", sentinel.display()),
+            format!("SELECT * FROM read_csv_auto('http://127.0.0.1:{port}/probe.csv')"),
+            format!("SELECT * FROM read_parquet('http://127.0.0.1:{port}/probe.parquet')"),
+            format!("ATTACH 'http://127.0.0.1:{port}/probe.db' AS outside"),
+            "INSTALL httpfs".to_owned(),
+            "LOAD httpfs".to_owned(),
+        ];
+        for (index, sql) in forbidden.iter().enumerate() {
+            assert!(
+                db.execute_batch(sql).is_err(),
+                "Embedded DuckDB escaped external-access policy at fixture {index}"
+            );
+            assert_eq!(
+                std::fs::read(&sentinel).unwrap(),
+                original.to_vec(),
+                "File contents changed after forbidden native DuckDB operation {index}"
+            );
+        }
+        drop(lock);
+        assert!(
+            matches!(listener.accept(), Err(ref e) if e.kind() == ErrorKind::WouldBlock),
+            "Embedded DuckDB attempted a loopback network connection"
+        );
+        assert_eq!(state.sessions(None).unwrap()["total_sessions"], 1);
+        assert_eq!(
+            state.tables("raw_external_probe", None).unwrap()["total_tables"],
+            0
+        );
+        std::fs::remove_dir_all(&base).unwrap();
+    }
+
+    #[test]
     fn duckdb_engine_denies_external_file_access_beyond_restricted_sql_parser() {
         let state = ScratchState::new();
         state.open("external_gate").unwrap();
