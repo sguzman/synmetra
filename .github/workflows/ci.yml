@@ -151,6 +151,17 @@ jobs:
             "$RUNNER_TEMP/synmetra-oversize-stdio.stderr"
           test ! -s "$RUNNER_TEMP/synmetra-oversize-stdio.stdout"
 
+      - name: Verify security disclosure policy without public secret reporting
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f SECURITY.md
+          grep -Fq 'Reporting a vulnerability privately' SECURITY.md
+          grep -Fq 'Report a vulnerability' SECURITY.md
+          grep -Fq 'Do not' SECURITY.md
+          grep -Fq 'has not been independently verified' SECURITY.md
+          grep -Fq 'docs/LOCAL_EXECUTION_THREAT_MODEL.md' SECURITY.md
+
       - name: Verify native operator reference and redacted smoke documentation
         shell: bash
         run: |

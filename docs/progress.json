@@ -4001,12 +4001,13 @@
               "id": "T201",
               "emoji": "🖋️",
               "name": "Publish install/uninstall and upgrades guide",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "No writes outside approved local paths",
               "checks": [
                 {
                   "text": "Deliver publish install/uninstall and upgrades guide as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "docs/INSTALL.md publishes EndeavourOS/Arch and other Linux source setup, native default and optional DuckDB builds, pinned Rust 1.99.1, install/verify/upgrade/uninstall and explicit local OAuth deletion caveats. Core CI https://github.com/sguzman/synmetra/actions/runs/40324582737 exercised installed native binary, isolated Cargo --root installation, auth doctor and uninstall without Python, npm or gcloud. Full external-path mutation audit remains open."
                 },
                 {
                   "text": "No writes outside approved local paths",
@@ -4018,12 +4019,13 @@
               "id": "T202",
               "emoji": "🐚",
               "name": "Provide Fish-friendly CLI configuration examples",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "No npm Python or bash-only assumptions",
               "checks": [
                 {
                   "text": "Deliver provide fish-friendly cli configuration examples as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "docs/CLI.md contains Fish-native read-only OAuth, diagnostics, native cargo/DuckDB build, private inbound bearer read -s -P and set -gx examples; docs/INSTALL.md uses fish_add_path. Syntax and semantics checked against fish-shell 4.0 read/set documentation and native PATH-isolation core CI https://github.com/sguzman/synmetra/actions/runs/40324582737. Formal Fish shell execution QA remains separate."
                 },
                 {
                   "text": "No npm Python or bash-only assumptions",
@@ -4043,16 +4045,18 @@
               "id": "T203",
               "emoji": "📋",
               "name": "Write complete CLI help config and environment reference",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "All flags options and permissions documented",
               "checks": [
                 {
                   "text": "Deliver write complete cli help config and environment reference as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs CLI_HELP and src/auth.rs AUTH_HELP implement offline --help/-h and auth help, alongside native --version; docs/CLI.md covers server, auth, environment, permissions and failure modes. Core CI https://github.com/sguzman/synmetra/actions/runs/40324582737 passed Verify offline CLI help across native invocation modes with PATH=/nonexistent."
                 },
                 {
                   "text": "All flags options and permissions documented",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "docs/CLI.md lists all 3 server flags, 5 OAuth login options, four auth subcommands plus command, version/help modes, four documented environment overrides, permission tiers and loopback/stdio trust limits; .github/workflows/ci.yml asserts flags and env references and offline native help. Core CI https://github.com/sguzman/synmetra/actions/runs/40324582737 passed the reference and operator help checks."
                 }
               ]
             },
@@ -4094,16 +4098,18 @@
               "id": "T206",
               "emoji": "🔑",
               "name": "Write Google Cloud setup without mandatory gcloud",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "Project API activation and scopes clearly explained",
               "checks": [
                 {
                   "text": "Deliver write google cloud setup without mandatory gcloud as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "docs/GOOGLE_CLOUD.md provides browser-console Cloud project setup, separately enabled Google Analytics Admin and Data APIs, Google Auth Platform Desktop OAuth client JSON, private file storage, user role distinctions and native Fish PKCE login without mandatory gcloud/Python/npm. CI https://github.com/sguzman/synmetra/actions/runs/40324582737 passed the native operator reference check."
                 },
                 {
                   "text": "Project API activation and scopes clearly explained",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "docs/GOOGLE_CLOUD.md explicitly covers Admin/Data API activation, testing user and Desktop-client consent setup, analytics.readonly versus analytics.edit, admin audit roles, edit-capable annotation roles, Google-side access and alpha eligibility; sources Google's Analytics quickstarts, OAuth Desktop app and scopes references; CI https://github.com/sguzman/synmetra/actions/runs/40324582737 verified both API names and full OAuth scope URLs."
                 }
               ]
             },
@@ -4128,16 +4134,18 @@
               "id": "T208",
               "emoji": "🧪",
               "name": "Publish anonymized smoke scenarios and QA limits",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "Operator can diagnose errors without pasting secrets",
               "checks": [
                 {
                   "text": "Deliver publish anonymized smoke scenarios and qa limits as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "docs/SMOKE_SCENARIOS.md gives synthetic coverage for installation, auth, stdio, authenticated HTTP, Google network retry/error, hostile cursor/filter inputs, native DuckDB, and progress/contract integrity, plus clear limits of mocked-only acceptance; core CI https://github.com/sguzman/synmetra/actions/runs/40324582737 validates document and examples."
                 },
                 {
                   "text": "Operator can diagnose errors without pasting secrets",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "docs/SMOKE_SCENARIOS.md specifies safe incident ledger SHA/test/UTC/error category and redacted synthetic reproduction, identifies invalid credentials/API denial and build/Clippy errors without user screenshots or pasted tokens, and references a 36-tool eligibility matrix. Core CI https://github.com/sguzman/synmetra/actions/runs/40324582737 passed documentation presence and scrubbed diagnostics tests. No manual user QA is required for these smoke scenarios."
                 }
               ]
             },
@@ -4162,12 +4170,13 @@
               "id": "T210",
               "emoji": "🛡️",
               "name": "Publish responsible security disclosure policy",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Safe vulnerability contact with no leaked reports",
               "checks": [
                 {
                   "text": "Deliver publish responsible security disclosure policy as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "Root SECURITY.md defines the experimental supported-version scope, GitHub Security Advisory conditional private reporting, metadata-only public contact fallback (never vulnerability details), synthetic evidence expectations, private triage/remediation/disclosure and security boundaries. This is a documented policy; repository private vulnerability reporting configuration is not verified, so safe active contact gate remains open."
                 },
                 {
                   "text": "Safe vulnerability contact with no leaked reports",

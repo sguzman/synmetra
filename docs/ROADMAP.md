@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `██████░░░░ 62.1%` · **+62.11 percentage points from initial empty repo; +0.22 pp from verified adversarial identifier/filter/cursor corpus** · 127/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `██████░░░░ 64.1%` · **+64.10 percentage points from initial empty repo; +1.99 pp from native CLI/Fish, Google Cloud, smoke QA and disclosure documentation
 
 ### 📏 Progress conventions
 
@@ -571,11 +571,11 @@
   - ✅ **Gate:** Signed provenance and dependency audit evidence
 
 
-## 🚀 M9 — Linux release and Codex-ready inauguration — `█░░░░░░░░░ 11.4%`
+## 🚀 M9 — Linux release and Codex-ready inauguration — `███░░░░░░░ 31.8%`
 
 **Scope:** MVP. **Acceptance gate:** A documented stable native binary with 36-tool verified parity and release artifacts; no Python/npm runtime.
 
-### 📦 P25 — Packaging and installation — `████░░░░░░ 35.7%`
+### 📦 P25 — Packaging and installation — `█████░░░░░ 50.0%`
 
 **Feature:** Native packaging.
 
@@ -589,31 +589,31 @@
   - ✅ **Gate:** Aarch64 CI artifact smoke test and linked library audit
 - 📏 **T200 — Document DuckDB native shared/static requirements** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Fresh-system runtime prerequisites verified · **Evidence:** docs/SCRATCHPAD.md explicitly documents optional bundled DuckDB 1.4.2 C/C++ source and linker prerequisites, feature flags, local-only limitations, native dependency inspections, Rust-vs-native licensing, and portability limits; fresh EndeavourOS install and native linkage audit remain unaccepted.
-- 🖋️ **T201 — Publish install/uninstall and upgrades guide** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** No writes outside approved local paths
-- 🐚 **T202 — Provide Fish-friendly CLI configuration examples** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** No npm Python or bash-only assumptions
+- 🖋️ **T201 — Publish install/uninstall and upgrades guide** — `█████░░░░░ 50.0%`
+  - ✅ **Gate:** No writes outside approved local paths · **Evidence:** docs/INSTALL.md publishes EndeavourOS/Arch and other Linux source setup, native default and optional DuckDB builds, pinned Rust 1.99.1, install/verify/upgrade/uninstall and explicit local OAuth deletion caveats. Core CI https://github.com/sguzman/synmetra/actions/runs/40324582737 exercised installed native binary, isolated Cargo --root installation, auth doctor and uninstall without Python, npm or gcloud. Full external-path mutation audit remains open.
+- 🐚 **T202 — Provide Fish-friendly CLI configuration examples** — `█████░░░░░ 50.0%`
+  - ✅ **Gate:** No npm Python or bash-only assumptions · **Evidence:** docs/CLI.md contains Fish-native read-only OAuth, diagnostics, native cargo/DuckDB build, private inbound bearer read -s -P and set -gx examples; docs/INSTALL.md uses fish_add_path. Syntax and semantics checked against fish-shell 4.0 read/set documentation and native PATH-isolation core CI https://github.com/sguzman/synmetra/actions/runs/40324582737. Formal Fish shell execution QA remains separate.
 
-### 📖 P26 — Documentation and agent onboarding — `░░░░░░░░░░ 0.0%`
+### 📖 P26 — Documentation and agent onboarding — `████░░░░░░ 43.8%`
 
 **Feature:** Operator docs.
 
-- 📋 **T203 — Write complete CLI help config and environment reference** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** All flags options and permissions documented
+- 📋 **T203 — Write complete CLI help config and environment reference** — `██████████ 100.0%`
+  - ✅ **Gate:** All flags options and permissions documented · **Evidence:** src/main.rs CLI_HELP and src/auth.rs AUTH_HELP implement offline --help/-h and auth help, alongside native --version; docs/CLI.md covers server, auth, environment, permissions and failure modes. Core CI https://github.com/sguzman/synmetra/actions/runs/40324582737 passed Verify offline CLI help across native invocation modes with PATH=/nonexistent.; docs/CLI.md lists all 3 server flags, 5 OAuth login options, four auth subcommands plus command, version/help modes, four documented environment overrides, permission tiers and loopback/stdio trust limits; .github/workflows/ci.yml asserts flags and env references and offline native help. Core CI https://github.com/sguzman/synmetra/actions/runs/40324582737 passed the reference and operator help checks.
 - 🔌 **T204 — Publish tested Codex global MCP registration** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** One-line setup verified with official Codex
 - 🧠 **T205 — Document other MCP agents using stdio and HTTP** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Secure example configurations and token separation
-- 🔑 **T206 — Write Google Cloud setup without mandatory gcloud** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Project API activation and scopes clearly explained
+- 🔑 **T206 — Write Google Cloud setup without mandatory gcloud** — `██████████ 100.0%`
+  - ✅ **Gate:** Project API activation and scopes clearly explained · **Evidence:** docs/GOOGLE_CLOUD.md provides browser-console Cloud project setup, separately enabled Google Analytics Admin and Data APIs, Google Auth Platform Desktop OAuth client JSON, private file storage, user role distinctions and native Fish PKCE login without mandatory gcloud/Python/npm. CI https://github.com/sguzman/synmetra/actions/runs/40324582737 passed the native operator reference check.; docs/GOOGLE_CLOUD.md explicitly covers Admin/Data API activation, testing user and Desktop-client consent setup, analytics.readonly versus analytics.edit, admin audit roles, edit-capable annotation roles, Google-side access and alpha eligibility; sources Google's Analytics quickstarts, OAuth Desktop app and scopes references; CI https://github.com/sguzman/synmetra/actions/runs/40324582737 verified both API names and full OAuth scope URLs.
 - 🔍 **T207 — Document per-tool parameter guides for all 36 tools** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Each tool includes input output limits and examples
-- 🧪 **T208 — Publish anonymized smoke scenarios and QA limits** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Operator can diagnose errors without pasting secrets
+- 🧪 **T208 — Publish anonymized smoke scenarios and QA limits** — `██████████ 100.0%`
+  - ✅ **Gate:** Operator can diagnose errors without pasting secrets · **Evidence:** docs/SMOKE_SCENARIOS.md gives synthetic coverage for installation, auth, stdio, authenticated HTTP, Google network retry/error, hostile cursor/filter inputs, native DuckDB, and progress/contract integrity, plus clear limits of mocked-only acceptance; core CI https://github.com/sguzman/synmetra/actions/runs/40324582737 validates document and examples.; docs/SMOKE_SCENARIOS.md specifies safe incident ledger SHA/test/UTC/error category and redacted synthetic reproduction, identifies invalid credentials/API denial and build/Clippy errors without user screenshots or pasted tokens, and references a 36-tool eligibility matrix. Core CI https://github.com/sguzman/synmetra/actions/runs/40324582737 passed documentation presence and scrubbed diagnostics tests. No manual user QA is required for these smoke scenarios.
 - 📗 **T209 — Publish migrations from official and SednaLabs servers** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Tool schema and behavior differences listed
-- 🛡️ **T210 — Publish responsible security disclosure policy** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Safe vulnerability contact with no leaked reports
+- 🛡️ **T210 — Publish responsible security disclosure policy** — `█████░░░░░ 50.0%`
+  - ✅ **Gate:** Safe vulnerability contact with no leaked reports · **Evidence:** Root SECURITY.md defines the experimental supported-version scope, GitHub Security Advisory conditional private reporting, metadata-only public contact fallback (never vulnerability details), synthetic evidence expectations, private triage/remediation/disclosure and security boundaries. This is a documented policy; repository private vulnerability reporting configuration is not verified, so safe active contact gate remains open.
 
 ### 🏁 P27 — Release acceptance and semantic versions — `░░░░░░░░░░ 0.0%`
 
