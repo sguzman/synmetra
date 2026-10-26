@@ -1554,16 +1554,18 @@
               "id": "T079",
               "emoji": "🏷️",
               "name": "Support annotation listing and date intervals",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "All pages and annotation color enums round-trip",
               "checks": [
                 {
                   "text": "Deliver support annotation listing and date intervals as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs annotations_with_options exposes v1alpha reportingDataAnnotations collection, with bounded page_size and max_pages, preserving provider annotationDate or annotationDateRange objects. Tests admin_beta_and_alpha_routes_retain_versioned_payloads and annotation_pages_preserve_all_color_enums_and_inclusive_date_targets passed full GitHub Actions 40255498957, both core and DuckDB."
                 },
                 {
                   "text": "All pages and annotation color enums round-trip",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "annotation_pages_preserve_all_color_enums_and_inclusive_date_targets simulates two separately fetched Admin v1alpha pages (pageSize 4; pageToken second), asserts all eight official Color enums round-trip including system-generated ORANGE and inclusive single-date/date-range targets with no lost rows. Google Admin v1alpha resource enum: https://googleapis.dev/python/analyticsadmin/latest/admin_v1alpha/types_.html. Full CI 40255498957 passed; authorized live Google tests remain a separate gate."
                 }
               ]
             },
@@ -1571,16 +1573,18 @@
               "id": "T080",
               "emoji": "🪪",
               "name": "Handle GA Admin API beta versus alpha resources",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "Version-specific host and payload shapes pinned",
               "checks": [
                 {
                   "text": "Deliver handle ga admin api beta versus alpha resources as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs version-specific Admin methods use v1beta for property, retention, account sharing, Google Ads links, custom definitions and v1alpha for reporting annotations; data reporting v1beta and conversion reporting v1alpha are independently routed. admin_beta_and_alpha_routes_retain_versioned_payloads pins observed routes and response shape via isolated mock Admin host with unavailable Data host. GitHub Actions 40255498957 passed."
                 },
                 {
                   "text": "Version-specific host and payload shapes pinned",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs admin_beta_and_alpha_routes_retain_versioned_payloads asserts exact GET path and v1beta or v1alpha API version for property details, retention settings, account sharing, Ads links, and reporting annotations; parses version-specific JSON without dropping fields. annotation_pages_preserve_all_color_enums_and_inclusive_date_targets exercises v1alpha paginated payload. Core and DuckDB CI 40255498957 passed; cross-version live account acceptance remains open in M8."
                 }
               ]
             },
