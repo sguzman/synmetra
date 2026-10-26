@@ -267,16 +267,12 @@ fn copied_callback_code(
     expected_state: &str,
 ) -> Result<String, String> {
     let candidate = submitted_url.trim();
-    if candidate.is_empty()
-        || candidate.len() > 8192
-        || candidate.chars().any(char::is_control)
-    {
+    if candidate.is_empty() || candidate.len() > 8192 || candidate.chars().any(char::is_control) {
         return Err("Invalid copied OAuth callback URL".into());
     }
-    let submitted =
-        Url::parse(candidate).map_err(|_| "Invalid copied OAuth callback URL")?;
-    let expected = Url::parse(expected_redirect)
-        .map_err(|_| "Invalid configured OAuth redirect URI")?;
+    let submitted = Url::parse(candidate).map_err(|_| "Invalid copied OAuth callback URL")?;
+    let expected =
+        Url::parse(expected_redirect).map_err(|_| "Invalid configured OAuth redirect URI")?;
     if submitted.scheme() != "http"
         || submitted.scheme() != expected.scheme()
         || submitted.host_str() != expected.host_str()
@@ -308,10 +304,7 @@ fn copied_callback_code(
     callback_code(&format!("GET {path_and_query} HTTP/1.1"), expected_state)
 }
 
-async fn read_headless_callback(
-    redirect: &str,
-    state: &str,
-) -> Result<String, String> {
+async fn read_headless_callback(redirect: &str, state: &str) -> Result<String, String> {
     let redirect = redirect.to_owned();
     let state = state.to_owned();
     eprintln!(
@@ -795,9 +788,7 @@ mod tests {
     fn headless_copy_back_verifies_exact_redirect_state_and_single_use() {
         let redirect = "http://127.0.0.1:41122/callback";
         let consent_state = "synthetic-random-state";
-        let valid = format!(
-            "{redirect}?code=synthetic%2Fauth%2Bcode&state={consent_state}"
-        );
+        let valid = format!("{redirect}?code=synthetic%2Fauth%2Bcode&state={consent_state}");
         assert_eq!(
             copied_callback_code(&valid, redirect, consent_state).unwrap(),
             "synthetic/auth+code"
