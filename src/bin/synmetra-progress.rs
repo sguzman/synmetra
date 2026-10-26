@@ -314,7 +314,9 @@ fn main() -> Result<(), Box<dyn Error>> {
         );
         if let (Some(row), Some((_, id, pct))) = (
             references.first(),
-            implementation_evidence.iter().find(|(name, _, _)| name == &tool),
+            implementation_evidence
+                .iter()
+                .find(|(name, _, _)| name == &tool),
         ) {
             check(
                 row.contains(&format!("| {id} |"))
