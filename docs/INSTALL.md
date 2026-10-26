@@ -47,3 +47,9 @@ The CI core job performs a clean, isolated `cargo install --path . --locked --de
 ## Optional experimental native ARM64 binary
 
 A default-feature `aarch64` Linux archive with SHA-256 sidecar and linked-library audit was built and verified on a **native** GitHub-hosted ARM64 Linux runner. See [verified experimental ARM64 artifact](https://github.com/sguzman/synmetra/actions/runs/40400440461/artifacts/12688357449) and [release policy](RELEASE_POLICY.md). This is an expiring Actions artifact, **not** a permanent or supported `v1.0.0` release. It excludes the optional bundled DuckDB feature and has not been clean-installed on ARM64 EndeavourOS. Source installation remains the documented default for that environment.
+
+## Verified disposable Arch Linux package and DuckDB QA
+
+The independent [passing Arch package workflow](https://github.com/sguzman/synmetra/actions/runs/40402013517) verified the unchanged [PKGBUILD](../packaging/arch/PKGBUILD) in a fresh disposable `archlinux:base-devel` container: `makepkg` as a non-root build user, `pacman -U`, native CLI/offline doctor with isolated XDG configuration, package-owned file paths restricted to `/usr/bin`, `/usr/share/doc/synmetra` and `/usr/share/licenses/synmetra`, and clean `pacman -R` removal. In the same disposable Arch image, the separate optional DuckDB source build and feature tests passed using Rust 1.99.1 plus native C/C++ prerequisites; `readelf` and `ldd` found no unresolved x86-64 ELF dependencies, and stdio scratchpad discovery succeeded.
+
+These checks accept T200's **Arch-based fresh-runtime prerequisites** and T201's **package-owned path containment** at that source revision. They do not prove a real EndeavourOS clean install (T217), absence of writes by every system process, universal static linking, native dependency license compliance, or that optional bundled DuckDB has no security vulnerabilities.

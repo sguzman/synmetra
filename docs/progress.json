@@ -4044,7 +4044,7 @@
               "id": "T200",
               "emoji": "📏",
               "name": "Document DuckDB native shared/static requirements",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Fresh-system runtime prerequisites verified",
               "checks": [
                 {
@@ -4054,7 +4054,8 @@
                 },
                 {
                   "text": "Fresh-system runtime prerequisites verified",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "Unchanged .github/workflows/arch-makepkg.yml and packaging/arch/PKGBUILD passed disposable native Arch Linux package QA in https://github.com/sguzman/synmetra/actions/runs/40402013517 (commit 05b85c5a7). A non-root makepkg build and fresh Arch container built and ran bundled DuckDB feature tests with Rust 1.99.1/C++ toolchain, inspected the x86-64 ELF with readelf and ldd, rejected any missing runtime shared library and Python/Node/OpenSSL linkage, and initialized scratchpad MCP offline. Both workflow and PKGBUILD blobs still match that passed source. This verifies fresh Arch toolchain and native-runtime prerequisites on that snapshot, not a native EndeavourOS host, all Linux distributions, ABI reproducibility or license compliance (T217 and T216 remain open)."
                 }
               ]
             },
@@ -4062,7 +4063,7 @@
               "id": "T201",
               "emoji": "🖋️",
               "name": "Publish install/uninstall and upgrades guide",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "No writes outside approved local paths",
               "checks": [
                 {
@@ -4072,7 +4073,8 @@
                 },
                 {
                   "text": "No writes outside approved local paths",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "The unchanged pinned Arch PKGBUILD and isolated installation/uninstallation workflow passed https://github.com/sguzman/synmetra/actions/runs/40402013517. The built package declares only /usr/bin/synmetra and approved /usr/share/doc/synmetra and /usr/share/licenses/synmetra files; CI verifies pacman -Qlq contains only approved paths, tests auth doctor with isolated XDG_CONFIG_HOME and PATH=/nonexistent, runs pacman -R, verifies /usr/bin/synmetra is absent afterwards, and leaves system git available. This accepts package-owned install/uninstall path containment at tested SHA, not proof about arbitrary third-party scripts, preexisting user files, every failure mode, or a direct EndeavourOS host installation (T217)."
                 }
               ]
             },
