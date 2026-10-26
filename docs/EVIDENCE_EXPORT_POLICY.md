@@ -1,6 +1,6 @@
 # 🧳 DuckDB evidence export: permission and disclosure boundary
 
-**Status:** local-only, bounded in-memory output; not a disk export API, not an automatic data-redaction or client-side permissions system. This is security evidence for the implementation portion of T148, not full acceptance of its "no secrets" guarantee.
+**Status:** local-only, bounded in-memory output with a conservative automatic *sample-cell* redaction safeguard; not a disk export API, comprehensive data-loss prevention (DLP), or client-side permissions system. This is incremental security evidence for T148, not full acceptance of its "no secrets" guarantee.
 
 ## Trust boundary
 
@@ -17,9 +17,15 @@ The MCP input has `session_id`, optional `table_names` and optional `sample_rows
 - `exports_private_bounded_json_and_markdown_evidence`, `evidence_samples_are_sorted_repeatable_and_hash_the_actual_query`, `aggregate_evidence_bundle_rejects_oversized_output_without_altering_tables`, and `scratchpad_evidence_export_matches_pinned_inputs_and_bounded_json_markdown` check the bounded structured/Markdown results and database preservation.
 - Both core and native DuckDB jobs passed on [main CI run 40374986333](https://github.com/sguzman/synmetra/actions/runs/40374986333). These are synthetic local tests, **not** independent audit proof against all DuckDB/native vulnerabilities.
 
+## Best-effort sensitive sample-cell redaction
+
+The exporter now replaces a sampled value with `[REDACTED]` when the **column name** suggests an access token, refresh token, client secret, API key, password, private key, credential, bearer/session token, cookie, email address, phone number or social-security number. It also recognizes high-confidence **cell-value** patterns (Bearer/Authorization headers, common OAuth/API token prefixes, PEM private-key headers, credential query parameters, and email addresses). This occurs **before** the row enters the MCP response. The output declares `sample_redaction_policy=best_effort_sensitive_fields_and_values`. A synthetic regression asserts that the response and Markdown do not contain test credentials, that unrelated counts are preserved, and that the original private DuckDB rows are not mutated by export.
+
+This is intentionally **heuristic**, not a proof that arbitrary secret formats, unusual personal information, embedded URLs, encoded values, or previously unknown provider credentials cannot leak. The caller still chooses tables and may hold sensitive data. The server does not authorize destinations or scan/undo a client-side save. The default safe operator action for private datasets remains `sample_rows_per_table=0`, which exports counts and hashes without raw row samples. No sensitive literal should be placed in a public acceptance artifact.
+
 ## What is *not* guaranteed
 
-An analytics column can itself contain an access token, email, URL query secret, or other private value **if the caller placed it in the scratchpad**. The exporter currently does not classify or redact arbitrary row values automatically; selected sample rows are returned to the requesting trusted client. For sensitive analytics, export only authorized tables, consider `sample_rows_per_table=0` for counts without examples, and avoid forwarding MCP responses into public prompts, logs, CI artifacts or Git commits.
+An analytics column can itself contain an access token, email, URL query secret, or other private value **if the caller placed it in the scratchpad**. The exporter now redacts certain *recognizable* sensitive values and sensitive field names in returned samples, but cannot classify arbitrary private contents, proprietary credentials or encoded tokens; residual sample rows still go to the requesting trusted client. For sensitive analytics, export only authorized tables, consider `sample_rows_per_table=0` for counts without examples, and avoid forwarding MCP responses into public prompts, logs, CI artifacts or Git commits.
 
 The current output limit and absence of disk-writing parameters prevent arbitrary **server file overwrites**, but cannot prevent the **client** from saving a response insecurely. Future per-principal session isolation, export authorization, redaction semantics and crash/temp-file cleanup require separate acceptance (T143, T148, T146). A passing path-fixture does not close T148's second permission/secret-disclosure gate.
 

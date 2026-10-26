@@ -341,6 +341,82 @@ impl ScratchState {
         }))
     }
 
+    /// Conservative export-only defense against accidentally disclosing common
+    /// bearer credentials and direct contact fields in sampled data.
+    /// This is a best-effort safeguard, not general PII classification.
+    fn should_redact_evidence_cell(column: &str, cell: &str) -> bool {
+        let key = column
+            .bytes()
+            .filter(|byte| byte.is_ascii_alphanumeric())
+            .map(|byte| byte.to_ascii_lowercase() as char)
+            .collect::<String>();
+        if [
+            "accesstoken",
+            "refreshtoken",
+            "authorization",
+            "clientsecret",
+            "apikey",
+            "password",
+            "passwd",
+            "privatekey",
+            "credential",
+            "bearertoken",
+            "sessiontoken",
+            "cookie",
+            "useremail",
+            "emailaddress",
+            "phonenumber",
+            "socialsecuritynumber",
+        ]
+        .iter()
+        .any(|sensitive| key.contains(sensitive))
+        {
+            return true;
+        }
+        let lower = cell.to_ascii_lowercase();
+        if [
+            "bearer ",
+            "authorization:",
+            "ya29.",
+            "aiza",
+            "ghp_",
+            "gho_",
+            "github_pat_",
+            "-----begin private key-----",
+            "-----begin rsa private key-----",
+            "-----begin ec private key-----",
+            "access_token=",
+            "refresh_token=",
+            "client_secret=",
+            "api_key=",
+            "apikey=",
+            "password=",
+        ]
+        .iter()
+        .any(|pattern| lower.contains(pattern))
+        {
+            return true;
+        }
+        // A single email address in a cell is contact PII regardless of the
+        // column label. Avoid enumerating or reporting the original value.
+        cell.split_ascii_whitespace().any(|word| {
+            let candidate = word.trim_matches(|ch: char| {
+                matches!(ch, '<' | '>' | '"' | '\'' | '(' | ')' | ',' | ';')
+            });
+            let Some((local, domain)) = candidate.split_once('@') else {
+                return false;
+            };
+            !local.is_empty()
+                && local.len() <= 64
+                && domain.len() <= 255
+                && domain.contains('.')
+                && !domain.contains('@')
+                && domain.bytes().all(|ch| {
+                    ch.is_ascii_alphanumeric() || matches!(ch, b'.' | b'-' | b'_')
+                })
+        })
+    }
+
     /// Export bounded in-memory JSON and Markdown evidence. Never writes files.
     pub fn export_evidence_bundle(
         &self,
@@ -463,7 +539,14 @@ impl ScratchState {
                         let mut map = serde_json::Map::new();
                         for (index, column) in columns.iter().enumerate() {
                             let cell: Option<String> = row.get(index)?;
-                            map.insert(column.clone(), cell.map_or(Value::Null, |s| json!(s)));
+                            let value = cell.map_or(Value::Null, |text| {
+                                if Self::should_redact_evidence_cell(column, &text) {
+                                    json!("[REDACTED]")
+                                } else {
+                                    json!(text)
+                                }
+                            });
+                            map.insert(column.clone(), value);
                         }
                         Ok(Value::Object(map))
                     })
@@ -496,6 +579,7 @@ impl ScratchState {
             "source":"local_scratchpad",
             "provider_called":false,
             "sample_cell_encoding":"bounded_text",
+            "sample_redaction_policy":"best_effort_sensitive_fields_and_values",
         });
         if serde_json::to_vec(&result).map_or(true, |data| data.len() > 256 * 1024) {
             return Err("Evidence bundle exceeds 256 KiB output policy".into());
@@ -1401,6 +1485,62 @@ mod tests {
             state.summarize_table("bounded_bundle", "sample_0").unwrap()["row_count"],
             20
         );
+    }
+
+    #[test]
+    fn evidence_samples_redact_obvious_credentials_and_email_without_modifying_tables() {
+        let state = ScratchState::new();
+        state.open("redaction_fixture").unwrap();
+        {
+            let mut inner = state.guard().unwrap();
+            let db = &inner.sessions.get_mut("redaction_fixture").unwrap().db;
+            db.execute_batch(
+                "CREATE TABLE safe_example (
+                     access_token VARCHAR,
+                     note VARCHAR,
+                     contact VARCHAR,
+                     safe_count INTEGER
+                 );
+                 INSERT INTO safe_example VALUES (
+                     'synthetic_private_token_123',
+                     'Authorization: Bearer synthetic_private_authorization_987',
+                     'alice@example.test',
+                     7
+                 );
+                 CREATE TABLE value_only (value VARCHAR);
+                 INSERT INTO value_only VALUES ('ya29.synthetic_private_override');",
+            )
+            .unwrap();
+        }
+        let result = state
+            .export_evidence_bundle(
+                "redaction_fixture",
+                Some(vec!["safe_example".into(), "value_only".into()]),
+                Some(1),
+            )
+            .unwrap();
+        let serialized = result.to_string();
+        assert!(!serialized.contains("synthetic_private_token_123"));
+        assert!(!serialized.contains("synthetic_private_authorization_987"));
+        assert!(!serialized.contains("alice@example.test"));
+        assert!(!serialized.contains("synthetic_private_override"));
+        assert_eq!(result["tables"][0]["sample_rows"][0]["access_token"], "[REDACTED]");
+        assert_eq!(result["tables"][0]["sample_rows"][0]["note"], "[REDACTED]");
+        assert_eq!(result["tables"][0]["sample_rows"][0]["contact"], "[REDACTED]");
+        assert_eq!(result["tables"][0]["sample_rows"][0]["safe_count"], "7");
+        assert_eq!(result["tables"][1]["sample_rows"][0]["value"], "[REDACTED]");
+        assert_eq!(
+            result["sample_redaction_policy"],
+            "best_effort_sensitive_fields_and_values"
+        );
+        // Export is a read-only projection: the underlying private DuckDB
+        // still retains the complete original values for the session owner.
+        let inner = state.guard().unwrap();
+        let db = &inner.sessions.get("redaction_fixture").unwrap().db;
+        let stored: String = db
+            .query_row("SELECT access_token FROM safe_example", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(stored, "synthetic_private_token_123");
     }
 
     #[test]
