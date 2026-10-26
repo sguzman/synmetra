@@ -10,7 +10,7 @@
 
 ## 📊 Evidence-backed progress
 
-**Overall:** `█████░░░░░ 46.9%` · **overall delta: +46.92 percentage points** from initial 0% (**latest accepted round: +0.44 pp**). **35/35 SednaLabs tool names implemented provisionally plus 1 opt-in annotation handler; 0/36 fully accepted upstream parity.** Real Google account acceptance and full tool schemas remain pending.
+**Overall:** `█████░░░░░ 48.0%` · **overall delta: +48.02 percentage points** from initial 0% (**latest accepted round: +1.10 pp**). **35/35 SednaLabs tool names implemented provisionally plus 1 opt-in annotation handler; 0/36 fully accepted upstream parity.** Real Google account acceptance and full tool schemas remain pending.
 
 | Milestone | Progress | Gate |
 | --- | --- | --- |
@@ -18,15 +18,15 @@
 | 🔌 M1 MCP protocol and transport fidelity | `██████░░░░ 60.9%` | MVP |
 | 🔑 M2 Google authentication and credential isolation | `███░░░░░░░ 30.8%` | MVP |
 | 🏢 M3 Admin API information parity | `██████░░░░ 56.2%` | MVP |
-| 📊 M4 Reporting, preflight and Data API parity | `█████████░ 91.7%` | MVP |
+| 📊 M4 Reporting, preflight and Data API parity | `██████████ 96.7%` | MVP |
 | ✍️ M5 Explicitly gated GA mutation parity | `███████░░░ 73.1%` | MVP |
 | 🗃️ M6 DuckDB scratchpad and advanced analytics parity | `████░░░░░░ 40.0%` | MVP |
-| 🧬 M7 Tool contract interoperability and parity audits | `█████░░░░░ 47.1%` | MVP |
+| 🧬 M7 Tool contract interoperability and parity audits | `█████░░░░░ 52.9%` | MVP |
 | 🧪 M8 Verification, resilience and security acceptance | `██░░░░░░░░ 21.4%` | MVP |
 | 🚀 M9 Linux release and Codex-ready inauguration | `░░░░░░░░░░ 0.0%` | MVP |
 | 🔭 M10 Post-MVP extensions and sustained stewardship | `░░░░░░░░░░ 0.0%` | POST_MVP |
 
-The [pinned native input-schema parity audit](docs/SCHEMA_PARITY_AUDIT.md) documents measured argument/schema gaps from an earlier feature-enabled CI run; these gaps are tracked separately from the 36-name inventory and are not yet all resolved.
+The [pinned upstream parameter-union audit](docs/UPSTREAM_PARAMETER_AUDIT.md) preserves all source fields and their known compatibility limits. The [pinned native input-schema parity audit](docs/SCHEMA_PARITY_AUDIT.md) documents measured argument/schema gaps from an earlier feature-enabled CI run; these gaps are tracked separately from the 36-name inventory and are not yet all resolved.
 
 Detailed milestone, phase, feature and atomic-task progress: [ROADMAP](docs/ROADMAP.md). [GitHub milestone issue queue](docs/ISSUES.md) keeps the 11 tracking issues in sync. Machine-readable evidence and checks: [progress.json](docs/progress.json). Exact combined tool surface: [tool-inventory.json](docs/tool-inventory.json). Source/protocol audit: [UPSTREAM](docs/UPSTREAM.md).
 

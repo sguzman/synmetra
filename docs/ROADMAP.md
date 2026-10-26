@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `█████░░░░░ 46.9%` · **+46.92 percentage points from initial empty repo; +0.44 pp from feature-enabled 36-tool MCP dispatch evidence** · 89/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `█████░░░░░ 48.0%` · **+48.02 percentage points from initial empty repo; +1.10 pp from CI-verified report preflight, credential-bound metadata caching, and pinned source audit** · 92/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -245,7 +245,7 @@
   - ✅ **Gate:** No stale cross-principal cache confusion
 
 
-## 📊 M4 — Reporting, preflight and Data API parity — `█████████░ 91.7%`
+## 📊 M4 — Reporting, preflight and Data API parity — `██████████ 96.7%`
 
 **Scope:** MVP. **Acceptance gate:** All report tools return correct GA4 semantics, including documented alpha, pagination and response projections.
 
@@ -270,15 +270,15 @@
 - 👥 **T090 — Implement run_account_access_report** — `██████████ 100.0%`
   - ✅ **Gate:** MCP schema, Google request, golden output and error cases for run_account_access_report · **Evidence:** src/main.rs implemented run_account_access_report MCP handler plus src/google.rs request route/validation; Rust unit and in-memory MCP tests passed Actions 40202015488; full upstream schema/live GA parity remains open; src/main.rs admin_access_mcp_inputs_cover_pinned_fields_and_required_sets verifies complete SednaLabs account access MCP input inventory, required set, and uint64 limit. admin_access_reports_project_named_fields_and_redact_google_denials uses local Admin API HTTP mocks for both resource types to test POST routing, GA dimensionName/metricName fields, stable golden rows, bounded totals and v1 continuation, and redacted HTTP 403 provider errors. src/tabular.rs admin_access_headers_and_resource_boundaries_have_distinct_cursors verifies account/property cursor fingerprints cannot be reused across resource types. GitHub Actions 40235752963 core passed formatting, tests, strict Clippy. Admin privileges and live Google acceptance remain separate.
 
-### 🧭 P11 — Preflight MCP tools — `██████░░░░ 64.3%`
+### 🧭 P11 — Preflight MCP tools — `█████████░ 85.7%`
 
 **Feature:** Preflight and metadata.
 
-- 🧭 **T091 — Implement preview_report_request** — `█████░░░░░ 50.0%`
+- 🧭 **T091 — Implement preview_report_request** — `██████████ 100.0%`
   - ✅ **Gate:** Validate its contract and unsupported metrics without wasteful report requests
 - ✅ **T092 — Implement check_report_compatibility** — `██████████ 100.0%`
   - ✅ **Gate:** Validate its contract and unsupported metrics without wasteful report requests · **Evidence:** src/main.rs implemented check_report_compatibility MCP handler plus src/google.rs request route/validation; Rust unit and in-memory MCP tests passed Actions 40202015488; full upstream schema/live GA parity remains open; src/google.rs compatibility_request builds the dedicated Google Data API checkCompatibility body without inventing report date ranges or requiring metrics; property 0 is allowed only for checkCompatibility. src/main.rs compatibility_probe_uses_property_zero_without_a_report_call mock verifies correct POST endpoint, empty inventory request, compatibility reason metadata and secret-free response, plus offline rejection of invalid fields; src/google.rs compatibility_requests_allow_inventory_or_metric_only_without_report_dates tests dimension-only, metric-only, inventory and invalid values. GitHub Actions 40232788668 core Rust tests, fmt and Clippy passed. This does not certify authorized live property-specific metadata or all upstream enriched response adapters.
-- 🧬 **T093 — Cache and refresh Data API metadata safely** — `░░░░░░░░░░ 0.0%`
+- 🧬 **T093 — Cache and refresh Data API metadata safely** — `██████████ 100.0%`
   - ✅ **Gate:** Metadata cache keys include property and caller
 - 🔤 **T094 — Support flexible dimension and metric filters** — `██████████ 100.0%`
   - ✅ **Gate:** FilterExpression nested JSON and shorthand cases validated · **Evidence:** src/google.rs: structured nested dimensionFilter and metricFilter pass unchanged through report_request; bounded recursive validation and valid nested AND/NOT fixture passed 2026-10-25 GitHub Actions core job 121238774791 (run 40216536190). Shorthand filters and live GA4 contract parity still unverified.; src/google.rs; GitHub Actions core job 121240177425 passed nested and shorthand FilterExpression fixtures, 2026-10-25.
@@ -441,7 +441,7 @@
   - ✅ **Gate:** Dependency license architecture and portability reviewed
 
 
-## 🧬 M7 — Tool contract interoperability and parity audits — `█████░░░░░ 47.1%`
+## 🧬 M7 — Tool contract interoperability and parity audits — `█████░░░░░ 52.9%`
 
 **Scope:** MVP. **Acceptance gate:** All 36 tool schemas and response mappings are independently snapshot-tested against both pinned upstreams.
 
@@ -479,11 +479,11 @@
 - 🧯 **T162 — Avoid false confidence from mocked-only parity** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Document live coverage by tool and account eligibility
 
-### 🔀 P21 — Feature-union conflict resolution — `███░░░░░░░ 30.0%`
+### 🔀 P21 — Feature-union conflict resolution — `█████░░░░░ 50.0%`
 
 **Feature:** Compatibility governance.
 
-- 🔍 **T163 — Audit every parameter-level difference between sources** — `░░░░░░░░░░ 0.0%`
+- 🔍 **T163 — Audit every parameter-level difference between sources** — `██████████ 100.0%`
   - ✅ **Gate:** Diff includes nullable fields limits aliases and errors
 - 🧱 **T164 — Choose a stable canonical contract without dropping capabilities** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** All documented upstream inputs remain expressible

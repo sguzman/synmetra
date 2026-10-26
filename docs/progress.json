@@ -1799,7 +1799,7 @@
               "id": "T091",
               "emoji": "🧭",
               "name": "Implement preview_report_request",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Validate its contract and unsupported metrics without wasteful report requests",
               "checks": [
                 {
@@ -1809,7 +1809,8 @@
                 },
                 {
                   "text": "Validate its contract and unsupported metrics without wasteful report requests",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs compatibility_preflight_surfaces_incompatible_metric_without_run_report uses a local mock GA checkCompatibility response with an INCOMPATIBLE metric and confirms no runReport call was sent; preview truthfully declines to claim that arbitrary custom fields were checked, directing callers to check_report_compatibility before expensive reports. GitHub Actions 40254000807 full core and DuckDB CI passed; live Google eligibility and exhaustive upstream semantic parity remain separate gates."
                 }
               ]
             },
@@ -1836,16 +1837,18 @@
               "id": "T093",
               "emoji": "🧬",
               "name": "Cache and refresh Data API metadata safely",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "Metadata cache keys include property and caller",
               "checks": [
                 {
                   "text": "Deliver cache and refresh data api metadata safely as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs now caches successful bounded checkCompatibility metadata for 30 seconds with maximum 64 entries and 128 KiB response size, no cached quota snapshots or provider errors. Uses a SHA-256 digest scoped to normalized property, Google endpoint, canonical request and exact bearer token; send_readonly_as executes with the same token used in the key to avoid refresh races."
                 },
                 {
                   "text": "Metadata cache keys include property and caller",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs compatibility_cache_is_isolated_by_property_and_credential_identity tests repeated-call hits and misses across both properties and two callers even when sharing a cache; compatibility_cache_expires_and_does_not_cache_403_denials tests expiration, refresh, 403 exclusion and recovery. GitHub Actions 40254000807 full Rust and DuckDB CI passed. This is compatibility metadata caching, not claimed full catalog ingestion or live Google acceptance."
                 }
               ]
             },
@@ -3221,16 +3224,18 @@
               "id": "T163",
               "emoji": "🔍",
               "name": "Audit every parameter-level difference between sources",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "Diff includes nullable fields limits aliases and errors",
               "checks": [
                 {
                   "text": "Deliver audit every parameter-level difference between sources as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "docs/UPSTREAM_PARAMETER_AUDIT.md and spec/audits/upstream-parameter-union.json preserve all 36 pinned feature-union tool names, nine shared tools, 26 SednaLabs-only and one Google-only, exact fields, required status, nullable types, defaults, numeric limits, enums and complete nested JSON Schema fragments. Distinguishes pinned source evidence from unavailable Google signature types, defaults and errors."
                 },
                 {
                   "text": "Diff includes nullable fields limits aliases and errors",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs upstream_parameter_audit_preserves_complete_pinned_source_fields compares all reported SednaLabs properties, full raw JSON Schemas, local $defs and required status against pinned source; verifies Google name/required field inventory without inventing unextracted defaults. GitHub Actions 40254000807 core tests, strict Clippy and DuckDB passed. Docs explicitly discuss snake_case versus provider aliases, bounds and the separately pinned error/response envelope; not live or current-native full parity."
                 }
               ]
             },
