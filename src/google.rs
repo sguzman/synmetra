@@ -1330,15 +1330,12 @@ pub fn report_request(
     if metrics.is_empty()
         || metrics.len() > 10
         || dimensions.len() > 9
-        || metrics
-            .iter()
-            .chain(dimensions.iter())
-            .any(|name| {
-                name.is_empty()
-                    || name.len() > 128
-                    || name.trim() != name
-                    || name.chars().any(char::is_control)
-            })
+        || metrics.iter().chain(dimensions.iter()).any(|name| {
+            name.is_empty()
+                || name.len() > 128
+                || name.trim() != name
+                || name.chars().any(char::is_control)
+        })
         || metrics.iter().collect::<HashSet<_>>().len() != metrics.len()
         || dimensions.iter().collect::<HashSet<_>>().len() != dimensions.len()
     {
@@ -2483,7 +2480,10 @@ mod tests {
     #[test]
     fn historical_report_rejects_ambiguous_or_malformed_field_names_before_google() {
         for (dimensions, metrics) in [
-            (vec!["country".to_string(); 2], vec!["activeUsers".to_string()]),
+            (
+                vec!["country".to_string(); 2],
+                vec!["activeUsers".to_string()],
+            ),
             (vec!["country".into()], vec!["activeUsers".to_string(); 2]),
             (vec!["country".into()], vec!["bad\\nmetric".into()]),
             (vec!["country".into()], vec![" activeUsers".into()]),
