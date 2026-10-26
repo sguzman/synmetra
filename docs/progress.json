@@ -1908,16 +1908,18 @@
               "id": "T096",
               "emoji": "🧮",
               "name": "Implement metric and dimension compatibility checks",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "Invalid combinations handled before expensive calls",
               "checks": [
                 {
                   "text": "Deliver implement metric and dimension compatibility checks as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs compatibility_verdict derives complete, conservative Core historical-report field verdicts from Google's checkCompatibility statuses, preserving original metadata; duplicate requested fields and duplicate/invalid provider status entries are rejected. src/main.rs result_with_compatibility_verdict adds a typed meta.compatibility decision without altering provider-shaped data. Tests compatibility_verdict_fails_closed_without_losing_provider_field_names passed GitHub Actions 40256768535 core and DuckDB."
                 },
                 {
                   "text": "Invalid combinations handled before expensive calls",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs compatibility_preflight_surfaces_incompatible_metric_without_run_report validates checkCompatibility POST to property-scoped Google endpoint, INCOMPATIBLE custom metric surfaces meta.compatibility.safe_to_run=false and incompatible_fields while no expensive runReport request is sent. The verdict fails closed for COMPATIBILITY_UNSPECIFIED, missing or duplicated field statuses; inventory-only probes cannot be mistaken for full compatibility. GitHub Actions 40256768535 passed. This explicit preflight does not automatically intercept a later run_report call, and authorized live Google validation remains open."
                 }
               ]
             },
