@@ -442,7 +442,16 @@ impl ScratchState {
                 })
                 .collect::<Vec<_>>()
                 .join(", ");
-            let query = format!("SELECT {projection} FROM \"{name}\" LIMIT {sample_limit}");
+            // Ordering the bounded text projection makes samples repeatable
+            // independently of DuckDB insertion and scan order. Identical
+            // projected rows are interchangeable in the exported evidence.
+            let order = (1..=columns.len())
+                .map(|index| index.to_string())
+                .collect::<Vec<_>>()
+                .join(", ");
+            let query = format!(
+                "SELECT {projection} FROM \"{name}\" ORDER BY {order} LIMIT {sample_limit}"
+            );
             let samples: Vec<Value> = if sample_limit == 0 {
                 Vec::new()
             } else {
@@ -1275,6 +1284,36 @@ impl ScratchState {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn evidence_samples_are_sorted_repeatable_and_hash_the_actual_query() {
+        let state = ScratchState::new();
+        state.open("stable_evidence").unwrap();
+        {
+            let mut inner = state.guard().unwrap();
+            let db = &inner.sessions.get_mut("stable_evidence").unwrap().db;
+            db.execute_batch(
+                "CREATE TABLE samples (event_name VARCHAR, qty INTEGER);
+                 INSERT INTO samples VALUES ('Zebra',2), ('Apple',7), ('Middle',3);",
+            )
+            .unwrap();
+        }
+        let first = state
+            .export_evidence_bundle("stable_evidence", Some(vec!["samples".into()]), Some(2))
+            .unwrap();
+        let second = state
+            .export_evidence_bundle("stable_evidence", Some(vec!["samples".into()]), Some(2))
+            .unwrap();
+        assert_eq!(first, second);
+        assert_eq!(first["tables"][0]["sample_rows"][0]["event_name"], "Apple");
+        assert_eq!(first["tables"][0]["sample_rows"][1]["event_name"], "Middle");
+        assert_eq!(first["tables"][0]["row_count"], 3);
+        assert_eq!(first["tables"][0]["sample_rows"].as_array().unwrap().len(), 2);
+        let hash = first["tables"][0]["sample_query_sha256"]
+            .as_str()
+            .unwrap();
+        assert_eq!(hash.len(), 64);
+    }
 
     #[test]
     fn aggregate_evidence_bundle_rejects_oversized_output_without_altering_tables() {
