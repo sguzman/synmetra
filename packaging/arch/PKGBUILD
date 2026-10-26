@@ -1,0 +1,38 @@
+# Local Arch package recipe pinned to an accepted experimental source commit.
+pkgname=synmetra
+pkgver=0.0.1
+pkgrel=1
+pkgdesc='Experimental native Rust Google Analytics 4 MCP server'
+arch=('x86_64')
+url='https://github.com/sguzman/synmetra'
+license=('MIT')
+depends=('glibc' 'gcc-libs')
+makedepends=('git' 'rustup' 'base-devel')
+_commit='d6ce2322d6f073d59844ea3d07e4d1a0c0886b54'
+source=("synmetra::git+https://github.com/sguzman/synmetra.git#commit=$_commit")
+sha256sums=('SKIP') # Immutable Git commit pinned; dependencies locked in Cargo.lock.
+
+prepare() {
+  cd "$srcdir/$pkgname"
+  test "$(git rev-parse HEAD)" = "$_commit" || return 1
+  cargo +1.99.1 fetch --locked
+}
+
+build() {
+  cd "$srcdir/$pkgname"
+  CARGO_INCREMENTAL=0 cargo +1.99.1 build --frozen --release --bin synmetra
+}
+
+check() {
+  cd "$srcdir/$pkgname"
+  cargo +1.99.1 test --frozen --all-targets
+}
+
+package() {
+  cd "$srcdir/$pkgname"
+  install -Dm755 target/release/synmetra "$pkgdir/usr/bin/synmetra"
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/synmetra/LICENSE"
+  install -Dm644 README.md "$pkgdir/usr/share/doc/synmetra/README.md"
+  install -Dm644 docs/INSTALL.md "$pkgdir/usr/share/doc/synmetra/INSTALL.md"
+  install -Dm644 docs/RELEASE_POLICY.md "$pkgdir/usr/share/doc/synmetra/RELEASE_POLICY.md"
+}

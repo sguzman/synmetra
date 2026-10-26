@@ -57,6 +57,21 @@ jobs:
           grep -Fq 'independent' docs/RELEASE_POLICY.md
           grep -Fq '36-tool' docs/RELEASE_POLICY.md
 
+      - name: Check pinned local Arch packaging recipe
+        shell: bash
+        run: |
+          bash -n packaging/arch/PKGBUILD
+          (
+            source packaging/arch/PKGBUILD
+            test "$pkgname" = synmetra
+            test "$pkgver" = 0.0.1
+            test "$_commit" = d6ce2322d6f073d59844ea3d07e4d1a0c0886b54
+            [[ "$source" == *"#commit=$_commit" ]]
+            test "$sha256sums" = SKIP
+            declare -f build | grep -Fq -- '--frozen --release --bin synmetra'
+            declare -f package | grep -Fq -- 'install -Dm755'
+          )
+
       - name: Verify committed canonical formatting
         run: cargo fmt --all -- --check
       - name: Run default Rust MCP tests

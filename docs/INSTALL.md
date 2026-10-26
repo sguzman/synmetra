@@ -18,6 +18,12 @@ synmetra auth doctor
 
 The build uses the checked-in `Cargo.lock` and the explicitly requested Rust 1.99.1 toolchain. The `--root` argument isolates the installation under `~/.local/bin`, without writing to system directories. No account credential is required to build or run `auth doctor`. This copies only `synmetra`, not the internal progress-ledger utility.
 
+## Optional local pacman package (Arch)
+
+An independently pinned [local PKGBUILD](../packaging/arch/PKGBUILD) is available for users who want pacman to own Synmetra rather than Cargo's user-local root. It references a full reviewed Git commit, fetches locked Rust dependencies, builds offline, runs default Rust tests, and stages the executable and documentation. Install Rust 1.99.1 before running `makepkg -si` from the recipe directory.
+
+The PKGBUILD has static shell and metadata verification in CI. A native Arch makepkg build/install smoke has **not yet been accepted**; the verified Cargo source installation above is the currently tested Linux route.
+
 ## Other Linux distributions
 
 Install Git, a C toolchain/linker, `pkg-config` and Rust via your distribution or rustup, then use the same `git clone` and `cargo +1.99.1 install --path . --locked --bin synmetra --root "$HOME/.local"` commands. Add `$HOME/.local/bin` to your shell's PATH. For Fish, use `fish_add_path -U ~/.local/bin`. Default builds use native Rust TLS through rustls; Python, npm, Node and gcloud are not needed at runtime.
