@@ -1,0 +1,9 @@
+# Synmetra immutable reference contract fixture blobs (Git object SHA-1)
+# SednaLabs upstream pinned: 039fd4620064fc4b76dc6bca641945aba52c14bc
+# Google official source pinned: ce84226bf4cedea7f2910f5afb07a6b9138f6553
+# The Google signature JSON and union inventory are independently extracted/derived local fixtures,
+# NOT byte-for-byte files from the Google project; these hashes pin Synmetra's checked-in versions.
+spec/upstream/sednalabs-tool-schema.v1.json	646c0baa22692b73430a0ee96415b0e2fe6215a3
+spec/upstream/google-official-signatures.json	ab43c97870c28b3bee18613c89bd8a484dab1a55
+spec/upstream/sednalabs-payload-contract-v1.schema.json	0f88a1965ceb771925c2524be3d127ff3dbf2c2a
+docs/tool-inventory.json	a3bf303d6cfb03b0437f970b8700cff4c99fab9d

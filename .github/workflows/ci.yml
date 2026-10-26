@@ -26,6 +26,164 @@ jobs:
           rustc --version | grep -F 'rustc 1.99.1'
           cargo --version
       - uses: Swatinem/rust-cache@v2
+      - name: Verify pinned upstream schema and union fixture hashes
+        shell: bash
+        run: |
+          count=0
+          while IFS=
+        run: cargo test --all-targets --locked
+      - name: Strict Clippy on default features
+        run: cargo clippy --all-targets --locked -- -D warnings
+      - name: Verify native rustls and no Python/OpenSSL runtime boundary
+        shell: bash
+        run: |
+          cargo tree --locked --edges normal,build --prefix none > "$RUNNER_TEMP/synmetra-dependencies.txt"
+          if grep -Eiq '^(openssl|openssl-sys|native-tls|tokio-native-tls|pyo3|pyo3-ffi|python3-sys)( |$)' "$RUNNER_TEMP/synmetra-dependencies.txt"; then
+            echo "Unexpected TLS or Python dependency in native Rust graph" >&2
+            exit 1
+          fi
+          cargo build --locked --bin synmetra
+          if ldd target/debug/synmetra | grep -Eiq 'lib(ssl|crypto|python)'; then
+            echo "Unexpected OpenSSL or Python dynamic runtime linkage" >&2
+            exit 1
+          fi
+      - name: Verify real stdio negotiation, tool discovery, calls, and clean stdout
+        shell: bash
+        run: |
+          initialize='{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"synmetra-ci","version":"1"}}}'
+          initialized='{"jsonrpc":"2.0","method":"notifications/initialized"}'
+          discovery='{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}'
+          call='{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"ga4_get_started","arguments":{}}}'
+          canary='synmetra-ci-private-canary-572'
+          printf '%s\n' "$initialize" "$initialized" "$discovery" "$call" | \
+            SYNMETRA_GOOGLE_ACCESS_TOKEN="$canary" timeout 10s target/debug/synmetra serve \
+            > "$RUNNER_TEMP/synmetra-stdio.jsonl" \
+            2> "$RUNNER_TEMP/synmetra-stdio.stderr"
+          test -s "$RUNNER_TEMP/synmetra-stdio.jsonl"
+          jq --slurp --exit-status '
+            length == 3
+            and all(.[]; .jsonrpc == "2.0" and .error == null)
+            and any(.[]; .id == 1
+              and (.result.protocolVersion | type == "string")
+              and (.result.serverInfo.name | type == "string"))
+            and any(.[]; .id == 2
+              and (.result.tools | length == 20)
+              and (.result.tools | any(.name == "ga4_get_started"))
+              and (.result.tools | all(.inputSchema.type == "object"))
+              and (.result.tools | all(.name != "create_property_annotation")))
+            and any(.[]; .id == 3
+              and .result.isError == false
+              and (.result.structuredContent.ok == true)
+              and (.result.structuredContent.data.scope == "https://www.googleapis.com/auth/analytics.readonly"))
+          ' "$RUNNER_TEMP/synmetra-stdio.jsonl" > /dev/null
+          if grep -Fq "$canary" "$RUNNER_TEMP/synmetra-stdio.jsonl"; then
+            echo "Unexpected credential material in MCP stdout" >&2
+            exit 1
+          fi
+      - name: Verify native auth doctor and credential-safe CLI failures
+        shell: bash
+        run: |
+          config_root="$(mktemp -d "$RUNNER_TEMP/synmetra-auth-smoke.XXXXXX")"
+          trap 'rm -rf "$config_root"' EXIT
+          XDG_CONFIG_HOME="$config_root" target/debug/synmetra auth doctor \
+            > "$RUNNER_TEMP/synmetra-doctor-setup.txt"
+          grep -Fq 'To configure native OAuth:' "$RUNNER_TEMP/synmetra-doctor-setup.txt"
+          grep -Fq 'Google Analytics Admin and Data APIs must be enabled' "$RUNNER_TEMP/synmetra-doctor-setup.txt"
+
+          canary='synmetra-doctor-ci-private-canary-903'
+          SYNMETRA_GOOGLE_ACCESS_TOKEN="$canary" XDG_CONFIG_HOME="$config_root" \
+            target/debug/synmetra auth doctor \
+            > "$RUNNER_TEMP/synmetra-doctor-token.txt"
+          grep -Fq '"override_token_present": true' "$RUNNER_TEMP/synmetra-doctor-token.txt"
+          if grep -Fq "$canary" "$RUNNER_TEMP/synmetra-doctor-token.txt"; then
+            echo 'Doctor exposed the synthetic access token' >&2
+            exit 1
+          fi
+
+          XDG_CONFIG_HOME="$config_root" target/debug/synmetra auth status \
+            > "$RUNNER_TEMP/synmetra-auth-status.txt"
+          grep -Fq 'no saved OAuth credentials' "$RUNNER_TEMP/synmetra-auth-status.txt"
+          XDG_CONFIG_HOME="$config_root" target/debug/synmetra auth command \
+            > "$RUNNER_TEMP/synmetra-auth-command.txt"
+          grep -Fq 'synmetra auth login --client-id-file' "$RUNNER_TEMP/synmetra-auth-command.txt"
+
+          if XDG_CONFIG_HOME="$config_root" target/debug/synmetra auth login --headless \
+            > "$RUNNER_TEMP/synmetra-auth-bad.stdout" \
+            2> "$RUNNER_TEMP/synmetra-auth-bad.stderr"; then
+            echo 'Login without OAuth client unexpectedly succeeded' >&2
+            exit 1
+          fi
+          grep -Fq 'OAuth login requires --client-id-file' "$RUNNER_TEMP/synmetra-auth-bad.stderr"
+          test ! -s "$RUNNER_TEMP/synmetra-auth-bad.stdout"
+          XDG_CONFIG_HOME="$config_root" target/debug/synmetra auth logout \
+            > "$RUNNER_TEMP/synmetra-logout.txt"
+          grep -Fq 'Revoke access in your Google account' "$RUNNER_TEMP/synmetra-logout.txt"
+
+      - name: Reject unsupported public MCP bind overrides before network startup
+        shell: bash
+        run: |
+          if target/debug/synmetra serve --http-loopback --host 0.0.0.0 \
+            > "$RUNNER_TEMP/synmetra-nonloopback.stdout" \
+            2> "$RUNNER_TEMP/synmetra-nonloopback.stderr"; then
+            echo "Unsupported public bind override unexpectedly succeeded" >&2
+            exit 1
+          fi
+          grep -Fq 'Usage: synmetra serve' "$RUNNER_TEMP/synmetra-nonloopback.stderr"
+          test ! -s "$RUNNER_TEMP/synmetra-nonloopback.stdout"
+
+      - name: Verify progress ledger and pinned contracts
+        run: cargo run --locked --bin synmetra-progress
+      - name: Verify README and roadmap bars regenerate reproducibly
+        run: |
+          cargo run --locked --bin synmetra-progress -- --write-bars
+          git diff --exit-code -- README.md docs/ROADMAP.md
+
+  duckdb:
+    concurrency:
+      group: synmetra-duckdb-${{ github.sha }}
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    env:
+      CARGO_BUILD_JOBS: 2
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Install pinned Rust 1.99.1 with rustfmt and Clippy
+        run: |
+          rustup toolchain install 1.99.1 --profile minimal --component rustfmt --component clippy
+          rustc --version | grep -F 'rustc 1.99.1'
+          cargo --version
+      - uses: Swatinem/rust-cache@v2
+      - name: Determine whether the native feature changed
+        id: native
+        shell: bash
+        run: |
+          if git diff --name-only HEAD^ HEAD | grep -Eq '^(src/(main|scratchpad)\.rs$|Cargo\.toml$|Cargo\.lock$)'; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Test bounded DuckDB scratchpad
+        if: steps.native.outputs.changed == 'true' || startsWith(github.ref, 'refs/tags/v')
+        env:
+          SYNMETRA_CAPTURE_INPUT_SCHEMAS: "1"
+        run: cargo test --all-targets --locked --features scratchpad -- --nocapture
+      - name: Release-gate strict Clippy with DuckDB
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: cargo clippy --all-targets --locked --features scratchpad -- -D warnings
+\\t' read -r path expected; do
+            case "$path" in ''|\\#*) continue ;; esac
+            test -f "$path" || { echo "Missing pinned contract: $path" >&2; exit 1; }
+            actual="$(git hash-object "$path")"
+            if test "$actual" != "$expected"; then
+              echo "Pinned contract drifted: $path ($expected != $actual)" >&2
+              exit 1
+            fi
+            count=$((count + 1))
+          done < spec/upstream/schema-lock.tsv
+          test "$count" -eq 4 || { echo "Expected exactly four pinned fixtures" >&2; exit 1; }
       - name: Verify committed canonical formatting
         run: cargo fmt --all -- --check
       - name: Run default Rust MCP tests
