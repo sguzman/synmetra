@@ -3205,7 +3205,7 @@
               "id": "T158",
               "emoji": "⚖️",
               "name": "Preserve official response semantics where conflicting",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Document compatibility choice and adapters",
               "checks": [
                 {
@@ -3215,7 +3215,8 @@
                 },
                 {
                   "text": "Document compatibility choice and adapters",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "docs/CLIENT_COMPATIBILITY.md and spec/compatibility/client-contract.v1.json define a reviewed adapter choice for the four named MCP profiles (20/21/35/36), exact ok/data/meta and ok/error/meta envelopes in structuredContent and legacy JSON text, default provider-shaped responses, explicit opt-in tabular projections, rejected realtime cursors and distinct JSON-RPC transport errors. They flag the unmeasured timing sentinel and source-derived SednaLabs behavior gaps, without asserting upstream parity. Existing native adapter/envelope tests passed https://github.com/sguzman/synmetra/actions/runs/40404146934; the new 36-tool source/profile version-policy CI check passed https://github.com/sguzman/synmetra/actions/runs/40405048840 (core)."
                 }
               ]
             },
@@ -3341,7 +3342,7 @@
               "id": "T165",
               "emoji": "⚙️",
               "name": "Version compatibility adapters and response projections",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Legacy tool expectations and version policy documented",
               "checks": [
                 {
@@ -3351,7 +3352,8 @@
                 },
                 {
                   "text": "Legacy tool expectations and version policy documented",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "docs/CLIENT_COMPATIBILITY.md documents concrete legacy MCP clients' raw Google vs native-enveloped vs opt-in SednaLabs-style table expectations, required unwrapping, error codes/status and unsupported control handling; docs/MIGRATION.md, docs/CONTRACT.md and docs/RELEASE_POLICY.md establish non-destructive side-by-side migration and 0.0.1 pre-1.0 change policy. spec/compatibility/client-contract.v1.json records stable profile counts, response shapes, version and known mismatches; CI verifies them against the 36-tool native inventory and release version. Core CI https://github.com/sguzman/synmetra/actions/runs/40405048840 passed; executable SednaLabs and third-party client behavioral parity remain separate unaccepted gates."
                 }
               ]
             },
