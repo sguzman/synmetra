@@ -1010,6 +1010,22 @@ fn preview_report_projection(dimensions: &[String], metrics: &[String]) -> Value
     json!({"tabular_columns":columns,"ingest_columns":ingest})
 }
 
+/// Audit events deliberately cannot accept property names, titles, descriptions,
+/// OAuth credentials, or provider response bodies. They go to stderr, not MCP
+/// stdout, with only a fixed action and outcome.
+fn write_audit_event(outcome: &'static str) -> Value {
+    json!({
+        "timestamp": chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Millis, true),
+        "action": "create_property_annotation",
+        "outcome": outcome,
+        "details_redacted": true
+    })
+}
+
+fn emit_write_audit(outcome: &'static str) {
+    eprintln!("{}", write_audit_event(outcome));
+}
+
 fn result(r: Result<Value, ApiError>) -> CallToolResult {
     // elapsed_ms = 0 is an explicit *unmeasured* sentinel here, not a
     // claim of zero tool latency. Per-tool timing is a separate parity gate.
@@ -1158,6 +1174,7 @@ impl Synmetra {
         Parameters(args): Parameters<CreateAnnotationArgs>,
     ) -> CallToolResult {
         if !self.writes_allowed {
+            emit_write_audit("blocked_read_only_profile");
             return result(Err(ApiError::InvalidRequest));
         }
         let body = annotation_payload(
@@ -1167,10 +1184,22 @@ impl Synmetra {
             args.description.as_deref(),
             &args.color,
         );
-        result(match body {
-            Ok(body) => self.api.create_annotation(&args.property_id, body).await,
-            Err(error) => Err(error),
-        })
+        let response = match body {
+            Ok(body) => {
+                let response = self.api.create_annotation(&args.property_id, body).await;
+                emit_write_audit(if response.is_ok() {
+                    "provider_accepted"
+                } else {
+                    "provider_failed"
+                });
+                response
+            }
+            Err(error) => {
+                emit_write_audit("invalid_input");
+                Err(error)
+            }
+        };
+        result(response)
     }
 
     #[tool(
@@ -5608,6 +5637,32 @@ mod tests {
         assert!(!schema["required"]
             .as_array()
             .is_some_and(|required| required.iter().any(|v| v == "verify_token")));
+    }
+
+    #[test]
+    fn write_audit_events_include_timestamp_and_action_but_no_sensitive_fields() {
+        let event = write_audit_event("blocked_read_only_profile");
+        assert_eq!(event["action"], "create_property_annotation");
+        assert_eq!(event["outcome"], "blocked_read_only_profile");
+        assert_eq!(event["details_redacted"], true);
+        assert!(chrono::DateTime::parse_from_rfc3339(
+            event["timestamp"].as_str().unwrap()
+        )
+        .is_ok());
+        let keys = event.as_object().unwrap();
+        assert_eq!(keys.len(), 4);
+        for forbidden in [
+            "property_id",
+            "title",
+            "description",
+            "client_secret",
+            "access_token",
+            "refresh_token",
+            "payload",
+            "response",
+        ] {
+            assert!(!keys.contains_key(forbidden));
+        }
     }
 
     #[tokio::test]
