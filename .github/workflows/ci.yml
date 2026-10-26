@@ -412,6 +412,18 @@ jobs:
           # No private credentials or account state are needed for configuration QA.
           test ! -e "$CODEX_HOME/auth.json"
 
+      - name: Measure synthetic native process startup and MCP RSS
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash ci/benchmark-native.sh target/debug/synmetra \
+            | tee "$RUNNER_TEMP/synmetra-benchmark.json"
+          jq -e '.measurements | length == 11
+            and any(.[]; .profile == "fresh_help" and .max_rss_kib > 0)
+            and any(.[]; .profile == "fresh_mcp_roundtrip" and .max_rss_kib > 0)
+            and any(.[]; .profile == "same_process_repeated_calls" and .calls == 5)
+          ' "$RUNNER_TEMP/synmetra-benchmark.json" > /dev/null
+
       - name: Verify progress ledger and pinned contracts
         run: cargo run --locked --bin synmetra-progress
       - name: Verify README and roadmap bars regenerate reproducibly
