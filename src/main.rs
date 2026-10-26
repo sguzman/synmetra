@@ -6612,7 +6612,8 @@ mod tests {
                 .len(),
             1100
         );
-        let oversized = accumulate_historical_ingest_page(&mut aggregate, page(601, "country"), 600);
+        let oversized =
+            accumulate_historical_ingest_page(&mut aggregate, page(601, "country"), 600);
         assert!(oversized.is_err());
         assert!(accumulate_historical_ingest_page(
             &mut aggregate,
