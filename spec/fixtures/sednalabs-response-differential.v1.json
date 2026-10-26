@@ -1,0 +1,107 @@
+{
+  "schema": "synmetra_pinned_sednalabs_response_differential",
+  "version": 1,
+  "source": {
+    "repository": "sednalabs/ga4-mcp",
+    "commit": "039fd4620064fc4b76dc6bca641945aba52c14bc",
+    "files": [
+      "src/contract.rs",
+      "tests/contract_safety_conformance.rs"
+    ],
+    "basis": "Explicit pinned upstream source test invocations and assertions; no upstream binary was executed and no live Google data are represented."
+  },
+  "cases": [
+    {
+      "name": "compact_source_assertions",
+      "source_test": "tests/contract_safety_conformance.rs::contract_success_tabular_emits_required_v1_fields",
+      "source_rows_supplied": 1,
+      "provider_rows": 25,
+      "provider_total": 100,
+      "dimension_name": "event_name",
+      "dimension_value": "page_view",
+      "output_mode": "compact",
+      "summary_only": false,
+      "query_hash": "abcd",
+      "offset": 0,
+      "max_rows": 25,
+      "shared_expected": {
+        "output_mode": "compact",
+        "summary_only": false,
+        "row_count_total": 100,
+        "row_count_returned": 25,
+        "truncated": true,
+        "next_cursor": "v1:abcd:25",
+        "query_hash": "abcd"
+      },
+      "native_expected": {
+        "data_kind": "compact",
+        "row_count": 25,
+        "first_tuple": [
+          "page_view"
+        ]
+      },
+      "source_data": [
+        {
+          "event_name": "page_view"
+        }
+      ],
+      "difference_note": "Pinned upstream contract builder accepts one supplied object yet independently reports 25 returned rows. Native compact mode constructs a 25-tuple compact object from 25 synthetic provider rows; compare shared metadata, not full payload equality."
+    },
+    {
+      "name": "summary_only_source_assertions",
+      "source_test": "src/contract.rs::tests::success_tabular_respects_summary_only",
+      "source_rows_supplied": 1,
+      "provider_rows": 5,
+      "provider_total": 10,
+      "dimension_name": "event_name",
+      "dimension_value": "page_view",
+      "output_mode": "rows",
+      "summary_only": true,
+      "query_hash": "abc",
+      "offset": 0,
+      "max_rows": 5,
+      "shared_expected": {
+        "output_mode": "rows",
+        "summary_only": true,
+        "row_count_total": 10,
+        "row_count_returned": 5,
+        "truncated": true,
+        "next_cursor": "v1:abc:5",
+        "query_hash": "abc"
+      },
+      "native_expected": {
+        "data_kind": "null"
+      },
+      "source_data": null,
+      "difference_note": "Both normalize data to null. Upstream source test supplies one row with independent metadata reporting five; native derives returned count from five fixture provider rows."
+    }
+  ],
+  "negative_parity_findings": [
+    {
+      "source_test": "tests/contract_safety_conformance.rs::contract_error_policy_denied_is_stable",
+      "source_expected": {
+        "code": "POLICY_DENIED",
+        "reason": "policy_denied",
+        "category": "policy",
+        "detail": "profile=read_only;tool=scratchpad_query"
+      },
+      "native_status": "not_comparable_to_a_live_tool_call",
+      "note": "Policy-denial category and detail from pinned source are not established as an equivalent native path; do not count this as matched error parity."
+    },
+    {
+      "source_test": "tests/contract_safety_conformance.rs::cursor_query_mismatch_maps_to_invalid_cursor_reason",
+      "source_expected": {
+        "code": "CURSOR_QUERY_MISMATCH",
+        "reason": "invalid_cursor",
+        "category": "cursor"
+      },
+      "native_status": "not_equivalent",
+      "note": "Synmetra currently maps rejected historical pagination to generic INVALID_REQUEST/validation, not a dedicated upstream cursor-mismatch reason. T157/T158/T171 parity remains open."
+    }
+  ],
+  "excluded": [
+    "elapsed_ms: pinned upstream builder measures caller-supplied real value (8/9), native explicitly reports 0 as an unmeasured sentinel",
+    "Upstream's supplied data array and native generated compact representation differ; not flattened into false equality",
+    "Upstream source assertions do not prove binary runtime, Google API or all tool outputs"
+  ]
+}

@@ -479,6 +479,92 @@ mod tests {
     }
 
     #[test]
+    fn pinned_upstream_response_goldens_expose_shared_fields_and_real_divergences() {
+        let cases: Value = serde_json::from_str(include_str!(
+            "../spec/fixtures/sednalabs-response-differential.v1.json"
+        ))
+        .unwrap();
+        assert_eq!(cases["schema"], "synmetra_pinned_sednalabs_response_differential");
+        assert_eq!(
+            cases["source"]["commit"],
+            "039fd4620064fc4b76dc6bca641945aba52c14bc"
+        );
+        let scenarios = cases["cases"].as_array().unwrap();
+        assert_eq!(scenarios.len(), 2);
+        for scenario in scenarios {
+            let name = scenario["name"].as_str().unwrap();
+            let row_count = scenario["provider_rows"].as_u64().unwrap() as usize;
+            let key = scenario["dimension_name"].as_str().unwrap();
+            let value = scenario["dimension_value"].as_str().unwrap();
+            let row = json!({"dimensionValues":[{"value":value}]});
+            let provider = json!({
+                "dimensionHeaders":[{"name":key}],
+                "rows":vec![row; row_count],
+                "rowCount":scenario["provider_total"]
+            });
+            let native = project(
+                &provider,
+                Controls {
+                    output_mode: Some(
+                        serde_json::from_value(scenario["output_mode"].clone()).unwrap(),
+                    ),
+                    summary_only: scenario["summary_only"].as_bool().unwrap(),
+                    max_rows: Some(scenario["max_rows"].as_u64().unwrap() as usize),
+                    max_cell_chars: None,
+                    cursor_supplied: false,
+                },
+                false,
+                Some(&Pagination {
+                    query_hash: scenario["query_hash"].as_str().unwrap().to_owned(),
+                    offset: scenario["offset"].as_u64().unwrap(),
+                }),
+            )
+            .unwrap();
+            for (field, expected) in scenario["shared_expected"].as_object().unwrap() {
+                assert_eq!(
+                    native.meta.get(field),
+                    Some(expected),
+                    "Shared pinned Contract V1 metadata differs: {name}.{field}"
+                );
+            }
+            // This value must never masquerade as upstream's measured elapsed_ms.
+            assert_eq!(native.meta["elapsed_ms"], 0);
+            assert_eq!(native.meta["elapsed_ms_measured"], false);
+            match scenario["native_expected"]["data_kind"].as_str().unwrap() {
+                "compact" => {
+                    let tuples = native.data["tuples"].as_array().unwrap();
+                    assert_eq!(tuples.len(), row_count);
+                    assert_eq!(native.data["row_count"].as_u64(), Some(row_count as u64));
+                    assert_eq!(native.data["columns"][0], key);
+                    assert_eq!(tuples[0], scenario["native_expected"]["first_tuple"]);
+                    let supplied = scenario["source_data"].as_array().unwrap();
+                    assert_eq!(
+                        supplied.len(),
+                        scenario["source_rows_supplied"].as_u64().unwrap() as usize
+                    );
+                    assert_ne!(
+                        native.data, scenario["source_data"],
+                        "The source builder and native compact projection are NOT byte-equivalent"
+                    );
+                }
+                "null" => {
+                    assert!(native.data.is_null());
+                    assert!(scenario["source_data"].is_null());
+                }
+                unexpected => panic!("Unreviewed native comparison mode: {unexpected}"),
+            }
+        }
+        let failures = cases["negative_parity_findings"].as_array().unwrap();
+        assert_eq!(failures.len(), 2);
+        assert_eq!(failures[0]["source_expected"]["code"], "POLICY_DENIED");
+        assert_eq!(
+            failures[1]["source_expected"]["code"],
+            "CURSOR_QUERY_MISMATCH"
+        );
+        assert_eq!(failures[1]["native_status"], "not_equivalent");
+    }
+
+    #[test]
     fn projections_keep_true_counts_and_upstream_quota() {
         let rows = project(&fixture(), controls(), false, None).unwrap();
         assert_eq!(rows.data[0]["country"], "México");
