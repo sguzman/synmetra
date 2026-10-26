@@ -21,7 +21,7 @@
 | 📊 M4 Reporting, preflight and Data API parity | `██████████ 100.0%` | MVP |
 | ✍️ M5 Explicitly gated GA mutation parity | `████████░░ 84.6%` | MVP |
 | 🗃️ M6 DuckDB scratchpad and advanced analytics parity | `████████░░ 78.0%` | MVP |
-| 🧬 M7 Tool contract interoperability and parity audits | `███████░░░ 67.6%` | MVP |
+| 🧬 M7 Tool contract interoperability and parity audits | `███████░░░ 67.7%` | MVP |
 | 🧪 M8 Verification, resilience and security acceptance | `████░░░░░░ 41.1%` | MVP |
 | 🚀 M9 Linux release and Codex-ready inauguration | `█████░░░░░ 50.0%` | MVP |
 | 🔭 M10 Post-MVP extensions and sustained stewardship | `░░░░░░░░░░ 0.0%` | POST_MVP |

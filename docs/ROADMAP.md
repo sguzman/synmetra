@@ -441,7 +441,7 @@
   - ✅ **Gate:** Dependency license architecture and portability reviewed · **Evidence:** src/main.rs and src/scratchpad.rs; GitHub Actions run 40206168306 successfully completed bundled-DuckDB feature tests (initial seven-route implementation); full strict-Clippy/updated-parameter parity and live GA tests remain separate acceptance gates.; docs/SCRATCHPAD.md, docs/ARCHITECTURE.md, Cargo.toml and src/scratchpad.rs reviewed: optional bundled DuckDB 1.4.2 includes native C/C++ linking with compiler/linker/runtime portability caveats; upstream Rust and native dependency licenses must remain accounted for under T013/T177/T216, and clean-install proof is T200/M9. DuckDB feature test https://github.com/sguzman/synmetra/actions/runs/40264614297 passed.
 
 
-## 🧬 M7 — Tool contract interoperability and parity audits — `███████░░░ 67.6%`
+## 🧬 M7 — Tool contract interoperability and parity audits — `███████░░░ 67.7%`
 
 **Scope:** MVP. **Acceptance gate:** All 36 tool schemas and response mappings are independently snapshot-tested against both pinned upstreams.
 
