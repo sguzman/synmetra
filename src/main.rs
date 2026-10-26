@@ -5645,10 +5645,7 @@ mod tests {
         assert_eq!(event["action"], "create_property_annotation");
         assert_eq!(event["outcome"], "blocked_read_only_profile");
         assert_eq!(event["details_redacted"], true);
-        assert!(chrono::DateTime::parse_from_rfc3339(
-            event["timestamp"].as_str().unwrap()
-        )
-        .is_ok());
+        assert!(chrono::DateTime::parse_from_rfc3339(event["timestamp"].as_str().unwrap()).is_ok());
         let keys = event.as_object().unwrap();
         assert_eq!(keys.len(), 4);
         for forbidden in [
@@ -5690,7 +5687,10 @@ mod tests {
             .create_property_annotation(Parameters(serde_json::from_value(args.clone()).unwrap()))
             .await;
         assert_eq!(denied.is_error, Some(true));
-        assert_eq!(denied.structured_content.unwrap()["error"]["code"], "INVALID_REQUEST");
+        assert_eq!(
+            denied.structured_content.unwrap()["error"]["code"],
+            "INVALID_REQUEST"
+        );
 
         // Merely making the route visible still cannot make a provider mutation
         // without a token; native OAuth scope and Google role remain separate.
