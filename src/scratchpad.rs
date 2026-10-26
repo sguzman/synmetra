@@ -1286,6 +1286,42 @@ mod tests {
     use super::*;
 
     #[test]
+    fn session_row_cap_rejects_overflow_transactionally_and_preserves_tables() {
+        let state = ScratchState::new();
+        state.open("row_cap").unwrap();
+        {
+            let mut inner = state.guard().unwrap();
+            let db = &inner.sessions.get_mut("row_cap").unwrap().db;
+            db.execute_batch(
+                "CREATE TABLE synthetic (value VARCHAR);
+                 INSERT INTO synthetic SELECT CAST(i AS VARCHAR) FROM range(20000) t(i);",
+            )
+            .unwrap();
+        }
+        let response = json!({
+            "dimensionHeaders":[{"name":"country"}],
+            "metricHeaders":[{"name":"users"}],
+            "rows":[
+                {"dimensionValues":[{"value":"Mexico"}],"metricValues":[{"value":"7"}]}
+            ]
+        });
+        let rejected = state
+            .ingest_ga_response("row_cap", "overflow", &response, false)
+            .unwrap_err();
+        assert!(rejected.contains("20000"), "{rejected}");
+        assert_eq!(
+            state.summarize_table("row_cap", "synthetic").unwrap()["row_count"],
+            20000
+        );
+        assert_eq!(state.tables("row_cap", None).unwrap()["total_tables"], 1);
+        assert!(state.describe_table("row_cap", "overflow").is_err());
+
+        state.close("row_cap").unwrap();
+        assert!(state.tables("row_cap", None).is_err());
+        assert_eq!(state.sessions(None).unwrap()["total_sessions"], 0);
+    }
+
+    #[test]
     fn evidence_samples_are_sorted_repeatable_and_hash_the_actual_query() {
         let state = ScratchState::new();
         state.open("stable_evidence").unwrap();
