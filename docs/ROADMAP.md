@@ -126,7 +126,7 @@
   - ✅ **Gate:** Protocol wire fixtures pass multiple clients
 
 
-## 🔑 M2 — Google authentication and credential isolation — `█████░░░░░ 46.2%`
+## 🔑 M2 — Google authentication and credential isolation — `█████░░░░░ 46.1%`
 
 **Scope:** MVP. **Acceptance gate:** Secure, least-privilege, non-Python auth across interactive, local and service configurations; no secret leaks.
 
@@ -571,7 +571,7 @@
   - ✅ **Gate:** Signed provenance and dependency audit evidence
 
 
-## 🚀 M9 — Linux release and Codex-ready inauguration — `█████░░░░░ 54.6%`
+## 🚀 M9 — Linux release and Codex-ready inauguration — `█████░░░░░ 54.5%`
 
 **Scope:** MVP. **Acceptance gate:** A documented stable native binary with 36-tool verified parity and release artifacts; no Python/npm runtime.
 
