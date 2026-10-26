@@ -3,7 +3,7 @@
   "version": 1,
   "comparison": "Top-level fields and raw JSON Schema property attributes; $refs are not dereferenced, and description-only or equivalent reference renames may count as differences. Behavioral/live parity is NOT established.",
   "sources": {
-    "native_sha": "a992219b9304bc4d888eb6be8b7b4cd3ed1c2bf3",
+    "native_sha": "885cbc0a3c95f644613e6e76c9ecd229d9d1bc09",
     "sednalabs_sha": "646c0baa22692b73430a0ee96415b0e2fe6215a3",
     "google_sha": "ab43c97870c28b3bee18613c89bd8a484dab1a55"
   },
@@ -13,7 +13,7 @@
     "official_google_tools": 10,
     "missing_sednalabs_top_level_fields": 0,
     "additional_native_top_level_fields": 2,
-    "raw_field_shape_differences": 204,
+    "raw_field_shape_differences": 202,
     "required_set_mismatches": 0,
     "missing_official_google_parameter_names": 0,
     "raw_attribute_differences": {
@@ -22,8 +22,7 @@
       "description": 182,
       "anyOf": 18,
       "default": 9,
-      "type": 8,
-      "format": 2
+      "type": 8
     }
   },
   "required_mismatches": [],
@@ -967,13 +966,6 @@
     },
     {
       "tool": "scratchpad_ingest_realtime_report",
-      "field": "limit",
-      "attributes": [
-        "format"
-      ]
-    },
-    {
-      "tool": "scratchpad_ingest_realtime_report",
       "field": "max_cell_chars",
       "attributes": [
         "description"
@@ -1057,13 +1049,6 @@
       "field": "dimension_filter",
       "attributes": [
         "description"
-      ]
-    },
-    {
-      "tool": "scratchpad_ingest_report",
-      "field": "limit",
-      "attributes": [
-        "format"
       ]
     },
     {

@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `███████░░░ 67.0%` · **+66.96 percentage points from initial empty repo; +0.22 pp from CI-backed Linux synthetic performance benchmarks
+**Overall:** `███████░░░ 67.8%` · **+67.84 percentage points from initial empty repo; +0.88 pp from verified canonical contract policy, compatibility projections and machine-readable progress integrity
 
 ### 📏 Progress conventions
 
@@ -441,7 +441,7 @@
   - ✅ **Gate:** Dependency license architecture and portability reviewed · **Evidence:** src/main.rs and src/scratchpad.rs; GitHub Actions run 40206168306 successfully completed bundled-DuckDB feature tests (initial seven-route implementation); full strict-Clippy/updated-parameter parity and live GA tests remain separate acceptance gates.; docs/SCRATCHPAD.md, docs/ARCHITECTURE.md, Cargo.toml and src/scratchpad.rs reviewed: optional bundled DuckDB 1.4.2 includes native C/C++ linking with compiler/linker/runtime portability caveats; upstream Rust and native dependency licenses must remain accounted for under T013/T177/T216, and clean-install proof is T200/M9. DuckDB feature test https://github.com/sguzman/synmetra/actions/runs/40264614297 passed.
 
 
-## 🧬 M7 — Tool contract interoperability and parity audits — `███████░░░ 67.7%`
+## 🧬 M7 — Tool contract interoperability and parity audits — `███████░░░ 73.5%`
 
 **Scope:** MVP. **Acceptance gate:** All 36 tool schemas and response mappings are independently snapshot-tested against both pinned upstreams.
 
@@ -479,16 +479,16 @@
 - 🧯 **T162 — Avoid false confidence from mocked-only parity** — `██████████ 100.0%`
   - ✅ **Gate:** Document live coverage by tool and account eligibility · **Evidence:** README.md, docs/ROADMAP.md, docs/NATIVE_MCP.md, docs/LOCAL_EXECUTION_THREAT_MODEL.md and docs/RELEASE_POLICY.md explicitly distinguish synthetic tests, provisional 36-name registration, incomplete upstream parameter/response parity, unaccepted account-role permissions and unauthenticated live GA workflows; docs/progress.json retains no fully parity-accepted 36-tool claim. Core progress-integrity CI https://github.com/sguzman/synmetra/actions/runs/40267346239 passed. Per-tool live coverage and eligibility matrix remains unaccepted.; docs/LIVE_ACCEPTANCE_MATRIX.md enumerates all 36 pinned MCP tool names with intended Google account scope/role or no-Google local boundary, explicit unverified live status and remaining acceptance references; .github/workflows/ci.yml enforces set equality against docs/tool-inventory.json. The 'Check pinned 36-tool live eligibility matrix' step passed in core CI https://github.com/sguzman/synmetra/actions/runs/40268224846; no live property auth, role or production write tests are claimed.
 
-### 🔀 P21 — Feature-union conflict resolution — `██████░░░░ 60.0%`
+### 🔀 P21 — Feature-union conflict resolution — `████████░░ 80.0%`
 
 **Feature:** Compatibility governance.
 
 - 🔍 **T163 — Audit every parameter-level difference between sources** — `██████████ 100.0%`
   - ✅ **Gate:** Diff includes nullable fields limits aliases and errors
-- 🧱 **T164 — Choose a stable canonical contract without dropping capabilities** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** All documented upstream inputs remain expressible
-- ⚙️ **T165 — Version compatibility adapters and response projections** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Legacy tool expectations and version policy documented
+- 🧱 **T164 — Choose a stable canonical contract without dropping capabilities** — `█████░░░░░ 50.0%`
+  - ✅ **Gate:** All documented upstream inputs remain expressible · **Evidence:** docs/CANONICAL_CONTRACT_DECISION.md selects the 36-tool pinned union, preserves the two native-only keep_empty_rows extensions, explicitly documents unsupported input semantics, and provides a version/response policy. spec/audits/native-upstream-diff.v1.json records zero missing SednaLabs/Google top-level input names and zero required-set mismatches while retaining 202 raw field-shape differences. The new policy and evidence check passed core CI https://github.com/sguzman/synmetra/actions/runs/40343241690. Nested/behavioral parity remains unaccepted.
+- ⚙️ **T165 — Version compatibility adapters and response projections** — `█████░░░░░ 50.0%`
+  - ✅ **Gate:** Legacy tool expectations and version policy documented · **Evidence:** src/tabular.rs and src/main.rs provide explicit opt-in Contract V1 output projections, bounded query-bound cursor handling, UTF-8-safe clipping, default provider-shaped responses, and deliberately rejected unsupported realtime/scratchpad ingestion controls. docs/CONTRACT.md, docs/MIGRATION.md and docs/CANONICAL_CONTRACT_DECISION.md publish version/compatibility decisions and unresolved upstream behavior. Core projection and request safety tests passed CI https://github.com/sguzman/synmetra/actions/runs/40343241690. Legacy client compatibility and complete upstream output fidelity remain unverified.
 - 📚 **T166 — Keep per-tool source-to-Rust test reference links** — `██████████ 100.0%`
   - ✅ **Gate:** Each one of 36 tools has provenance and acceptance evidence · **Evidence:** docs/TOOL_PROVENANCE.md maps every name from docs/tool-inventory.json (36 union) to pinned SednaLabs and/or Google source, native Rust handler/Google/DuckDB code, implementation task ID/progress, and source or CI evidence link from accepted progress.json checks. Current mapping: 36/36 source links, 36/36 now have accepted implementation checks in the ledger; full upstream and live account behavioral acceptance remains open.; docs/TOOL_PROVENANCE.md now has exactly one mapping row for each of 36 pinned tool names: upstream pinned reference, source-pinned native handler, original implementation task, dynamically reconciled accepted check count and source/CI evidence. src/bin/synmetra-progress.rs rejects missing rows, mismatched task IDs/progress or missing native source links. Core CI https://github.com/sguzman/synmetra/actions/runs/40328589659 passed the progress/inventory/provenance validator. A completed implementation task still does not mean upstream or live GA parity.
 - 🕵️ **T167 — Detect new upstream tools and changes in CI** — `██████████ 100.0%`
@@ -571,7 +571,7 @@
   - ✅ **Gate:** Signed provenance and dependency audit evidence
 
 
-## 🚀 M9 — Linux release and Codex-ready inauguration — `█████░░░░░ 50.0%`
+## 🚀 M9 — Linux release and Codex-ready inauguration — `█████░░░░░ 54.6%`
 
 **Scope:** MVP. **Acceptance gate:** A documented stable native binary with 36-tool verified parity and release artifacts; no Python/npm runtime.
 
@@ -615,14 +615,14 @@
 - 🛡️ **T210 — Publish responsible security disclosure policy** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Safe vulnerability contact with no leaked reports · **Evidence:** Root SECURITY.md defines the experimental supported-version scope, GitHub Security Advisory conditional private reporting, metadata-only public contact fallback (never vulnerability details), synthetic evidence expectations, private triage/remediation/disclosure and security boundaries. This is a documented policy; repository private vulnerability reporting configuration is not verified, so safe active contact gate remains open.
 
-### 🏁 P27 — Release acceptance and semantic versions — `░░░░░░░░░░ 0.0%`
+### 🏁 P27 — Release acceptance and semantic versions — `█░░░░░░░░░ 14.3%`
 
 **Feature:** v1.0 GA4 parity.
 
 - ✅ **T211 — Complete all MVP atomic acceptance gates** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** No tool parity acceptance based on mocks alone
-- 📊 **T212 — Regenerate all progress percentages from evidence** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Zero uncited 100 percent tasks
+- 📊 **T212 — Regenerate all progress percentages from evidence** — `██████████ 100.0%`
+  - ✅ **Gate:** Zero uncited 100 percent tasks · **Evidence:** src/bin/synmetra-progress.rs regenerates README.md and docs/ROADMAP.md percentage bars directly from docs/progress.json; .github/workflows/ci.yml runs cargo run --locked --bin synmetra-progress and -- --write-bars followed by git diff --exit-code. Core CI https://github.com/sguzman/synmetra/actions/runs/40343241690 passed both integrity and canonical-bar checks.; src/bin/synmetra-progress.rs rejects fully accepted tasks without two passed, nonempty evidence checks, validates exact tool/task counts and reconciles progress.json with README/ROADMAP. Core CI https://github.com/sguzman/synmetra/actions/runs/40343241690 passed the source-backed validator; zero uncited 100%-accepted tasks were found. This is ledger integrity, not proof of external/live GA parity.
 - 🏷️ **T213 — Tag v1.0.0 only after parity and live QA** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Semver milestone traceable to test artifacts
 - 📦 **T214 — Publish checksummed Linux release assets** — `░░░░░░░░░░ 0.0%`

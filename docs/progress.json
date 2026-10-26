@@ -3295,12 +3295,13 @@
               "id": "T164",
               "emoji": "🧱",
               "name": "Choose a stable canonical contract without dropping capabilities",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "All documented upstream inputs remain expressible",
               "checks": [
                 {
                   "text": "Deliver choose a stable canonical contract without dropping capabilities as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "docs/CANONICAL_CONTRACT_DECISION.md selects the 36-tool pinned union, preserves the two native-only keep_empty_rows extensions, explicitly documents unsupported input semantics, and provides a version/response policy. spec/audits/native-upstream-diff.v1.json records zero missing SednaLabs/Google top-level input names and zero required-set mismatches while retaining 202 raw field-shape differences. The new policy and evidence check passed core CI https://github.com/sguzman/synmetra/actions/runs/40343241690. Nested/behavioral parity remains unaccepted."
                 },
                 {
                   "text": "All documented upstream inputs remain expressible",
@@ -3312,12 +3313,13 @@
               "id": "T165",
               "emoji": "⚙️",
               "name": "Version compatibility adapters and response projections",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Legacy tool expectations and version policy documented",
               "checks": [
                 {
                   "text": "Deliver version compatibility adapters and response projections as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/tabular.rs and src/main.rs provide explicit opt-in Contract V1 output projections, bounded query-bound cursor handling, UTF-8-safe clipping, default provider-shaped responses, and deliberately rejected unsupported realtime/scratchpad ingestion controls. docs/CONTRACT.md, docs/MIGRATION.md and docs/CANONICAL_CONTRACT_DECISION.md publish version/compatibility decisions and unresolved upstream behavior. Core projection and request safety tests passed CI https://github.com/sguzman/synmetra/actions/runs/40343241690. Legacy client compatibility and complete upstream output fidelity remain unverified."
                 },
                 {
                   "text": "Legacy tool expectations and version policy documented",
@@ -4226,16 +4228,18 @@
               "id": "T212",
               "emoji": "📊",
               "name": "Regenerate all progress percentages from evidence",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "Zero uncited 100 percent tasks",
               "checks": [
                 {
                   "text": "Deliver regenerate all progress percentages from evidence as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/bin/synmetra-progress.rs regenerates README.md and docs/ROADMAP.md percentage bars directly from docs/progress.json; .github/workflows/ci.yml runs cargo run --locked --bin synmetra-progress and -- --write-bars followed by git diff --exit-code. Core CI https://github.com/sguzman/synmetra/actions/runs/40343241690 passed both integrity and canonical-bar checks."
                 },
                 {
                   "text": "Zero uncited 100 percent tasks",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/bin/synmetra-progress.rs rejects fully accepted tasks without two passed, nonempty evidence checks, validates exact tool/task counts and reconciles progress.json with README/ROADMAP. Core CI https://github.com/sguzman/synmetra/actions/runs/40343241690 passed the source-backed validator; zero uncited 100%-accepted tasks were found. This is ledger integrity, not proof of external/live GA parity."
                 }
               ]
             },

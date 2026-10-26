@@ -184,7 +184,7 @@ struct ScratchIngestReportArgs {
     #[serde(default)]
     append: bool,
     #[serde(default)]
-    limit: Option<u32>,
+    limit: Option<u64>,
     #[serde(default)]
     offset: Option<u64>,
     #[serde(default)]
@@ -224,7 +224,7 @@ struct ScratchIngestRealtimeArgs {
     #[serde(default)]
     append: bool,
     #[serde(default)]
-    limit: Option<u32>,
+    limit: Option<u64>,
     #[serde(default)]
     offset: Option<u64>,
     #[serde(default)]
@@ -464,7 +464,7 @@ fn project_scratchpad_table_catalog(
 
 #[cfg(feature = "scratchpad")]
 fn validated_ingest_page_limit(
-    limit: Option<u32>,
+    limit: Option<u64>,
     max_rows: Option<usize>,
     max_cell_chars: Option<usize>,
     cursor: Option<&str>,
@@ -488,14 +488,14 @@ fn validated_ingest_page_limit(
     if limit.is_some_and(|limit| limit == 0 || limit > 1000) {
         return Err("GA4 ingest limit must be 1-1000".into());
     }
-    Ok(limit.unwrap_or(1000).min(rows as u32))
+    Ok(limit.unwrap_or(1000).min(rows as u64) as u32)
 }
 
 #[cfg(feature = "scratchpad")]
 fn redact_ingest_receipt(
     result: Result<Value, String>,
     max_cell_chars: Option<usize>,
-    requested_limit: u32,
+    requested_limit: u64,
     page_limit: u32,
 ) -> Result<Value, String> {
     let mut result = result?;
@@ -522,7 +522,7 @@ fn redact_ingest_receipt(
         }
         clip(&mut result, cap);
     }
-    if page_limit < requested_limit {
+    if (page_limit as u64) < requested_limit {
         // Unlike pinned upstream's bounded multi-page ingest, the current
         // native path reads only one page. Declare incomplete ingestion rather
         // than quietly implying all requested rows were transferred.
@@ -6178,7 +6178,7 @@ mod tests {
                 validated_ingest_page_limit(Some(100), None, None, cursor, summary, mode,).is_err()
             );
         }
-        for limit in [Some(0), Some(1001)] {
+        for limit in [Some(0), Some(1001), Some(u64::MAX)] {
             assert!(validated_ingest_page_limit(limit, None, None, None, false, None).is_err());
         }
         for limit in [Some(0), Some(1001)] {
@@ -6191,6 +6191,25 @@ mod tests {
             validated_ingest_page_limit(None, Some(1000), Some(2048), None, false, None).unwrap(),
             1000
         );
+        let large_width_args: ScratchIngestRealtimeArgs = serde_json::from_value(json!({
+            "session_id":"synthetic",
+            "table_name":"table",
+            "property_id":"42",
+            "dimensions":["country"],
+            "metrics":["activeUsers"],
+            "limit":4294967296u64
+        }))
+        .unwrap();
+        assert_eq!(large_width_args.limit, Some(4_294_967_296));
+        assert!(validated_ingest_page_limit(
+            large_width_args.limit,
+            None,
+            None,
+            None,
+            false,
+            None
+        )
+        .is_err());
         let sample = json!({
             "table_name":"synthetic_very_long_name",
             "rows_ingested":8,
