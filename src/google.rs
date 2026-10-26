@@ -60,7 +60,28 @@ impl fmt::Display for ApiError {
             Self::UnsupportedAuthOption => write!(f, "Requested OAuth command option is not supported: shared gcloud ADC and quota-project routing are not enabled."),
             Self::UnsupportedRealtimeOffset => write!(f, "Realtime report offset is unavailable in the current Google Analytics v1beta request. Use ordering and limit, or a historical report for offset pagination."),
             Self::RequestFailed => write!(f, "Google Analytics request failed (network or timeout)."),
-            Self::Http(status) => write!(f, "Google Analytics API returned HTTP {status}. Check property access, scopes, quotas, and the request."),
+            Self::Http(status) => match status {
+                401 => write!(
+                    f,
+                    "Google Analytics HTTP 401: credentials were rejected or expired. Check synmetra auth status/doctor, then reauthorize with the account owner's consent if needed."
+                ),
+                403 => write!(
+                    f,
+                    "Google Analytics HTTP 403: verify both Google Cloud API enablement and the Google Analytics account/property role and requested OAuth scope; Synmetra will not silently escalate permissions."
+                ),
+                429 => write!(
+                    f,
+                    "Google Analytics HTTP 429: rate or quota limit exceeded. Reduce request volume or check the project's Analytics API quotas; read-only retries are bounded."
+                ),
+                500..=599 => write!(
+                    f,
+                    "Google Analytics HTTP {status}: upstream service unavailable. Read-only retries are bounded, and annotation mutations are never automatically replayed."
+                ),
+                _ => write!(
+                    f,
+                    "Google Analytics HTTP {status}: check request validation, enabled APIs and resource access."
+                ),
+            },
             Self::ResponseTooLarge => write!(f, "Google Analytics response exceeded the 4 MiB safety limit."),
             Self::InvalidResponse => write!(f, "Google Analytics response was not valid JSON or had an invalid pagination contract."),
             Self::TooManyPages => write!(f, "Google Analytics pagination exceeded the 100-page safety limit."),
@@ -2996,6 +3017,37 @@ mod tests {
             .to_lowercase()
             .contains("authorization: bearer test-token"));
         assert!(!format!("{:?}", ApiError::Http(403)).contains("test-token"));
+    }
+
+    #[test]
+    fn google_http_errors_have_actionable_redacted_status_specific_guidance() {
+        for (status, phrase) in [
+            (401, "synmetra auth status/doctor"),
+            (403, "account/property role"),
+            (429, "rate or quota"),
+            (500, "annotation mutations are never automatically replayed"),
+            (503, "Read-only retries are bounded"),
+            (400, "check request validation"),
+        ] {
+            let text = ApiError::Http(status).to_string();
+            assert!(text.contains(&format!("HTTP {status}")));
+            assert!(text.contains(phrase), "{status}: {text}");
+            for canary in [
+                "synthetic-private-token",
+                "synthetic-private-property",
+                "synthetic-personal-report",
+            ] {
+                assert!(!text.contains(canary));
+            }
+        }
+        assert_ne!(
+            ApiError::Http(401).to_string(),
+            ApiError::Http(403).to_string()
+        );
+        assert_ne!(
+            ApiError::Http(403).to_string(),
+            ApiError::Http(429).to_string()
+        );
     }
 
     #[tokio::test]

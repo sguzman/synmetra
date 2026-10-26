@@ -3118,10 +3118,7 @@ mod tests {
         let schema = serde_json::to_value(&tool.input_schema).unwrap();
         for key in ["property_id", "date_ranges", "dimensions", "metrics"] {
             assert!(
-                schema["required"]
-                    .as_array()
-                    .unwrap()
-                    .contains(&json!(key)),
+                schema["required"].as_array().unwrap().contains(&json!(key)),
                 "Native exported schema no longer requires {key}"
             );
         }
