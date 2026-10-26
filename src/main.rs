@@ -3323,12 +3323,17 @@ mod tests {
             if structured["ok"] == true {
                 assert!(structured.get("data").is_some(), "{name} omitted data");
             } else {
-                assert!(structured["error"]["code"].is_string(), "{name} omitted error code");
+                assert!(
+                    structured["error"]["code"].is_string(),
+                    "{name} omitted error code"
+                );
                 assert_eq!(reply.is_error, Some(true), "{name} must mark tool error");
             }
             assert!(structured["meta"].is_object(), "{name} omitted metadata");
             assert!(
-                !structured.to_string().contains("synthetic-tool-invocation-only"),
+                !structured
+                    .to_string()
+                    .contains("synthetic-tool-invocation-only"),
                 "{name} reflected a Google bearer into the MCP response"
             );
         }
