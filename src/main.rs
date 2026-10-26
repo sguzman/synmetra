@@ -2087,7 +2087,6 @@ impl Synmetra {
     }
 
     #[tool(
-        name = "run_report",
         description = "Run a historical Google Analytics Data API report with metric and dimension names.",
         annotations(
             read_only_hint = true,
@@ -2096,22 +2095,6 @@ impl Synmetra {
             open_world_hint = true
         )
     )]
-    async fn cancellable_run_report(
-        &self,
-        Parameters(args): Parameters<ReportArgs>,
-        context: rmcp::service::RequestContext<rmcp::RoleServer>,
-    ) -> CallToolResult {
-        // MCP cancellations must release an in-flight Google HTTP request, not
-        // merely suppress its result at the JSON-RPC transport boundary.
-        let cancellation = context.ct.clone();
-        tokio::select! {
-            biased;
-            _ = cancellation.cancelled() => result(Err(ApiError::RequestFailed)),
-            response = self.run_report(Parameters(args)) => response,
-        }
-    }
-
-    // Shared implementation for the MCP route and synthetic direct-call tests.
     async fn run_report(&self, Parameters(args): Parameters<ReportArgs>) -> CallToolResult {
         let controls = tabular::Controls {
             output_mode: args.output_mode,
@@ -2676,7 +2659,27 @@ impl Synmetra {
     version = "0.0.1",
     instructions = "Read-only Google Analytics MCP server. Use synmetra auth login for native OAuth token refresh, or SYNMETRA_GOOGLE_ACCESS_TOKEN for a short-lived analytics.readonly token. Only implemented tools are listed; no write or scratchpad tools are enabled."
 )]
-impl ServerHandler for Synmetra {}
+impl ServerHandler for Synmetra {
+    async fn call_tool(
+        &self,
+        request: rmcp::model::CallToolRequestParams,
+        context: rmcp::service::RequestContext<rmcp::RoleServer>,
+    ) -> Result<rmcp::model::CallToolResponse, rmcp::ErrorData> {
+        // The SDK suppresses responses after notifications/cancelled, but tool
+        // futures also need to be dropped so a stalled upstream HTTP request
+        // cannot outlive its canceled MCP request. This covers every route,
+        // including Google reads, explicitly gated writes and local scratchpad.
+        let cancellation = context.ct.clone();
+        let call = rmcp::handler::server::tool::ToolCallContext::new(self, request, context);
+        tokio::select! {
+            biased;
+            _ = cancellation.cancelled() => {
+                Err(rmcp::ErrorData::internal_error("MCP request cancelled", None))
+            }
+            result = self.router.call(call) => result,
+        }
+    }
+}
 
 const CLI_HELP: &str = r#"Synmetra — experimental local Google Analytics MCP server
 
