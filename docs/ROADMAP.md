@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `████████░░ 79.7%` · **+79.74 percentage points from initial empty repo; +0.22 pp from CI-verified 36-tool synthetic MCP invocation coverage
+**Overall:** `████████░░ 80.6%` · **+80.62 percentage points from initial empty repo; +0.88 pp from passing explicit private JSON and opt-in ADC user refresh gates
 
 ### 📏 Progress conventions
 
@@ -126,7 +126,7 @@
   - ✅ **Gate:** Protocol wire fixtures pass multiple clients · **Evidence:** ci/test-mcp-clients.sh runs two separate native stdio processes with raw JSON-RPC clients advertising MCP 2025-06-18 and 2025-11-25, each checking initialize/tools/list, successful local guidance, and an uncredentialed typed Google tool error without credentials or npm/Python. src/main.rs in_memory_mcp_client_negotiates_and_calls_read_only_tools independently exercises an rmcp SDK client over Tokio duplex. docs/MCP_CONFORMANCE.md gives the exact scope, limitations and source mapping. Core tests and the explicit two-profile conformance step passed https://github.com/sguzman/synmetra/actions/runs/40415340670 at f897156b7913ec04ef459c15772c2c2c47bec5ca.; Two client implementations (Rust rmcp SDK and independently framed raw JSON-RPC) passed synthetic MCP initialize, default 20-tool discovery, read-only success/error handling and response metadata checks. Raw client profiles cover 2025-06-18 and 2025-11-25 in isolated processes; the full default core CI job and native feature job passed https://github.com/sguzman/synmetra/actions/runs/40415340670. This is local stdio conformance only: external Inspector/Codex/multi-host client QA remains separately open at T033/T161/T172/T185.
 
 
-## 🔑 M2 — Google authentication and credential isolation — `██████░░░░ 63.5%`
+## 🔑 M2 — Google authentication and credential isolation — `███████░░░ 71.2%`
 
 **Scope:** MVP. **Acceptance gate:** Secure, least-privilege, non-Python auth across interactive, local and service configurations; no secret leaks.
 
@@ -151,14 +151,14 @@
 - 🔎 **T048 — Validate live token and quota-project configuration** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** API-enabled project and quota errors are distinguishable
 
-### 📂 P06 — ADC, service account and token policy — `███░░░░░░░ 27.8%`
+### 📂 P06 — ADC, service account and token policy — `█████░░░░░ 50.0%`
 
 **Feature:** Google identities.
 
-- 🔑 **T049 — Support explicit Google application credentials JSON** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Credential paths resolved without stdout token leakage
-- 🪄 **T050 — Support ADC user credentials as opt-in** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Existing ADC loads without modifying global credentials
+- 🔑 **T049 — Support explicit Google application credentials JSON** — `██████████ 100.0%`
+  - ✅ **Gate:** Credential paths resolved without stdout token leakage · **Evidence:** src/auth.rs read_adc_user_at and adc_user_access_token_at implement explicit private absolute GOOGLE_APPLICATION_CREDENTIALS JSON with an additional SYNMETRA_GOOGLE_ADC_USER=1 opt-in, strict authorized_user parsing, 32 KiB file cap, 0600 permissions, symlink rejection and native rustls token refresh. src/main.rs and docs/CLI.md/docs/GOOGLE_CLOUD.md document precedence, credential types and security limitations. Tests explicitly_supplied_adc_user_json_is_private_and_rejects_unsafe_files and opted_in_adc_user_refresh_is_serialized_cached_and_source_read_only passed the native Rust core and DuckDB-feature test jobs https://github.com/sguzman/synmetra/actions/runs/40417044153; real-account auth remains unverified.; Private absolute ADC JSON paths are resolved without stdout credential disclosure: src/auth.rs rejects relative paths, symlinks and world-readable files; CI 'Prove explicit ADC doctor output is redacted and source file unchanged' passes synthetic secret canaries via offline auth doctor, checks status opt-in without printing secrets and asserts SHA-256 and adjacent XDG credentials remain unchanged. The core CI step passed https://github.com/sguzman/synmetra/actions/runs/40417377932; no real Google account identifier or token was used.
+- 🪄 **T050 — Support ADC user credentials as opt-in** — `██████████ 100.0%`
+  - ✅ **Gate:** Existing ADC loads without modifying global credentials · **Evidence:** src/auth.rs adds strict read-only opt-in authorized_user ADC (SYNMETRA_GOOGLE_ADC_USER=1 plus GOOGLE_APPLICATION_CREDENTIALS) with serialized refresh and short-lived in-memory access/rotated-refresh cache. GoogleClient retains explicit bearer and private native Desktop OAuth precedence. docs/CLI.md and docs/GOOGLE_CLOUD.md distinguish this path from gcloud, service-account JSON and annotation write access. Rust core tests and feature-native CI passed https://github.com/sguzman/synmetra/actions/runs/40417044153.; The opted_in_adc_user_refresh_is_serialized_cached_and_source_read_only synthetic test runs two concurrent callers against one ephemeral local OAuth responder, verifies a single refresh, shared cached token, memory-only rotation and byte-identical original authorized_user JSON; the offline doctor CI also checks secret redaction and unchanged SHA-256 https://github.com/sguzman/synmetra/actions/runs/40417377932. No shared ADC or global gcloud credentials are modified. Authorized live Google refresh and service-account handling remain open at T048/T051/T178.
 - 🤖 **T051 — Support service-account JWT token exchange** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Service identity token renews and errors correctly
 - 🔗 **T052 — Support delegated and impersonated identities where valid** — `░░░░░░░░░░ 0.0%`
