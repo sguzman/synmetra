@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `██████░░░░ 57.0%` · **+57.05 percentage points from initial empty repo; +2.64 pp from verified DuckDB lifecycle and synthetic GA ingest/query conformance** · 119/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `██████░░░░ 57.7%` · **+57.71 percentage points from initial empty repo; +0.66 pp from verified evidence-bundle schema/output and bounded export implementation** · 120/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -366,7 +366,7 @@
   - ✅ **Gate:** Disable write capability at runtime restart · **Evidence:** Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.; Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.
 
 
-## 🗃️ M6 — DuckDB scratchpad and advanced analytics parity — `██████░░░░ 64.0%`
+## 🗃️ M6 — DuckDB scratchpad and advanced analytics parity — `███████░░░ 70.0%`
 
 **Scope:** MVP. **Acceptance gate:** All 15 local scratchpad tools and policy limits operate without unsafe SQL or credential disclosure.
 
@@ -404,7 +404,7 @@
 - 🧮 **T137 — Implement scratchpad_summarize_table** — `██████████ 100.0%`
   - ✅ **Gate:** Synthetic GA payload and DuckDB query conformance for scratchpad_summarize_table · **Evidence:** src/scratchpad.rs and src/main.rs: in-memory DuckDB schema inspection and bounded row-count summary; tests describes_and_summarizes_bounded_local_tables plus native DuckDB cargo test --features scratchpad passed in GitHub Actions run 40208111289. Upstream optional output controls and live GA parity remain unaccepted.; src/main.rs scratchpad_ga_ingest_round_trips_historical_realtime_and_private_evidence and scratchpad_mcp_lifecycle_limits_and_private_tables_have_stable_envelopes verify row counts from MCP summarize_table on separate synthetic tables; src/scratchpad.rs describes_and_summarizes_bounded_local_tables covers metadata. DuckDB-enabled Actions 40261109602 passed. Full live Google and feature-wide upstream parity remain independent acceptance gates.
 
-### 📉 P17 — Scratchpad analysis MCP tools — `███░░░░░░░ 33.3%`
+### 📉 P17 — Scratchpad analysis MCP tools — `███████░░░ 66.7%`
 
 **Feature:** Three analytic tools.
 
@@ -412,10 +412,10 @@
   - ✅ **Gate:** Evidence fixture and schema/output equivalence for scratchpad_release_regression_report
 - 🔀 **T139 — Implement scratchpad_landing_param_shift_report** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Evidence fixture and schema/output equivalence for scratchpad_landing_param_shift_report
-- 📤 **T140 — Implement scratchpad_export_evidence_bundle** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Evidence fixture and schema/output equivalence for scratchpad_export_evidence_bundle
+- 📤 **T140 — Implement scratchpad_export_evidence_bundle** — `██████████ 100.0%`
+  - ✅ **Gate:** Evidence fixture and schema/output equivalence for scratchpad_export_evidence_bundle · **Evidence src/scratchpad.rs export_evidence_bundle implements local private bounded JSON+Markdown with table samples, row counts, sample-query SHA-256 and no filesystem write/provider call; src/main.rs registers scratchpad_export_evidence_bundle MCP with opt-in capability. DuckDB-feature GitHub Actions 40261209205 native test suite passed export and schema fixtures.; src/main.rs scratchpad_evidence_export_matches_pinned_inputs_and_bounded_json_markdown tests the exact pinned field/required-set inventory and response table/sample/hash/Markdown shape, rejects duplicate table selectors, traversal names and sample limit 21; src/scratchpad.rs evidence_export_handles_quoted_columns_nulls_and_bounded_text_cells plus exports_private_bounded_json_and_markdown_evidence test SQL identifiers, NULLs, >2048-byte cells and zero-row sampling. GitHub Actions 40261209205 DuckDB job passed these named tests; format correction followed in 40261354530 passing core checks. No live Google acceptance implied.
 
-### 🔐 P18 — DuckDB security and resource controls — `███░░░░░░░ 30.0%`
+### 🔐 P18 — DuckDB security and resource controls — `████░░░░░░ 35.0%`
 
 **Feature:** Scratchpad sandbox.
 
@@ -431,8 +431,8 @@
   - ✅ **Gate:** No network or arbitrary path escape through DuckDB
 - 🧯 **T146 — Handle unexpected termination and session cleanup** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Leftover temp files sanitized on restart
-- 📏 **T147 — Provide deterministic truncation and evidence limits** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Bundle size and context limits enforced
+- 📏 **T147 — Provide deterministic truncation and evidence limits** — `█████░░░░░ 50.0%`
+  - ✅ **Gate:** Bundle size and context limits enforced · **Evidence (partial): src/scratchpad.rs query_bounded clamps rows/cells and reports truthful truncated counts; export_evidence_bundle enforces at most eight tables, 20 sample rows, 2048-byte sample row, and total serialized bundle cap 256 KiB. src/main.rs scratchpad_evidence_export_matches_pinned_inputs_and_bounded_json_markdown plus scratchpad.rs bounded fixture tests passed feature-enabled GitHub Actions 40261209205. The second gate remains open pending explicit oversized aggregate bundle and deterministic multi-table boundary evidence.
 - 🔏 **T148 — Guard exported evidence bundle permissions** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Exports do not overwrite arbitrary paths or expose secrets
 - 🧪 **T149 — Run embedded DuckDB fuzz and hostile SQL fixtures** — `░░░░░░░░░░ 0.0%`

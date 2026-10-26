@@ -2810,16 +2810,18 @@
               "id": "T140",
               "emoji": "📤",
               "name": "Implement scratchpad_export_evidence_bundle",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "Evidence fixture and schema/output equivalence for scratchpad_export_evidence_bundle",
               "checks": [
                 {
                   "text": "Deliver implement scratchpad_export_evidence_bundle as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/scratchpad.rs export_evidence_bundle implements local private bounded JSON+Markdown with table samples, row counts, sample-query SHA-256 and no filesystem write/provider call; src/main.rs registers scratchpad_export_evidence_bundle MCP with opt-in capability. DuckDB-feature GitHub Actions 40261209205 native test suite passed export and schema fixtures."
                 },
                 {
                   "text": "Evidence fixture and schema/output equivalence for scratchpad_export_evidence_bundle",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs scratchpad_evidence_export_matches_pinned_inputs_and_bounded_json_markdown tests the exact pinned field/required-set inventory and response table/sample/hash/Markdown shape, rejects duplicate table selectors, traversal names and sample limit 21; src/scratchpad.rs evidence_export_handles_quoted_columns_nulls_and_bounded_text_cells plus exports_private_bounded_json_and_markdown_evidence test SQL identifiers, NULLs, >2048-byte cells and zero-row sampling. GitHub Actions 40261209205 DuckDB job passed these named tests; format correction followed in 40261354530 passing core checks. No live Google acceptance implied."
                 }
               ]
             }
@@ -2942,12 +2944,13 @@
               "id": "T147",
               "emoji": "📏",
               "name": "Provide deterministic truncation and evidence limits",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Bundle size and context limits enforced",
               "checks": [
                 {
                   "text": "Deliver provide deterministic truncation and evidence limits as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/scratchpad.rs query_bounded clamps rows/cells and reports truthful truncated counts; export_evidence_bundle enforces at most eight tables, 20 sample rows, 2048-byte sample row, and total serialized bundle cap 256 KiB. src/main.rs scratchpad_evidence_export_matches_pinned_inputs_and_bounded_json_markdown plus scratchpad.rs bounded fixture tests passed feature-enabled GitHub Actions 40261209205. The second gate remains open pending explicit oversized aggregate bundle and deterministic multi-table boundary evidence."
                 },
                 {
                   "text": "Bundle size and context limits enforced",
