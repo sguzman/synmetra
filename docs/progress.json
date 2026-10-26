@@ -2876,7 +2876,7 @@
               "id": "T142",
               "emoji": "🧩",
               "name": "Enforce per-session quotas and retention",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Memory disk time rows and session count bounded",
               "checks": [
                 {
@@ -2886,7 +2886,8 @@
                 },
                 {
                   "text": "Memory disk time rows and session count bounded",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/scratchpad.rs ScratchState::open/expire/limits/set_limits enforces a 30-minute session TTL, default four/hard eight concurrent sessions, eight/hard sixteen tables per session, and 20,000 session rows. Each new DuckDB connection locks memory_limit='256MB' and max_temp_directory_size='0B', preventing spill allocation under the supported in-memory configuration. Tests session_quota_expiry_and_limit_reconfiguration_are_isolated, table_quota_and_private_catalog_survive_rejected_operations, session_row_cap_rejects_overflow_transactionally_and_preserves_tables, and crash_safe_scratchpad_disables_spills_and_locks_configuration passed native DuckDB CI https://github.com/sguzman/synmetra/actions/runs/40387545022. Engine memory limit is not an OS-process RSS guarantee and timed expiration is checked on operation, not by a background timer."
                 }
               ]
             },
@@ -3003,7 +3004,7 @@
               "id": "T149",
               "emoji": "🧪",
               "name": "Run embedded DuckDB fuzz and hostile SQL fixtures",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Policy bypass corpus fails safely",
               "checks": [
                 {
@@ -3013,7 +3014,8 @@
                 },
                 {
                   "text": "Policy bypass corpus fails safely",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/scratchpad.rs seeded_sql_policy_mutations_cannot_write_or_escape_the_in_memory_engine exercises 384 seeded hostile suffix variants across three fixed seeds with catch_unwind, rejection and unchanged table checks. hostile_sql_corpus_and_deterministic_mutations_never_execute adds 35 fixed hostile inputs and 44 deterministic suffix mutations; restricted_select_query_is_bounded_and_never_executes_user_sql and duckdb_engine_denies_external_file_access_beyond_restricted_sql_parser verify parser and engine enforcement. Native feature CI https://github.com/sguzman/synmetra/actions/runs/40387545022 passed the security corpus. This accepts that reviewed corpus only, not a complete coverage-guided fuzz campaign or a guarantee against future engine vulnerabilities."
                 }
               ]
             },
