@@ -2462,12 +2462,7 @@ impl Synmetra {
         };
         match self.api.report(&args.property_id, body, false).await {
             Ok(data) => local_result(redact_ingest_receipt(
-                scratch.ingest_ga_response(
-                    &args.session_id,
-                    &args.table_name,
-                    &data,
-                    args.append,
-                ),
+                scratch.ingest_ga_response(&args.session_id, &args.table_name, &data, args.append),
                 args.max_cell_chars,
                 args.limit.unwrap_or(1000),
                 page_limit,
@@ -2531,12 +2526,7 @@ impl Synmetra {
         };
         match self.api.report(&args.property_id, body, true).await {
             Ok(data) => local_result(redact_ingest_receipt(
-                scratch.ingest_ga_response(
-                    &args.session_id,
-                    &args.table_name,
-                    &data,
-                    args.append,
-                ),
+                scratch.ingest_ga_response(&args.session_id, &args.table_name, &data, args.append),
                 args.max_cell_chars,
                 args.limit.unwrap_or(1000),
                 page_limit,
@@ -6185,29 +6175,15 @@ mod tests {
             (None, false, Some("tuples")),
         ] {
             assert!(
-                validated_ingest_page_limit(
-                    Some(100),
-                    None,
-                    None,
-                    cursor,
-                    summary,
-                    mode,
-                )
-                .is_err()
+                validated_ingest_page_limit(Some(100), None, None, cursor, summary, mode,).is_err()
             );
         }
         for limit in [Some(0), Some(1001)] {
-            assert!(
-                validated_ingest_page_limit(limit, None, None, None, false, None).is_err()
-            );
+            assert!(validated_ingest_page_limit(limit, None, None, None, false, None).is_err());
         }
         for limit in [Some(0), Some(1001)] {
-            assert!(
-                validated_ingest_page_limit(None, limit, None, None, false, None).is_err()
-            );
-            assert!(
-                validated_ingest_page_limit(None, None, limit, None, false, None).is_err()
-            );
+            assert!(validated_ingest_page_limit(None, limit, None, None, false, None).is_err());
+            assert!(validated_ingest_page_limit(None, None, limit, None, false, None).is_err());
         }
         let sample = json!({
             "table_name":"synthetic_very_long_name",
