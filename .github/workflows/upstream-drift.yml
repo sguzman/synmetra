@@ -15,6 +15,12 @@ permissions:
   contents: read
   issues: write
 
+# Serializing checks prevents simultaneous scheduled and manual runs from
+# opening duplicate issues for the same reviewed source.
+concurrency:
+  group: synmetra-upstream-drift-${{ github.repository }}
+  cancel-in-progress: false
+
 jobs:
   source-drift:
     runs-on: ubuntu-latest
@@ -49,20 +55,20 @@ jobs:
               # Keep one OPEN maintenance issue per upstream source. No copied
               # sources, automatic repinning, new parity credit, or issue spam.
               title="[upstream-drift] Review $source signature source"
-              open_count="$(gh api --paginate \\
-                "repos/$GITHUB_REPOSITORY/issues?state=open&per_page=100" \\
-                | jq -s --arg title "$title" \\
+              open_count="$(gh api --paginate \
+                "repos/$GITHUB_REPOSITORY/issues?state=open&per_page=100" \
+                | jq -s --arg title "$title" \
                   '[.[][] | select(.pull_request == null and .title == $title)] | length')"
               if test "$open_count" -eq 0; then
-                body="$(printf '%s\\n' \\
-                  'Automated upstream signature-source drift warning (not proof of a breaking change).' \\
-                  '' \\
-                  "Source: https://github.com/$repository/blob/main/$path" \\
-                  "Reviewed/pinned Git blob: \\x60$expected\\x60" \\
-                  "Observed current Git blob: \\x60$current\\x60" \\
-                  '' \\
-                  'Review tool names, parameters, defaults, errors and response schemas against the frozen pinned baselines. Update the source pin, fixtures, parity ledger and tests only through a reviewed commit; do not claim parity from this automated signal.' \\
-                  '' \\
+                body="$(printf '%s\n' \
+                  'Automated upstream signature-source drift warning (not proof of a breaking change).' \
+                  '' \
+                  "Source: https://github.com/$repository/blob/main/$path" \
+                  "Reviewed/pinned Git blob: $expected" \
+                  "Observed current Git blob: $current" \
+                  '' \
+                  'Review tool names, parameters, defaults, errors and response schemas against the frozen pinned baselines. Update the source pin, fixtures, parity ledger and tests only through a reviewed commit; do not claim parity from this automated signal.' \
+                  '' \
                   "Detection: https://github.com/$GITHUB_REPOSITORY/actions/workflows/upstream-drift.yml")"
                 gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" --body "$body"
                 echo "Opened maintenance issue: $title" >> "$GITHUB_STEP_SUMMARY"
