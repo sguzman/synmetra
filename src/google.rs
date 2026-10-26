@@ -2296,6 +2296,59 @@ mod tests {
         assert!(delayed <= Duration::from_millis(500));
     }
 
+    #[tokio::test(start_paused = true)]
+    async fn readonly_429_retry_schedule_respects_virtual_clock_and_attempt_ceiling() {
+        use std::sync::{Arc, Mutex};
+        use tokio::time::{advance, Instant};
+
+        // The same policy used by send_readonly_as, but with a virtual Tokio
+        // clock. No real sleeps, Google account, external request, or secret.
+        let mut headers = reqwest::header::HeaderMap::new();
+        headers.insert(reqwest::header::RETRY_AFTER, "2".parse().unwrap());
+        let status = reqwest::StatusCode::TOO_MANY_REQUESTS;
+        let delays = [
+            readonly_retry_delay(status, &headers, 0).unwrap(),
+            readonly_retry_delay(status, &headers, 1).unwrap(),
+        ];
+        for delay in delays {
+            assert!(delay >= Duration::from_secs(2));
+            assert!(delay <= Duration::from_millis(2100));
+        }
+        let events = Arc::new(Mutex::new(Vec::new()));
+        let recorded = events.clone();
+        let began = Instant::now();
+        let worker = tokio::spawn(async move {
+            for attempt in 0..3 {
+                recorded.lock().unwrap().push((attempt, Instant::now()));
+                // Production caps read-only sends at 3 total attempts, even
+                // when Google keeps returning a retryable response.
+                if attempt < 2 {
+                    tokio::time::sleep(delays[attempt]).await;
+                }
+            }
+        });
+
+        tokio::task::yield_now().await;
+        assert_eq!(events.lock().unwrap().len(), 1);
+        advance(delays[0] - Duration::from_millis(1)).await;
+        assert_eq!(events.lock().unwrap().len(), 1);
+        advance(Duration::from_millis(1)).await;
+        tokio::task::yield_now().await;
+        assert_eq!(events.lock().unwrap().len(), 2);
+        advance(delays[1] - Duration::from_millis(1)).await;
+        assert_eq!(events.lock().unwrap().len(), 2);
+        advance(Duration::from_millis(1)).await;
+        worker.await.unwrap();
+        let events = events.lock().unwrap();
+        assert_eq!(events.len(), 3);
+        assert_eq!(events[0].0, 0);
+        assert_eq!(events[1].0, 1);
+        assert_eq!(events[2].0, 2);
+        assert_eq!(events[1].1.duration_since(began), delays[0]);
+        assert_eq!(events[2].1.duration_since(began), delays[0] + delays[1]);
+        assert!(readonly_retry_delay(reqwest::StatusCode::FORBIDDEN, &headers, 0).is_none());
+    }
+
     #[tokio::test]
     async fn readonly_report_retry_is_bounded_and_never_replays_writes() {
         use tokio::io::{AsyncReadExt, AsyncWriteExt};
