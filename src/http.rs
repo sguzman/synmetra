@@ -260,6 +260,118 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn separate_local_bearer_principals_cannot_replay_foreign_sessions() {
+        use serde_json::json;
+
+        let first = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let second = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port_a = first.local_addr().unwrap().port();
+        let port_b = second.local_addr().unwrap().port();
+        let token_a = "local-principal-alpha-token-of-valid-length";
+        let token_b = "local-principal-bravo-token-of-valid-length";
+
+        let a = tokio::spawn(async move {
+            axum::serve(
+                first,
+                app(
+                    Synmetra::new(GoogleClient::new(None), false),
+                    token_a.to_owned(),
+                    port_a,
+                ),
+            )
+            .await
+            .unwrap();
+        });
+        let b = tokio::spawn(async move {
+            axum::serve(
+                second,
+                app(
+                    Synmetra::new(GoogleClient::new(None), false),
+                    token_b.to_owned(),
+                    port_b,
+                ),
+            )
+            .await
+            .unwrap();
+        });
+
+        let client = reqwest::Client::new();
+        let endpoint_a = format!("http://127.0.0.1:{port_a}/mcp");
+        let endpoint_b = format!("http://127.0.0.1:{port_b}/mcp");
+        let request = |url: &str, token: &str, session: Option<&str>| {
+            let mut req = client
+                .post(url)
+                .header(header::AUTHORIZATION, format!("Bearer {token}"))
+                .header(header::ACCEPT, "application/json, text/event-stream")
+                .json(&json!({
+                    "jsonrpc":"2.0",
+                    "id":1,
+                    "method":"initialize",
+                    "params":{
+                        "protocolVersion":"2025-11-25",
+                        "capabilities":{},
+                        "clientInfo":{"name":"principal-boundary-test","version":"1"}
+                    }
+                }));
+            if let Some(id) = session {
+                req = req.header("mcp-session-id", id);
+            }
+            req
+        };
+        let init_a = request(&endpoint_a, token_a, None).send().await.unwrap();
+        assert_eq!(init_a.status(), StatusCode::OK);
+        let session_a = init_a
+            .headers()
+            .get("mcp-session-id")
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_owned();
+        assert_eq!(
+            mcp_json_response(init_a).await["result"]["serverInfo"]["name"],
+            "synmetra"
+        );
+
+        // Presenting a valid bearer for a distinct local principal does not
+        // transfer the first principal's opaque session identifier.
+        let cross_principal = client
+            .post(&endpoint_b)
+            .header(header::AUTHORIZATION, format!("Bearer {token_b}"))
+            .header("mcp-session-id", &session_a)
+            .header("mcp-protocol-version", "2025-11-25")
+            .json(&json!({"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}))
+            .send()
+            .await
+            .unwrap();
+        assert!(!cross_principal.status().is_success());
+
+        let wrong_token = client
+            .post(&endpoint_b)
+            .header(header::AUTHORIZATION, format!("Bearer {token_a}"))
+            .header("mcp-session-id", &session_a)
+            .json(&json!({"jsonrpc":"2.0","id":3,"method":"tools/list","params":{}}))
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(wrong_token.status(), StatusCode::UNAUTHORIZED);
+
+        let init_b = request(&endpoint_b, token_b, None).send().await.unwrap();
+        assert_eq!(init_b.status(), StatusCode::OK);
+        let session_b = init_b
+            .headers()
+            .get("mcp-session-id")
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_owned();
+        assert_ne!(session_a, session_b);
+        mcp_json_response(init_b).await;
+
+        a.abort();
+        b.abort();
+    }
+
+    #[tokio::test]
     async fn authenticated_http_session_lists_and_calls_tools_but_rejects_invalid_sessions() {
         use serde_json::json;
 
