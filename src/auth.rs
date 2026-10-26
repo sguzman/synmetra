@@ -839,7 +839,11 @@ mod tests {
                 r#"{"error":"invalid_client","detail":"synthetic-revoked-canary"}"#,
                 "Google token endpoint returned HTTP 401",
             ),
-            (200, "not-json synthetic-revoked-canary", "Malformed Google token response"),
+            (
+                200,
+                "not-json synthetic-revoked-canary",
+                "Malformed Google token response",
+            ),
             (
                 200,
                 r#"{"access_token":"","expires_in":3600}"#,
@@ -920,7 +924,9 @@ mod tests {
         let lock = tokio::sync::Mutex::new(());
         let unused_endpoint = "http://127.0.0.1:1/token";
         assert_eq!(
-            access_token_at(&path, unused_endpoint, &lock).await.unwrap(),
+            access_token_at(&path, unused_endpoint, &lock)
+                .await
+                .unwrap(),
             None
         );
         std::fs::create_dir_all(path.parent().unwrap()).unwrap();
