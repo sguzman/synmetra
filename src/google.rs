@@ -3326,6 +3326,132 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn account_hierarchy_preserves_property_parent_timezone_and_permission_scope() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        use tokio::net::TcpListener;
+
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let admin_host = format!("http://{}", listener.local_addr().unwrap());
+        let responder = tokio::spawn(async move {
+            for (path, status, body) in [
+                (
+                    "/v1beta/accountSummaries",
+                    "200 OK",
+                    json!({
+                        "accountSummaries":[{
+                            "name":"accounts/77",
+                            "displayName":"Fixture Organization",
+                            "propertySummaries":[
+                                {"property":"properties/42","displayName":"Mexico Property"},
+                                {"property":"properties/43","displayName":"Sibling Property"}
+                            ]
+                        }]
+                    }),
+                ),
+                (
+                    "/v1beta/properties/42",
+                    "200 OK",
+                    json!({
+                        "name":"properties/42",
+                        "parent":"accounts/77",
+                        "displayName":"Mexico Property",
+                        "timeZone":"America/Mexico_City",
+                        "currencyCode":"MXN"
+                    }),
+                ),
+                (
+                    "/v1beta/properties/99",
+                    "403 Forbidden",
+                    json!({"error":{"message":"private account denial details"}}),
+                ),
+            ] {
+                let (mut stream, _) = listener.accept().await.unwrap();
+                let mut bytes = [0_u8; 4096];
+                let size = stream.read(&mut bytes).await.unwrap();
+                let request = String::from_utf8_lossy(&bytes[..size]);
+                assert!(request.starts_with(&format!("GET {path} HTTP/1.1")));
+                let body = body.to_string();
+                let response = format!(
+                    "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                    body.len(),
+                    body
+                );
+                stream.write_all(response.as_bytes()).await.unwrap();
+            }
+        });
+        let client = GoogleClient::with_endpoints(
+            Some("private-fixture-token".into()),
+            &admin_host,
+            "http://127.0.0.1:9",
+        );
+        let summaries = client.account_summaries_with_options(None, None).await.unwrap();
+        let properties = &summaries["accountSummaries"][0]["propertySummaries"];
+        assert_eq!(properties[0]["property"], "properties/42");
+        assert_eq!(properties[1]["property"], "properties/43");
+        let selected = client.property("properties/42").await.unwrap();
+        assert_eq!(selected["parent"], "accounts/77");
+        assert_eq!(selected["timeZone"], "America/Mexico_City");
+        assert_eq!(selected["currencyCode"], "MXN");
+        assert_eq!(client.property("99").await, Err(ApiError::Http(403)));
+        responder.await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn account_metadata_is_refetched_and_never_shared_across_principals() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        use tokio::net::TcpListener;
+
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let admin_host = format!("http://{}", listener.local_addr().unwrap());
+        let responder = tokio::spawn(async move {
+            for (token, returned_account) in [
+                ("principal-a", "accounts/10"),
+                ("principal-a", "accounts/11"),
+                ("principal-b", "accounts/99"),
+            ] {
+                let (mut stream, _) = listener.accept().await.unwrap();
+                let mut buffer = [0_u8; 4096];
+                let count = stream.read(&mut buffer).await.unwrap();
+                let request = String::from_utf8_lossy(&buffer[..count]);
+                assert!(request.starts_with("GET /v1beta/accountSummaries HTTP/1.1"));
+                assert!(request.contains(&format!("Bearer {token}")));
+                let body = json!({
+                    "accountSummaries":[{"name":returned_account}]
+                })
+                .to_string();
+                let response = format!(
+                    "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                    body.len(),
+                    body
+                );
+                stream.write_all(response.as_bytes()).await.unwrap();
+            }
+        });
+        let first = GoogleClient::with_endpoints(
+            Some("principal-a".into()),
+            &admin_host,
+            "http://127.0.0.1:9",
+        );
+        let second = GoogleClient::with_endpoints(
+            Some("principal-b".into()),
+            &admin_host,
+            "http://127.0.0.1:9",
+        );
+        let a1 = first.account_summaries_with_options(None, None).await.unwrap();
+        let a2 = first.account_summaries_with_options(None, None).await.unwrap();
+        let b1 = second.account_summaries_with_options(None, None).await.unwrap();
+        responder.await.unwrap();
+        assert_eq!(a1["accountSummaries"][0]["name"], "accounts/10");
+        assert_eq!(a2["accountSummaries"][0]["name"], "accounts/11");
+        assert_eq!(b1["accountSummaries"][0]["name"], "accounts/99");
+        for response in [&a1, &a2, &b1] {
+            let public = response.to_string();
+            assert!(!public.contains("principal-a"));
+            assert!(!public.contains("principal-b"));
+        }
+    }
+
+    #[tokio::test]
     async fn access_reports_are_scoped_to_account_or_property() {
         for (id, account) in [("accounts/16", true), ("properties/82", false)] {
             let (url, handle) = once(r#"{"rowCount":0}"#).await;
