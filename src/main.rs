@@ -474,7 +474,9 @@ fn project_scratchpad_diagnostic(
     let row_cap = max_rows.unwrap_or(1000);
     let cell_cap = max_cell_chars.unwrap_or(2048);
     if row_cap == 0 || row_cap > 1000 || cell_cap == 0 || cell_cap > 2048 {
-        return Err("Diagnostic projection limits must be 1-1000 rows and 1-2048 characters".into());
+        return Err(
+            "Diagnostic projection limits must be 1-1000 rows and 1-2048 characters".into(),
+        );
     }
     let mut value = response?;
     if let Some(field) = rows_field {
@@ -6083,14 +6085,9 @@ mod tests {
         assert_eq!(summary["summary_only"], true);
         assert_eq!(summary["groups_total"], 3);
         assert_eq!(summary["truncated"], true);
-        let unchanged = project_scratchpad_diagnostic(
-            Ok(original.clone()),
-            false,
-            Some("shifts"),
-            None,
-            None,
-        )
-        .unwrap();
+        let unchanged =
+            project_scratchpad_diagnostic(Ok(original.clone()), false, Some("shifts"), None, None)
+                .unwrap();
         assert_eq!(unchanged, original);
         let scalar = project_scratchpad_diagnostic(
             Ok(json!({"assessment":"low_sample","pre_anchor":3})),
