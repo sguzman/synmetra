@@ -441,16 +441,18 @@
               "id": "T021",
               "emoji": "📣",
               "name": "Implement JSON-RPC notifications and cancellation",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "Cancelled requests do not spawn orphan Google calls",
               "checks": [
                 {
                   "text": "Deliver implement json-rpc notifications and cancellation as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs centrally implements ServerHandler::call_tool using rmcp::service::RequestContext<RoleServer>.ct and tokio::select! to drop any in-flight tool future when the client issues notifications/cancelled; the SDK handles initialize/initialized and suppresses canceled JSON-RPC replies. The synthetic raw stdio fixture cancelled_stdio_report_drops_upstream_request_and_keeps_peer_responsive sends initialize, initialized, a historical tool call, cancellation and a second tool call. Core CI https://github.com/sguzman/synmetra/actions/runs/40354026086 passed."
                 },
                 {
                   "text": "Cancelled requests do not spawn orphan Google calls",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs cancelled_stdio_report_drops_upstream_request_and_keeps_peer_responsive runs an authorized-to-test local mock Google HTTP endpoint that intentionally holds the historical report request open; after notifications/cancelled, the upstream TCP socket reaches EOF, the canceled request emits no stale response, and a subsequent tool call completes. The cancellation gate is at centralized tool-router dispatch, covering all route futures; core CI https://github.com/sguzman/synmetra/actions/runs/40354026086 passed. Cancellation is not remote rollback after an upstream write may already be processed."
                 }
               ]
             },
@@ -790,12 +792,13 @@
               "id": "T039",
               "emoji": "🧵",
               "name": "Propagate request cancellation across auth and HTTP",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Interrupted calls free resources",
               "checks": [
                 {
                   "text": "Deliver propagate request cancellation across auth and http as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs ServerHandler::call_tool now passes the rmcp request-specific cancellation token through a central tokio::select! over every registered local/Google tool, dropping pending futures and transport work on notification. src/auth.rs aborted_oauth_refresh_releases_lock_without_partial_token_rotation verifies canceled OAuth refresh releases the lock and closes the token-exchange socket; src/main.rs cancelled_stdio_report_drops_upstream_request_and_keeps_peer_responsive verifies a stalled Google report socket closes. Both passed core CI https://github.com/sguzman/synmetra/actions/runs/40354026086. Independent cancellation propagation under a live Streamable HTTP caller and mutation uncertainty is still open."
                 },
                 {
                   "text": "Interrupted calls free resources",

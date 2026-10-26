@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `███████░░░ 70.3%` · **+70.26 percentage points from initial empty repo; +0.44 pp from stable MCP input validation and safe Google error handling
+**Overall:** `███████░░░ 70.9%` · **+70.93 percentage points from initial empty repo; +0.66 pp from verified MCP cancellation and upstream resource cleanup
 
 ### 📏 Progress conventions
 
@@ -60,11 +60,11 @@
   - ✅ **Gate:** Document semver and provenance gates · **Evidence:** CHANGELOG.md defines an Unreleased section and the experimental 0.0.1 baseline; docs/RELEASE_POLICY.md defines SemVer, immutable source and lockfile pinning, secure provenance requirements, live Google gating and non-production CI artifacts; README links both. GitHub Actions 40259902417 core checked manifest/changelog version and required policy gates.; docs/RELEASE_POLICY.md explains independent reproducibility, checksums, source SHA and release promotion requirements and distinguishes a successful CI build from a signed/stable release. CI 40259902417 changelog/version policy validation passed; actual reproducible binary acceptance remains an independent M9 task.
 
 
-## 🔌 M1 — MCP protocol and transport fidelity — `███████░░░ 69.6%`
+## 🔌 M1 — MCP protocol and transport fidelity — `████████░░ 76.1%`
 
 **Scope:** MVP. **Acceptance gate:** Spec-conforming native MCP discovery and calls over stdio plus bounded Streamable HTTP; all transport safety tests pass.
 
-### 📨 P02 — Stdio protocol — `██████░░░░ 64.3%`
+### 📨 P02 — Stdio protocol — `████████░░ 78.6%`
 
 **Feature:** MCP stdio.
 
@@ -74,8 +74,8 @@
   - ✅ **Gate:** All available tools discoverable by MCP clients · **Evidence:** src/main.rs typed schemars tool metadata; in-memory client lists 17 handlers in Actions 40202015488; Real binary stdio JSON-RPC tools/list issued after initialize and notifications/initialized returned the exact 20 read-only handlers, each with object inputSchema, including ga4_get_started and excluding create_property_annotation; .github/workflows/ci.yml real-process smoke in GitHub Actions run 40243631855 succeeded alongside existing in-memory MCP tool discovery and pinned field tests. Feature-enabled 36-name union remains separate.
 - ⚙️ **T020 — Support tools/call dispatch and structured content** — `██████████ 100.0%`
   - ✅ **Gate:** Call requests resolve to tools with valid response envelopes · **Evidence:** src/main.rs actual rmcp tools/call of get_account_summaries via in-memory client; Actions 40202015488 passed; Real binary stdio JSON-RPC tools/call dispatched ga4_get_started following initialize and tools/list and returned a successful MCP result with structuredContent.ok=true and the precise read-only analytics scope. Real-process CI run 40243631855 passed; existing in-memory rmcp call and structured envelope tests cover invalid/no-auth cases.
-- 📣 **T021 — Implement JSON-RPC notifications and cancellation** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Cancelled requests do not spawn orphan Google calls
+- 📣 **T021 — Implement JSON-RPC notifications and cancellation** — `██████████ 100.0%`
+  - ✅ **Gate:** Cancelled requests do not spawn orphan Google calls · **Evidence:** src/main.rs centrally implements ServerHandler::call_tool using rmcp::service::RequestContext<RoleServer>.ct and tokio::select! to drop any in-flight tool future when the client issues notifications/cancelled; the SDK handles initialize/initialized and suppresses canceled JSON-RPC replies. The synthetic raw stdio fixture cancelled_stdio_report_drops_upstream_request_and_keeps_peer_responsive sends initialize, initialized, a historical tool call, cancellation and a second tool call. Core CI https://github.com/sguzman/synmetra/actions/runs/40354026086 passed.; src/main.rs cancelled_stdio_report_drops_upstream_request_and_keeps_peer_responsive runs an authorized-to-test local mock Google HTTP endpoint that intentionally holds the historical report request open; after notifications/cancelled, the upstream TCP socket reaches EOF, the canceled request emits no stale response, and a subsequent tool call completes. The cancellation gate is at centralized tool-router dispatch, covering all route futures; core CI https://github.com/sguzman/synmetra/actions/runs/40354026086 passed. Cancellation is not remote rollback after an upstream write may already be processed.
 - 🚧 **T022 — Separate stdout protocol from stderr diagnostics** — `██████████ 100.0%`
   - ✅ **Gate:** No banners or logging contaminate JSON-RPC stdout · **Evidence:** src/main.rs stdio transport only on serve path; application diagnostic output uses stderr; Actions 40202015488 passed; Real native synmetra serve process captured stdout and stderr separately, enforced exactly three well-formed JSON-RPC result lines for initialize/list/call with no banner, and confirmed a synthetic SYNMETRA_GOOGLE_ACCESS_TOKEN canary never entered stdout. .github/workflows/ci.yml CI run 40243631855 core and DuckDB passed. Provider logs/stderr remain intentionally separate.
 - 📏 **T023 — Bound request sizes concurrency and timeouts** — `██████████ 100.0%`
@@ -106,7 +106,7 @@
 - 🧫 **T033 — Test MCP HTTP inspector interoperability** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** End-to-end tool invocation under loopback and protected remote modes
 
-### 🧾 P04 — MCP schema semantics — `███████░░░ 71.4%`
+### 🧾 P04 — MCP schema semantics — `████████░░ 78.6%`
 
 **Feature:** MCP contract.
 
@@ -120,8 +120,8 @@
   - ✅ **Gate:** Discovery pagination and list change tests pass · **Evidence:** src/http.rs authenticated_http_session_lists_and_calls_tools_but_rejects_invalid_sessions now repeats real MCP tools/list after initialization and asserts identical catalog ordering, no duplicates and no nextCursor when the complete 20-tool read-only catalog fits in a single response. No hidden multi-page cursor state is introduced.; src/http.rs performs two authenticated tools/list requests within one MCP session and verifies identical results/no spurious pagination. src/main.rs full_capability_profile_matches_exact_pinned_36_tool_union and scratchpad_tools_are_hidden_without_explicit_capability prove opt-in write/scratchpad profile differences and bounded complete inventories (20/35/36 tool names). GitHub Actions 40247290466 passed core and DuckDB. This accepts deterministic single-page discovery, not a fictitious paginated listing.
 - ⚠️ **T038 — Normalize MCP protocol errors separately from GA failures** — `██████████ 100.0%`
   - ✅ **Gate:** Invalid tools are distinct from Google API errors · **Evidence:** src/http.rs json_rpc_protocol_errors_remain_separate_from_ga_validation_results runs a real authenticated MCP initialize, notifications/initialized, unknown JSON-RPC method and valid tools/call with invalid Google property. rmcp returns protocol method-not-found as JSON-RPC error -32601 while Synmetra returns a structured MCP tool result for GA argument validation. No provider call or Google credentials are required.; Synthetic loopback MCP HTTP test verifies unknown method returns top-level error.code=-32601 without result, but invalid run_report returns HTTP 200 JSON-RPC result with isError=true and structuredContent.error.category=validation and no top-level protocol error. Tests also enforce bearer token omission. GitHub Actions 40247087766 passed core tests, rustfmt, strict Clippy and native DuckDB.
-- 🧵 **T039 — Propagate request cancellation across auth and HTTP** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Interrupted calls free resources
+- 🧵 **T039 — Propagate request cancellation across auth and HTTP** — `█████░░░░░ 50.0%`
+  - ✅ **Gate:** Interrupted calls free resources · **Evidence:** src/main.rs ServerHandler::call_tool now passes the rmcp request-specific cancellation token through a central tokio::select! over every registered local/Google tool, dropping pending futures and transport work on notification. src/auth.rs aborted_oauth_refresh_releases_lock_without_partial_token_rotation verifies canceled OAuth refresh releases the lock and closes the token-exchange socket; src/main.rs cancelled_stdio_report_drops_upstream_request_and_keeps_peer_responsive verifies a stalled Google report socket closes. Both passed core CI https://github.com/sguzman/synmetra/actions/runs/40354026086. Independent cancellation propagation under a live Streamable HTTP caller and mutation uncertainty is still open.
 - 🧪 **T040 — Run cross-client MCP conformance suite** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Protocol wire fixtures pass multiple clients
 
