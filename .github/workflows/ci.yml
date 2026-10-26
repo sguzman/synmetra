@@ -267,6 +267,22 @@ jobs:
             jq -e --arg name "$name" --argjson args "$example" '.tools[] | select(.name == $name) | all((.inputSchema.required // [])[]; . as $key | $args | has($key))' spec/native/tool-schema.v1.json > /dev/null
           done < "$RUNNER_TEMP/native-guide-fixtures"
 
+      - name: Verify all 36 offline MCP smoke arguments are source-bound
+        shell: bash
+        run: |
+          set -euo pipefail
+          file=spec/fixtures/native-all-tool-smoke.v1.json
+          jq -e '.schema == "synmetra_native_all_tool_offline_smoke"
+            and .version == 1
+            and .network_policy == "only_ephemeral_127.0.0.1_mock_google_api"
+            and (.tools | length) == 36
+            and all(.tools[]; (.arguments | type) == "object")
+          ' "$file" > /dev/null
+          test "$(jq -r '.source_guide_sha' "$file")" = "$(git hash-object docs/NATIVE_TOOL_GUIDE.md)"
+          jq -r '.tools[].name' "$file" | LC_ALL=C sort > "$RUNNER_TEMP/all-tool-smoke-names"
+          diff -u "$RUNNER_TEMP/inventory-names" "$RUNNER_TEMP/all-tool-smoke-names"
+          grep -Fq 'Official Inspector/other client interoperability' docs/SMOKE_SCENARIOS.md
+
       - name: Check native Codex and upstream migration instructions
         shell: bash
         run: |

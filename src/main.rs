@@ -3238,6 +3238,105 @@ mod tests {
             .contains("per-call human approval"));
     }
 
+    #[cfg(feature = "scratchpad")]
+    #[tokio::test]
+    async fn all_36_registered_mcp_tools_accept_synthetic_fixture_invocations() {
+        use rmcp::model::CallToolRequestParams;
+        use std::collections::BTreeSet;
+        use std::time::Duration;
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        use tokio::net::TcpListener;
+
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../spec/fixtures/native-all-tool-smoke.v1.json"
+        ))
+        .unwrap();
+        assert_eq!(fixture["schema"], "synmetra_native_all_tool_offline_smoke");
+        let cases = fixture["tools"].as_array().unwrap();
+        assert_eq!(cases.len(), 36);
+        let expected: BTreeSet<_> = cases
+            .iter()
+            .map(|item| item["name"].as_str().unwrap().to_owned())
+            .collect();
+        assert_eq!(expected.len(), 36);
+
+        // Never use the operator's native Google identity or external DNS:
+        // every attempted provider request terminates at this ephemeral local
+        // fixture and returns a redacted, non-retryable 403.
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let endpoint = format!("http://{}", listener.local_addr().unwrap());
+        let provider = tokio::spawn(async move {
+            loop {
+                let Ok((mut stream, _)) = listener.accept().await else {
+                    break;
+                };
+                let mut bytes = [0u8; 8192];
+                let _ = stream.read(&mut bytes).await;
+                let _ = stream
+                    .write_all(
+                        b"HTTP/1.1 403 Forbidden\r\nContent-Type: application/json\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{}",
+                    )
+                    .await;
+            }
+        });
+        let google = GoogleClient::with_endpoints(
+            Some("synthetic-tool-invocation-only".into()),
+            &endpoint,
+            &endpoint,
+        );
+        let server = Synmetra::new(google, true).enable_scratchpad();
+        let (server_stream, client_stream) = tokio::io::duplex(256 * 1024);
+        let worker = tokio::spawn(async move {
+            server
+                .serve(server_stream)
+                .await
+                .unwrap()
+                .waiting()
+                .await
+                .unwrap();
+        });
+        let client = ().serve(client_stream).await.unwrap();
+        let actual: BTreeSet<_> = client
+            .list_all_tools()
+            .await
+            .unwrap()
+            .into_iter()
+            .map(|tool| tool.name.to_string())
+            .collect();
+        assert_eq!(actual, expected);
+        for item in cases {
+            let name = item["name"].as_str().unwrap();
+            let args = item["arguments"].as_object().unwrap().clone();
+            let request = CallToolRequestParams::new(name.to_owned()).with_arguments(args);
+            let reply = tokio::time::timeout(Duration::from_secs(8), client.call_tool(request))
+                .await
+                .unwrap_or_else(|_| panic!("{name} fixture exceeded bounded timeout"))
+                .unwrap_or_else(|error| panic!("{name} fixture was rejected by MCP: {error}"));
+            let structured = reply
+                .structured_content
+                .as_ref()
+                .unwrap_or_else(|| panic!("{name} omitted structured MCP content"));
+            assert!(
+                structured["ok"].is_boolean(),
+                "{name} returned no typed Contract V1 outcome"
+            );
+            if structured["ok"] == true {
+                assert!(structured.get("data").is_some(), "{name} omitted data");
+            } else {
+                assert!(structured["error"]["code"].is_string(), "{name} omitted error code");
+                assert_eq!(reply.is_error, Some(true), "{name} must mark tool error");
+            }
+            assert!(structured["meta"].is_object(), "{name} omitted metadata");
+            assert!(
+                !structured.to_string().contains("synthetic-tool-invocation-only"),
+                "{name} reflected a Google bearer into the MCP response"
+            );
+        }
+        client.cancel().await.unwrap();
+        worker.await.unwrap();
+        provider.abort();
+    }
+
     #[tokio::test]
     async fn in_memory_mcp_client_negotiates_and_calls_read_only_tools() {
         use rmcp::model::CallToolRequestParams;
