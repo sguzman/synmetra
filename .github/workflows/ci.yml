@@ -42,6 +42,17 @@ jobs:
             count=$((count + 1))
           done < spec/upstream/schema-lock.tsv
           test "$count" -eq 4 || { echo "Wrong pinned fixture count" >&2; exit 1; }
+      - name: Check pinned 36-tool live eligibility matrix
+        shell: bash
+        run: |
+          set -euo pipefail
+          jq -r '.union.tools[].name' docs/tool-inventory.json | LC_ALL=C sort > "$RUNNER_TEMP/union-names"
+          awk -F '|' '/^[|] `[^`]+` [|]/ { gsub(/[ `]/, "", $2); print $2 }' docs/LIVE_ACCEPTANCE_MATRIX.md |
+            LC_ALL=C sort > "$RUNNER_TEMP/eligibility-names"
+          test "$(wc -l < "$RUNNER_TEMP/eligibility-names")" -eq 36
+          diff -u "$RUNNER_TEMP/union-names" "$RUNNER_TEMP/eligibility-names"
+          grep -Fq 'No live Google Analytics OAuth/property/role QA has been accepted' docs/LIVE_ACCEPTANCE_MATRIX.md
+
       - name: Validate changelog version and evidence-gated release policy
         shell: bash
         run: |

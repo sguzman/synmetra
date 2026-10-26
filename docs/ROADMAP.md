@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `██████░░░░ 60.6%` · **+60.57 percentage points from initial empty repo; +1.54 pp from verified OAuth refresh, identity separation, retry, redaction and safe-deployment gates** · 125/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `██████░░░░ 61.7%` · **+61.67 percentage points from initial empty repo; +1.10 pp from verified identity, cursor, retry/failure and adversarial safety gates** · 126/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -126,7 +126,7 @@
   - ✅ **Gate:** Protocol wire fixtures pass multiple clients
 
 
-## 🔑 M2 — Google authentication and credential isolation — `████░░░░░░ 40.4%`
+## 🔑 M2 — Google authentication and credential isolation — `████░░░░░░ 42.3%`
 
 **Scope:** MVP. **Acceptance gate:** Secure, least-privilege, non-Python auth across interactive, local and service configurations; no secret leaks.
 
@@ -174,12 +174,12 @@
 - ⏳ **T057 — Guard clock skew and rotation races** — `██████████ 100.0%`
   - ✅ **Gate:** Expiring secrets renew safely during concurrent calls · **Evidence:** src/auth.rs access_token_at re-reads credentials within an async refresh lock, renews 120 seconds before expiry and rotates refresh tokens using private atomic persistence; the concurrent_expired_credentials_refresh_once_and_rotate_privately test passed in core CI https://github.com/sguzman/synmetra/actions/runs/40266208686.; src/auth.rs concurrent_expired_credentials_refresh_once_and_rotate_privately verifies two concurrent callers perform exactly one local OAuth token exchange, both receive the new access token, rotated refresh token persists privately, and later calls reuse the refreshed credential; core CI https://github.com/sguzman/synmetra/actions/runs/40266208686 passed. This does not certify live Google refresh/revocation behavior.
 
-### 🛡️ P07 — Inbound versus upstream trust — `█████░░░░░ 50.0%`
+### 🛡️ P07 — Inbound versus upstream trust — `██████░░░░ 55.6%`
 
 **Feature:** Identity security.
 
-- 🚪 **T058 — Separate inbound MCP identity from Google identity** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** No identity-conflation in HTTP transport · **Evidence:** src/http.rs uses SYNMETRA_MCP_BEARER_TOKEN for inbound requests while src/google.rs and src/auth.rs independently load SYNMETRA_GOOGLE_ACCESS_TOKEN or isolated private OAuth credentials for Google API calls; src/main.rs denies scratchpad HTTP. Core CI https://github.com/sguzman/synmetra/actions/runs/40266208686 passed local identity boundary tests. Separate explicit end-to-end identity-conflation regression remains open.
+- 🚪 **T058 — Separate inbound MCP identity from Google identity** — `██████████ 100.0%`
+  - ✅ **Gate:** No identity-conflation in HTTP transport · **Evidence:** src/http.rs uses SYNMETRA_MCP_BEARER_TOKEN for inbound requests while src/google.rs and src/auth.rs independently load SYNMETRA_GOOGLE_ACCESS_TOKEN or isolated private OAuth credentials for Google API calls; src/main.rs denies scratchpad HTTP. Core CI https://github.com/sguzman/synmetra/actions/runs/40266208686 passed local identity boundary tests. Separate explicit end-to-end identity-conflation regression remains open.; src/http.rs local_mcp_bearer_is_not_forwarded_to_google_api exercises an authenticated 2025-11-25 MCP initialization, notification and tools/call with one inbound token and a separate local mock Google API endpoint with a different upstream token; it asserts the Google request contains only the upstream bearer and neither token enters the MCP response. Core CI https://github.com/sguzman/synmetra/actions/runs/40267346239 passed. This is a synthetic local isolation test, not multi-tenant hosted security certification.
 - 🧾 **T059 — Define capability authorization matrices** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Google and local permissions checked per tool call
 - 💼 **T060 — Avoid credential exposure in crash logs and traces** — `░░░░░░░░░░ 0.0%`
@@ -441,7 +441,7 @@
   - ✅ **Gate:** Dependency license architecture and portability reviewed · **Evidence:** src/main.rs and src/scratchpad.rs; GitHub Actions run 40206168306 successfully completed bundled-DuckDB feature tests (initial seven-route implementation); full strict-Clippy/updated-parameter parity and live GA tests remain separate acceptance gates.; docs/SCRATCHPAD.md, docs/ARCHITECTURE.md, Cargo.toml and src/scratchpad.rs reviewed: optional bundled DuckDB 1.4.2 includes native C/C++ linking with compiler/linker/runtime portability caveats; upstream Rust and native dependency licenses must remain accounted for under T013/T177/T216, and clean-install proof is T200/M9. DuckDB feature test https://github.com/sguzman/synmetra/actions/runs/40264614297 passed.
 
 
-## 🧬 M7 — Tool contract interoperability and parity audits — `█████░░░░░ 52.9%`
+## 🧬 M7 — Tool contract interoperability and parity audits — `██████░░░░ 58.8%`
 
 **Scope:** MVP. **Acceptance gate:** All 36 tool schemas and response mappings are independently snapshot-tested against both pinned upstreams.
 
@@ -456,7 +456,7 @@
 - 🗝️ **T153 — Implement ga4_auth_login_command** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Native CLI guidance and MCP schema parity for ga4_auth_login_command · **Evidence (implementation only):** src/main.rs AuthLoginCommandArgs advertises all six pinned optional inputs, compares input schema types/defaults/descriptions/formats to pinned SednaLabs, POSIX-quotes generated commands, and rejects unsupported shared ADC/quota-project options explicitly; src/auth.rs implements CLI --account OAuth login hint, --callback-port, --headless with bounds/duplication tests. GitHub Actions 40225871288 core job passed fmt, tests, strict Clippy, ledger. Runtime parity for shared ADC/quota-project and live auth still pending.
 
-### 📜 P20 — Schema and error contract — `████░░░░░░ 44.4%`
+### 📜 P20 — Schema and error contract — `██████░░░░ 55.6%`
 
 **Feature:** Contracts and schemas.
 
@@ -470,14 +470,14 @@
   - ✅ **Gate:** Errors have stable status code reason and context fields
 - ⚖️ **T158 — Preserve official response semantics where conflicting** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Document compatibility choice and adapters
-- 📏 **T159 — Enforce stable cursor and truncation metadata** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** All tabular tools report known/unknown totals honestly
+- 📏 **T159 — Enforce stable cursor and truncation metadata** — `█████░░░░░ 50.0%`
+  - ✅ **Gate:** All tabular tools report known/unknown totals honestly · **Evidence:** src/tabular.rs prepare_historical, prepare_access and project implement canonical resource/query SHA-256 scoped v1 cursors with bounded offsets, known/unknown provider row totals, correct final-page truncation, no imaginary pivot or realtime cursor, and explicit metadata on the projected report modes. Tests historical_cursor_round_trip_enforces_query_hash_and_bounded_offset, historical_last_page_is_not_marked_truncated_and_accepts_string_totals, unknown_total_is_marked_unknown_and_metric_only_reports_are_valid and admin_access_headers_and_resource_boundaries_have_distinct_cursors passed core CI https://github.com/sguzman/synmetra/actions/runs/40267346239. All remaining unprojected or unsupported tool families are outside this first gate.
 - 📂 **T160 — Publish schema snapshot with generated reference SHA** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Tool schema diff is reviewed during every upstream update · **Evidence:** spec/upstream/schema-lock.tsv published with Git object SHA-1 digests and upstream source commit identifiers, verified on each CI run using the native git hash-object command in .github/workflows/ci.yml. CI 40247973673 passed lock integrity without Python/npm. Full semantic schema diff/review on upstream version bumps remains open.
 - 🤝 **T161 — Test alternative MCP clients and structured output** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Codex and inspector consume every major response type
-- 🧯 **T162 — Avoid false confidence from mocked-only parity** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Document live coverage by tool and account eligibility
+- 🧯 **T162 — Avoid false confidence from mocked-only parity** — `█████░░░░░ 50.0%`
+  - ✅ **Gate:** Document live coverage by tool and account eligibility · **Evidence:** README.md, docs/ROADMAP.md, docs/NATIVE_MCP.md, docs/LOCAL_EXECUTION_THREAT_MODEL.md and docs/RELEASE_POLICY.md explicitly distinguish synthetic tests, provisional 36-name registration, incomplete upstream parameter/response parity, unaccepted account-role permissions and unauthenticated live GA workflows; docs/progress.json retains no fully parity-accepted 36-tool claim. Core progress-integrity CI https://github.com/sguzman/synmetra/actions/runs/40267346239 passed. Per-tool live coverage and eligibility matrix remains unaccepted.
 
 ### 🔀 P21 — Feature-union conflict resolution — `█████░░░░░ 50.0%`
 
@@ -495,7 +495,7 @@
   - ✅ **Gate:** Changes open maintenance work rather than silently inflate parity · **Evidence:** .github/workflows/upstream-drift.yml watches exact SednaLabs schema and Google coordinator Git blob SHAs weekly and on reviewed lock/workflow changes; changes trigger stable [upstream-drift] local maintenance issue, never repin automatically. ci/test-upstream-drift-watch.sh executes the actual workflow shell body with mocked curl/gh, verifying unchanged, changed and duplicate issue cases. GitHub Actions drift workflow 40249957815 succeeded.; GitHub Actions 40249957815 offline fixture checks verify an upstream blob change fails the watch and opens exactly one review issue per source; repeat unchanged pin mismatch reuses an existing open issue and a second changed source opens a separate one. Real unchanged upstream watch also passed. No real upstream drift was forced and no real maintenance issue was created; this is synthetic acceptance of the detection/mutation control, not a source parity claim.
 
 
-## 🧪 M8 — Verification, resilience and security acceptance — `███░░░░░░░ 30.4%`
+## 🧪 M8 — Verification, resilience and security acceptance — `███░░░░░░░ 33.9%`
 
 **Scope:** MVP. **Acceptance gate:** Full offline and authorized live verification including malformed inputs, MCP interoperability and threat model.
 
@@ -547,7 +547,7 @@
 - 🗄️ **T186 — Record redacted reproducible live test ledger** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** All outcomes scoped with date and source SHA
 
-### 🛡️ P24 — Robustness and operational performance — `██░░░░░░░░ 22.2%`
+### 🛡️ P24 — Robustness and operational performance — `███░░░░░░░ 33.3%`
 
 **Feature:** Reliability and security.
 
@@ -557,12 +557,12 @@
   - ✅ **Gate:** Fuzz corpus with reproducible seeds and crash guard
 - ⏱️ **T189 — Benchmark startup latency peak RSS and tool calls** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Repeatable Linux measurements under no-cache and warm-cache
-- 🧰 **T190 — Handle network outage and Google API failure modes** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Actionable status without unsafe retries
+- 🧰 **T190 — Handle network outage and Google API failure modes** — `█████░░░░░ 50.0%`
+  - ✅ **Gate:** Actionable status without unsafe retries · **Evidence:** src/google.rs send_readonly_as and decode_response return typed redacted HTTP/transport errors, bound read-only retries to 3 attempts on 429/5xx, refuse unsafe transport replay and honor request/connect timeouts without retrying mutations. Tests readonly_429_exhausts_three_attempts_with_redacted_error and readonly_socket_drop_fails_without_unsafe_transport_retries passed core CI https://github.com/sguzman/synmetra/actions/runs/40267346239. User-actionable per-error diagnostics and live outage handling remain unaccepted.
 - ♻️ **T191 — Test OAuth refresh and cancellation under concurrency** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** No token duplication or orphan request leaks
-- 🚧 **T192 — Test untrusted MCP arguments for injection and SSRF** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** No arbitrary networking or destructive file access
+- 🚧 **T192 — Test untrusted MCP arguments for injection and SSRF** — `█████░░░░░ 50.0%`
+  - ✅ **Gate:** No arbitrary networking or destructive file access · **Evidence:** src/google.rs production_google_hosts_are_pinned_and_http_redirects_never_followed and adversarial_report_filter_corpus_is_bounded_before_google_network_access protect fixed HTTPS API origins and reject hostile JSON/filter/resource inputs; src/scratchpad.rs hostile_sql_corpus_and_deterministic_mutations_never_execute and duckdb_engine_denies_external_file_access_beyond_restricted_sql_parser cover SQL/file-path injection. Google regressions passed core CI https://github.com/sguzman/synmetra/actions/runs/40267346239; DuckDB synthetic security cases passed feature CI https://github.com/sguzman/synmetra/actions/runs/40264614297. Independent fuzzing and a broad no-arbitrary-networking guarantee remain unaccepted.
 - 📃 **T193 — Redact logs telemetry and error reports by default** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** No account data or tokens in CI artifacts · **Evidence:** src/auth.rs keeps tokens out of public CLI doctor/status, src/google.rs excludes upstream provider body and credentials from typed errors, and src/main.rs keeps MCP stdout clean. Core CI https://github.com/sguzman/synmetra/actions/runs/40266208686 passed synthetic credential-canary checks for stdio, auth doctor, isolated installed native binary and error cases. A dedicated scan of generated CI artifacts remains open.
 - 🛑 **T194 — Document safe remote deployment rejection gates** — `██████████ 100.0%`

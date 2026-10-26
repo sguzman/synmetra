@@ -1154,7 +1154,7 @@
               "id": "T058",
               "emoji": "🚪",
               "name": "Separate inbound MCP identity from Google identity",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "No identity-conflation in HTTP transport",
               "checks": [
                 {
@@ -1164,7 +1164,8 @@
                 },
                 {
                   "text": "No identity-conflation in HTTP transport",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/http.rs local_mcp_bearer_is_not_forwarded_to_google_api exercises an authenticated 2025-11-25 MCP initialization, notification and tools/call with one inbound token and a separate local mock Google API endpoint with a different upstream token; it asserts the Google request contains only the upstream bearer and neither token enters the MCP response. Core CI https://github.com/sguzman/synmetra/actions/runs/40267346239 passed. This is a synthetic local isolation test, not multi-tenant hosted security certification."
                 }
               ]
             },
@@ -3194,12 +3195,13 @@
               "id": "T159",
               "emoji": "📏",
               "name": "Enforce stable cursor and truncation metadata",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "All tabular tools report known/unknown totals honestly",
               "checks": [
                 {
                   "text": "Deliver enforce stable cursor and truncation metadata as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/tabular.rs prepare_historical, prepare_access and project implement canonical resource/query SHA-256 scoped v1 cursors with bounded offsets, known/unknown provider row totals, correct final-page truncation, no imaginary pivot or realtime cursor, and explicit metadata on the projected report modes. Tests historical_cursor_round_trip_enforces_query_hash_and_bounded_offset, historical_last_page_is_not_marked_truncated_and_accepts_string_totals, unknown_total_is_marked_unknown_and_metric_only_reports_are_valid and admin_access_headers_and_resource_boundaries_have_distinct_cursors passed core CI https://github.com/sguzman/synmetra/actions/runs/40267346239. All remaining unprojected or unsupported tool families are outside this first gate."
                 },
                 {
                   "text": "All tabular tools report known/unknown totals honestly",
@@ -3246,12 +3248,13 @@
               "id": "T162",
               "emoji": "🧯",
               "name": "Avoid false confidence from mocked-only parity",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Document live coverage by tool and account eligibility",
               "checks": [
                 {
                   "text": "Deliver avoid false confidence from mocked-only parity as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "README.md, docs/ROADMAP.md, docs/NATIVE_MCP.md, docs/LOCAL_EXECUTION_THREAT_MODEL.md and docs/RELEASE_POLICY.md explicitly distinguish synthetic tests, provisional 36-name registration, incomplete upstream parameter/response parity, unaccepted account-role permissions and unauthenticated live GA workflows; docs/progress.json retains no fully parity-accepted 36-tool claim. Core progress-integrity CI https://github.com/sguzman/synmetra/actions/runs/40267346239 passed. Per-tool live coverage and eligibility matrix remains unaccepted."
                 },
                 {
                   "text": "Document live coverage by tool and account eligibility",
@@ -3782,12 +3785,13 @@
               "id": "T190",
               "emoji": "🧰",
               "name": "Handle network outage and Google API failure modes",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Actionable status without unsafe retries",
               "checks": [
                 {
                   "text": "Deliver handle network outage and google api failure modes as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs send_readonly_as and decode_response return typed redacted HTTP/transport errors, bound read-only retries to 3 attempts on 429/5xx, refuse unsafe transport replay and honor request/connect timeouts without retrying mutations. Tests readonly_429_exhausts_three_attempts_with_redacted_error and readonly_socket_drop_fails_without_unsafe_transport_retries passed core CI https://github.com/sguzman/synmetra/actions/runs/40267346239. User-actionable per-error diagnostics and live outage handling remain unaccepted."
                 },
                 {
                   "text": "Actionable status without unsafe retries",
@@ -3816,12 +3820,13 @@
               "id": "T192",
               "emoji": "🚧",
               "name": "Test untrusted MCP arguments for injection and SSRF",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "No arbitrary networking or destructive file access",
               "checks": [
                 {
                   "text": "Deliver test untrusted mcp arguments for injection and ssrf as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs production_google_hosts_are_pinned_and_http_redirects_never_followed and adversarial_report_filter_corpus_is_bounded_before_google_network_access protect fixed HTTPS API origins and reject hostile JSON/filter/resource inputs; src/scratchpad.rs hostile_sql_corpus_and_deterministic_mutations_never_execute and duckdb_engine_denies_external_file_access_beyond_restricted_sql_parser cover SQL/file-path injection. Google regressions passed core CI https://github.com/sguzman/synmetra/actions/runs/40267346239; DuckDB synthetic security cases passed feature CI https://github.com/sguzman/synmetra/actions/runs/40264614297. Independent fuzzing and a broad no-arbitrary-networking guarantee remain unaccepted."
                 },
                 {
                   "text": "No arbitrary networking or destructive file access",

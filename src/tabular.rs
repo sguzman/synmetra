@@ -829,6 +829,112 @@ mod tests {
     }
 
     #[test]
+    fn deterministic_resource_and_cursor_mutation_corpus_fails_closed() {
+        // Fixed corpus, requiring no live credentials or network. Every bad
+        // identifier must be rejected before constructing an upstream URL.
+        for input in [
+            "",
+            "0",
+            "00",
+            "01",
+            " 42",
+            "42 ",
+            "-1",
+            "+1",
+            "1/../../private",
+            "properties/42/other",
+            "accounts/42",
+            "http://127.0.0.1",
+            "https://example.invalid/42",
+            "42?next=1",
+            "42#fragment",
+            "42;DROP",
+            "42\0",
+            "42\n",
+            "４２",
+            "18446744073709551616",
+        ] {
+            assert!(
+                crate::google::property_name(input).is_err(),
+                "Property identifier fixture unexpectedly accepted: {input:?}"
+            );
+            if input != "accounts/42" {
+                assert!(
+                    crate::google::account_name(input).is_err(),
+                    "Account identifier fixture unexpectedly accepted: {input:?}"
+                );
+            }
+        }
+        assert_eq!(
+            crate::google::property_name("properties/42").unwrap(),
+            "properties/42"
+        );
+        assert_eq!(
+            crate::google::account_name("accounts/42").unwrap(),
+            "accounts/42"
+        );
+
+        let request = json!({
+            "dateRanges":[{"startDate":"yesterday","endDate":"today"}],
+            "dimensions":[{"name":"country"}],
+            "metrics":[{"name":"activeUsers"}],
+            "limit":"3"
+        });
+        let mut prepared = request.clone();
+        let fingerprint = prepare_historical(&mut prepared, "42", None, None).unwrap();
+        let valid_cursor = format!("v1:{}:3", fingerprint.query_hash);
+        let mut good = request.clone();
+        let valid = prepare_historical(&mut good, "properties/42", Some(&valid_cursor), None)
+            .unwrap();
+        assert_eq!(valid.offset, 3);
+
+        let bad_tokens = [
+            "".to_owned(),
+            "v1:broken:1".to_owned(),
+            format!("v2:{}:3", fingerprint.query_hash),
+            format!("v1:{}:-1", fingerprint.query_hash),
+            format!("v1:{}:+1", fingerprint.query_hash),
+            format!("v1:{}:3;DROP", fingerprint.query_hash),
+            format!("v1:{}:3:extra", fingerprint.query_hash),
+            format!("v1:{}:3/../../", fingerprint.query_hash),
+            format!("v1:{}:3\0", fingerprint.query_hash),
+            format!("v1:{}:10000001", fingerprint.query_hash),
+            format!("v1:{}:18446744073709551616", fingerprint.query_hash),
+            "x".repeat(101),
+        ];
+        for (index, token) in bad_tokens.iter().enumerate() {
+            let mut attempt = request.clone();
+            assert!(
+                prepare_historical(&mut attempt, "42", Some(token), None).is_err(),
+                "Cursor mutation {index} unexpectedly accepted"
+            );
+            assert_eq!(attempt, request);
+        }
+        for (index, changed) in [
+            json!({"dimensionFilter":{"filter":{"fieldName":"country","stringFilter":{"value":"US"}}}}),
+            json!({"metrics":[{"name":"screenPageViews"}]}),
+            json!({"dateRanges":[{"startDate":"7daysAgo","endDate":"today"}]}),
+        ]
+        .into_iter()
+        .enumerate()
+        {
+            let mut modified = request.clone();
+            for (key, value) in changed.as_object().unwrap() {
+                modified[key.as_str()] = value.clone();
+            }
+            assert!(
+                prepare_historical(&mut modified, "42", Some(&valid_cursor), None).is_err(),
+                "Changed-query cursor fixture {index} unexpectedly accepted"
+            );
+        }
+        let mut account = request;
+        assert!(
+            prepare_access(&mut account, "42", true, Some(&valid_cursor), None).is_err(),
+            "A property cursor must never authorize a different account resource"
+        );
+    }
+
+    #[test]
     fn rejects_invalid_controls_and_malformed_provider_shapes() {
         let mut options = controls();
         options.max_rows = Some(0);
