@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `█████░░░░░ 46.0%` · **+46.04 percentage points from initial empty repo; +0.45 pp from tested upstream drift maintenance issue tracking** · 88/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `█████░░░░░ 46.3%` · **+46.26 percentage points from initial empty repo; +0.22 pp from reviewable local credential threat-model baseline** · 88/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -11,7 +11,7 @@
 - On each stewardship round, report total and actively worked milestone/phase/task bars plus the **signed delta in percentage points** against the previous verified committed ledger; completed 100% tasks can be omitted in ongoing status updates.
 - **No progress padding.** Upstream feature inventory, planning and brand assets count only for their specific documentation tasks; GA4 functionality starts at 0% until tests establish otherwise. Real Google access, credentials and live tests are separate explicit gates.
 
-## 🧭 M0 — Reference baseline and project governance — `████████░░ 82.3%`
+## 🧭 M0 — Reference baseline and project governance — `█████████░ 85.3%`
 
 **Scope:** MVP. **Acceptance gate:** Audited pinned feature-union inventory, color identity, public-safe policies and reproducible plan. Foundation is not runtime parity.
 
@@ -36,7 +36,7 @@
 - 🔁 **T008 — Set up upstream drift tracking and version pin policy** — `██████████ 100.0%`
   - ✅ **Gate:** CI alerts on name/signature deltas without silent breaking changes · **Evidence:** docs/UPSTREAM.md, docs/PROVENANCE.md, docs/tool-inventory.json and src/bin/synmetra-progress.rs: pinned source revisions and CI-checked 36-name union; GitHub Actions 40211821382 passed; upstream signature drift alert automation remains open.; .github/workflows/upstream-drift.yml now checks pinned upstream signature-bearing source blobs on weekly schedule, manual dispatch and changes to the watch/lock; spec/upstream/drift-lock.json pins SednaLabs schema snapshot blob 646c0baa and Google coordinator blob a1e7936a at separately documented source commits; drift produces a failed GitHub Actions job and review guidance without silently updating the baseline. docs/UPSTREAM.md documents the conservative source-change policy and its limitations. GitHub Actions 40241902469 verified both public current blobs against the pins; 40241902503 core and DuckDB passed. The watch detects file changes for review, not automatic parsing of Google's entire dynamic runtime schema.
 
-### 🦀 P01 — Native scaffold and quality gates — `███████░░░ 66.7%`
+### 🦀 P01 — Native scaffold and quality gates — `███████░░░ 72.2%`
 
 **Feature:** Rust foundation.
 
@@ -54,8 +54,8 @@
   - ✅ **Gate:** No secrets or real analytics identifiers in fixtures · **Evidence:** src/google.rs synthetic tokio TcpListener Google API mock tests; Actions 40202015488 passed without real credentials; src/google.rs synthetic tokio TcpListener Google API mock tests; Actions 40202015488 passed without real credentials
 - 🧭 **T015 — Implement CLI config parsing and doctor subcommands** — `██████████ 100.0%`
   - ✅ **Gate:** Actionable diagnostics and typed failures without exposing secrets · **Evidence:** src/auth.rs implements native `auth doctor`, `auth command`, `auth status`, `auth login`, `auth logout`; public_status redacts token values and offline unit tests passed core run 40212316165; live Google authorization and full operator QA remain unverified.; src/auth.rs CLI offers private read-only auth doctor/status/command, typed malformed login validation and revocation guidance. GitHub Actions 40244436625 built the actual synmetra executable and passed Verify native auth doctor and credential-safe CLI failures, with isolated XDG_CONFIG_HOME, no configured credentials, synthetic override-token canary never disclosed, actionable Admin/Data API prerequisites, failed headless login without --client-id-file, and logout guidance. This accepts local CLI diagnostics, not an authorized live OAuth login.
-- 🔏 **T016 — Threat-model local execution and its credential boundary** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Review accepted before live Google credentials
+- 🔏 **T016 — Threat-model local execution and its credential boundary** — `█████░░░░░ 50.0%`
+  - ✅ **Gate:** Review accepted before live Google credentials · **Evidence (baseline only):** docs/LOCAL_EXECUTION_THREAT_MODEL.md audits assets, actors, stdio/HTTP bearer boundaries, native OAuth callback/PKCE, on-disk credential isolation, Google request validation, opt-in writes, DuckDB SQL restrictions, upstream CI, misuse scenarios and residual/security-release gates, grounded in src/main.rs src/http.rs src/auth.rs src/google.rs src/scratchpad.rs. Independent pre-live review and live-account acceptance remain unverified.
 - 🗒️ **T017 — Create changelog and reproducible release policy** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Document semver and provenance gates
 

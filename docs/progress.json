@@ -329,12 +329,13 @@
               "id": "T016",
               "emoji": "🔏",
               "name": "Threat-model local execution and its credential boundary",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Review accepted before live Google credentials",
               "checks": [
                 {
                   "text": "Deliver threat-model local execution and its credential boundary as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "docs/LOCAL_EXECUTION_THREAT_MODEL.md audits assets, actors, stdio/HTTP bearer boundaries, native OAuth callback/PKCE, on-disk credential isolation, Google request validation, opt-in writes, DuckDB SQL restrictions, upstream CI, misuse scenarios and residual/security-release gates, grounded in src/main.rs src/http.rs src/auth.rs src/google.rs src/scratchpad.rs. Independent pre-live review and live-account acceptance remain unverified."
                 },
                 {
                   "text": "Review accepted before live Google credentials",
