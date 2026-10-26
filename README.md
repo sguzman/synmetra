@@ -10,13 +10,13 @@
 
 ## 📊 Evidence-backed progress
 
-**Overall:** `█████░░░░░ 54.0%` · **overall delta: +53.96 percentage points** from initial 0% (**latest accepted round: +0.88 pp**). **35/35 SednaLabs tool names implemented provisionally plus 1 opt-in annotation handler; 0/36 fully accepted upstream parity.** Real Google account acceptance and full tool schemas remain pending.
+**Overall:** `█████░░░░░ 54.4%` · **overall delta: +54.41 percentage points** from initial 0% (**latest accepted round: +0.45 pp**). **35/35 SednaLabs tool names implemented provisionally plus 1 opt-in annotation handler; 0/36 fully accepted upstream parity.** Real Google account acceptance and full tool schemas remain pending.
 
 | Milestone | Progress | Gate |
 | --- | --- | --- |
 | 🧭 M0 Reference baseline and project governance | `█████████░ 91.2%` | MVP |
 | 🔌 M1 MCP protocol and transport fidelity | `███████░░░ 65.2%` | MVP |
-| 🔑 M2 Google authentication and credential isolation | `███░░░░░░░ 30.8%` | MVP |
+| 🔑 M2 Google authentication and credential isolation | `███░░░░░░░ 34.6%` | MVP |
 | 🏢 M3 Admin API information parity | `██████████ 100.0%` | MVP |
 | 📊 M4 Reporting, preflight and Data API parity | `██████████ 100.0%` | MVP |
 | ✍️ M5 Explicitly gated GA mutation parity | `████████░░ 84.6%` | MVP |

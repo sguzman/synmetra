@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `█████░░░░░ 54.0%` · **+53.96 percentage points from initial empty repo; +0.88 pp from verified release policy, experimental Linux binary and Arch recipe** · 105/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `█████░░░░░ 54.4%` · **+54.41 percentage points from initial empty repo; +0.45 pp from CI-verified concurrent native OAuth refresh and rotation** · 107/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -126,7 +126,7 @@
   - ✅ **Gate:** Protocol wire fixtures pass multiple clients
 
 
-## 🔑 M2 — Google authentication and credential isolation — `███░░░░░░░ 30.8%`
+## 🔑 M2 — Google authentication and credential isolation — `███░░░░░░░ 34.6%`
 
 **Scope:** MVP. **Acceptance gate:** Secure, least-privilege, non-Python auth across interactive, local and service configurations; no secret leaks.
 
@@ -144,8 +144,8 @@
   - ✅ **Gate:** Headless flow completes and rejects replayed callbacks
 - 🔐 **T045 — Store tokens in GA4-specific user config storage** — `██████████ 100.0%`
   - ✅ **Gate:** Private file permissions and no shared ADC clobbering · **Evidence:** src/auth.rs isolated XDG credential path and atomic mode-0600 persistence; Actions 40202015488 compiled; file-mode tests pending; Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.
-- ♻️ **T046 — Implement expiry-aware access-token refresh** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Refresh honors expiry and avoids parallel stampedes
+- ♻️ **T046 — Implement expiry-aware access-token refresh** — `██████████ 100.0%`
+  - ✅ **Gate:** Refresh honors expiry and avoids parallel stampedes · **Evidence:** src/auth.rs access_token() expiry check, serialized refresh lock and Google token exchange; Actions 40202015488 compiled; live refresh pending; src/auth.rs access_token_at preserves the production lock/re-read/refresh/atomic persistence path; concurrent_expired_credentials_refresh_once_and_rotate_privately verifies a fresh token skips network, a token within 120-second skew window refreshes, concurrent calls share one mock HTTP token exchange, rotated refresh credentials are persisted, and future fresh reads require no exchange. GitHub Actions 40261800504 full core CI passed tests, fmt and strict Clippy. Live Google renewal remains a separate acceptance gate.
 - 📛 **T047 — Validate requested OAuth scopes per capability** — `██████████ 100.0%`
   - ✅ **Gate:** Read-only uses analytics.readonly; writes demand analytics.edit · **Evidence:** src/auth.rs authorization_url() requests only analytics.readonly; scope tests pass Actions 40202015488; write scope policy pending; src/auth.rs now requires explicit auth login --client-id-file PATH --allow-edit to request both analytics.readonly and analytics.edit, verifies both returned scopes, persists granted scope in mode-0600 private storage and keeps normal login readonly; tests pkce_authorization_is_readonly_and_state_bound and edit_scopes_require_explicit_consent_in_authorization_url passed core/feature CI 40222541416. Google's permissions remain independently enforced and live consent is unverified.
 - 🔎 **T048 — Validate live token and quota-project configuration** — `░░░░░░░░░░ 0.0%`
@@ -167,8 +167,8 @@
   - ✅ **Gate:** Client token is never persisted in server config
 - 🔀 **T054 — Support request-header-or-config only on loopback** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Hosted fallback to server-held identity fails closed
-- 🧮 **T055 — Support configured refresh-token credentials** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Explicit credentials refresh without CLI gcloud dependency
+- 🧮 **T055 — Support configured refresh-token credentials** — `██████████ 100.0%`
+  - ✅ **Gate:** Explicit credentials refresh without CLI gcloud dependency · **Evidence:** src/auth.rs configured refresh token persisted without Python/gcloud dependency; Actions 40202015488 compiled; live token renewal pending; src/auth.rs access_token_at refreshes a privately persisted explicit OAuth refresh token through native reqwest, without invoking Python or gcloud. concurrent_expired_credentials_refresh_once_and_rotate_privately uses temporary 0600 fixture credentials and a localhost mock token endpoint, verifies rotated refresh-token persistence and two concurrent callers, and cleans fixture files. GitHub Actions 40261800504 full core CI passed. This is native configured-credentials acceptance, not a live Google account claim.
 - 🏷️ **T056 — Support quota project and billing headers** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Expected Google quota routing preserved
 - ⏳ **T057 — Guard clock skew and rotation races** — `░░░░░░░░░░ 0.0%`

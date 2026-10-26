@@ -926,7 +926,7 @@
               "id": "T046",
               "emoji": "♻️",
               "name": "Implement expiry-aware access-token refresh",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Refresh honors expiry and avoids parallel stampedes",
               "checks": [
                 {
@@ -936,7 +936,8 @@
                 },
                 {
                   "text": "Refresh honors expiry and avoids parallel stampedes",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/auth.rs access_token_at preserves the production lock/re-read/refresh/atomic persistence path; concurrent_expired_credentials_refresh_once_and_rotate_privately verifies a fresh token skips network, a token within 120-second skew window refreshes, concurrent calls share one mock HTTP token exchange, rotated refresh credentials are persisted, and future fresh reads require no exchange. GitHub Actions 40261800504 full core CI passed tests, fmt and strict Clippy. Live Google renewal remains a separate acceptance gate."
                 }
               ]
             },
@@ -1090,7 +1091,7 @@
               "id": "T055",
               "emoji": "🧮",
               "name": "Support configured refresh-token credentials",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Explicit credentials refresh without CLI gcloud dependency",
               "checks": [
                 {
@@ -1100,7 +1101,8 @@
                 },
                 {
                   "text": "Explicit credentials refresh without CLI gcloud dependency",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/auth.rs access_token_at refreshes a privately persisted explicit OAuth refresh token through native reqwest, without invoking Python or gcloud. concurrent_expired_credentials_refresh_once_and_rotate_privately uses temporary 0600 fixture credentials and a localhost mock token endpoint, verifies rotated refresh-token persistence and two concurrent callers, and cleans fixture files. GitHub Actions 40261800504 full core CI passed. This is native configured-credentials acceptance, not a live Google account claim."
                 }
               ]
             },
