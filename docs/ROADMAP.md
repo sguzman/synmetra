@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `███████░░░ 71.8%` · **+71.81 percentage points from initial empty repo; +0.44 pp from CI-verified virtual retry clock and seeded hostile-input corpus**
+**Overall:** `███████░░░ 72.2%` · **+72.25 percentage points from initial empty repo; +0.44 pp from repeatable release hashes and isolated artifact execution**
 
 ### 📏 Progress conventions
 
@@ -495,7 +495,7 @@
   - ✅ **Gate:** Changes open maintenance work rather than silently inflate parity · **Evidence:** .github/workflows/upstream-drift.yml watches exact SednaLabs schema and Google coordinator Git blob SHAs weekly and on reviewed lock/workflow changes; changes trigger stable [upstream-drift] local maintenance issue, never repin automatically. ci/test-upstream-drift-watch.sh executes the actual workflow shell body with mocked curl/gh, verifying unchanged, changed and duplicate issue cases. GitHub Actions drift workflow 40249957815 succeeded.; GitHub Actions 40249957815 offline fixture checks verify an upstream blob change fails the watch and opens exactly one review issue per source; repeat unchanged pin mismatch reuses an existing open issue and a second changed source opens a separate one. Real unchanged upstream watch also passed. No real upstream drift was forced and no real maintenance issue was created; this is synthetic acceptance of the detection/mutation control, not a source parity claim.
 
 
-## 🧪 M8 — Verification, resilience and security acceptance — `█████░░░░░ 48.2%`
+## 🧪 M8 — Verification, resilience and security acceptance — `█████░░░░░ 50.0%`
 
 **Scope:** MVP. **Acceptance gate:** Full offline and authorized live verification including malformed inputs, MCP interoperability and threat model.
 
@@ -547,7 +547,7 @@
 - 🗄️ **T186 — Record redacted reproducible live test ledger** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** All outcomes scoped with date and source SHA
 
-### 🛡️ P24 — Robustness and operational performance — `███████░░░ 66.7%`
+### 🛡️ P24 — Robustness and operational performance — `███████░░░ 72.2%`
 
 **Feature:** Reliability and security.
 
@@ -567,20 +567,20 @@
   - ✅ **Gate:** No account data or tokens in CI artifacts · **Evidence:** src/auth.rs keeps tokens out of public CLI doctor/status, src/google.rs excludes upstream provider body and credentials from typed errors, and src/main.rs keeps MCP stdout clean. Core CI https://github.com/sguzman/synmetra/actions/runs/40266208686 passed synthetic credential-canary checks for stdio, auth doctor, isolated installed native binary and error cases. A dedicated scan of generated CI artifacts remains open.
 - 🛑 **T194 — Document safe remote deployment rejection gates** — `██████████ 100.0%`
   - ✅ **Gate:** No unauthenticated public shared-credential service · **Evidence:** docs/SECURITY.md, docs/HTTP.md and docs/LOCAL_EXECUTION_THREAT_MODEL.md document non-production loopback-only deployment, identity and TLS rejection gates; src/main.rs blocks scratchpad over HTTP. Core CI https://github.com/sguzman/synmetra/actions/runs/40266208686 verified nonloopback-bind rejection and protected local transport.; src/http.rs enforces IPv4 loopback-only binding, constant-time inbound bearer checks, Host/Origin restrictions, and bounded HTTP requests; src/main.rs denies process-shared scratchpad sessions over HTTP. Tests production_http_bind_is_always_ipv4_loopback, loopback_http_rejects_unauthenticated_wrong_host_and_wrong_origin and separate_local_bearer_principals_cannot_replay_foreign_sessions passed in core CI https://github.com/sguzman/synmetra/actions/runs/40266208686. This does not authorize public hosting.
-- 🦺 **T195 — Exercise build reproducibility and supply-chain pinning** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Signed provenance and dependency audit evidence
+- 🦺 **T195 — Exercise build reproducibility and supply-chain pinning** — `█████░░░░░ 50.0%`
+  - ✅ **Gate:** Signed provenance and dependency audit evidence · **Evidence:** Pinned Rust 1.99.1/Cargo.lock source builds an x86-64 release binary in two independent Cargo target directories and compares SHA-256 digests and sizes. The dedicated workflow step passed https://github.com/sguzman/synmetra/actions/runs/40358192285; separate cargo-deny Rust license/source/advisory scans also pass. Cross-runner reproducibility, bundled DuckDB and signed provenance remain distinct pending gates.
 
 
-## 🚀 M9 — Linux release and Codex-ready inauguration — `██████░░░░ 56.8%`
+## 🚀 M9 — Linux release and Codex-ready inauguration — `██████░░░░ 59.1%`
 
 **Scope:** MVP. **Acceptance gate:** A documented stable native binary with 36-tool verified parity and release artifacts; no Python/npm runtime.
 
-### 📦 P25 — Packaging and installation — `██████░░░░ 57.1%`
+### 📦 P25 — Packaging and installation — `██████░░░░ 64.3%`
 
 **Feature:** Native packaging.
 
-- 🏗️ **T196 — Build reproducible x86-64 Linux binary** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Artifact installs without Python npm or node · **Evidence (implementation only):** .github/workflows/linux-release.yml builds the default Rust 1.99.1 release binary from Cargo.lock, verifies dynamic native dependencies, normalizes a tarball with source SHA, license and install instructions, checks SHA-256, then extracts and invokes the binary with PATH=/nonexistent. GitHub Actions 40259842341 succeeded and uploaded experimental x86-64 artifact ID 12623622345. Independent two-run binary hash reproducibility has NOT been proven; acceptance remains partial.
+- 🏗️ **T196 — Build reproducible x86-64 Linux binary** — `██████████ 100.0%`
+  - ✅ **Gate:** Artifact installs without Python npm or node · **Evidence:** .github/workflows/linux-release.yml builds the default Rust 1.99.1 release binary from Cargo.lock, verifies dynamic native dependencies, normalizes a tarball with source SHA, license and install instructions, checks SHA-256, then extracts and invokes the binary with PATH=/nonexistent. GitHub Actions 40259842341 succeeded and uploaded experimental x86-64 artifact ID 12623622345. Independent two-run binary hash reproducibility has NOT been proven; acceptance remains partial.; GitHub Actions https://github.com/sguzman/synmetra/actions/runs/40358192285 passed two independent Cargo target-directory release builds with matching SHA-256 hashes, a normalized checksum-verified tarball, archive extraction and CLI auth doctor/version checks under env -i PATH=/nonexistent. ldd rejects libssl/libcrypto/libpython/libnode runtime linkage, and the experimental artifact was uploaded. This is Ubuntu x86-64 CI evidence, not EndeavourOS or cross-runner proof.
 - 🦀 **T197 — Provide rustup and cargo-based source installation** — `██████████ 100.0%`
   - ✅ **Gate:** Native build documented for Arch and other Linux · **Evidence:** docs/INSTALL.md documents pinning Rust 1.99.1, Arch pacman prerequisites, Cargo --locked --bin synmetra install into a user-local root, Fish PATH, other Linux build prerequisites, isolated diagnostics, optional DuckDB boundary, upgrade and uninstall; linked from README. Main commit 866847051.; GitHub Actions 40258199187 core job successfully ran an isolated Cargo +1.99.1 install --path . --locked --debug --bin synmetra to a temp root, verified installed executable without progress utility, invoked native auth doctor with PATH=/nonexistent and isolated XDG_CONFIG_HOME, checked no credential-value leakage, then uninstalled cleanly; DuckDB and core jobs both passed. Smoke was on Ubuntu Linux; Arch package prerequisites are documented but native Arch packaging is T198.
 - 📦 **T198 — Provide Arch PKGBUILD or local packaging recipe** — `█████░░░░░ 50.0%`

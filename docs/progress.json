@@ -3901,12 +3901,13 @@
               "id": "T195",
               "emoji": "🦺",
               "name": "Exercise build reproducibility and supply-chain pinning",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Signed provenance and dependency audit evidence",
               "checks": [
                 {
                   "text": "Deliver exercise build reproducibility and supply-chain pinning as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "Pinned Rust 1.99.1/Cargo.lock source builds an x86-64 release binary in two independent Cargo target directories and compares SHA-256 digests and sizes. The dedicated workflow step passed https://github.com/sguzman/synmetra/actions/runs/40358192285; separate cargo-deny Rust license/source/advisory scans also pass. Cross-runner reproducibility, bundled DuckDB and signed provenance remain distinct pending gates."
                 },
                 {
                   "text": "Signed provenance and dependency audit evidence",
@@ -3935,7 +3936,7 @@
               "id": "T196",
               "emoji": "🏗️",
               "name": "Build reproducible x86-64 Linux binary",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Artifact installs without Python npm or node",
               "checks": [
                 {
@@ -3945,7 +3946,8 @@
                 },
                 {
                   "text": "Artifact installs without Python npm or node",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "GitHub Actions https://github.com/sguzman/synmetra/actions/runs/40358192285 passed two independent Cargo target-directory release builds with matching SHA-256 hashes, a normalized checksum-verified tarball, archive extraction and CLI auth doctor/version checks under env -i PATH=/nonexistent. ldd rejects libssl/libcrypto/libpython/libnode runtime linkage, and the experimental artifact was uploaded. This is Ubuntu x86-64 CI evidence, not EndeavourOS or cross-runner proof."
                 }
               ]
             },
