@@ -3219,10 +3219,9 @@ mod tests {
     fn upstream_parameter_audit_preserves_complete_pinned_source_fields() {
         use std::collections::BTreeSet;
 
-        let audit: Value = serde_json::from_str(include_str!(
-            "../spec/audits/upstream-parameter-union.json"
-        ))
-        .unwrap();
+        let audit: Value =
+            serde_json::from_str(include_str!("../spec/audits/upstream-parameter-union.json"))
+                .unwrap();
         let sedna: Value = serde_json::from_str(include_str!(
             "../spec/upstream/sednalabs-tool-schema.v1.json"
         ))
@@ -3285,7 +3284,10 @@ mod tests {
                     .unwrap();
                 assert_eq!(
                     reported["required"],
-                    tool["required"].as_array().unwrap().contains(&json!(field_name)),
+                    tool["required"]
+                        .as_array()
+                        .unwrap()
+                        .contains(&json!(field_name)),
                     "{name}.{field_name}"
                 );
             }
