@@ -3109,6 +3109,81 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn report_tool_schema_and_typed_errors_fail_before_google_network_access() {
+        let tool = Synmetra::tool_router()
+            .list_all()
+            .into_iter()
+            .find(|tool| tool.name == "run_report")
+            .unwrap();
+        let schema = serde_json::to_value(&tool.input_schema).unwrap();
+        for key in ["property_id", "date_ranges", "dimensions", "metrics"] {
+            assert!(
+                schema["required"]
+                    .as_array()
+                    .unwrap()
+                    .contains(&json!(key)),
+                "Native exported schema no longer requires {key}"
+            );
+        }
+
+        let valid = json!({
+            "property_id":"42",
+            "date_ranges":[{"start_date":"yesterday","end_date":"today"}],
+            "dimensions":["country"],
+            "metrics":["activeUsers"]
+        });
+        for (field, invalid) in [
+            ("property_id", json!(false)),
+            ("date_ranges", json!("yesterday")),
+            ("dimensions", json!([17])),
+            ("metrics", json!("activeUsers")),
+            ("offset", json!(-1)),
+            ("output_mode", json!("unsafe_sql")),
+        ] {
+            let mut value = valid.clone();
+            value[field] = invalid;
+            let error = serde_json::from_value::<ReportArgs>(value)
+                .expect_err("Invalid JSON value must not deserialize")
+                .to_string();
+            assert!(!error.trim().is_empty(), "{field} lacked a useful error");
+            assert!(error.len() <= 256, "{field} error grew unexpectedly");
+        }
+        let mut absent = valid.clone();
+        absent.as_object_mut().unwrap().remove("metrics");
+        let missing = serde_json::from_value::<ReportArgs>(absent)
+            .expect_err("Missing required metric list must fail")
+            .to_string();
+        assert!(missing.contains("metrics"));
+
+        let server = Synmetra::new(GoogleClient::new(None), false);
+        for invalid_metrics in [vec![], vec!["activeUsers", "activeUsers"]] {
+            let mut value = valid.clone();
+            value["metrics"] = json!(invalid_metrics);
+            let args: ReportArgs = serde_json::from_value(value).unwrap();
+            let result = server.run_report(Parameters(args)).await;
+            assert_eq!(result.is_error, Some(true));
+            let structured = result.structured_content.unwrap();
+            assert_eq!(structured["error"]["category"], "validation");
+            assert_eq!(structured["error"]["code"], "INVALID_REQUEST");
+            assert!(structured["error"]["message"].is_string());
+            assert!(!structured.to_string().contains("synthetic-private-canary"));
+        }
+
+        let realtime: RealtimeArgs = serde_json::from_value(json!({
+            "property_id":"42",
+            "dimensions":["country"],
+            "metrics":["activeUsers"],
+            "offset":1
+        }))
+        .unwrap();
+        let result = server.run_realtime_report(Parameters(realtime)).await;
+        assert_eq!(result.is_error, Some(true));
+        let structured = result.structured_content.unwrap();
+        assert_eq!(structured["error"]["code"], "UNSUPPORTED_REALTIME_OFFSET");
+        assert_eq!(structured["error"]["category"], "validation");
+    }
+
+    #[tokio::test]
     async fn core_preflight_and_batch_reject_invalid_input_before_google_calls() {
         let server = Synmetra::new(GoogleClient::new(None), false);
         let bad_batch = server
