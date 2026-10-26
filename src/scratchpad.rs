@@ -1782,11 +1782,20 @@ mod tests {
         );
         assert_eq!(
             state
-                .query_bounded("hostile_sql", "SELECT COUNT(*) FROM events", None, None, false)
+                .query_bounded(
+                    "hostile_sql",
+                    "SELECT COUNT(*) FROM events",
+                    None,
+                    None,
+                    false
+                )
                 .unwrap()["rows"][0]["row_count"],
             "2"
         );
-        assert_eq!(state.tables("hostile_sql", None).unwrap()["total_tables"], 1);
+        assert_eq!(
+            state.tables("hostile_sql", None).unwrap()["total_tables"],
+            1
+        );
     }
 
     #[test]
