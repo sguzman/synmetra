@@ -690,9 +690,12 @@ mod tests {
 
         // Transfer-Encoding: chunked deliberately omits Content-Length, so the
         // body-stream limit must enforce the same bound independently.
-        let unannounced = reqwest::Body::wrap_stream(futures_util::stream::iter(vec![
-            Ok::<Vec<u8>, std::io::Error>(vec![b'x'; MAX_HTTP_REQUEST_BYTES + 1]),
-        ]));
+        let unannounced = reqwest::Body::wrap_stream(futures_util::stream::iter(vec![Ok::<
+            Vec<u8>,
+            std::io::Error,
+        >(
+            vec![b'x'; MAX_HTTP_REQUEST_BYTES + 1],
+        )]));
         let oversized_chunked = client
             .post(&endpoint)
             .header(header::AUTHORIZATION, format!("Bearer {token}"))
