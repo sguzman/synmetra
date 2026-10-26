@@ -442,13 +442,143 @@ async fn access_token_at(
     Ok(Some(stored.access_token))
 }
 
+// Explicit opt-in for user-owned Google Application Default Credentials JSON.
+// This is deliberately not gcloud integration, service-account impersonation,
+// or authorization for Synmetra's gated annotation mutation. The ADC file is
+// never modified and its access token cache exists only in process memory.
+#[derive(Deserialize)]
+struct AdcAuthorizedUser {
+    #[serde(rename = "type")]
+    credential_type: String,
+    client_id: String,
+    client_secret: String,
+    refresh_token: String,
+}
+
+struct AdcTokenCache {
+    path: PathBuf,
+    client_id: String,
+    client_secret: String,
+    original_refresh_token: String,
+    active_refresh_token: String,
+    access_token: String,
+    expires_at: u64,
+}
+
+fn adc_user_opted_in() -> bool {
+    env::var("SYNMETRA_GOOGLE_ADC_USER").is_ok_and(|value| value == "1")
+}
+
+fn read_adc_user_at(path: &Path) -> Result<AdcAuthorizedUser, String> {
+    if !path.is_absolute() {
+        return Err("Google ADC credentials path must be absolute".into());
+    }
+    let parent = path.parent().ok_or("Google ADC credentials have no directory")?;
+    let dir = fs::symlink_metadata(parent)
+        .map_err(|_| "Cannot inspect Google ADC credentials directory")?;
+    if !dir.is_dir() || dir.file_type().is_symlink() {
+        return Err("Refusing a symlinked Google ADC credentials directory".into());
+    }
+    private_file(path)?;
+    let file = fs::File::open(path).map_err(|_| "Cannot open Google ADC credentials")?;
+    if file.metadata().map_err(|_| "Cannot stat Google ADC credentials")?.len() > 32 * 1024 {
+        return Err("Google ADC credentials exceed the 32 KiB limit".into());
+    }
+    let mut content = String::new();
+    file.take(32 * 1024 + 1)
+        .read_to_string(&mut content)
+        .map_err(|_| "Cannot read Google ADC credentials")?;
+    let adc: AdcAuthorizedUser =
+        serde_json::from_str(&content).map_err(|_| "Invalid Google ADC JSON")?;
+    if adc.credential_type != "authorized_user" {
+        return Err("Only explicit Google ADC authorized_user credentials are supported".into());
+    }
+    if !adc.client_id.ends_with(".apps.googleusercontent.com")
+        || adc.client_secret.is_empty()
+        || adc.refresh_token.is_empty()
+    {
+        return Err("Google ADC authorized_user fields are incomplete".into());
+    }
+    Ok(adc)
+}
+
+async fn adc_user_access_token_at(
+    path: &Path,
+    endpoint: &str,
+    lock: &tokio::sync::Mutex<Option<AdcTokenCache>>,
+) -> Result<String, String> {
+    let mut held = lock.lock().await;
+    let source = read_adc_user_at(path)?;
+    let reusable = held.as_ref().is_some_and(|cached| {
+        cached.path == path
+            && cached.client_id == source.client_id
+            && cached.client_secret == source.client_secret
+            && cached.original_refresh_token == source.refresh_token
+    });
+    if reusable {
+        if let Some(cached) = held.as_ref() {
+            if cached.expires_at > epoch_seconds().saturating_add(120) {
+                return Ok(cached.access_token.clone());
+            }
+        }
+    }
+    let active_refresh = if reusable {
+        held.as_ref()
+            .map(|cached| cached.active_refresh_token.clone())
+            .unwrap_or_else(|| source.refresh_token.clone())
+    } else {
+        source.refresh_token.clone()
+    };
+    let response = token_exchange_at(
+        endpoint,
+        &[
+            ("client_id", &source.client_id),
+            ("client_secret", &source.client_secret),
+            ("refresh_token", &active_refresh),
+            ("grant_type", "refresh_token"),
+        ],
+    )
+    .await?;
+    if response.access_token.is_empty() || response.expires_in == 0 {
+        return Err("Google ADC user refresh returned invalid credentials".into());
+    }
+    let token = response.access_token.clone();
+    *held = Some(AdcTokenCache {
+        path: path.to_path_buf(),
+        client_id: source.client_id,
+        client_secret: source.client_secret,
+        original_refresh_token: source.refresh_token,
+        active_refresh_token: response
+            .refresh_token
+            .filter(|value| !value.is_empty())
+            .unwrap_or(active_refresh),
+        access_token: response.access_token,
+        expires_at: epoch_seconds().saturating_add(response.expires_in),
+    });
+    Ok(token)
+}
+
 pub async fn access_token() -> Result<Option<String>, String> {
     static REFRESH_LOCK: tokio::sync::OnceCell<tokio::sync::Mutex<()>> =
         tokio::sync::OnceCell::const_new();
     let lock = REFRESH_LOCK
         .get_or_init(|| async { tokio::sync::Mutex::new(()) })
         .await;
-    access_token_at(&credentials_path()?, TOKEN_ENDPOINT, lock).await
+    let native = access_token_at(&credentials_path()?, TOKEN_ENDPOINT, lock).await?;
+    if native.is_some() || !adc_user_opted_in() {
+        return Ok(native);
+    }
+    let raw_path = env::var_os("GOOGLE_APPLICATION_CREDENTIALS")
+        .filter(|path| !path.is_empty())
+        .ok_or("Explicit ADC user opt-in requires GOOGLE_APPLICATION_CREDENTIALS")?;
+    static ADC_LOCK: tokio::sync::OnceCell<tokio::sync::Mutex<Option<AdcTokenCache>>> =
+        tokio::sync::OnceCell::const_new();
+    let adc_lock = ADC_LOCK
+        .get_or_init(|| async { tokio::sync::Mutex::new(None) })
+        .await;
+    adc_user_access_token_at(&PathBuf::from(raw_path), TOKEN_ENDPOINT, adc_lock)
+        .await
+        .map(Some)
 }
 
 #[derive(Debug, Default)]
@@ -646,6 +776,8 @@ pub(crate) fn native_edit_scope_granted() -> Result<Option<bool>, String> {
 pub fn public_status() -> serde_json::Value {
     let override_token =
         std::env::var("SYNMETRA_GOOGLE_ACCESS_TOKEN").is_ok_and(|value| !value.trim().is_empty());
+    let adc_user_opted_in = adc_user_opted_in()
+        && env::var_os("GOOGLE_APPLICATION_CREDENTIALS").is_some_and(|value| !value.is_empty());
     match read_credentials() {
         Ok(Some(config)) => serde_json::json!({
             "local_oauth_configured": true, "override_token_present": override_token,
@@ -654,6 +786,7 @@ pub fn public_status() -> serde_json::Value {
         }),
         Ok(None) => serde_json::json!({
             "local_oauth_configured": false, "override_token_present": override_token,
+            "adc_user_opted_in": adc_user_opted_in,
             "scope": "none"
         }),
         Err(_) => serde_json::json!({
@@ -685,6 +818,9 @@ Credentials: private XDG Synmetra config, 0700 directory and 0600 file.
 status and doctor never print tokens. logout clears only local Synmetra
 credentials; revoke Google-side access separately if needed.
 A real consent flow requires the Google account owner in a browser.
+Alternative read-only authorized_user ADC requires BOTH
+SYNMETRA_GOOGLE_ADC_USER=1 and GOOGLE_APPLICATION_CREDENTIALS=/absolute/private/user.json.
+ADC source JSON is never rewritten and never grants annotation write permission.
 "#;
 
 fn doctor_guidance(status: &serde_json::Value) -> Vec<&'static str> {
@@ -693,7 +829,10 @@ fn doctor_guidance(status: &serde_json::Value) -> Vec<&'static str> {
         advice.push(
             "Stored credentials could not be read safely. Check the private XDG config path, ownership, symlinks, and 0700 directory/0600 file permissions; never relax permissions or paste the file into logs.",
         );
-    } else if status["local_oauth_configured"] != true && status["override_token_present"] != true {
+    } else if status["local_oauth_configured"] != true
+        && status["override_token_present"] != true
+        && status["adc_user_opted_in"] != true
+    {
         advice.push(
             "To configure native OAuth: synmetra auth login --client-id-file /path/to/desktop-client.json",
         );
@@ -706,6 +845,11 @@ fn doctor_guidance(status: &serde_json::Value) -> Vec<&'static str> {
     if status["override_token_present"] == true {
         advice.push(
             "An environment-provided Google access token takes precedence over local OAuth credentials and is not automatically refreshed.",
+        );
+    }
+    if status["adc_user_opted_in"] == true {
+        advice.push(
+            "Explicit read-only ADC authorized_user is enabled. The private JSON must be mode 0600, non-symlinked and readable; never share or paste it into a public issue.",
         );
     }
     advice
@@ -879,12 +1023,127 @@ mod tests {
             "analytics.edit",
             "0700",
             "0600",
+            "SYNMETRA_GOOGLE_ADC_USER=1",
+            "GOOGLE_APPLICATION_CREDENTIALS",
         ] {
             assert!(
                 AUTH_HELP.contains(option),
                 "Missing auth help option: {option}"
             );
         }
+    }
+
+    #[test]
+    fn explicitly_supplied_adc_user_json_is_private_and_rejects_unsafe_files() {
+        use std::os::unix::fs::{symlink, PermissionsExt};
+
+        let root = std::env::temp_dir().join(format!(
+            "synmetra-adc-privacy-{}-{}",
+            std::process::id(),
+            nonce()
+        ));
+        fs::create_dir_all(&root).unwrap();
+        let path = root.join("user-adc.json");
+        let valid = serde_json::json!({
+            "type":"authorized_user",
+            "client_id":"synthetic.apps.googleusercontent.com",
+            "client_secret":"synthetic-private-client-secret",
+            "refresh_token":"synthetic-private-refresh"
+        })
+        .to_string();
+        fs::write(&path, &valid).unwrap();
+        fs::set_permissions(&path, fs::Permissions::from_mode(0o600)).unwrap();
+        let loaded = read_adc_user_at(&path).unwrap();
+        assert_eq!(loaded.credential_type, "authorized_user");
+        assert_eq!(loaded.client_id, "synthetic.apps.googleusercontent.com");
+
+        let link = root.join("linked.json");
+        symlink(&path, &link).unwrap();
+        assert!(read_adc_user_at(&link).is_err());
+        fs::set_permissions(&path, fs::Permissions::from_mode(0o644)).unwrap();
+        assert!(read_adc_user_at(&path).is_err());
+        fs::set_permissions(&path, fs::Permissions::from_mode(0o600)).unwrap();
+
+        let rejected = serde_json::json!({
+            "type":"service_account",
+            "client_id":"synthetic.apps.googleusercontent.com",
+            "client_secret":"synthetic-private-client-secret",
+            "refresh_token":"synthetic-private-refresh"
+        })
+        .to_string();
+        fs::write(&path, rejected).unwrap();
+        assert!(read_adc_user_at(&path).is_err());
+        fs::write(&path, &valid).unwrap();
+        assert!(read_adc_user_at(&PathBuf::from("relative-adc.json")).is_err());
+        assert!(read_adc_user_at(&path).is_ok());
+        fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[tokio::test]
+    async fn opted_in_adc_user_refresh_is_serialized_cached_and_source_read_only() {
+        use std::os::unix::fs::PermissionsExt;
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        use tokio::net::TcpListener;
+
+        let root = std::env::temp_dir().join(format!(
+            "synmetra-adc-cache-{}-{}",
+            std::process::id(),
+            nonce()
+        ));
+        fs::create_dir_all(&root).unwrap();
+        let path = root.join("user-adc.json");
+        let source = serde_json::json!({
+            "type":"authorized_user",
+            "client_id":"synthetic.apps.googleusercontent.com",
+            "client_secret":"synthetic-client-secret",
+            "refresh_token":"synthetic-old-refresh"
+        })
+        .to_string();
+        fs::write(&path, &source).unwrap();
+        fs::set_permissions(&path, fs::Permissions::from_mode(0o600)).unwrap();
+
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let endpoint = format!("http://{}/token", listener.local_addr().unwrap());
+        let server = tokio::spawn(async move {
+            let (mut socket, _) =
+                tokio::time::timeout(Duration::from_secs(5), listener.accept())
+                    .await
+                    .unwrap()
+                    .unwrap();
+            let mut buffer = [0u8; 8192];
+            let n = socket.read(&mut buffer).await.unwrap();
+            assert!(String::from_utf8_lossy(&buffer[..n]).starts_with("POST /token "));
+            let body = serde_json::json!({
+                "access_token":"synthetic-adc-access",
+                "refresh_token":"synthetic-rotated-refresh",
+                "expires_in":3600
+            })
+            .to_string();
+            let reply = format!(
+                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                body.len(),
+                body
+            );
+            socket.write_all(reply.as_bytes()).await.unwrap();
+            // With the global async lock and an in-process cache, the second
+            // concurrent call must not perform a redundant refresh request.
+            assert!(
+                tokio::time::timeout(Duration::from_millis(150), listener.accept())
+                    .await
+                    .is_err()
+            );
+        });
+        let lock = tokio::sync::Mutex::new(None);
+        let (first, second) = tokio::join!(
+            adc_user_access_token_at(&path, &endpoint, &lock),
+            adc_user_access_token_at(&path, &endpoint, &lock)
+        );
+        assert_eq!(first.unwrap(), "synthetic-adc-access");
+        assert_eq!(second.unwrap(), "synthetic-adc-access");
+        server.await.unwrap();
+        assert_eq!(fs::read_to_string(&path).unwrap(), source);
+        assert_eq!(lock.lock().await.as_ref().unwrap().active_refresh_token, "synthetic-rotated-refresh");
+        fs::remove_dir_all(root).unwrap();
     }
 
     #[tokio::test]

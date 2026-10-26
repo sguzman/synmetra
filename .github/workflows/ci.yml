@@ -425,6 +425,20 @@ jobs:
           grep -Fq '"override_token_present": true' "$temporary/doctor.txt"
           echo 'Synthetic CLI diagnostics and failure output: credential canaries suppressed'
 
+      - name: Validate explicit read-only authorized_user ADC policy
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -Fq 'SYNMETRA_GOOGLE_ADC_USER' docs/CLI.md
+          grep -Fq 'GOOGLE_APPLICATION_CREDENTIALS' docs/CLI.md
+          grep -Fq 'authorized_user' docs/GOOGLE_CLOUD.md
+          grep -Fq 'never rewrites the supplied JSON' docs/CLI.md
+          grep -Fq 'SYNMETRA_GOOGLE_ADC_USER=1' docs/SECURITY.md
+          grep -Fq 'SYNMETRA_GOOGLE_ADC_USER' src/auth.rs
+          grep -Fq 'explicitly_supplied_adc_user_json_is_private_and_rejects_unsafe_files' src/auth.rs
+          grep -Fq 'opted_in_adc_user_refresh_is_serialized_cached_and_source_read_only' src/auth.rs
+          ! grep -Eiq 'gcloud auth application-default login' docs/CLI.md
+
       - name: Verify native auth doctor and credential-safe CLI failures
         shell: bash
         run: |

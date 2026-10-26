@@ -50,6 +50,8 @@ Normal login **without** `--headless` continues to receive the loopback redirect
 | Variable | Purpose | Security |
 | --- | --- | --- |
 | `SYNMETRA_GOOGLE_ACCESS_TOKEN` | Optional Google OAuth access-token override for a session | Overrides stored local credentials for **read calls only**; the annotation mutation rejects unverified external token scopes. Does **not** automatically refresh; never echo or put into command history |
+| `SYNMETRA_GOOGLE_ADC_USER` | **Opt-in only**: set to `1` to permit native read-only `authorized_user` ADC refresh | Has no effect unless `GOOGLE_APPLICATION_CREDENTIALS` is also set; never grants annotation writes |
+| `GOOGLE_APPLICATION_CREDENTIALS` | Absolute path to a private `authorized_user` ADC JSON supplied by the account owner | Not read unless `SYNMETRA_GOOGLE_ADC_USER=1`; mode 0600, regular non-symlinked file, max 32 KiB; not modified or committed |
 | `SYNMETRA_MCP_BEARER_TOKEN` | Required for `--http-loopback`; independent local HTTP principal secret | Minimum 32 printable nonspace ASCII characters; **never** forward to Google |
 | `SYNMETRA_GOOGLE_QUOTA_PROJECT` | Optional Google Cloud project ID/number for outbound `x-goog-user-project` quota attribution | Explicit operator opt-in. Requires `serviceusage.services.use` permission on that project; malformed values are rejected **before** any Google request |
 | `SYNMETRA_MCP_PORT` | Optional positive u16 loopback HTTP port, default `44128` | Bound to `127.0.0.1` regardless of caller-specified address |
@@ -74,6 +76,16 @@ For a separately authorized Google Desktop OAuth client JSON, read-only setup is
 synmetra auth login --client-id-file ~/private/google-desktop-oauth.json
 synmetra serve
 ```
+
+For an **already authorized** Google `authorized_user` ADC JSON, the optional native read-only mode requires both variables explicitly (and does not invoke `gcloud`):
+
+```fish
+set -gx SYNMETRA_GOOGLE_ADC_USER 1
+set -gx GOOGLE_APPLICATION_CREDENTIALS ~/private/google-authorized-user.json
+synmetra serve
+```
+
+Use an **absolute** file path and restrict it to mode 0600. The local Synmetra Desktop OAuth file, if present, takes priority; otherwise the ADC user refresh token exchanges for a short-lived token using native rustls, caches the result only in memory, and never rewrites the supplied JSON. Service accounts, impersonation, delegation, arbitrary credential JSON and annotation writes are **not** enabled by this mode. Removing the opt-in and restarting disables it. This is not a substitute for real OAuth scope/property-role acceptance.
 
 For the optional DuckDB build, use the source directory and pinned Rust toolchain:
 

@@ -52,6 +52,12 @@ The credentials file lives under `$XDG_CONFIG_HOME/synmetra/credentials.json` (d
 
 To attribute Google API quota to an operator-approved project, set `SYNMETRA_GOOGLE_QUOTA_PROJECT` to its **project ID or numeric project number** before launching Synmetra. It adds Google's `x-goog-user-project` request header to outbound Admin/Data API calls, including opted-in annotation writes. Invalid project values fail locally without contacting Google; the setting never changes a Google OAuth account's permissions. The consenting principal must have `serviceusage.services.use` on that project (usually the Service Usage Consumer role). A Google HTTP 403 may reflect that quota-project permission as well as an API/scope/property-role issue. See [Google Cloud's quota project documentation](https://docs.cloud.google.com/docs/quotas/set-quota-project). No Google project or live role has been verified for this experimental server.
 
+## Optional explicit `authorized_user` application credentials (native Rust)
+
+For a **user-authorized** `authorized_user` Google Application Default Credentials JSON that the operator already owns, Synmetra supports a separate read-only opt-in. Set **both** `SYNMETRA_GOOGLE_ADC_USER=1` and `GOOGLE_APPLICATION_CREDENTIALS=/absolute/private/user.json`. The path must be a regular, non-symlinked, mode-0600 file of at most 32 KiB, and no tokens or JSON contents should be copied to a repository, CI output or chat. The native refresh path uses the fixed Google OAuth token endpoint with rustls; short-lived access tokens and any refresh-token rotation are held only in process memory. The original ADC file is not modified. Synmetra's own saved XDG Desktop OAuth credentials take precedence.
+
+This **does not** run `gcloud`, import implicit shared ADC, authorize service-account JSON or impersonated identities, or grant an annotation write. An explicit `SYNMETRA_GOOGLE_ACCESS_TOKEN` bearer override is separately supported for reads and takes precedence over this mode. A successful offline synthetic refresh does not establish live Google scope or property eligibility; T049–T052 and T178–T186 remain separately gated.
+
 ## 5. Diagnose without exposing secrets
 
 - **No credentials**: run `synmetra auth doctor`; ensure a downloaded Desktop OAuth client JSON exists in a private folder, not in the repository.

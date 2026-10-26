@@ -2833,6 +2833,8 @@ Server flags (all opt-in):
 
 Environment:
   SYNMETRA_GOOGLE_ACCESS_TOKEN  Optional short-lived Google bearer override (no refresh)
+  SYNMETRA_GOOGLE_ADC_USER      Set to 1 to opt into read-only authorized_user ADC
+  GOOGLE_APPLICATION_CREDENTIALS  Absolute private ADC user JSON (only with the above opt-in)
   SYNMETRA_MCP_BEARER_TOKEN     Required for loopback HTTP (32+ printable nonspace ASCII)
   SYNMETRA_MCP_PORT             Optional loopback port (default 44128, nonzero)
   XDG_CONFIG_HOME               Optional private Synmetra OAuth config root
