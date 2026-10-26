@@ -3109,7 +3109,10 @@ mod tests {
             writer: &mut W,
             value: &serde_json::Value,
         ) {
-            writer.write_all(value.to_string().as_bytes()).await.unwrap();
+            writer
+                .write_all(value.to_string().as_bytes())
+                .await
+                .unwrap();
             writer.write_all(b"\n").await.unwrap();
             writer.flush().await.unwrap();
         }
