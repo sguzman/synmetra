@@ -813,16 +813,18 @@
               "id": "T040",
               "emoji": "🧪",
               "name": "Run cross-client MCP conformance suite",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "Protocol wire fixtures pass multiple clients",
               "checks": [
                 {
                   "text": "Deliver run cross-client mcp conformance suite as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "ci/test-mcp-clients.sh runs two separate native stdio processes with raw JSON-RPC clients advertising MCP 2025-06-18 and 2025-11-25, each checking initialize/tools/list, successful local guidance, and an uncredentialed typed Google tool error without credentials or npm/Python. src/main.rs in_memory_mcp_client_negotiates_and_calls_read_only_tools independently exercises an rmcp SDK client over Tokio duplex. docs/MCP_CONFORMANCE.md gives the exact scope, limitations and source mapping. Core tests and the explicit two-profile conformance step passed https://github.com/sguzman/synmetra/actions/runs/40415340670 at f897156b7913ec04ef459c15772c2c2c47bec5ca."
                 },
                 {
                   "text": "Protocol wire fixtures pass multiple clients",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "Two client implementations (Rust rmcp SDK and independently framed raw JSON-RPC) passed synthetic MCP initialize, default 20-tool discovery, read-only success/error handling and response metadata checks. Raw client profiles cover 2025-06-18 and 2025-11-25 in isolated processes; the full default core CI job and native feature job passed https://github.com/sguzman/synmetra/actions/runs/40415340670. This is local stdio conformance only: external Inspector/Codex/multi-host client QA remains separately open at T033/T161/T172/T185."
                 }
               ]
             }

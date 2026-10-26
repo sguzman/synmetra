@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `████████░░ 79.1%` · **+79.07 percentage points from initial empty repo; +0.22 pp from tested per-call human approval policy metadata
+**Overall:** `████████░░ 79.5%` · **+79.52 percentage points from initial empty repo; +0.44 pp from passing raw-wire and Rust SDK MCP cross-client conformance
 
 ### 📏 Progress conventions
 
@@ -60,7 +60,7 @@
   - ✅ **Gate:** Document semver and provenance gates · **Evidence:** CHANGELOG.md defines an Unreleased section and the experimental 0.0.1 baseline; docs/RELEASE_POLICY.md defines SemVer, immutable source and lockfile pinning, secure provenance requirements, live Google gating and non-production CI artifacts; README links both. GitHub Actions 40259902417 core checked manifest/changelog version and required policy gates.; docs/RELEASE_POLICY.md explains independent reproducibility, checksums, source SHA and release promotion requirements and distinguishes a successful CI build from a signed/stable release. CI 40259902417 changelog/version policy validation passed; actual reproducible binary acceptance remains an independent M9 task.
 
 
-## 🔌 M1 — MCP protocol and transport fidelity — `████████░░ 82.6%`
+## 🔌 M1 — MCP protocol and transport fidelity — `█████████░ 87.0%`
 
 **Scope:** MVP. **Acceptance gate:** Spec-conforming native MCP discovery and calls over stdio plus bounded Streamable HTTP; all transport safety tests pass.
 
@@ -106,7 +106,7 @@
 - 🧫 **T033 — Test MCP HTTP inspector interoperability** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** End-to-end tool invocation under loopback and protected remote modes
 
-### 🧾 P04 — MCP schema semantics — `█████████░ 85.7%`
+### 🧾 P04 — MCP schema semantics — `██████████ 100.0%`
 
 **Feature:** MCP contract.
 
@@ -122,8 +122,8 @@
   - ✅ **Gate:** Invalid tools are distinct from Google API errors · **Evidence:** src/http.rs json_rpc_protocol_errors_remain_separate_from_ga_validation_results runs a real authenticated MCP initialize, notifications/initialized, unknown JSON-RPC method and valid tools/call with invalid Google property. rmcp returns protocol method-not-found as JSON-RPC error -32601 while Synmetra returns a structured MCP tool result for GA argument validation. No provider call or Google credentials are required.; Synthetic loopback MCP HTTP test verifies unknown method returns top-level error.code=-32601 without result, but invalid run_report returns HTTP 200 JSON-RPC result with isError=true and structuredContent.error.category=validation and no top-level protocol error. Tests also enforce bearer token omission. GitHub Actions 40247087766 passed core tests, rustfmt, strict Clippy and native DuckDB.
 - 🧵 **T039 — Propagate request cancellation across auth and HTTP** — `██████████ 100.0%`
   - ✅ **Gate:** Interrupted calls free resources · **Evidence:** src/main.rs ServerHandler::call_tool now passes the rmcp request-specific cancellation token through a central tokio::select! over every registered local/Google tool, dropping pending futures and transport work on notification. src/auth.rs aborted_oauth_refresh_releases_lock_without_partial_token_rotation verifies canceled OAuth refresh releases the lock and closes the token-exchange socket; src/main.rs cancelled_stdio_report_drops_upstream_request_and_keeps_peer_responsive verifies a stalled Google report socket closes. Both passed core CI https://github.com/sguzman/synmetra/actions/runs/40354026086. Independent cancellation propagation under a live Streamable HTTP caller and mutation uncertainty is still open.; src/http.rs cancelled_loopback_http_report_releases_upstream_and_preserves_session runs a real authenticated localhost MCP Streamable HTTP initialize, starts a stalled synthetic Google report, sends notifications/cancelled for that request ID, verifies the upstream Google socket closes, and successfully invokes another MCP tool in the same session. src/auth.rs aborted_oauth_refresh_releases_lock_without_partial_token_rotation covers independent OAuth cancellation and preserved credentials. The same src/http.rs revision passed default Rust tests in core CI https://github.com/sguzman/synmetra/actions/runs/40378389320. This is explicit bounded synthetic release evidence, not a live Google service or mutation-disposition guarantee.
-- 🧪 **T040 — Run cross-client MCP conformance suite** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Protocol wire fixtures pass multiple clients
+- 🧪 **T040 — Run cross-client MCP conformance suite** — `██████████ 100.0%`
+  - ✅ **Gate:** Protocol wire fixtures pass multiple clients · **Evidence:** ci/test-mcp-clients.sh runs two separate native stdio processes with raw JSON-RPC clients advertising MCP 2025-06-18 and 2025-11-25, each checking initialize/tools/list, successful local guidance, and an uncredentialed typed Google tool error without credentials or npm/Python. src/main.rs in_memory_mcp_client_negotiates_and_calls_read_only_tools independently exercises an rmcp SDK client over Tokio duplex. docs/MCP_CONFORMANCE.md gives the exact scope, limitations and source mapping. Core tests and the explicit two-profile conformance step passed https://github.com/sguzman/synmetra/actions/runs/40415340670 at f897156b7913ec04ef459c15772c2c2c47bec5ca.; Two client implementations (Rust rmcp SDK and independently framed raw JSON-RPC) passed synthetic MCP initialize, default 20-tool discovery, read-only success/error handling and response metadata checks. Raw client profiles cover 2025-06-18 and 2025-11-25 in isolated processes; the full default core CI job and native feature job passed https://github.com/sguzman/synmetra/actions/runs/40415340670. This is local stdio conformance only: external Inspector/Codex/multi-host client QA remains separately open at T033/T161/T172/T185.
 
 
 ## 🔑 M2 — Google authentication and credential isolation — `██████░░░░ 63.5%`
