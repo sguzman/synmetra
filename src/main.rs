@@ -3261,14 +3261,14 @@ mod tests {
             );
             if let Some(pinned_fields) = pinned_fields {
                 for (field, schema) in pinned_fields {
-                let reported = captured
-                    .iter()
-                    .find(|item| item["name"] == field.as_str())
-                    .unwrap();
-                assert_eq!(reported["raw_schema"], *schema, "{name}.{field}");
-                let required = tool["inputSchema"]["required"]
-                    .as_array()
-                    .is_some_and(|set| set.contains(&json!(field)));
+                    let reported = captured
+                        .iter()
+                        .find(|item| item["name"] == field.as_str())
+                        .unwrap();
+                    assert_eq!(reported["raw_schema"], *schema, "{name}.{field}");
+                    let required = tool["inputSchema"]["required"]
+                        .as_array()
+                        .is_some_and(|set| set.contains(&json!(field)));
                     assert_eq!(reported["required"], required, "{name}.{field}");
                 }
             }
