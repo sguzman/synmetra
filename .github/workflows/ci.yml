@@ -439,6 +439,35 @@ jobs:
           grep -Fq 'opted_in_adc_user_refresh_is_serialized_cached_and_source_read_only' src/auth.rs
           ! grep -Eiq 'gcloud auth application-default login' docs/CLI.md
 
+      - name: Prove explicit ADC doctor output is redacted and source file unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$(mktemp -d "$RUNNER_TEMP/synmetra-adc-status.XXXXXX")"
+          trap 'rm -rf "$root"' EXIT
+          mkdir -p "$root/xdg"
+          umask 077
+          client_canary="synthetic-adc-client-$(printf '%028d' 0)"
+          refresh_canary="synthetic-adc-refresh-$(printf '%028d' 0)"
+          printf '{"type":"authorized_user","client_id":"synthetic.apps.googleusercontent.com","client_secret":"%s","refresh_token":"%s"}\n' "$client_canary" "$refresh_canary" > "$root/user-adc.json"
+          chmod 600 "$root/user-adc.json"
+          before="$(sha256sum "$root/user-adc.json" | cut -d ' ' -f 1)"
+          env -u SYNMETRA_GOOGLE_ACCESS_TOKEN \
+            SYNMETRA_GOOGLE_ADC_USER=1 \
+            GOOGLE_APPLICATION_CREDENTIALS="$root/user-adc.json" \
+            XDG_CONFIG_HOME="$root/xdg" \
+            target/debug/synmetra auth doctor > "$root/doctor.txt" 2> "$root/stderr.txt"
+          grep -Fq '"adc_user_opted_in": true' "$root/doctor.txt"
+          test ! -s "$root/stderr.txt"
+          if grep -Fq "$client_canary" "$root/doctor.txt" ||
+             grep -Fq "$refresh_canary" "$root/doctor.txt"; then
+            echo 'Synthetic ADC secret disclosed in offline auth doctor output' >&2
+            exit 1
+          fi
+          after="$(sha256sum "$root/user-adc.json" | cut -d ' ' -f 1)"
+          test "$before" = "$after"
+          test ! -e "$root/xdg/synmetra/credentials.json"
+
       - name: Verify native auth doctor and credential-safe CLI failures
         shell: bash
         run: |
