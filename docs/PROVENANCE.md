@@ -15,3 +15,7 @@ Synmetra aims to implement **public behavior/contracts** with independent Rust c
 ## 📐 Contract V1 response schema
 
 The read-only fixture [`spec/upstream/sednalabs-payload-contract-v1.schema.json`](../spec/upstream/sednalabs-payload-contract-v1.schema.json) is copied without modifications from `sednalabs/ga4-mcp` at commit `039fd4620064fc4b76dc6bca641945aba52c14bc`, original `spec/payload_contract_v1.schema.json`, under SednaLabs' Apache-2.0 license (already retained under `licenses/`). It defines the upstream success and failure envelope for future native MCP contract tests. Including it does not establish Synmetra's behavioral parity or end-to-end validation.
+
+## 🔒 Locked reference fixture integrity
+
+The versioned [schema-lock.tsv](../spec/upstream/schema-lock.tsv) contains the Git object SHA-1 of each pinned SednaLabs tool schema, SednaLabs response contract, independently extracted Google signatures, and Synmetra's merged inventory. The CI core job runs `git hash-object` against all four checked-in fixtures on every push, failing closed if their bytes differ. The source commits remain those named above; the independently extracted Google signatures and derived union inventory are not claimed to be byte-for-byte Google or SednaLabs files. Updating a reference fixture requires an explicit lock update, provenance review, and refreshed tool-schema parity tests. This integrity lock does not itself certify that every Synmetra tool matches either upstream implementation.

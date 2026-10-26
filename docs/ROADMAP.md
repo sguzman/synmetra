@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `████░░░░░░ 44.7%` · **+44.71 percentage points from initial empty repo; +0.22 pp from verified MCP session replay and termination isolation** · 85/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `█████░░░░░ 45.2%` · **+45.15 percentage points from initial empty repo; +0.44 pp from verified pinned upstream fixture hashes and parity reference tests** · 86/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -11,11 +11,11 @@
 - On each stewardship round, report total and actively worked milestone/phase/task bars plus the **signed delta in percentage points** against the previous verified committed ledger; completed 100% tasks can be omitted in ongoing status updates.
 - **No progress padding.** Upstream feature inventory, planning and brand assets count only for their specific documentation tasks; GA4 functionality starts at 0% until tests establish otherwise. Real Google access, credentials and live tests are separate explicit gates.
 
-## 🧭 M0 — Reference baseline and project governance — `████████░░ 79.4%`
+## 🧭 M0 — Reference baseline and project governance — `████████░░ 82.4%`
 
 **Scope:** MVP. **Acceptance gate:** Audited pinned feature-union inventory, color identity, public-safe policies and reproducible plan. Foundation is not runtime parity.
 
-### 📚 P00 — Upstream contracts and provenance — `█████████░ 93.8%`
+### 📚 P00 — Upstream contracts and provenance — `██████████ 100.0%`
 
 **Feature:** Reference provenance.
 
@@ -31,8 +31,8 @@
   - ✅ **Gate:** Document consistent task gates, percentages, visual bars and baseline deltas · **Evidence:** docs/ROADMAP.md and docs/progress.json; README.md and docs/ROADMAP.md reference ledger
 - 🛡️ **T006 — Document privacy, security and maintainer governance** — `██████████ 100.0%`
   - ✅ **Gate:** Explicit no-secret and read-only defaults and evidence policy · **Evidence:** docs/GOVERNANCE.md and docs/SECURITY.md; docs/GOVERNANCE.md and docs/SECURITY.md approved policies
-- 🧾 **T007 — Archive exact upstream tool schemas and signatures** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Verifiable pinned schema snapshots with tool argument parity tests
+- 🧾 **T007 — Archive exact upstream tool schemas and signatures** — `██████████ 100.0%`
+  - ✅ **Gate:** Verifiable pinned schema snapshots with tool argument parity tests · **Evidence:** spec/upstream/sednalabs-tool-schema.v1.json pinned exact 35-tool upstream schema, spec/upstream/google-official-signatures.json pinned Google's 10 tool functions, licenses/SEDNALABS-APACHE-2.0.txt attribution, docs/PROVENANCE.md and docs/UPSTREAM.md; GitHub Actions 40211821382 passed pinned inventory integrity. Full runtime schema parity remains open.; spec/upstream/schema-lock.tsv pins immutable Git blob hashes for the original SednaLabs 35-tool JSON Schema and Contract V1 response schema, independently derived 10-signature Google JSON and merged 36-tool inventory; docs/PROVENANCE.md identifies original source commits and redistribution license. CI 40247973673 verified every fixture via git hash-object; src/main.rs every_registered_tool_preserves_pinned_required_mcp_arguments, full_capability_profile_matches_exact_pinned_36_tool_union and specific per-tool contract tests verify required arguments against these locked references. This archives/verifies fixtures, not full parameter/response parity.
 - 🔁 **T008 — Set up upstream drift tracking and version pin policy** — `██████████ 100.0%`
   - ✅ **Gate:** CI alerts on name/signature deltas without silent breaking changes · **Evidence:** docs/UPSTREAM.md, docs/PROVENANCE.md, docs/tool-inventory.json and src/bin/synmetra-progress.rs: pinned source revisions and CI-checked 36-name union; GitHub Actions 40211821382 passed; upstream signature drift alert automation remains open.; .github/workflows/upstream-drift.yml now checks pinned upstream signature-bearing source blobs on weekly schedule, manual dispatch and changes to the watch/lock; spec/upstream/drift-lock.json pins SednaLabs schema snapshot blob 646c0baa and Google coordinator blob a1e7936a at separately documented source commits; drift produces a failed GitHub Actions job and review guidance without silently updating the baseline. docs/UPSTREAM.md documents the conservative source-change policy and its limitations. GitHub Actions 40241902469 verified both public current blobs against the pins; 40241902503 core and DuckDB passed. The watch detects file changes for review, not automatic parsing of Google's entire dynamic runtime schema.
 
@@ -441,7 +441,7 @@
   - ✅ **Gate:** Dependency license architecture and portability reviewed
 
 
-## 🧬 M7 — Tool contract interoperability and parity audits — `████░░░░░░ 35.3%`
+## 🧬 M7 — Tool contract interoperability and parity audits — `████░░░░░░ 38.2%`
 
 **Scope:** MVP. **Acceptance gate:** All 36 tool schemas and response mappings are independently snapshot-tested against both pinned upstreams.
 
@@ -456,7 +456,7 @@
 - 🗝️ **T153 — Implement ga4_auth_login_command** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Native CLI guidance and MCP schema parity for ga4_auth_login_command · **Evidence (implementation only):** src/main.rs AuthLoginCommandArgs advertises all six pinned optional inputs, compares input schema types/defaults/descriptions/formats to pinned SednaLabs, POSIX-quotes generated commands, and rejects unsupported shared ADC/quota-project options explicitly; src/auth.rs implements CLI --account OAuth login hint, --callback-port, --headless with bounds/duplication tests. GitHub Actions 40225871288 core job passed fmt, tests, strict Clippy, ledger. Runtime parity for shared ADC/quota-project and live auth still pending.
 
-### 📜 P20 — Schema and error contract — `████░░░░░░ 38.9%`
+### 📜 P20 — Schema and error contract — `████░░░░░░ 44.4%`
 
 **Feature:** Contracts and schemas.
 
@@ -472,8 +472,8 @@
   - ✅ **Gate:** Document compatibility choice and adapters
 - 📏 **T159 — Enforce stable cursor and truncation metadata** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** All tabular tools report known/unknown totals honestly
-- 📂 **T160 — Publish schema snapshot with generated reference SHA** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Tool schema diff is reviewed during every upstream update
+- 📂 **T160 — Publish schema snapshot with generated reference SHA** — `█████░░░░░ 50.0%`
+  - ✅ **Gate:** Tool schema diff is reviewed during every upstream update · **Evidence:** spec/upstream/schema-lock.tsv published with Git object SHA-1 digests and upstream source commit identifiers, verified on each CI run using the native git hash-object command in .github/workflows/ci.yml. CI 40247973673 passed lock integrity without Python/npm. Full semantic schema diff/review on upstream version bumps remains open.
 - 🤝 **T161 — Test alternative MCP clients and structured output** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Codex and inspector consume every major response type
 - 🧯 **T162 — Avoid false confidence from mocked-only parity** — `░░░░░░░░░░ 0.0%`
