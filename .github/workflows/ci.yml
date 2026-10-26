@@ -195,6 +195,23 @@ jobs:
           grep -Fq 'has not been independently verified' SECURITY.md
           grep -Fq 'docs/LOCAL_EXECUTION_THREAT_MODEL.md' SECURITY.md
 
+      - name: Check one explicitly human-approved Google mutation policy
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f spec/security/client-approval.v1.json
+          jq -e '.schema == "synmetra_client_write_approval_policy"
+            and .version == 1
+            and (.write_tools | length) == 1
+            and .write_tools[0].name == "create_property_annotation"
+            and .write_tools[0].requires_host_per_call_approval == true
+            and .write_tools[0].deny_when_client_cannot_confirm == true
+            and .write_tools[0].automatic_retry == false
+            and .synmetra_server_can_attest_to_host_confirmation == false
+          ' spec/security/client-approval.v1.json > /dev/null
+          grep -Fq 'MCP host' docs/ANNOTATIONS.md
+          grep -Fq 'cannot force or attest' docs/ANNOTATIONS.md
+
       - name: Verify canonical pinned union and explicit raw schema drift
         shell: bash
         run: |

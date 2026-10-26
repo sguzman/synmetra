@@ -1,0 +1,21 @@
+{
+  "schema": "synmetra_client_write_approval_policy",
+  "version": 1,
+  "server_default": "read_only_stdio",
+  "write_tools": [
+    {
+      "name": "create_property_annotation",
+      "effect": "creates_a_persistent_GA4_reporting_annotation",
+      "read_only_hint": false,
+      "idempotent_hint": false,
+      "requires_server_allow_write": true,
+      "requires_scoped_native_OAuth_edit_grant": true,
+      "requires_property_role": true,
+      "requires_host_per_call_approval": true,
+      "deny_when_client_cannot_confirm": true,
+      "automatic_retry": false
+    }
+  ],
+  "synmetra_server_can_attest_to_host_confirmation": false,
+  "notes": "Normative integration policy for supported MCP clients. No local server flag or credential grant proves a third-party client obtained human confirmation. Unsupported host approval must be disabled for writes; do not replace confirmation with automatic replay or model self-approval."
+}

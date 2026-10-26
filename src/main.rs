@@ -1517,7 +1517,7 @@ impl Synmetra {
     }
 
     #[tool(
-        description = "WRITE: Create a GA4 reporting annotation. Hidden and blocked unless server starts with --allow-write and Google token has analytics.edit scope. Never retry automatically.",
+        description = "WRITE: Create a GA4 reporting annotation. Requires explicit per-call human approval by the MCP host before invocation. --allow-write and Google analytics.edit are necessary but never substitute for client confirmation. Never retry automatically.",
         annotations(
             read_only_hint = false,
             destructive_hint = false,
@@ -3180,11 +3180,42 @@ mod tests {
                 assert_eq!(hints.destructive_hint, Some(false));
                 assert_eq!(hints.idempotent_hint, Some(false));
                 assert_eq!(hints.open_world_hint, Some(true));
+                let description = tool.description.as_deref().unwrap_or_default();
+                assert!(description.contains("per-call human approval"));
+                assert!(description.contains("never substitute for client confirmation"));
             } else {
                 assert_eq!(hints.read_only_hint, Some(true), "{}", tool.name);
                 assert_eq!(hints.destructive_hint, Some(false));
             }
         }
+    }
+
+    #[test]
+    fn mutation_approval_policy_has_one_tool_and_never_claims_server_enforcement() {
+        let policy: serde_json::Value = serde_json::from_str(include_str!(
+            "../spec/security/client-approval.v1.json"
+        ))
+        .unwrap();
+        assert_eq!(policy["schema"], "synmetra_client_write_approval_policy");
+        assert_eq!(policy["version"], 1);
+        let writes = policy["write_tools"].as_array().unwrap();
+        assert_eq!(writes.len(), 1);
+        assert_eq!(writes[0]["name"], "create_property_annotation");
+        assert_eq!(writes[0]["requires_host_per_call_approval"], true);
+        assert_eq!(writes[0]["deny_when_client_cannot_confirm"], true);
+        assert_eq!(policy["synmetra_server_can_attest_to_host_confirmation"], false);
+        let info = Synmetra::tool_router().list_all();
+        let mutation = info
+            .iter()
+            .find(|tool| tool.name == "create_property_annotation")
+            .unwrap();
+        assert_eq!(mutation.annotations.as_ref().unwrap().read_only_hint, Some(false));
+        assert_eq!(mutation.annotations.as_ref().unwrap().idempotent_hint, Some(false));
+        assert!(mutation
+            .description
+            .as_deref()
+            .unwrap_or_default()
+            .contains("per-call human approval"));
     }
 
     #[tokio::test]
