@@ -902,12 +902,13 @@
               "id": "T044",
               "emoji": "🖥️",
               "name": "Support headless copy-back OAuth setup",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Headless flow completes and rejects replayed callbacks",
               "checks": [
                 {
                   "text": "Deliver support headless copy-back oauth setup as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/auth.rs implements --headless browser redirect copy-back using bounded private stdin, exact local scheme/host/port/path validation, a single code/state pair, per-login CSRF state and the existing PKCE token exchange; docs/CLI.md and docs/GOOGLE_CLOUD.md document the authorized account-owner workflow. The headless_copy_back_verifies_exact_redirect_state_and_single_use test and full core/native feature checks passed CI https://github.com/sguzman/synmetra/actions/runs/40393854117. An end-to-end authorized real Google login, callback replay across actual sessions, and property access remain unaccepted."
                 },
                 {
                   "text": "Headless flow completes and rejects replayed callbacks",

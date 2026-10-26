@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `████████░░ 76.2%` · **+76.21 percentage points from initial empty repo; +0.22 pp from tested direct DuckDB network/path sandbox regression
+**Overall:** `████████░░ 76.4%` · **+76.43 percentage points from initial empty repo; +0.22 pp from CI-verified headless OAuth callback copy-back implementation
 
 ### 📏 Progress conventions
 
@@ -126,11 +126,11 @@
   - ✅ **Gate:** Protocol wire fixtures pass multiple clients
 
 
-## 🔑 M2 — Google authentication and credential isolation — `█████░░░░░ 53.9%`
+## 🔑 M2 — Google authentication and credential isolation — `██████░░░░ 55.8%`
 
 **Scope:** MVP. **Acceptance gate:** Secure, least-privilege, non-Python auth across interactive, local and service configurations; no secret leaks.
 
-### 🪪 P05 — Native OAuth login and operators — `██████░░░░ 62.5%`
+### 🪪 P05 — Native OAuth login and operators — `███████░░░ 68.8%`
 
 **Feature:** Native OAuth.
 
@@ -140,8 +140,8 @@
   - ✅ **Gate:** Operator gets actionable non-secret diagnostics · **Evidence:** src/auth.rs public_status, doctor_guidance and command implement native auth doctor and auth command without calling Google or external tools; tests doctor_guidance_is_actionable_and_does_not_echo_private_values and auth_help_documents_complete_opt_in_scope_and_private_status exercise setup, stale/override, unreadable-credential and nonsecret guidance. CI https://github.com/sguzman/synmetra/actions/runs/40349474901 passed native doctor/command setup, canary-redaction and PATH=/nonexistent checks.; CI https://github.com/sguzman/synmetra/actions/runs/40349474901 ran target/debug/synmetra auth doctor and auth command under private temp XDG_CONFIG_HOME both normally and env -i PATH=/nonexistent, checked Admin/Data API guidance, login template, configured bearer presence without revealing synthetic token, and safe no-credentials/status behavior. src/auth.rs doctor_guidance also identifies private-file permission/symlink failures and expired refresh options; no live Google authorization is claimed.
 - 🌐 **T043 — Implement browser OAuth PKCE loopback flow** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** CSRF state, PKCE, timeout and redirect checks pass
-- 🖥️ **T044 — Support headless copy-back OAuth setup** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Headless flow completes and rejects replayed callbacks
+- 🖥️ **T044 — Support headless copy-back OAuth setup** — `█████░░░░░ 50.0%`
+  - ✅ **Gate:** Headless flow completes and rejects replayed callbacks · **Evidence:** src/auth.rs implements --headless browser redirect copy-back using bounded private stdin, exact local scheme/host/port/path validation, a single code/state pair, per-login CSRF state and the existing PKCE token exchange; docs/CLI.md and docs/GOOGLE_CLOUD.md document the authorized account-owner workflow. The headless_copy_back_verifies_exact_redirect_state_and_single_use test and full core/native feature checks passed CI https://github.com/sguzman/synmetra/actions/runs/40393854117. An end-to-end authorized real Google login, callback replay across actual sessions, and property access remain unaccepted.
 - 🔐 **T045 — Store tokens in GA4-specific user config storage** — `██████████ 100.0%`
   - ✅ **Gate:** Private file permissions and no shared ADC clobbering · **Evidence:** src/auth.rs isolated XDG credential path and atomic mode-0600 persistence; Actions 40202015488 compiled; file-mode tests pending; Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.
 - ♻️ **T046 — Implement expiry-aware access-token refresh** — `██████████ 100.0%`
@@ -571,7 +571,7 @@
   - ✅ **Gate:** Signed provenance and dependency audit evidence · **Evidence:** Pinned Rust 1.99.1/Cargo.lock source builds an x86-64 release binary in two independent Cargo target directories and compares SHA-256 digests and sizes. The dedicated workflow step passed https://github.com/sguzman/synmetra/actions/runs/40358192285; separate cargo-deny Rust license/source/advisory scans also pass. Cross-runner reproducibility, bundled DuckDB and signed provenance remain distinct pending gates.; The release workflow passed two separate pinned Rust 1.99.1/Cargo.lock x86-64 binary SHA-256 comparisons, SHA-pinned actions/attest@v4 Sigstore/SLSA v1 archive attestation, and gh attestation verify -R sguzman/synmetra validating repository identity and SLSA predicate in https://github.com/sguzman/synmetra/actions/runs/40359969759. Independent cargo-deny Rust license/source checks passed https://github.com/sguzman/synmetra/actions/runs/40346651714. This accepts signed provenance and dependency-audit evidence only for an experimental default-feature Linux archive, not clean ARM64/EndeavourOS builds or native C++ compliance.
 
 
-## 🚀 M9 — Linux release and Codex-ready inauguration — `███████░░░ 70.5%`
+## 🚀 M9 — Linux release and Codex-ready inauguration — `███████░░░ 70.4%`
 
 **Scope:** MVP. **Acceptance gate:** A documented stable native binary with 36-tool verified parity and release artifacts; no Python/npm runtime.
 
