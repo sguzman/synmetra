@@ -480,6 +480,162 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn cancelled_loopback_http_report_releases_upstream_and_preserves_session() {
+        use serde_json::json;
+        use tokio::io::AsyncReadExt;
+
+        let upstream = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let google_origin = format!("http://{}", upstream.local_addr().unwrap());
+        let server = Synmetra::new(
+            GoogleClient::with_endpoints(
+                Some("synthetic-http-cancellation-google-token".into()),
+                &google_origin,
+                &google_origin,
+            ),
+            false,
+        );
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let local_token = "synthetic-local-cancel-bearer-5731";
+        let task = tokio::spawn(async move {
+            axum::serve(listener, app(server, local_token.to_owned(), port))
+                .await
+                .unwrap();
+        });
+        let client = reqwest::Client::builder()
+            .timeout(Duration::from_secs(10))
+            .build()
+            .unwrap();
+        let endpoint = format!("http://127.0.0.1:{port}/mcp");
+        let origin = format!("http://127.0.0.1:{port}");
+
+        let init = client
+            .post(&endpoint)
+            .header(header::AUTHORIZATION, format!("Bearer {local_token}"))
+            .header(header::ORIGIN, &origin)
+            .header(header::ACCEPT, "application/json, text/event-stream")
+            .json(&json!({
+                "jsonrpc":"2.0","id":1,"method":"initialize",
+                "params":{
+                    "protocolVersion":"2025-11-25",
+                    "capabilities":{},
+                    "clientInfo":{"name":"synthetic-http-cancel","version":"1"}
+                }
+            }))
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(init.status(), StatusCode::OK);
+        let session = init
+            .headers()
+            .get("mcp-session-id")
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_owned();
+        assert_eq!(
+            mcp_json_response(init).await["result"]["serverInfo"]["name"],
+            "synmetra"
+        );
+        let request = |body: serde_json::Value| {
+            client
+                .post(&endpoint)
+                .header(header::AUTHORIZATION, format!("Bearer {local_token}"))
+                .header(header::ORIGIN, &origin)
+                .header(header::ACCEPT, "application/json, text/event-stream")
+                .header("mcp-session-id", &session)
+                .header("mcp-protocol-version", "2025-11-25")
+                .json(&body)
+        };
+        let initialized = request(json!({
+            "jsonrpc":"2.0","method":"notifications/initialized"
+        }))
+        .send()
+        .await
+        .unwrap();
+        assert!(initialized.status().is_success());
+
+        let stalled_client = client.clone();
+        let stalled_url = endpoint.clone();
+        let stalled_session = session.clone();
+        let stalled_origin = origin.clone();
+        let stalled = tokio::spawn(async move {
+            let response = stalled_client
+                .post(stalled_url)
+                .header(header::AUTHORIZATION, format!("Bearer {local_token}"))
+                .header(header::ORIGIN, stalled_origin)
+                .header(header::ACCEPT, "application/json, text/event-stream")
+                .header("mcp-session-id", stalled_session)
+                .header("mcp-protocol-version", "2025-11-25")
+                .json(&json!({
+                    "jsonrpc":"2.0","id":2,"method":"tools/call",
+                    "params":{"name":"run_report","arguments":{
+                        "property_id":"42",
+                        "date_ranges":[{"start_date":"yesterday","end_date":"today"}],
+                        "dimensions":["country"],
+                        "metrics":["activeUsers"]
+                    }}
+                }))
+                .send()
+                .await
+                .unwrap();
+            response.bytes().await.unwrap();
+        });
+        let (mut google_socket, _) =
+            tokio::time::timeout(Duration::from_secs(5), upstream.accept())
+                .await
+                .expect("Report never reached mock Google service")
+                .unwrap();
+        let mut buffer = [0_u8; 8192];
+        let read = google_socket.read(&mut buffer).await.unwrap();
+        assert!(String::from_utf8_lossy(&buffer[..read])
+            .contains("POST /v1beta/properties/42:runReport HTTP/1.1"));
+
+        let cancelled = tokio::time::timeout(
+            Duration::from_secs(5),
+            request(json!({
+                "jsonrpc":"2.0","method":"notifications/cancelled",
+                "params":{"requestId":2,"reason":"synthetic HTTP cancellation"}
+            }))
+            .send(),
+        )
+        .await
+        .expect("Cancellation notification blocked behind the pending report")
+        .unwrap();
+        assert!(cancelled.status().is_success());
+        stalled.abort();
+        assert!(stalled.await.unwrap_err().is_cancelled());
+
+        tokio::time::timeout(Duration::from_secs(5), async {
+            loop {
+                if google_socket.read(&mut buffer).await.unwrap() == 0 {
+                    break;
+                }
+            }
+        })
+        .await
+        .expect("Cancelled HTTP report left a Google socket open");
+
+        let after = tokio::time::timeout(
+            Duration::from_secs(5),
+            request(json!({
+                "jsonrpc":"2.0","id":3,"method":"tools/call",
+                "params":{"name":"ga4_get_started","arguments":{}}
+            }))
+            .send(),
+        )
+        .await
+        .expect("Cancelled report blocked another MCP request")
+        .unwrap();
+        assert_eq!(after.status(), StatusCode::OK);
+        assert_eq!(
+            mcp_json_response(after).await["result"]["structuredContent"]["ok"],
+            true
+        );
+        task.abort();
+    }
+
+    #[tokio::test]
     async fn authenticated_http_session_lists_and_calls_tools_but_rejects_invalid_sessions() {
         use serde_json::json;
 

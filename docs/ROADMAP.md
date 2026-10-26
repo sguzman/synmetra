@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `███████░░░ 70.9%` · **+70.93 percentage points from initial empty repo; +0.66 pp from verified MCP cancellation and upstream resource cleanup
+**Overall:** `███████░░░ 71.4%` · **+71.37 percentage points from initial empty repo; +0.44 pp from verified Codex native MCP registration
 
 ### 📏 Progress conventions
 
@@ -60,11 +60,11 @@
   - ✅ **Gate:** Document semver and provenance gates · **Evidence:** CHANGELOG.md defines an Unreleased section and the experimental 0.0.1 baseline; docs/RELEASE_POLICY.md defines SemVer, immutable source and lockfile pinning, secure provenance requirements, live Google gating and non-production CI artifacts; README links both. GitHub Actions 40259902417 core checked manifest/changelog version and required policy gates.; docs/RELEASE_POLICY.md explains independent reproducibility, checksums, source SHA and release promotion requirements and distinguishes a successful CI build from a signed/stable release. CI 40259902417 changelog/version policy validation passed; actual reproducible binary acceptance remains an independent M9 task.
 
 
-## 🔌 M1 — MCP protocol and transport fidelity — `████████░░ 76.1%`
+## 🔌 M1 — MCP protocol and transport fidelity — `████████░░ 80.4%`
 
 **Scope:** MVP. **Acceptance gate:** Spec-conforming native MCP discovery and calls over stdio plus bounded Streamable HTTP; all transport safety tests pass.
 
-### 📨 P02 — Stdio protocol — `████████░░ 78.6%`
+### 📨 P02 — Stdio protocol — `█████████░ 92.9%`
 
 **Feature:** MCP stdio.
 
@@ -80,8 +80,8 @@
   - ✅ **Gate:** No banners or logging contaminate JSON-RPC stdout · **Evidence:** src/main.rs stdio transport only on serve path; application diagnostic output uses stderr; Actions 40202015488 passed; Real native synmetra serve process captured stdout and stderr separately, enforced exactly three well-formed JSON-RPC result lines for initialize/list/call with no banner, and confirmed a synthetic SYNMETRA_GOOGLE_ACCESS_TOKEN canary never entered stdout. .github/workflows/ci.yml CI run 40243631855 core and DuckDB passed. Provider logs/stderr remain intentionally separate.
 - 📏 **T023 — Bound request sizes concurrency and timeouts** — `██████████ 100.0%`
   - ✅ **Gate:** Malformed and oversize frames rejected deterministically · **Evidence:** src/http.rs bounds authenticated loopback HTTP to 1 MiB (including chunked unknown-length bodies), 16 concurrent requests, 10-second body and 30-second handler deadlines; src/stdio_limit.rs forwards stdio frames through a 64 KiB backpressured pipe with 8192-byte chunks, terminating a frame above 1 MiB before rmcp's otherwise unbounded read_until buffer; src/main.rs rejects oversized stdio input as a nonzero CLI error. Both transports retain normal MCP JSON-RPC. Code and tests passed GitHub Actions 40259215479 core Rust CI.; GitHub Actions 40259215479 passed Rust tests, Clippy, and an actual subprocess smoke feeding >1 MiB of unterminated stdio input: the server logged only a generic size error, exited unsuccessfully, and emitted no protocol stdout. src/stdio_limit.rs unit tests verify multiple normal lines and bounded rejection. src/http.rs authenticated_http_rejects_oversize_slow_and_overloaded_requests verifies Content-Length and chunked oversize 413, overload 503 and slow body 408; json_rpc_protocol_errors_remain_separate_from_ga_validation_results verifies malformed JSON produces a client/protocol error rather than an accepted tool result. HTTP and SDK read handling are bounded; cancellation of arbitrary long-running Google calls remains separate T039.
-- ⌨️ **T024 — Integrate Codex stdio configuration smoke** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Codex recognizes locally built synmetra binary
+- ⌨️ **T024 — Integrate Codex stdio configuration smoke** — `██████████ 100.0%`
+  - ✅ **Gate:** Codex recognizes locally built synmetra binary · **Evidence:** docs/CODEX.md documents native Codex CLI stdio registration using codex mcp add synmetra -- BIN serve, including get/list/remove and separate credential constraints; .github/workflows/ci.yml fetches a SHA-256 pinned native Rust Codex release asset (not npm), sets isolated CODEX_HOME, runs mcp add/get/list/remove and verifies exact native binary command/arguments with JSON output. This complete synthetic registration fixture passed core CI https://github.com/sguzman/synmetra/actions/runs/40354026086.; The pinned official Codex MCP CLI global-registration test in core CI https://github.com/sguzman/synmetra/actions/runs/40354026086 successfully recognized the locally built target/debug/synmetra serve executable as an enabled stdio MCP entry, with no embedded tokens/env credentials; codex mcp get/list matched expected configuration and remove left an empty entry list. This is registration/recognition QA, not a Codex live Google query or full multi-tool interoperability (T185).
 
 ### 🌐 P03 — Streamable HTTP protocol — `███████░░░ 72.2%`
 

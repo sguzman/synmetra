@@ -498,16 +498,18 @@
               "id": "T024",
               "emoji": "⌨️",
               "name": "Integrate Codex stdio configuration smoke",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "Codex recognizes locally built synmetra binary",
               "checks": [
                 {
                   "text": "Deliver integrate codex stdio configuration smoke as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "docs/CODEX.md documents native Codex CLI stdio registration using codex mcp add synmetra -- BIN serve, including get/list/remove and separate credential constraints; .github/workflows/ci.yml fetches a SHA-256 pinned native Rust Codex release asset (not npm), sets isolated CODEX_HOME, runs mcp add/get/list/remove and verifies exact native binary command/arguments with JSON output. This complete synthetic registration fixture passed core CI https://github.com/sguzman/synmetra/actions/runs/40354026086."
                 },
                 {
                   "text": "Codex recognizes locally built synmetra binary",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "The pinned official Codex MCP CLI global-registration test in core CI https://github.com/sguzman/synmetra/actions/runs/40354026086 successfully recognized the locally built target/debug/synmetra serve executable as an enabled stdio MCP entry, with no embedded tokens/env credentials; codex mcp get/list matched expected configuration and remove left an empty entry list. This is registration/recognition QA, not a Codex live Google query or full multi-tool interoperability (T185)."
                 }
               ]
             }
