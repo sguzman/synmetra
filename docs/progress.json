@@ -741,16 +741,18 @@
               "id": "T037",
               "emoji": "♻️",
               "name": "Honor deterministic pagination and tool list consistency",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "Discovery pagination and list change tests pass",
               "checks": [
                 {
                   "text": "Deliver honor deterministic pagination and tool list consistency as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/http.rs authenticated_http_session_lists_and_calls_tools_but_rejects_invalid_sessions now repeats real MCP tools/list after initialization and asserts identical catalog ordering, no duplicates and no nextCursor when the complete 20-tool read-only catalog fits in a single response. No hidden multi-page cursor state is introduced."
                 },
                 {
                   "text": "Discovery pagination and list change tests pass",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/http.rs performs two authenticated tools/list requests within one MCP session and verifies identical results/no spurious pagination. src/main.rs full_capability_profile_matches_exact_pinned_36_tool_union and scratchpad_tools_are_hidden_without_explicit_capability prove opt-in write/scratchpad profile differences and bounded complete inventories (20/35/36 tool names). GitHub Actions 40247290466 passed core and DuckDB. This accepts deterministic single-page discovery, not a fictitious paginated listing."
                 }
               ]
             },

@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `████░░░░░░ 44.0%` · **+44.05 percentage points from initial empty repo; +0.44 pp from verified separation of MCP protocol and GA tool errors** · 83/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `████░░░░░░ 44.5%` · **+44.49 percentage points from initial empty repo; +0.44 pp from stable complete MCP tool discovery** · 84/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -60,7 +60,7 @@
   - ✅ **Gate:** Document semver and provenance gates
 
 
-## 🔌 M1 — MCP protocol and transport fidelity — `█████░░░░░ 54.4%`
+## 🔌 M1 — MCP protocol and transport fidelity — `██████░░░░ 58.7%`
 
 **Scope:** MVP. **Acceptance gate:** Spec-conforming native MCP discovery and calls over stdio plus bounded Streamable HTTP; all transport safety tests pass.
 
@@ -106,7 +106,7 @@
 - 🧫 **T033 — Test MCP HTTP inspector interoperability** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** End-to-end tool invocation under loopback and protected remote modes
 
-### 🧾 P04 — MCP schema semantics — `████░░░░░░ 42.9%`
+### 🧾 P04 — MCP schema semantics — `██████░░░░ 57.1%`
 
 **Feature:** MCP contract.
 
@@ -116,8 +116,8 @@
   - ✅ **Gate:** Annotation write differs accurately from read tools · **Evidence:** src/main.rs: 21 #[tool] annotations including additive non-idempotent GA write; explicit in-memory metadata assertions. GitHub Actions run 40205211110 passed tests, strict rustfmt and Clippy.; src/main.rs: 21 #[tool] annotations including additive non-idempotent GA write; explicit in-memory metadata assertions. GitHub Actions run 40205211110 passed tests, strict rustfmt and Clippy.
 - 🎛️ **T036 — Expose capability-profile filtered tool lists** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Default read-only excludes writes and scratchpad effects
-- ♻️ **T037 — Honor deterministic pagination and tool list consistency** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Discovery pagination and list change tests pass
+- ♻️ **T037 — Honor deterministic pagination and tool list consistency** — `██████████ 100.0%`
+  - ✅ **Gate:** Discovery pagination and list change tests pass · **Evidence:** src/http.rs authenticated_http_session_lists_and_calls_tools_but_rejects_invalid_sessions now repeats real MCP tools/list after initialization and asserts identical catalog ordering, no duplicates and no nextCursor when the complete 20-tool read-only catalog fits in a single response. No hidden multi-page cursor state is introduced.; src/http.rs performs two authenticated tools/list requests within one MCP session and verifies identical results/no spurious pagination. src/main.rs full_capability_profile_matches_exact_pinned_36_tool_union and scratchpad_tools_are_hidden_without_explicit_capability prove opt-in write/scratchpad profile differences and bounded complete inventories (20/35/36 tool names). GitHub Actions 40247290466 passed core and DuckDB. This accepts deterministic single-page discovery, not a fictitious paginated listing.
 - ⚠️ **T038 — Normalize MCP protocol errors separately from GA failures** — `██████████ 100.0%`
   - ✅ **Gate:** Invalid tools are distinct from Google API errors · **Evidence:** src/http.rs json_rpc_protocol_errors_remain_separate_from_ga_validation_results runs a real authenticated MCP initialize, notifications/initialized, unknown JSON-RPC method and valid tools/call with invalid Google property. rmcp returns protocol method-not-found as JSON-RPC error -32601 while Synmetra returns a structured MCP tool result for GA argument validation. No provider call or Google credentials are required.; Synthetic loopback MCP HTTP test verifies unknown method returns top-level error.code=-32601 without result, but invalid run_report returns HTTP 200 JSON-RPC result with isError=true and structuredContent.error.category=validation and no top-level protocol error. Tests also enforce bearer token omission. GitHub Actions 40247087766 passed core tests, rustfmt, strict Clippy and native DuckDB.
 - 🧵 **T039 — Propagate request cancellation across auth and HTTP** — `░░░░░░░░░░ 0.0%`
