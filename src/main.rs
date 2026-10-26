@@ -5717,6 +5717,11 @@ mod tests {
                     "Unexpected route for {method}"
                 );
                 assert!(request.contains(r#""limit":"1000""#));
+                assert!(
+                    request
+                        .to_ascii_lowercase()
+                        .contains("authorization: bearer synthetic-scratchpad-bearer")
+                );
                 let body = json!({
                     "dimensionHeaders":[{"name":"country"}],
                     "metricHeaders":[{"name":"activeUsers","type":"TYPE_INTEGER"}],
@@ -5760,10 +5765,9 @@ mod tests {
             .scratchpad_ingest_report(Parameters(historical))
             .await;
         assert_eq!(result.is_error, Some(false));
-        assert_eq!(
-            result.structured_content.unwrap()["data"]["rows_ingested"],
-            1
-        );
+        let receipt = result.structured_content.unwrap();
+        assert_eq!(receipt["data"]["rows_ingested"], 1);
+        assert!(!receipt.to_string().contains("synthetic-scratchpad-bearer"));
 
         let realtime: ScratchIngestRealtimeArgs = serde_json::from_value(json!({
             "session_id":"session_fixture",
@@ -5778,10 +5782,9 @@ mod tests {
             .await;
         responder.await.unwrap();
         assert_eq!(result.is_error, Some(false));
-        assert_eq!(
-            result.structured_content.unwrap()["data"]["rows_ingested"],
-            1
-        );
+        let receipt = result.structured_content.unwrap();
+        assert_eq!(receipt["data"]["rows_ingested"], 1);
+        assert!(!receipt.to_string().contains("synthetic-scratchpad-bearer"));
 
         let table = server.scratchpad_summarize_table(Parameters(ScratchReadTableArgs {
             session_id: "session_fixture".into(),
@@ -5799,10 +5802,9 @@ mod tests {
             cursor: None,
         }));
         assert_eq!(query.is_error, Some(false));
-        assert_eq!(
-            query.structured_content.unwrap()["data"]["rows"][0]["country"],
-            "Mexico"
-        );
+        let queried = query.structured_content.unwrap();
+        assert_eq!(queried["data"]["rows"][0]["country"], "Mexico");
+        assert!(!queried.to_string().contains("synthetic-scratchpad-bearer"));
 
         let export = server.scratchpad_export_evidence_bundle(Parameters(ScratchEvidenceArgs {
             session_id: "session_fixture".into(),
@@ -5812,7 +5814,42 @@ mod tests {
         assert_eq!(export.is_error, Some(false));
         let bundle = export.structured_content.unwrap();
         assert_eq!(bundle["ok"], true);
+        assert_eq!(bundle["data"]["provider_called"], false);
+        assert_eq!(bundle["data"]["tables"].as_array().unwrap().len(), 2);
+        assert!(bundle["data"]["markdown"]
+            .as_str()
+            .unwrap()
+            .starts_with("# Synmetra scratchpad evidence"));
+        assert!(serde_json::to_vec(&bundle["data"]).unwrap().len() <= 256 * 1024);
         assert!(!bundle.to_string().contains("synthetic-scratchpad-bearer"));
+
+        // A different local session must not observe the first session's
+        // table, even though both belong to the same trusted stdio process.
+        let other = server.scratchpad_open_session(Parameters(ScratchOpenArgs {
+            session_id: "other_synthetic_session".into(),
+        }));
+        assert_eq!(other.is_error, Some(false));
+        let foreign_query = server.scratchpad_query(Parameters(ScratchQueryArgs {
+            session_id: "other_synthetic_session".into(),
+            sql: "SELECT country FROM historical".into(),
+            max_rows: Some(10),
+            max_cell_chars: Some(50),
+            summary_only: false,
+            output_mode: Some("rows".into()),
+            cursor: None,
+        }));
+        assert_eq!(foreign_query.is_error, Some(true));
+        let error = foreign_query.structured_content.unwrap();
+        assert_eq!(error["error"]["code"], "SCRATCHPAD_ERROR");
+        assert!(!error.to_string().contains("synthetic-scratchpad-bearer"));
+        assert_eq!(
+            server
+                .scratchpad_close_session(Parameters(ScratchSessionArgs {
+                    session_id: "other_synthetic_session".into(),
+                }))
+                .is_error,
+            Some(false)
+        );
 
         let too_large: ScratchIngestRealtimeArgs = serde_json::from_value(json!({
             "session_id":"session_fixture",
@@ -5848,6 +5885,14 @@ mod tests {
                 .is_error,
             Some(false)
         );
+        let after_close = server.scratchpad_export_evidence_bundle(Parameters(
+            ScratchEvidenceArgs {
+                session_id: "session_fixture".into(),
+                table_names: Some(vec!["historical".into()]),
+                sample_rows_per_table: Some(1),
+            },
+        ));
+        assert_eq!(after_close.is_error, Some(true));
     }
 
     #[cfg(feature = "scratchpad")]
