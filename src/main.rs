@@ -4550,6 +4550,71 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn partial_admin_catalog_permission_failure_does_not_leak_accessible_data() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        use tokio::net::TcpListener;
+
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let admin_host = format!("http://{}", listener.local_addr().unwrap());
+        let responder = tokio::spawn(async move {
+            for (path, status, body) in [
+                (
+                    "/v1beta/properties/42/customDimensions",
+                    "200 OK",
+                    json!({
+                        "customDimensions":[{
+                            "name":"properties/42/customDimensions/1",
+                            "parameterName":"private_but_accessible_metric"
+                        }]
+                    }),
+                ),
+                (
+                    "/v1beta/properties/42/customMetrics",
+                    "403 Forbidden",
+                    json!({"error":{"message":"private permission details"}}),
+                ),
+            ] {
+                let (mut stream, _) = listener.accept().await.unwrap();
+                let mut buffer = [0_u8; 4096];
+                let n = stream.read(&mut buffer).await.unwrap();
+                let request = String::from_utf8_lossy(&buffer[..n]);
+                assert!(request.starts_with(&format!("GET {path} HTTP/1.1")));
+                let body = body.to_string();
+                let response = format!(
+                    "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                    body.len(),
+                    body
+                );
+                stream.write_all(response.as_bytes()).await.unwrap();
+            }
+        });
+        let server = Synmetra::new(
+            GoogleClient::with_endpoints(
+                Some("private-fixture-token".into()),
+                &admin_host,
+                "http://127.0.0.1:9",
+            ),
+            false,
+        );
+        let result = server
+            .get_custom_dimensions_and_metrics(Parameters(PropertyArgs {
+                property_id: "42".into(),
+            }))
+            .await;
+        responder.await.unwrap();
+        assert_eq!(result.is_error, Some(true));
+        let structured = result.structured_content.unwrap();
+        assert_eq!(structured["error"]["code"], "GOOGLE_HTTP_ERROR");
+        assert_eq!(structured["error"]["status_code"], 403);
+        assert_eq!(structured["error"]["category"], "upstream");
+        assert!(structured["data"].is_null());
+        let public = structured.to_string();
+        assert!(!public.contains("private_but_accessible_metric"));
+        assert!(!public.contains("private permission details"));
+        assert!(!public.contains("private-fixture-token"));
+    }
+
+    #[tokio::test]
     async fn admin_handlers_preserve_golden_google_json_and_reject_403_without_leakage() {
         use tokio::io::{AsyncReadExt, AsyncWriteExt};
         use tokio::net::TcpListener;
