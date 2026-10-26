@@ -5083,16 +5083,24 @@ mod tests {
 
         let limits = server.scratchpad_get_runtime_limits();
         assert_eq!(limits.is_error, Some(false));
-        assert_eq!(limits.structured_content.unwrap()["data"]["max_sessions"], 4);
+        assert_eq!(
+            limits.structured_content.unwrap()["data"]["max_sessions"],
+            4
+        );
         let changed = server.scratchpad_set_runtime_limits(Parameters(ScratchLimitArgs {
             max_sessions: Some(2),
             max_tables_per_session: Some(1),
         }));
-        assert_eq!(changed.structured_content.unwrap()["data"]["max_tables_per_session"], 1);
-        let listed = server.scratchpad_list_sessions(Parameters(ScratchListArgs {
-            limit: Some(1),
-        }));
-        assert_eq!(listed.structured_content.unwrap()["data"]["session_ids"], json!(["fixture_a"]));
+        assert_eq!(
+            changed.structured_content.unwrap()["data"]["max_tables_per_session"],
+            1
+        );
+        let listed =
+            server.scratchpad_list_sessions(Parameters(ScratchListArgs { limit: Some(1) }));
+        assert_eq!(
+            listed.structured_content.unwrap()["data"]["session_ids"],
+            json!(["fixture_a"])
+        );
 
         let payload = json!({
             "dimensionHeaders":[{"name":"country"}],
@@ -5100,19 +5108,31 @@ mod tests {
             "rows":[{"dimensionValues":[{"value":"Mexico"}],
                      "metricValues":[{"value":"42"}]}]
         });
-        server.scratchpad.as_ref().unwrap()
-            .ingest_ga_response("fixture_a","events",&payload,false).unwrap();
+        server
+            .scratchpad
+            .as_ref()
+            .unwrap()
+            .ingest_ga_response("fixture_a", "events", &payload, false)
+            .unwrap();
         let tables = server.scratchpad_list_tables(Parameters(ScratchListTablesArgs {
             session_id: "fixture_a".into(),
             limit: None,
         }));
-        assert_eq!(tables.structured_content.unwrap()["data"]["tables"], json!(["events"]));
+        assert_eq!(
+            tables.structured_content.unwrap()["data"]["tables"],
+            json!(["events"])
+        );
         let describe = server.scratchpad_describe_table(Parameters(ScratchReadTableArgs {
             session_id: "fixture_a".into(),
             table_name: "events".into(),
         }));
-        assert_eq!(describe.structured_content.unwrap()["data"]["columns"]
-            .as_array().unwrap().len(),2);
+        assert_eq!(
+            describe.structured_content.unwrap()["data"]["columns"]
+                .as_array()
+                .unwrap()
+                .len(),
+            2
+        );
         let summary = server.scratchpad_summarize_table(Parameters(ScratchReadTableArgs {
             session_id: "fixture_a".into(),
             table_name: "events".into(),
@@ -5127,7 +5147,10 @@ mod tests {
             output_mode: Some("rows".into()),
             cursor: None,
         }));
-        assert_eq!(query.structured_content.unwrap()["data"]["rows"][0]["country"], "Mexico");
+        assert_eq!(
+            query.structured_content.unwrap()["data"]["rows"][0]["country"],
+            "Mexico"
+        );
         let invalid_query = server.scratchpad_query(Parameters(ScratchQueryArgs {
             session_id: "fixture_a".into(),
             sql: "DROP TABLE events".into(),
@@ -5138,13 +5161,19 @@ mod tests {
             cursor: None,
         }));
         assert_eq!(invalid_query.is_error, Some(true));
-        assert_eq!(invalid_query.structured_content.unwrap()["error"]["code"], "SCRATCHPAD_ERROR");
+        assert_eq!(
+            invalid_query.structured_content.unwrap()["error"]["code"],
+            "SCRATCHPAD_ERROR"
+        );
         let destroyed = server.scratchpad_drop_table(Parameters(ScratchTableArgs {
             session_id: "fixture_a".into(),
             table_name: "events".into(),
             if_exists: false,
         }));
-        assert_eq!(destroyed.structured_content.unwrap()["data"]["dropped"], true);
+        assert_eq!(
+            destroyed.structured_content.unwrap()["data"]["dropped"],
+            true
+        );
         let closed = server.scratchpad_close_session(Parameters(ScratchSessionArgs {
             session_id: "fixture_a".into(),
         }));
@@ -5154,7 +5183,10 @@ mod tests {
             limit: None,
         }));
         assert_eq!(invalid.is_error, Some(true));
-        assert_eq!(invalid.structured_content.unwrap()["error"]["category"], "local");
+        assert_eq!(
+            invalid.structured_content.unwrap()["error"]["category"],
+            "local"
+        );
     }
 
     #[cfg(feature = "scratchpad")]

@@ -1321,10 +1321,16 @@ mod tests {
         assert_eq!(state.open("alpha").unwrap()["refreshed"], true);
         assert_eq!(state.open("beta").unwrap()["refreshed"], false);
         assert!(state.open("gamma").unwrap_err().contains("quota"));
-        assert_eq!(state.sessions(Some(1)).unwrap()["session_ids"], json!(["alpha"]));
+        assert_eq!(
+            state.sessions(Some(1)).unwrap()["session_ids"],
+            json!(["alpha"])
+        );
         assert_eq!(state.sessions(Some(1)).unwrap()["total_sessions"], 2);
         assert_eq!(state.sessions(Some(1)).unwrap()["truncated"], true);
-        assert_eq!(state.sessions(None).unwrap()["session_ids"], json!(["alpha","beta"]));
+        assert_eq!(
+            state.sessions(None).unwrap()["session_ids"],
+            json!(["alpha", "beta"])
+        );
         assert!(state.sessions(Some(0)).is_err());
         assert!(state.sessions(Some(MAX_LIST_ITEMS + 1)).is_err());
         assert!(state.set_limits(Some(1), None).is_err());
@@ -1338,7 +1344,10 @@ mod tests {
                 Instant::now() - Duration::from_secs(1);
         }
         assert!(state.require_session("alpha").is_err());
-        assert_eq!(state.sessions(None).unwrap()["session_ids"], json!(["beta"]));
+        assert_eq!(
+            state.sessions(None).unwrap()["session_ids"],
+            json!(["beta"])
+        );
         assert_eq!(state.open("alpha").unwrap()["refreshed"], false);
         assert_eq!(state.close("beta").unwrap()["closed"], true);
         assert!(state.close("beta").is_err());
@@ -1363,32 +1372,67 @@ mod tests {
             ]
         });
         assert_eq!(
-            state.ingest_ga_response("primary","events",&payload,false)
-                .unwrap()["rows_ingested"], 2
+            state
+                .ingest_ga_response("primary", "events", &payload, false)
+                .unwrap()["rows_ingested"],
+            2
         );
-        assert!(state.ingest_ga_response("primary","second",&payload,false).is_err());
-        assert_eq!(state.tables("primary",None).unwrap()["tables"],json!(["events"]));
-        assert!(state.tables("secondary",None).unwrap()["tables"]
-            .as_array().unwrap().is_empty());
-        assert!(state.describe_table("secondary","events").is_err());
-        assert_eq!(state.describe_table("primary","events").unwrap()["columns"]
-            .as_array().unwrap().len(), 2);
-        assert_eq!(state.summarize_table("primary","events").unwrap()["row_count"],2);
-        assert_eq!(state.query_bounded(
-            "primary","SELECT COUNT(*) FROM events",None,None,false
-        ).unwrap()["rows"][0]["row_count"],"2");
-        assert!(state.drop_table("secondary","events",false).is_err());
-        assert!(state.drop_table("primary","bad;DROP",true).is_err());
-        assert_eq!(state.drop_table("primary","events",false).unwrap()["dropped"],true);
-        assert_eq!(state.drop_table("primary","events",true).unwrap()["dropped"],false);
-        assert!(state.drop_table("primary","events",false).is_err());
-        assert_eq!(state.tables("primary",None).unwrap()["total_tables"],0);
-        assert_eq!(state.ingest_ga_response("primary","again",&payload,false)
-            .unwrap()["rows_ingested"],2);
-        assert_eq!(state.summarize_table("primary","again").unwrap()["row_count"],2);
+        assert!(state
+            .ingest_ga_response("primary", "second", &payload, false)
+            .is_err());
+        assert_eq!(
+            state.tables("primary", None).unwrap()["tables"],
+            json!(["events"])
+        );
+        assert!(state.tables("secondary", None).unwrap()["tables"]
+            .as_array()
+            .unwrap()
+            .is_empty());
+        assert!(state.describe_table("secondary", "events").is_err());
+        assert_eq!(
+            state.describe_table("primary", "events").unwrap()["columns"]
+                .as_array()
+                .unwrap()
+                .len(),
+            2
+        );
+        assert_eq!(
+            state.summarize_table("primary", "events").unwrap()["row_count"],
+            2
+        );
+        assert_eq!(
+            state
+                .query_bounded("primary", "SELECT COUNT(*) FROM events", None, None, false)
+                .unwrap()["rows"][0]["row_count"],
+            "2"
+        );
+        assert!(state.drop_table("secondary", "events", false).is_err());
+        assert!(state.drop_table("primary", "bad;DROP", true).is_err());
+        assert_eq!(
+            state.drop_table("primary", "events", false).unwrap()["dropped"],
+            true
+        );
+        assert_eq!(
+            state.drop_table("primary", "events", true).unwrap()["dropped"],
+            false
+        );
+        assert!(state.drop_table("primary", "events", false).is_err());
+        assert_eq!(state.tables("primary", None).unwrap()["total_tables"], 0);
+        assert_eq!(
+            state
+                .ingest_ga_response("primary", "again", &payload, false)
+                .unwrap()["rows_ingested"],
+            2
+        );
+        assert_eq!(
+            state.summarize_table("primary", "again").unwrap()["row_count"],
+            2
+        );
         state.close("primary").unwrap();
-        assert!(state.tables("primary",None).is_err());
-        assert!(state.query_bounded("secondary","SELECT * FROM again",None,None,false).is_err());
+        assert!(state.tables("primary", None).is_err());
+        assert!(state
+            .query_bounded("secondary", "SELECT * FROM again", None, None, false)
+            .is_err());
     }
 
     #[test]
