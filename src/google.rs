@@ -3050,6 +3050,159 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn admin_beta_and_alpha_routes_retain_versioned_payloads() {
+        // Admin calls must use the Admin host even when the Data host differs.
+        for (kind, path, payload, key) in [
+            (
+                "property",
+                "/v1beta/properties/42",
+                r#"{"name":"properties/42","timeZone":"America/Mexico_City"}"#,
+                "name",
+            ),
+            (
+                "retention",
+                "/v1beta/properties/42/dataRetentionSettings",
+                r#"{"eventDataRetention":"FOURTEEN_MONTHS","resetUserDataOnNewActivity":false}"#,
+                "eventDataRetention",
+            ),
+            (
+                "account_sharing",
+                "/v1beta/accounts/77/dataSharingSettings",
+                r#"{"name":"accounts/77/dataSharingSettings","sharingWithGoogleSupportEnabled":false}"#,
+                "name",
+            ),
+            (
+                "ads_links",
+                "/v1beta/properties/42/googleAdsLinks",
+                r#"{"googleAdsLinks":[{"name":"properties/42/googleAdsLinks/7"}]}"#,
+                "googleAdsLinks",
+            ),
+            (
+                "annotations",
+                "/v1alpha/properties/42/reportingDataAnnotations",
+                r#"{"reportingDataAnnotations":[{"name":"properties/42/reportingDataAnnotations/8","color":"BLUE","annotationDate":{"year":2026,"month":10,"day":25}}]}"#,
+                "reportingDataAnnotations",
+            ),
+        ] {
+            let (admin_host, handle) = once(payload).await;
+            let client = GoogleClient::with_endpoints(
+                Some("private-fixture-token".into()),
+                &admin_host,
+                "http://127.0.0.1:9",
+            );
+            let data = match kind {
+                "property" => client.property("42").await,
+                "retention" => client.retention_settings("42").await,
+                "account_sharing" => client.account_sharing("77").await,
+                "ads_links" => client.ads_links_with_options("42", None, None).await,
+                "annotations" => client.annotations_with_options("42", None, None).await,
+                _ => unreachable!(),
+            }
+            .unwrap();
+            assert!(data.get(key).is_some(), "Missing {key} for {kind}");
+            let request = handle.await.unwrap();
+            assert!(
+                request.starts_with(&format!("GET {path} HTTP/1.1")),
+                "Wrong API version or path for {kind}"
+            );
+            assert!(!request.contains("private-fixture-token"));
+        }
+    }
+
+    #[tokio::test]
+    async fn annotation_pages_preserve_all_color_enums_and_inclusive_date_targets() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        use tokio::net::TcpListener;
+
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let admin_host = format!("http://{}", listener.local_addr().unwrap());
+        let colors = [
+            "COLOR_UNSPECIFIED", "PURPLE", "BROWN", "BLUE",
+            "GREEN", "RED", "CYAN", "ORANGE",
+        ];
+        let responder = tokio::spawn(async move {
+            for page in 0..2 {
+                let (mut socket, _) = listener.accept().await.unwrap();
+                let mut bytes = [0_u8; 4096];
+                let count = socket.read(&mut bytes).await.unwrap();
+                let request = String::from_utf8_lossy(&bytes[..count]);
+                assert!(request.starts_with(
+                    "GET /v1alpha/properties/42/reportingDataAnnotations?"
+                ));
+                assert!(request.contains("pageSize=4"));
+                if page == 0 {
+                    assert!(!request.contains("pageToken="));
+                } else {
+                    assert!(request.contains("pageToken=second"));
+                }
+                let annotations = colors[page * 4..page * 4 + 4]
+                    .iter()
+                    .enumerate()
+                    .map(|(n, color)| {
+                        let mut entry = json!({
+                            "name":format!(
+                                "properties/42/reportingDataAnnotations/{}",
+                                page * 4 + n + 1
+                            ),
+                            "title":"fixture",
+                            "color":color,
+                            "systemGenerated":*color == "ORANGE",
+                        });
+                        if n % 2 == 0 {
+                            entry["annotationDate"] = json!({
+                                "year":2026,"month":10,"day":25
+                            });
+                        } else {
+                            entry["annotationDateRange"] = json!({
+                                "startDate":{"year":2026,"month":10,"day":24},
+                                "endDate":{"year":2026,"month":10,"day":25}
+                            });
+                        }
+                        entry
+                    })
+                    .collect::<Vec<_>>();
+                let mut body = json!({"reportingDataAnnotations":annotations});
+                if page == 0 {
+                    body["nextPageToken"] = json!("second");
+                }
+                let body = body.to_string();
+                let reply = format!(
+                    "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                    body.len(),
+                    body
+                );
+                socket.write_all(reply.as_bytes()).await.unwrap();
+            }
+        });
+        let client = GoogleClient::with_endpoints(
+            Some("private-fixture-token".into()),
+            &admin_host,
+            "http://127.0.0.1:9",
+        );
+        let data = client.annotations_with_options("42", Some(4), Some(2)).await.unwrap();
+        responder.await.unwrap();
+        let annotations = data["reportingDataAnnotations"].as_array().unwrap();
+        assert_eq!(annotations.len(), 8);
+        for (index, color) in colors.iter().enumerate() {
+            assert_eq!(annotations[index]["color"], *color);
+            if index % 2 == 0 {
+                assert_eq!(annotations[index]["annotationDate"]["day"], 25);
+            } else {
+                assert_eq!(
+                    annotations[index]["annotationDateRange"]["startDate"]["day"],
+                    24
+                );
+                assert_eq!(
+                    annotations[index]["annotationDateRange"]["endDate"]["day"],
+                    25
+                );
+            }
+        }
+        assert_eq!(annotations[7]["systemGenerated"], true);
+        assert!(data.get("nextPageToken").is_none());
+    }
+
+    #[tokio::test]
     async fn access_reports_are_scoped_to_account_or_property() {
         for (id, account) in [("accounts/16", true), ("properties/82", false)] {
             let (url, handle) = once(r#"{"rowCount":0}"#).await;
