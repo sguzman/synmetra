@@ -1130,7 +1130,7 @@
               "id": "T056",
               "emoji": "🏷️",
               "name": "Support quota project and billing headers",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Expected Google quota routing preserved",
               "checks": [
                 {
@@ -1140,7 +1140,8 @@
                 },
                 {
                   "text": "Expected Google quota routing preserved",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs opt_in_quota_header_is_kept_separate_from_google_bearer_on_reads_and_writes exercises four real local HTTP wire requests: named quota-project ID on Admin read and explicitly enabled annotation write, numeric Google project number on Admin read, and unset quota setting with no x-goog-user-project header. It asserts exactly one correctly attributed header on configured requests, no inbound MCP bearer forwarding, and rejects CR/LF header injection before network access. Both pinned core and optional-feature CI passed https://github.com/sguzman/synmetra/actions/runs/40421137585. This accepts deterministic native Google request routing, not live Google Cloud IAM, quota consumption or serviceusage.services.use authorization (T048 remains open)."
                 }
               ]
             },
@@ -3482,17 +3483,18 @@
               "id": "T171",
               "emoji": "📚",
               "name": "Differentially compare upstream response projections",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Normalized golden fixtures generated from pinned baseline",
               "checks": [
                 {
                   "text": "Deliver differentially compare upstream response projections as reviewable repository evidence",
                   "passed": true,
-                  "evidence": "src/tabular.rs pinned_upstream_response_goldens_expose_shared_fields_and_real_divergences compares two source-derived pinned SednaLabs Contract V1 success fixtures (compact and summary-only) against a synthetic native projection, asserts equal shared row-count/cursor metadata, and explicitly preserves non-equivalent compact data, elapsed-time and cursor-taxonomy limits. spec/fixtures/sednalabs-response-differential.v1.json and docs/RESPONSE_DIFFERENTIAL.md retain upstream SHA, source-test identities, negative findings and fixture limits. The default Rust MCP tests and CI source-golden guard passed in GitHub Actions https://github.com/sguzman/synmetra/actions/runs/40373806570 (core steps); native DuckDB job also passed. The pinned upstream executable has not been run; the second executable-golden acceptance gate stays open."
+                  "evidence": "src/tabular.rs pinned_upstream_response_goldens_expose_shared_fields_and_real_divergences compares two source-derived pinned SednaLabs Contract V1 success fixtures (compact and summary-only) against a synthetic native projection, asserts equal shared row-count/cursor metadata, and explicitly preserves non-equivalent compact data, elapsed-time and cursor-taxonomy limits. spec/fixtures/sednalabs-response-differential.v1.json and docs/RESPONSE_DIFFERENTIAL.md retain upstream SHA, source-test identities, negative findings and fixture limits. The default Rust MCP tests and CI source-golden guard passed in GitHub Actions https://github.com/sguzman/synmetra/actions/runs/40373806570 (core steps); native DuckDB job also passed. The earlier source-derived first gate is now supplemented by source-executed upstream golden capture under the second gate; complete live/tool parity remains distinct."
                 },
                 {
                   "text": "Normalized golden fixtures generated from pinned baseline",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "The independent pinned upstream Rust CI https://github.com/sguzman/synmetra/actions/runs/40420006635 checked out sednalabs/ga4-mcp@039fd4620064fc4b76dc6bca641945aba52c14bc and executed four synthetic Contract V1 success/error builders, generating spec/fixtures/sednalabs-executed-contract-v1.json. src/tabular.rs executed_pinned_upstream_goldens_match_only_shared_contract_fields passed native core CI https://github.com/sguzman/synmetra/actions/runs/40422223509, comparing actual captured source metadata with native projections. It explicitly rejects false parity: upstream summary_only query_hash=null versus native abc, compact array versus native tuples, source elapsed_ms 8/9 versus native unmeasured 0, and retained policy/cursor error differences. This meets the pinned-baseline normalized golden fixture gate, NOT all-tool response identity or authorized live Google QA."
                 }
               ]
             },
