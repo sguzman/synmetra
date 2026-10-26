@@ -2891,7 +2891,7 @@
               "id": "T144",
               "emoji": "🪬",
               "name": "Implement SQL SELECT-only parser policy",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "DML DDL COPY INSTALL LOAD ATTACH and external scans rejected",
               "checks": [
                 {
@@ -2901,7 +2901,8 @@
                 },
                 {
                   "text": "DML DDL COPY INSTALL LOAD ATTACH and external scans rejected",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/scratchpad.rs hostile_sql_corpus_and_deterministic_mutations_never_execute and restricted_select_query_is_bounded_and_never_executes_user_sql reject DML, DDL, COPY, INSTALL, LOAD, ATTACH, external scans, query injection and 44 deterministic hostile SQL mutations without table alteration; DuckDB feature test https://github.com/sguzman/synmetra/actions/runs/40264614297 passed."
                 }
               ]
             },
@@ -2944,7 +2945,7 @@
               "id": "T147",
               "emoji": "📏",
               "name": "Provide deterministic truncation and evidence limits",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Bundle size and context limits enforced",
               "checks": [
                 {
@@ -2954,7 +2955,8 @@
                 },
                 {
                   "text": "Bundle size and context limits enforced",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/scratchpad.rs aggregate_evidence_bundle_rejects_oversized_output_without_altering_tables rejects eight-table aggregate output over 256 KiB while preserving tables; evidence_samples_are_sorted_repeatable_and_hash_the_actual_query checks stable order/hash, and evidence_export_handles_quoted_columns_nulls_and_bounded_text_cells guards encoding; DuckDB feature test https://github.com/sguzman/synmetra/actions/runs/40264614297 passed."
                 }
               ]
             },
@@ -2979,12 +2981,13 @@
               "id": "T149",
               "emoji": "🧪",
               "name": "Run embedded DuckDB fuzz and hostile SQL fixtures",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Policy bypass corpus fails safely",
               "checks": [
                 {
                   "text": "Deliver run embedded duckdb fuzz and hostile sql fixtures as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/scratchpad.rs hostile_sql_corpus_and_deterministic_mutations_never_execute exercises 35 hostile SQL fixtures and 44 deterministic prefix/suffix mutations, checking denial and preserved table rows; DuckDB feature test https://github.com/sguzman/synmetra/actions/runs/40264614297 passed. Coverage-guided fuzzing and an independently reviewed policy bypass corpus remain unaccepted."
                 },
                 {
                   "text": "Policy bypass corpus fails safely",
@@ -2996,7 +2999,7 @@
               "id": "T150",
               "emoji": "🦀",
               "name": "Document native DuckDB library boundary honestly",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Dependency license architecture and portability reviewed",
               "checks": [
                 {
@@ -3006,7 +3009,8 @@
                 },
                 {
                   "text": "Dependency license architecture and portability reviewed",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "docs/SCRATCHPAD.md, docs/ARCHITECTURE.md, Cargo.toml and src/scratchpad.rs reviewed: optional bundled DuckDB 1.4.2 includes native C/C++ linking with compiler/linker/runtime portability caveats; upstream Rust and native dependency licenses must remain accounted for under T013/T177/T216, and clean-install proof is T200/M9. DuckDB feature test https://github.com/sguzman/synmetra/actions/runs/40264614297 passed."
                 }
               ]
             }
@@ -3722,12 +3726,13 @@
               "id": "T187",
               "emoji": "🔒",
               "name": "Threat-model inbound Google and DuckDB trust boundaries",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Documented review of MCP prompt injection and auth vectors",
               "checks": [
                 {
                   "text": "Deliver threat-model inbound google and duckdb trust boundaries as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "docs/LOCAL_EXECUTION_THREAT_MODEL.md and revised docs/SECURITY.md review MCP arguments, prompt-injected data, inbound bearer/Google OAuth separation, fixed provider hosts, optional DuckDB SQL and shared stdio session boundaries against src/main.rs, src/http.rs, src/google.rs and src/scratchpad.rs; independent pre-live signoff remains open."
                 },
                 {
                   "text": "Documented review of MCP prompt injection and auth vectors",
@@ -3964,12 +3969,13 @@
               "id": "T200",
               "emoji": "📏",
               "name": "Document DuckDB native shared/static requirements",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Fresh-system runtime prerequisites verified",
               "checks": [
                 {
                   "text": "Deliver document duckdb native shared/static requirements as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "docs/SCRATCHPAD.md explicitly documents optional bundled DuckDB 1.4.2 C/C++ source and linker prerequisites, feature flags, local-only limitations, native dependency inspections, Rust-vs-native licensing, and portability limits; fresh EndeavourOS install and native linkage audit remain unaccepted."
                 },
                 {
                   "text": "Fresh-system runtime prerequisites verified",

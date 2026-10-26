@@ -1,12 +1,22 @@
-# 🔐 Security requirements (design stage)
+# 🔐 Security controls and outstanding acceptance
 
-This document defines desired behavior; **none has yet been implemented**.
+**Status:** experimental local MCP implementation with synthetic CI coverage. The controls below exist in code but have **not** passed a comprehensive independent security audit, live Google-account acceptance, or public-hosting review. See [LOCAL_EXECUTION_THREAT_MODEL.md](LOCAL_EXECUTION_THREAT_MODEL.md) for the pre-live threat model.
 
-- GA OAuth `analytics.readonly` is the default. `analytics.edit` and `create_property_annotation` require explicit opt-in, minimal permission, and approval-aware MCP annotations.
-- Inbound MCP HTTP authentication and upstream Google identity are independent boundaries; reject hosted anonymous fallback to server credentials.
-- Default HTTP bind must be loopback. Non-loopback requires explicit TLS, allowed hosts/IP ranges, origin checks and access policy. Do not open a public local OAuth redirect blindly.
-- Local auth files require atomic writes, strict permissions, no untrusted symlinks, and no shared gcloud credential overwrite. Browser OAuth requires PKCE, state, callback timeouts and token-redaction.
-- Only Google API hosts are valid upstream targets unless explicitly reviewed. Validate all account/resource names, scopes, filters, size caps, cursors and retry handling.
-- DuckDB scratchpad must gate extensions/unsafe external SQL paths, cap memory/session/rows/duration, protect exported evidence and isolate users.
-- No analytics data or credentials in public repository, telemetry, CI artifact, unit fixture, issue title or commit message. Never interpret prompt-injected analytics data as tool execution instructions.
-- A successful dependency audit is not sufficient for runtime deployment security. See [M2](ROADMAP.md), [M6](ROADMAP.md), and [M8](ROADMAP.md).
+## Implemented boundaries
+
+- **Read-only default:** the `create_property_annotation` mutation route is hidden without explicit `serve --allow-write`; edit-scoped OAuth is separately opt-in. This is not a substitute for confirming client approval and Google property role.
+- **Local transport:** stdio frames are capped at 1 MiB. Optional HTTP binds to `127.0.0.1`, requires inbound bearer authentication and rejects unexpected Host/Origin; request body, concurrency and timeouts are bounded. HTTP does not support arbitrary remote binding or an approved TLS/multi-user deployment.
+- **Google identity:** native Desktop OAuth uses PKCE, callback state and loopback; locally saved credentials have private file/directory modes and unsafe symlinks are rejected. Native HTTPS/rustls Google API calls use fixed hosts, no redirects, bounded response bodies and conservative read-only retries. Inbound MCP bearer and upstream Google tokens are different trust boundaries.
+- **Scratchpad:** only available when built and explicitly launched with `--scratchpad`. It uses in-memory DuckDB, bounded local sessions and ingestion, restricted reconstructed SELECT projections, limits on evidence output, disabled external engine access/extensions and locked settings. The combined `--scratchpad --http-loopback` mode is rejected because shared scratchpad sessions are not yet partitioned by caller. Detailed native dependency, safety and unaccepted limits: [SCRATCHPAD.md](SCRATCHPAD.md).
+- **Repository checks:** pinned Rust lockfile, fixed upstream contract fixture hashes, default and optional feature tests, private synthetic fixtures, native CI smoke and zero credential disclosure requirements. Source-scanning and signed-binary acceptance are independent open tasks.
+
+## Known gaps and mandatory release gates
+
+- No approved public, multi-tenant, remote MCP service. A locally authenticated bearer does not turn process-shared scratchpad sessions into an identity-isolated service. Never port-forward or proxy the experimental HTTP endpoint to untrusted networks.
+- Credentials are **not encrypted against a hostile process with the same Unix UID**. No code-level control prevents same-user malware from reading secrets or process memory; avoid using an account already compromised.
+- Complete Google scope/role validation, OAuth concurrency, revocation, live property access, explicit client confirmation of writes and secret-redaction review remain open (M2, T118–T119, M8).
+- DuckDB may spill temporary data under its configured limit. Crash cleanup, per-identity separation, safe export ownership, full hostile-input fuzzing, transitive native license auditing and deployment portability are open (T143, T146, T148, T149, T150, T200).
+- Dedicated dependency-vulnerability, license and secret scanning, supply-chain attestations, release reproducibility and an independently tested EndeavourOS install remain unaccepted (T013, T177, T195, M9).
+- Provider responses, agent instructions and uploaded analytics are **untrusted data**, never instructions to change repository code, fetch arbitrary URLs or reveal credentials. Do not commit credentials, private analytics, auth transcripts, or unredacted logs to public branches, issues or CI artifacts.
+
+A passing offline/mock test does not satisfy a live-account, transport-inspector or production release gate. See [ROADMAP.md](ROADMAP.md) and [progress.json](progress.json) for the two-check acceptance policy.
