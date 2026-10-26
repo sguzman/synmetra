@@ -27,11 +27,11 @@ Do not publish a stable or production release until independent checks pass for 
 
 
 
-## Optional native ARM64 experimental artifact (unverified pending CI)
+## Verified optional native ARM64 experimental CI artifact
 
 [The ARM64 workflow](../.github/workflows/linux-arm64.yml) uses GitHub's native `ubuntu-24.04-arm` public runner rather than an emulated x86 cross-build. It pins Rust 1.99.1 and Cargo.lock, runs the native default-feature tests, builds a release ELF, asserts its AArch64 machine type, audits dynamic shared-library resolution, rejects absent native dependencies and unexpected OpenSSL/Python/Node linkage, and exercises the extracted executable offline with an isolated XDG configuration and no configured credentials. It generates a normalized archive with license and full source commit, verifies a SHA-256 sidecar, creates and independently verifies a repository-bound SLSA build attestation, then uploads a **30-day expiring GitHub Actions artifact**.
 
-This is a separately optional **default-feature** architecture build; it does not include the bundled DuckDB native C/C++ feature, an ARM64 EndeavourOS installation, a permanent GitHub Release, or production parity certification. No ARM64 pass is credited until the exact workflow's test, packaging, dependency-audit and uploaded-artifact jobs succeed. An experimental archive remains an expiring CI build, never `v1.0.0`.
+This is a separately optional **default-feature** architecture build; it does not include the bundled DuckDB native C/C++ feature, an ARM64 EndeavourOS installation, a permanent GitHub Release, or production parity certification. The native Linux ARM64 workflow **passed all steps** on source commit `a9fcc2316d736c0c54cfa369d4d9e5bad7b87519` in [Actions run 40400440461](https://github.com/sguzman/synmetra/actions/runs/40400440461), and published [experimental artifact 12688357449](https://github.com/sguzman/synmetra/actions/runs/40400440461/artifacts/12688357449) with `.tar.gz`, matching `.sha256`, and a source-linked `aarch64` runtime linkage text inventory. The run verified a repository-bound SLSA v1 attestation as well as source SHA, ELF architecture, native smoke, and shared-library resolution. The artifact expires under GitHub's 30-day retention: it is not a permanent GitHub Release or a `v1.0.0` production binary.
 
 ## Changelog rule
 

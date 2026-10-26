@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `████████░░ 76.9%` · **+76.87 percentage points from initial empty repo; +0.22 pp from CI-tested annotation native OAuth edit-scope preflight
+**Overall:** `████████░░ 77.3%` · **+77.31 percentage points from initial empty repo; +0.44 pp from verified optional native ARM64 Linux release artifact
 
 ### 📏 Progress conventions
 
@@ -571,11 +571,11 @@
   - ✅ **Gate:** Signed provenance and dependency audit evidence · **Evidence:** Pinned Rust 1.99.1/Cargo.lock source builds an x86-64 release binary in two independent Cargo target directories and compares SHA-256 digests and sizes. The dedicated workflow step passed https://github.com/sguzman/synmetra/actions/runs/40358192285; separate cargo-deny Rust license/source/advisory scans also pass. Cross-runner reproducibility, bundled DuckDB and signed provenance remain distinct pending gates.; The release workflow passed two separate pinned Rust 1.99.1/Cargo.lock x86-64 binary SHA-256 comparisons, SHA-pinned actions/attest@v4 Sigstore/SLSA v1 archive attestation, and gh attestation verify -R sguzman/synmetra validating repository identity and SLSA predicate in https://github.com/sguzman/synmetra/actions/runs/40359969759. Independent cargo-deny Rust license/source checks passed https://github.com/sguzman/synmetra/actions/runs/40346651714. This accepts signed provenance and dependency-audit evidence only for an experimental default-feature Linux archive, not clean ARM64/EndeavourOS builds or native C++ compliance.
 
 
-## 🚀 M9 — Linux release and Codex-ready inauguration — `███████░░░ 70.5%`
+## 🚀 M9 — Linux release and Codex-ready inauguration — `████████░░ 75.0%`
 
 **Scope:** MVP. **Acceptance gate:** A documented stable native binary with 36-tool verified parity and release artifacts; no Python/npm runtime.
 
-### 📦 P25 — Packaging and installation — `███████░░░ 71.4%`
+### 📦 P25 — Packaging and installation — `█████████░ 85.7%`
 
 **Feature:** Native packaging.
 
@@ -585,8 +585,8 @@
   - ✅ **Gate:** Native build documented for Arch and other Linux · **Evidence:** docs/INSTALL.md documents pinning Rust 1.99.1, Arch pacman prerequisites, Cargo --locked --bin synmetra install into a user-local root, Fish PATH, other Linux build prerequisites, isolated diagnostics, optional DuckDB boundary, upgrade and uninstall; linked from README. Main commit 866847051.; GitHub Actions 40258199187 core job successfully ran an isolated Cargo +1.99.1 install --path . --locked --debug --bin synmetra to a temp root, verified installed executable without progress utility, invoked native auth doctor with PATH=/nonexistent and isolated XDG_CONFIG_HOME, checked no credential-value leakage, then uninstalled cleanly; DuckDB and core jobs both passed. Smoke was on Ubuntu Linux; Arch package prerequisites are documented but native Arch packaging is T198.
 - 📦 **T198 — Provide Arch PKGBUILD or local packaging recipe** — `██████████ 100.0%`
   - ✅ **Gate:** Pacman-managed or local user installation path tested · **Evidence:** packaging/arch/PKGBUILD implements a locally pinned immutable Git commit package with Rust 1.99.1, locked/offline release compilation, default-feature tests, and pacman-staged binary/license/docs; docs/INSTALL.md distinguishes it from the verified Cargo path. GitHub Actions 40260186967 core passed bash -n and source/metadata/build/package recipe checks. Actual Arch makepkg package installation has NOT been exercised, so full acceptance remains open.; Native Arch makepkg install/uninstall QA GitHub Actions https://github.com/sguzman/synmetra/actions/runs/40369257171 passed on disposable archlinux:base-devel: built immutable source revision d6ce2322d6f073d59844ea3d07e4d1a0c0886b54 as non-root pkgbuild user with pinned Rust 1.99.1 and locked dependencies, installed with pacman -U, verified package ownership and binary --version, ran credential-free auth doctor with isolated XDG and PATH, checked linked runtime libraries, and removed with pacman -R with no executable remaining. This certifies Arch container packaging recipe, NOT an external clean EndeavourOS install or native feature-enabled DuckDB package.
-- 🧷 **T199 — Offer optional ARM64 Linux release binary** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Aarch64 CI artifact smoke test and linked library audit
+- 🧷 **T199 — Offer optional ARM64 Linux release binary** — `██████████ 100.0%`
+  - ✅ **Gate:** Aarch64 CI artifact smoke test and linked library audit · **Evidence:** .github/workflows/linux-arm64.yml builds/tests the locked default-feature Rust 1.99.1 application on native ubuntu-24.04-arm, creates a normalized source-SHA-and-license archive, validates SHA256, verifies an x86-independent AArch64 ELF and detached SLSA v1 source attestation, and publishes the checksum-protected experimental archive. Native ARM64 Actions run https://github.com/sguzman/synmetra/actions/runs/40400440461 passed, artifact https://github.com/sguzman/synmetra/actions/runs/40400440461/artifacts/12688357449 uploaded. This is not a permanent stable release or bundled DuckDB binary.; Native ARM64 job in https://github.com/sguzman/synmetra/actions/runs/40400440461 passed pinned Cargo.lock Rust source tests and optimized release build, ELF architecture inspection, ldd linked-library resolution with no missing libraries or libssl/libcrypto/python/node dependency, extracted PATH=/nonexistent CLI version and auth doctor smoke, checksum self-validation, repository-bound SLSA attestation verification, and upload of a 30-day ARM64 artifact containing archive/checksum/linkage audit. No ARM64 EndeavourOS hardware install, bundled DuckDB C++ feature or real Google account QA is implied.
 - 📏 **T200 — Document DuckDB native shared/static requirements** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Fresh-system runtime prerequisites verified · **Evidence:** docs/SCRATCHPAD.md explicitly documents optional bundled DuckDB 1.4.2 C/C++ source and linker prerequisites, feature flags, local-only limitations, native dependency inspections, Rust-vs-native licensing, and portability limits; fresh EndeavourOS install and native linkage audit remain unaccepted.
 - 🖋️ **T201 — Publish install/uninstall and upgrades guide** — `█████░░░░░ 50.0%`

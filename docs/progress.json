@@ -4009,16 +4009,18 @@
               "id": "T199",
               "emoji": "🧷",
               "name": "Offer optional ARM64 Linux release binary",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "Aarch64 CI artifact smoke test and linked library audit",
               "checks": [
                 {
                   "text": "Deliver offer optional arm64 linux release binary as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": ".github/workflows/linux-arm64.yml builds/tests the locked default-feature Rust 1.99.1 application on native ubuntu-24.04-arm, creates a normalized source-SHA-and-license archive, validates SHA256, verifies an x86-independent AArch64 ELF and detached SLSA v1 source attestation, and publishes the checksum-protected experimental archive. Native ARM64 Actions run https://github.com/sguzman/synmetra/actions/runs/40400440461 passed, artifact https://github.com/sguzman/synmetra/actions/runs/40400440461/artifacts/12688357449 uploaded. This is not a permanent stable release or bundled DuckDB binary."
                 },
                 {
                   "text": "Aarch64 CI artifact smoke test and linked library audit",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "Native ARM64 job in https://github.com/sguzman/synmetra/actions/runs/40400440461 passed pinned Cargo.lock Rust source tests and optimized release build, ELF architecture inspection, ldd linked-library resolution with no missing libraries or libssl/libcrypto/python/node dependency, extracted PATH=/nonexistent CLI version and auth doctor smoke, checksum self-validation, repository-bound SLSA attestation verification, and upload of a 30-day ARM64 artifact containing archive/checksum/linkage audit. No ARM64 EndeavourOS hardware install, bundled DuckDB C++ feature or real Google account QA is implied."
                 }
               ]
             },

@@ -43,3 +43,7 @@ Uninstall the installed executable with `cargo +1.99.1 uninstall --root ~/.local
 ## Automated verification
 
 The CI core job performs a clean, isolated `cargo install --path . --locked --debug --bin synmetra` into a temporary root, invokes the installed binary with an empty executable PATH and temporary configuration, verifies that no credentials appear in stdout, and uninstalls it. The `--debug` flag avoids an unnecessary second optimized compile in every push; the native release artifact is a separate acceptance milestone. No manual QA is required from the user for this source-install gate.
+
+## Optional experimental native ARM64 binary
+
+A default-feature `aarch64` Linux archive with SHA-256 sidecar and linked-library audit was built and verified on a **native** GitHub-hosted ARM64 Linux runner. See [verified experimental ARM64 artifact](https://github.com/sguzman/synmetra/actions/runs/40400440461/artifacts/12688357449) and [release policy](RELEASE_POLICY.md). This is an expiring Actions artifact, **not** a permanent or supported `v1.0.0` release. It excludes the optional bundled DuckDB feature and has not been clean-installed on ARM64 EndeavourOS. Source installation remains the documented default for that environment.
