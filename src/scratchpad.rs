@@ -1706,7 +1706,13 @@ mod tests {
         }
         drop(inner);
         assert!(state
-            .query_bounded("external_gate", "SELECT * FROM read_csv('/etc/passwd')", None, None, false)
+            .query_bounded(
+                "external_gate",
+                "SELECT * FROM read_csv('/etc/passwd')",
+                None,
+                None,
+                false
+            )
             .is_err());
         assert_eq!(state.tables("external_gate", None).unwrap()["total_tables"], 0);
     }
