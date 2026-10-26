@@ -2359,9 +2359,7 @@ See docs/CLI.md and docs/SECURITY.md for accepted boundaries.
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = std::env::args().collect();
     if (args.len() == 2 && matches!(args[1].as_str(), "--help" | "-h"))
-        || (args.len() == 3
-            && args[1] == "serve"
-            && matches!(args[2].as_str(), "--help" | "-h"))
+        || (args.len() == 3 && args[1] == "serve" && matches!(args[2].as_str(), "--help" | "-h"))
     {
         println!("{CLI_HELP}");
         return Ok(());
@@ -2454,7 +2452,10 @@ mod tests {
             "XDG_CONFIG_HOME",
             "read-only stdio",
         ] {
-            assert!(super::CLI_HELP.contains(command), "Missing help topic: {command}");
+            assert!(
+                super::CLI_HELP.contains(command),
+                "Missing help topic: {command}"
+            );
         }
         assert!(!super::CLI_HELP.contains("client_secret"));
         assert!(!super::CLI_HELP.contains("refresh_token"));

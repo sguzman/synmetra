@@ -662,10 +662,12 @@ mod tests {
             "0700",
             "0600",
         ] {
-            assert!(AUTH_HELP.contains(option), "Missing auth help option: {option}");
+            assert!(
+                AUTH_HELP.contains(option),
+                "Missing auth help option: {option}"
+            );
         }
     }
-
 
     #[tokio::test]
     async fn concurrent_expired_credentials_refresh_once_and_rotate_privately() {
