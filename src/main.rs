@@ -2087,6 +2087,7 @@ impl Synmetra {
     }
 
     #[tool(
+        name = "run_report",
         description = "Run a historical Google Analytics Data API report with metric and dimension names.",
         annotations(
             read_only_hint = true,
@@ -2095,6 +2096,22 @@ impl Synmetra {
             open_world_hint = true
         )
     )]
+    async fn cancellable_run_report(
+        &self,
+        Parameters(args): Parameters<ReportArgs>,
+        context: rmcp::service::RequestContext<rmcp::RoleServer>,
+    ) -> CallToolResult {
+        // MCP cancellations must release an in-flight Google HTTP request, not
+        // merely suppress its result at the JSON-RPC transport boundary.
+        let cancellation = context.ct.clone();
+        tokio::select! {
+            biased;
+            _ = cancellation.cancelled() => result(Err(ApiError::RequestFailed)),
+            response = self.run_report(Parameters(args)) => response,
+        }
+    }
+
+    // Shared implementation for the MCP route and synthetic direct-call tests.
     async fn run_report(&self, Parameters(args): Parameters<ReportArgs>) -> CallToolResult {
         let controls = tabular::Controls {
             output_mode: args.output_mode,
