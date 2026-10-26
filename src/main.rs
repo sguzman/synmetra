@@ -6116,6 +6116,66 @@ mod tests {
     }
 
     #[cfg(feature = "scratchpad")]
+    #[tokio::test]
+    async fn invalid_historical_page_budgets_fail_locally_without_google_calls() {
+        use std::io::ErrorKind;
+        use std::net::TcpListener;
+
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        listener.set_nonblocking(true).unwrap();
+        let endpoint = format!("http://{}", listener.local_addr().unwrap());
+        let server = Synmetra::new(
+            GoogleClient::with_endpoints(None, &endpoint, &endpoint),
+            false,
+        )
+        .enable_scratchpad();
+        server.scratchpad_open_session(Parameters(ScratchOpenArgs {
+            session_id: "invalid_page_budget".into(),
+        }));
+        for (limit, max_rows, expected_error) in [
+            (20_001_u64, None, "Historical ingest limit"),
+            (1_500, Some(50), "exceed 20 bounded"),
+            (1_500, Some(0), "Ingestion bounds"),
+            (0, None, "Historical ingest limit"),
+        ] {
+            let mut data = json!({
+                "session_id":"invalid_page_budget",
+                "table_name":"never_created",
+                "property_id":42,
+                "date_ranges":[{"start_date":"7daysAgo","end_date":"today"}],
+                "dimensions":["country"],
+                "metrics":["activeUsers"],
+                "limit":limit
+            });
+            if let Some(max_rows) = max_rows {
+                data["max_rows"] = json!(max_rows);
+            }
+            let args: ScratchIngestReportArgs = serde_json::from_value(data).unwrap();
+            let reply = server.scratchpad_ingest_report(Parameters(args)).await;
+            assert_eq!(reply.is_error, Some(true));
+            let structured = reply.structured_content.unwrap();
+            assert_eq!(structured["error"]["code"], "SCRATCHPAD_ERROR");
+            assert!(structured["error"]["message"]
+                .as_str()
+                .unwrap()
+                .contains(expected_error));
+        }
+        assert!(
+            matches!(listener.accept(), Err(ref e) if e.kind() == ErrorKind::WouldBlock),
+            "Invalid historical request unexpectedly contacted the Google endpoint"
+        );
+        assert_eq!(
+            server
+                .scratchpad
+                .as_ref()
+                .unwrap()
+                .tables("invalid_page_budget", None)
+                .unwrap()["total_tables"],
+            0
+        );
+    }
+
+    #[cfg(feature = "scratchpad")]
     #[test]
     fn scratchpad_evidence_export_matches_pinned_inputs_and_bounded_json_markdown() {
         use std::collections::BTreeSet;
