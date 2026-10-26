@@ -622,6 +622,26 @@ mod tests {
         assert_eq!(rpc_error["error"]["code"], -32601);
         assert!(rpc_error.get("result").is_none());
 
+        let malformed_frame = client
+            .post(&endpoint)
+            .header(header::AUTHORIZATION, format!("Bearer {token}"))
+            .header(header::ACCEPT, "application/json, text/event-stream")
+            .header(header::CONTENT_TYPE, "application/json")
+            .header("mcp-session-id", &session)
+            .header("mcp-protocol-version", "2025-11-25")
+            .body("{not-valid-json")
+            .send()
+            .await
+            .unwrap();
+        if malformed_frame.status().is_success() {
+            // Some clients transport protocol errors as HTTP 200 JSON-RPC.
+            let payload = mcp_json_response(malformed_frame).await;
+            assert!(payload["error"]["code"].is_i64());
+            assert!(payload.get("result").is_none());
+        } else {
+            assert!(malformed_frame.status().is_client_error());
+        }
+
         let malformed_ga = request(
             json!({
                 "jsonrpc":"2.0","id":3,"method":"tools/call",
