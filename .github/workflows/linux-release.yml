@@ -6,6 +6,7 @@ on:
     tags: ["v*"]
     paths:
       - .github/workflows/linux-release.yml
+      - ci/generate-sbom.sh
   workflow_dispatch:
 
 permissions:
@@ -100,6 +101,21 @@ jobs:
             echo 'Credential field in release doctor output' >&2
             exit 1
           fi
+      - name: Generate locked Rust CycloneDX SBOM and linked-library inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash ci/generate-sbom.sh target/release/synmetra dist
+          jq -e '.bomFormat == "CycloneDX" and (.components | length > 100)' \
+            dist/synmetra-rust-sbom.cdx.json > /dev/null
+          jq -e '.schema == "synmetra_native_runtime_inventory"
+            and (.native_libraries | length >= 2)' \
+            dist/synmetra-native-runtime.json > /dev/null
+          if grep -Fq "$GITHUB_WORKSPACE" dist/synmetra-rust-sbom.cdx.json; then
+            echo 'SBOM disclosed an absolute checkout path' >&2
+            exit 1
+          fi
+
       - name: Sign experimental artifact SLSA build provenance
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
         with:
@@ -111,8 +127,11 @@ jobs:
         run: |
           set -euo pipefail
           gh attestation verify dist/synmetra-experimental-linux-x86_64.tar.gz \
-            -R "$GITHUB_REPOSITORY" > "$RUNNER_TEMP/synmetra-attestation-verification.txt"
-          test -s "$RUNNER_TEMP/synmetra-attestation-verification.txt"
+            -R "$GITHUB_REPOSITORY" --format json \
+            > "$RUNNER_TEMP/synmetra-attestation-verification.json"
+          jq -e 'type == "array" and length > 0
+            and any(.[]; .verificationResult.statement.predicateType == "https://slsa.dev/provenance/v1")' \
+            "$RUNNER_TEMP/synmetra-attestation-verification.json" > /dev/null
 
       - name: Preserve checksum-verified experimental artifact
         uses: actions/upload-artifact@v4
@@ -123,3 +142,5 @@ jobs:
           path: |
             dist/synmetra-experimental-linux-x86_64.tar.gz
             dist/synmetra-experimental-linux-x86_64.tar.gz.sha256
+            dist/synmetra-rust-sbom.cdx.json
+            dist/synmetra-native-runtime.json
