@@ -58,3 +58,20 @@ Raw attribute types: `description` 115; `type` 23; `items` 10; `format` 8; `anyO
 
 - [Realtime compatibility correction](https://github.com/sguzman/synmetra/commit/2d74a1493d60cf2cc92ac7472febf0961d527910): native `run_realtime_report` now accepts official `order_bys` and `offset` arguments, forwards `orderBys`, and rejects nonzero `offset` instead of silently ignoring it. Google's [current v1beta request schema](https://developers.google.com/analytics/devguides/reporting/data/v1/rest/v1beta/properties/runRealtimeReport) supports `orderBys` but not `offset`. The official Python function still declares `offset`; the semantic discrepancy is explicitly documented rather than counted as achieved parity.
 - [Realtime envelope regression](https://github.com/sguzman/synmetra/commit/c24502b6fe5d882eae2503eabddfc9a8838562fa): synthetic provider response retains row count and quota with no fabricated continuation token. GitHub Actions 40227043192 core tests passed; native DuckDB job is a separate acceptance gate.
+
+## Current native property-name recheck (2026-10-26)
+
+A later **feature-enabled** full-profile router capture from [Synmetra `be2bb3c`, GitHub Actions 40269115096](https://github.com/sguzman/synmetra/actions/runs/40269115096) has now been locked as [spec/native/tool-schema.v1.json](../spec/native/tool-schema.v1.json). The native snapshot is subsequently checked for byte-equivalent JSON schema semantics by Rust's full-profile feature test. This section compares **top-level advertised property names only**, not all nested field types/defaults, return schemas or live behavior.
+
+| Comparison | Current capture |
+| --- | ---: |
+| Native tools captured | 36 |
+| Pinned SednaLabs tools compared | 35 |
+| Tools with property-name set differences | 8 |
+| Missing SednaLabs property names | **24** |
+| Native-only extra property names | 2 |
+| Missing Google official extracted parameter names | **0** |
+
+All 24 missing names are confined to six scratchpad tools: `scratchpad_describe_table`, `scratchpad_ingest_realtime_report`, `scratchpad_ingest_report`, `scratchpad_summarize_table` (five output/paging options each: `cursor`, `max_cell_chars`, `max_rows`, `output_mode`, `summary_only`), and `scratchpad_landing_param_shift_report` / `scratchpad_release_regression_report` (two options each: `max_cell_chars`, `max_rows`). The two native-only properties are `keep_empty_rows` on `preview_report_request` and `run_report`.
+
+This reduces the historical field-name gap from 75 to 24; **it does not establish contract parity**. Input type/description/default drift, SednaLabs response projection differences, Google account role/alpha behavior and full client conformance remain unverified. The [migration guide](MIGRATION.md), [native per-tool guide](NATIVE_TOOL_GUIDE.md), and T164–T165 acceptance tasks track these boundaries. The historical table above is retained with its original source SHA and must not be rewritten to imply later acceptance.

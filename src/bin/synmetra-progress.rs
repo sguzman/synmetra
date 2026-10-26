@@ -153,9 +153,11 @@ fn main() -> Result<(), Box<dyn Error>> {
         readme = new_readme;
     }
     let issue_index = fs::read_to_string("docs/ISSUES.md")?;
+    let tool_provenance = fs::read_to_string("docs/TOOL_PROVENANCE.md")?;
     let mut errors = Vec::<String>::new();
     let mut ids = HashSet::<String>::new();
     let mut names = HashSet::<String>::new();
+    let mut implementation_evidence = Vec::<(String, String, f64)>::new();
     let mut all = Vec::<f64>::new();
     let mut nphase = 0;
     let mut accepted = 0;
@@ -201,6 +203,9 @@ fn main() -> Result<(), Box<dyn Error>> {
                     );
                 }
                 let actual = round_two(passed as f64 * 100.0 / checks.len().max(1) as f64);
+                if let Some(tool) = name.strip_prefix("Implement ") {
+                    implementation_evidence.push((tool.to_owned(), id.to_owned(), actual));
+                }
                 let stored = task["progress"].as_f64().unwrap_or(-1.0);
                 check(
                     (stored - actual).abs() < 0.005,
@@ -297,6 +302,28 @@ fn main() -> Result<(), Box<dyn Error>> {
             format!("Missing atomic task for {tool}"),
             &mut errors,
         );
+        let marker = format!("| {tool} |");
+        let references = tool_provenance
+            .lines()
+            .filter(|line| line.starts_with(&marker))
+            .collect::<Vec<_>>();
+        check(
+            references.len() == 1,
+            format!("Expected one provenance row for {tool}"),
+            &mut errors,
+        );
+        if let (Some(row), Some((_, id, pct))) = (
+            references.first(),
+            implementation_evidence.iter().find(|(name, _, _)| name == &tool),
+        ) {
+            check(
+                row.contains(&format!("| {id} |"))
+                    && row.contains(&format!(", {}% (", *pct as usize))
+                    && row.contains("github.com/sguzman/synmetra/blob/"),
+                format!("Tool provenance task, acceptance or Rust source drift: {tool}"),
+                &mut errors,
+            );
+        }
     }
     check(
         ids.len() == 227 && nphase == 30 && array(&ledger, "milestones").len() == 11,

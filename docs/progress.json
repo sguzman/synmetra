@@ -4081,16 +4081,18 @@
               "id": "T205",
               "emoji": "🧠",
               "name": "Document other MCP agents using stdio and HTTP",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "Secure example configurations and token separation",
               "checks": [
                 {
                   "text": "Deliver document other mcp agents using stdio and http as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "docs/MCP_CLIENTS.md provides independently scoped stdio and authenticated loopback Streamable HTTP configurations for other MCP clients; documents 20 default read-only, 15 opt-in DuckDB and one gated annotation route, with native executable requirements and no Python/npm runtime."
                 },
                 {
                   "text": "Secure example configurations and token separation",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "docs/MCP_CLIENTS.md explicitly distinguishes inbound MCP bearer vs upstream Google OAuth, bounds loopback Host/Origin, rejects public proxy/multiuser/scratchpad HTTP, and cites synthetic identity and transport acceptance in src/http.rs and docs/HTTP.md. No third-party client conformance is claimed."
                 }
               ]
             },
@@ -4117,12 +4119,13 @@
               "id": "T207",
               "emoji": "🔍",
               "name": "Document per-tool parameter guides for all 36 tools",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Each tool includes input output limits and examples",
               "checks": [
                 {
                   "text": "Deliver document per-tool parameter guides for all 36 tools as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "docs/NATIVE_TOOL_GUIDE.md provides distinct parameter headings, required and optional native schema fields, output semantics, explicit limits/permissions and synthetic JSON examples for all 36 planned MCP tools. Source is the captured real Rust rmcp router in spec/native/tool-schema.v1.json from feature CI 40269115096; source review confirmed 36 unique entries and no missing required sample inputs. Automated documentation-example acceptance remains open until CI passes."
                 },
                 {
                   "text": "Each tool includes input output limits and examples",
@@ -4153,16 +4156,18 @@
               "id": "T209",
               "emoji": "📗",
               "name": "Publish migrations from official and SednaLabs servers",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "Tool schema and behavior differences listed",
               "checks": [
                 {
                   "text": "Deliver publish migrations from official and sednalabs servers as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "docs/MIGRATION.md publishes a non-destructive migration guide for pinned official Google 10-tool Python MCP and pinned SednaLabs 35-tool Rust MCP, distinguishing native stdio/auth settings, default capability visibility and provider vs Contract V1 responses."
                 },
                 {
                   "text": "Tool schema and behavior differences listed",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "docs/MIGRATION.md and docs/SCHEMA_PARITY_AUDIT.md enumerate the independently measured current 24 SednaLabs top-level optional input gaps across six scratchpad tools, two native-only fields, zero missing official extracted parameter names, alpha eligibility and realtime offset restrictions, with explicit evidence and no live parity claim."
                 }
               ]
             },

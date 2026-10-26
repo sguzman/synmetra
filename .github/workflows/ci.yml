@@ -176,6 +176,26 @@ jobs:
           diff -u "$RUNNER_TEMP/inventory-names" "$RUNNER_TEMP/native-guide-names"
           test "$(grep -c '^```json$' docs/NATIVE_TOOL_GUIDE.md)" -eq 36
           awk '/^```json$/ {block=1; next} block && /^```$/ {block=0; print ""; next} block {print}' docs/NATIVE_TOOL_GUIDE.md | jq -s -e 'length == 36' > /dev/null
+          awk '/^### / {name=$2; gsub(/[^[:alnum:]_]/, "", name)} /^```json$/ {body=1; json=""; next} body && /^```$/ {print name "\t" json; body=0; next} body {json=json $0}' docs/NATIVE_TOOL_GUIDE.md > "$RUNNER_TEMP/native-guide-fixtures"
+          test "$(wc -l < "$RUNNER_TEMP/native-guide-fixtures")" -eq 36
+          while IFS=$'\t' read -r name example; do
+            jq -e --arg name "$name" --argjson args "$example" '.tools[] | select(.name == $name) | all((.inputSchema.required // [])[]; . as $key | $args | has($key))' spec/native/tool-schema.v1.json > /dev/null
+          done < "$RUNNER_TEMP/native-guide-fixtures"
+
+      - name: Check native Codex and upstream migration instructions
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f docs/CODEX.md
+          test -f docs/MCP_CLIENTS.md
+          test -f docs/MIGRATION.md
+          grep -Fq 'codex mcp add synmetra -- ~/.local/bin/synmetra serve' docs/CODEX.md
+          grep -Fq 'codex mcp remove synmetra' docs/CODEX.md
+          grep -Fq 'one trusted local user' docs/MCP_CLIENTS.md
+          grep -Fq '24 SednaLabs inputs not advertised natively' docs/MIGRATION.md
+          grep -Fq '0.0.1' Cargo.toml
+          grep -Fq 'docs/CODEX.md' README.md
+          grep -Fq 'docs/MIGRATION.md' README.md
 
       - name: Verify native operator reference and redacted smoke documentation
         shell: bash
@@ -345,7 +365,9 @@ jobs:
   duckdb:
     concurrency:
       group: synmetra-duckdb-${{ github.ref }}
-      cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+      # Preserve a running expensive native DuckDB build across docs and
+      # roadmap pushes. GitHub coalesces obsolete pending builds.
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     timeout-minutes: 70
     env:
@@ -360,8 +382,8 @@ jobs:
           rustc --version | grep -F 'rustc 1.99.1'
           cargo --version
       - uses: Swatinem/rust-cache@v2
-      # Always check the final branch head: a docs-only push must not cancel
-      # a previous native run and silently skip feature acceptance.
+      # New commits receive their own feature test after the prior run
+      # completes; source snapshots are compared against the actual head.
       - name: Test bounded DuckDB scratchpad
         env:
           SYNMETRA_CAPTURE_INPUT_SCHEMAS: "1"

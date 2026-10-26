@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `██████░░░░ 64.1%` · **+64.10 percentage points from initial empty repo; +1.99 pp from native CLI/Fish, Google Cloud, smoke QA and disclosure documentation
+**Overall:** `███████░░░ 65.2%` · **+65.20 percentage points from initial empty repo; +1.10 pp from native MCP client and upstream migration guide evidence
 
 ### 📏 Progress conventions
 
@@ -571,7 +571,7 @@
   - ✅ **Gate:** Signed provenance and dependency audit evidence
 
 
-## 🚀 M9 — Linux release and Codex-ready inauguration — `███░░░░░░░ 31.8%`
+## 🚀 M9 — Linux release and Codex-ready inauguration — `████░░░░░░ 43.2%`
 
 **Scope:** MVP. **Acceptance gate:** A documented stable native binary with 36-tool verified parity and release artifacts; no Python/npm runtime.
 
@@ -594,7 +594,7 @@
 - 🐚 **T202 — Provide Fish-friendly CLI configuration examples** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** No npm Python or bash-only assumptions · **Evidence:** docs/CLI.md contains Fish-native read-only OAuth, diagnostics, native cargo/DuckDB build, private inbound bearer read -s -P and set -gx examples; docs/INSTALL.md uses fish_add_path. Syntax and semantics checked against fish-shell 4.0 read/set documentation and native PATH-isolation core CI https://github.com/sguzman/synmetra/actions/runs/40324582737. Formal Fish shell execution QA remains separate.
 
-### 📖 P26 — Documentation and agent onboarding — `████░░░░░░ 43.8%`
+### 📖 P26 — Documentation and agent onboarding — `████████░░ 75.0%`
 
 **Feature:** Operator docs.
 
@@ -602,16 +602,16 @@
   - ✅ **Gate:** All flags options and permissions documented · **Evidence:** src/main.rs CLI_HELP and src/auth.rs AUTH_HELP implement offline --help/-h and auth help, alongside native --version; docs/CLI.md covers server, auth, environment, permissions and failure modes. Core CI https://github.com/sguzman/synmetra/actions/runs/40324582737 passed Verify offline CLI help across native invocation modes with PATH=/nonexistent.; docs/CLI.md lists all 3 server flags, 5 OAuth login options, four auth subcommands plus command, version/help modes, four documented environment overrides, permission tiers and loopback/stdio trust limits; .github/workflows/ci.yml asserts flags and env references and offline native help. Core CI https://github.com/sguzman/synmetra/actions/runs/40324582737 passed the reference and operator help checks.
 - 🔌 **T204 — Publish tested Codex global MCP registration** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** One-line setup verified with official Codex
-- 🧠 **T205 — Document other MCP agents using stdio and HTTP** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Secure example configurations and token separation
+- 🧠 **T205 — Document other MCP agents using stdio and HTTP** — `██████████ 100.0%`
+  - ✅ **Gate:** Secure example configurations and token separation · **Evidence:** docs/MCP_CLIENTS.md provides independently scoped stdio and authenticated loopback Streamable HTTP configurations for other MCP clients; documents 20 default read-only, 15 opt-in DuckDB and one gated annotation route, with native executable requirements and no Python/npm runtime.; docs/MCP_CLIENTS.md explicitly distinguishes inbound MCP bearer vs upstream Google OAuth, bounds loopback Host/Origin, rejects public proxy/multiuser/scratchpad HTTP, and cites synthetic identity and transport acceptance in src/http.rs and docs/HTTP.md. No third-party client conformance is claimed.
 - 🔑 **T206 — Write Google Cloud setup without mandatory gcloud** — `██████████ 100.0%`
   - ✅ **Gate:** Project API activation and scopes clearly explained · **Evidence:** docs/GOOGLE_CLOUD.md provides browser-console Cloud project setup, separately enabled Google Analytics Admin and Data APIs, Google Auth Platform Desktop OAuth client JSON, private file storage, user role distinctions and native Fish PKCE login without mandatory gcloud/Python/npm. CI https://github.com/sguzman/synmetra/actions/runs/40324582737 passed the native operator reference check.; docs/GOOGLE_CLOUD.md explicitly covers Admin/Data API activation, testing user and Desktop-client consent setup, analytics.readonly versus analytics.edit, admin audit roles, edit-capable annotation roles, Google-side access and alpha eligibility; sources Google's Analytics quickstarts, OAuth Desktop app and scopes references; CI https://github.com/sguzman/synmetra/actions/runs/40324582737 verified both API names and full OAuth scope URLs.
-- 🔍 **T207 — Document per-tool parameter guides for all 36 tools** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Each tool includes input output limits and examples
+- 🔍 **T207 — Document per-tool parameter guides for all 36 tools** — `█████░░░░░ 50.0%`
+  - ✅ **Gate:** Each tool includes input output limits and examples · **Evidence:** docs/NATIVE_TOOL_GUIDE.md provides distinct parameter headings, required and optional native schema fields, output semantics, explicit limits/permissions and synthetic JSON examples for all 36 planned MCP tools. Source is the captured real Rust rmcp router in spec/native/tool-schema.v1.json from feature CI 40269115096; source review confirmed 36 unique entries and no missing required sample inputs. Automated documentation-example acceptance remains open until CI passes.
 - 🧪 **T208 — Publish anonymized smoke scenarios and QA limits** — `██████████ 100.0%`
   - ✅ **Gate:** Operator can diagnose errors without pasting secrets · **Evidence:** docs/SMOKE_SCENARIOS.md gives synthetic coverage for installation, auth, stdio, authenticated HTTP, Google network retry/error, hostile cursor/filter inputs, native DuckDB, and progress/contract integrity, plus clear limits of mocked-only acceptance; core CI https://github.com/sguzman/synmetra/actions/runs/40324582737 validates document and examples.; docs/SMOKE_SCENARIOS.md specifies safe incident ledger SHA/test/UTC/error category and redacted synthetic reproduction, identifies invalid credentials/API denial and build/Clippy errors without user screenshots or pasted tokens, and references a 36-tool eligibility matrix. Core CI https://github.com/sguzman/synmetra/actions/runs/40324582737 passed documentation presence and scrubbed diagnostics tests. No manual user QA is required for these smoke scenarios.
-- 📗 **T209 — Publish migrations from official and SednaLabs servers** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Tool schema and behavior differences listed
+- 📗 **T209 — Publish migrations from official and SednaLabs servers** — `██████████ 100.0%`
+  - ✅ **Gate:** Tool schema and behavior differences listed · **Evidence:** docs/MIGRATION.md publishes a non-destructive migration guide for pinned official Google 10-tool Python MCP and pinned SednaLabs 35-tool Rust MCP, distinguishing native stdio/auth settings, default capability visibility and provider vs Contract V1 responses.; docs/MIGRATION.md and docs/SCHEMA_PARITY_AUDIT.md enumerate the independently measured current 24 SednaLabs top-level optional input gaps across six scratchpad tools, two native-only fields, zero missing official extracted parameter names, alpha eligibility and realtime offset restrictions, with explicit evidence and no live parity claim.
 - 🛡️ **T210 — Publish responsible security disclosure policy** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Safe vulnerability contact with no leaked reports · **Evidence:** Root SECURITY.md defines the experimental supported-version scope, GitHub Security Advisory conditional private reporting, metadata-only public contact fallback (never vulnerability details), synthetic evidence expectations, private triage/remediation/disclosure and security boundaries. This is a documented policy; repository private vulnerability reporting configuration is not verified, so safe active contact gate remains open.
 
