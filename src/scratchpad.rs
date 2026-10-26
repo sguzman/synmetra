@@ -1289,7 +1289,10 @@ mod tests {
                 .unwrap();
             }
         }
-        assert_eq!(state.tables("bounded_bundle", None).unwrap()["total_tables"], 8);
+        assert_eq!(
+            state.tables("bounded_bundle", None).unwrap()["total_tables"],
+            8
+        );
         let too_large = state
             .export_evidence_bundle("bounded_bundle", None, Some(20))
             .unwrap_err();
@@ -1304,11 +1307,7 @@ mod tests {
             .iter()
             .all(|table| table["sample_rows"].as_array().unwrap().is_empty()));
         let bounded = state
-            .export_evidence_bundle(
-                "bounded_bundle",
-                Some(vec!["sample_0".into()]),
-                Some(1),
-            )
+            .export_evidence_bundle("bounded_bundle", Some(vec!["sample_0".into()]), Some(1))
             .unwrap();
         assert_eq!(bounded["tables"][0]["row_count"], 20);
         assert_eq!(
