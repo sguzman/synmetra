@@ -3528,7 +3528,7 @@
               "id": "T175",
               "emoji": "⏱️",
               "name": "Validate timeouts retries backoff and rate limits",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Offline deterministic clock and throttled 429 tests",
               "checks": [
                 {
@@ -3538,7 +3538,8 @@
                 },
                 {
                   "text": "Offline deterministic clock and throttled 429 tests",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs readonly_429_retry_schedule_respects_virtual_clock_and_attempt_ceiling uses Tokio's paused deterministic clock (enabled only in dev tests), asserts Retry-After 2-second minimum, no premature wake-up, exactly three 429 attempts, and exact virtual elapsed delay. Separate synthetic loopback tests readonly_report_retry_is_bounded_and_never_replays_writes, readonly_429_exhausts_three_attempts_with_redacted_error, and annotation_writes_do_not_retry_429_500_or_503_responses validate actual HTTP retry ceilings and no write replay. All passed pinned Rust core CI https://github.com/sguzman/synmetra/actions/runs/40356602112. These are offline policy tests, not live Google quota/SLO certification."
                 }
               ]
             },
@@ -3770,7 +3771,7 @@
               "id": "T188",
               "emoji": "🧪",
               "name": "Fuzz resource names filters cursors and JSON parsing",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Fuzz corpus with reproducible seeds and crash guard",
               "checks": [
                 {
@@ -3780,7 +3781,8 @@
                 },
                 {
                   "text": "Fuzz corpus with reproducible seeds and crash guard",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/tabular.rs seeded_resource_and_cursor_mutations_fail_closed_without_panics runs 768 reproducible invalid resource/cursor mutations across three pinned xorshift64 seeds, checking denial and unchanged request bodies. src/google.rs seeded_json_and_filter_mutations_are_bounded_and_panic_free runs 384 more seeded malformed JSON/oversized filter mutations and checks local rejection before networking. Both catch parser panics and print seed/iteration on a failure. docs/ADVERSARIAL_CORPUS.md preserves seeds, bounds and limitations. All passed core CI https://github.com/sguzman/synmetra/actions/runs/40356602112. This is a bounded seeded corpus, not coverage-guided fuzz completeness or a formal safety proof."
                 }
               ]
             },
