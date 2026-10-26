@@ -592,11 +592,11 @@ The same native contract may be carried as JSON-RPC structured content and legac
 
 ### `scratchpad_landing_param_shift_report`
 
-**Required inputs:** `session_id`, `table_name`, `release_date`. **Optional inputs:** `channel_column`, `cursor`, `date_column`, `landing_url_column`, `output_mode`, `post_days`, `pre_days`, `source_medium_column`, `summary_only`, `top_n`, `transition_days`.
+**Required inputs:** `session_id`, `table_name`, `release_date`. **Optional inputs:** `channel_column`, `cursor`, `date_column`, `landing_url_column`, `max_cell_chars`, `max_rows`, `output_mode`, `post_days`, `pre_days`, `source_medium_column`, `summary_only`, `top_n`, `transition_days`.
 
 **Output:** Local DuckDB operation; result is an MCP ok/data/meta envelope with bounded local structured data, not a Google provider response.
 
-**Limits / permissions:** Only with --features scratchpad and serve --scratchpad on trusted stdio; in-memory session max 20000 rows; feature security gates still open.
+**Limits / permissions:** Only with --features scratchpad and serve --scratchpad on trusted stdio; in-memory session max 20000 rows; feature security gates still open. Optional `max_rows` (1–1000) limits ranked shifts, retaining `groups_total` and explicit `truncated`; `max_cell_chars` (1–2048) clips returned string cells; no SQL or network is involved.
 
 **Synthetic example arguments:**
 
@@ -604,7 +604,9 @@ The same native contract may be carried as JSON-RPC structured content and legac
 {
   "session_id": "fixture_session",
   "table_name": "events",
-  "release_date": "2026-10-25"
+  "release_date": "2026-10-25",
+  "max_rows": 2,
+  "max_cell_chars": 128
 }
 ```
 
@@ -673,11 +675,11 @@ The same native contract may be carried as JSON-RPC structured content and legac
 
 ### `scratchpad_release_regression_report`
 
-**Required inputs:** `session_id`, `table_name`, `release_date`, `anchor_event`, `comparison_event`. **Optional inputs:** `cursor`, `date_column`, `event_column`, `metric_column`, `output_mode`, `post_days`, `pre_days`, `summary_only`, `transition_days`.
+**Required inputs:** `session_id`, `table_name`, `release_date`, `anchor_event`, `comparison_event`. **Optional inputs:** `cursor`, `date_column`, `event_column`, `max_cell_chars`, `max_rows`, `metric_column`, `output_mode`, `post_days`, `pre_days`, `summary_only`, `transition_days`.
 
 **Output:** Local DuckDB operation; result is an MCP ok/data/meta envelope with bounded local structured data, not a Google provider response.
 
-**Limits / permissions:** Only with --features scratchpad and serve --scratchpad on trusted stdio; in-memory session max 20000 rows; feature security gates still open.
+**Limits / permissions:** Only with --features scratchpad and serve --scratchpad on trusted stdio; in-memory session max 20000 rows; feature security gates still open. Optional `max_rows` (1–1000) validates the single diagnostic result; `max_cell_chars` (1–2048) clips returned string fields. The report remains a scalar diagnostic, not a paginated row-set.
 
 **Synthetic example arguments:**
 
@@ -687,7 +689,9 @@ The same native contract may be carried as JSON-RPC structured content and legac
   "table_name": "events",
   "release_date": "2026-10-25",
   "anchor_event": "page_view",
-  "comparison_event": "session_start"
+  "comparison_event": "session_start",
+  "max_rows": 2,
+  "max_cell_chars": 128
 }
 ```
 

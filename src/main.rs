@@ -265,6 +265,10 @@ struct ScratchReleaseArgs {
     #[serde(default)]
     post_days: Option<u32>,
     #[serde(default)]
+    max_rows: Option<usize>,
+    #[serde(default)]
+    max_cell_chars: Option<usize>,
+    #[serde(default)]
     summary_only: bool,
     #[serde(default)]
     output_mode: Option<String>,
@@ -294,6 +298,10 @@ struct ScratchLandingArgs {
     post_days: Option<u32>,
     #[serde(default)]
     top_n: Option<usize>,
+    #[serde(default)]
+    max_rows: Option<usize>,
+    #[serde(default)]
+    max_cell_chars: Option<usize>,
     #[serde(default)]
     summary_only: bool,
     #[serde(default)]
@@ -453,6 +461,56 @@ fn diagnostic_summary_only(
         }
         data
     })
+}
+
+#[cfg(feature = "scratchpad")]
+fn project_scratchpad_diagnostic(
+    response: Result<Value, String>,
+    summary_only: bool,
+    rows_field: Option<&str>,
+    max_rows: Option<usize>,
+    max_cell_chars: Option<usize>,
+) -> Result<Value, String> {
+    let row_cap = max_rows.unwrap_or(1000);
+    let cell_cap = max_cell_chars.unwrap_or(2048);
+    if row_cap == 0 || row_cap > 1000 || cell_cap == 0 || cell_cap > 2048 {
+        return Err("Diagnostic projection limits must be 1-1000 rows and 1-2048 characters".into());
+    }
+    let mut value = response?;
+    if let Some(field) = rows_field {
+        let mut capped = false;
+        if let Some(rows) = value.get_mut(field).and_then(Value::as_array_mut) {
+            capped = rows.len() > row_cap;
+            rows.truncate(row_cap);
+        }
+        if capped {
+            value["truncated"] = json!(true);
+        }
+    }
+    if max_cell_chars.is_some() {
+        fn clip_value(value: &mut Value, cap: usize) {
+            match value {
+                Value::String(text) => {
+                    if text.chars().count() > cap {
+                        *text = text.chars().take(cap).collect();
+                    }
+                }
+                Value::Array(rows) => {
+                    for row in rows {
+                        clip_value(row, cap);
+                    }
+                }
+                Value::Object(columns) => {
+                    for cell in columns.values_mut() {
+                        clip_value(cell, cap);
+                    }
+                }
+                _ => {}
+            }
+        }
+        clip_value(&mut value, cell_cap);
+    }
+    diagnostic_summary_only(Ok(value), summary_only, rows_field)
 }
 
 #[cfg(feature = "scratchpad")]
@@ -2428,13 +2486,15 @@ impl Synmetra {
             transition_days: args.transition_days,
             post_days: args.post_days,
         };
-        local_result(diagnostic_summary_only(
+        local_result(project_scratchpad_diagnostic(
             self.scratchpad
                 .as_ref()
                 .expect("scratchpad capability required")
                 .release_regression(&config),
             args.summary_only,
             None,
+            args.max_rows,
+            args.max_cell_chars,
         ))
     }
     #[tool(
@@ -2468,13 +2528,15 @@ impl Synmetra {
             post_days: args.post_days,
             top_n: args.top_n,
         };
-        local_result(diagnostic_summary_only(
+        local_result(project_scratchpad_diagnostic(
             self.scratchpad
                 .as_ref()
                 .expect("scratchpad capability required")
                 .landing_param_shift(&config),
             args.summary_only,
             Some("shifts"),
+            args.max_rows,
+            args.max_cell_chars,
         ))
     }
 }
@@ -5981,6 +6043,83 @@ mod tests {
             project_scratchpad_table_catalog(schema.clone(), &legacy).unwrap(),
             schema
         );
+    }
+
+    #[cfg(feature = "scratchpad")]
+    #[test]
+    fn diagnostic_optional_row_and_cell_limits_are_enforced() {
+        let original = json!({
+            "session_id":"local",
+            "groups_total":3,
+            "truncated":false,
+            "shifts":[
+                {"parameter":"campaign_url","channel":"direct"},
+                {"parameter":"source_url","channel":"organic"},
+                {"parameter":"gclid","channel":"paid"}
+            ]
+        });
+        let reduced = project_scratchpad_diagnostic(
+            Ok(original.clone()),
+            false,
+            Some("shifts"),
+            Some(1),
+            Some(4),
+        )
+        .unwrap();
+        assert_eq!(reduced["shifts"].as_array().unwrap().len(), 1);
+        assert_eq!(reduced["shifts"][0]["parameter"], "camp");
+        assert_eq!(reduced["shifts"][0]["channel"], "dire");
+        assert_eq!(reduced["groups_total"], 3);
+        assert_eq!(reduced["truncated"], true);
+        let summary = project_scratchpad_diagnostic(
+            Ok(original.clone()),
+            true,
+            Some("shifts"),
+            Some(2),
+            None,
+        )
+        .unwrap();
+        assert!(summary.get("shifts").is_none());
+        assert_eq!(summary["summary_only"], true);
+        assert_eq!(summary["groups_total"], 3);
+        assert_eq!(summary["truncated"], true);
+        let unchanged = project_scratchpad_diagnostic(
+            Ok(original.clone()),
+            false,
+            Some("shifts"),
+            None,
+            None,
+        )
+        .unwrap();
+        assert_eq!(unchanged, original);
+        let scalar = project_scratchpad_diagnostic(
+            Ok(json!({"assessment":"low_sample","pre_anchor":3})),
+            false,
+            None,
+            Some(1),
+            Some(3),
+        )
+        .unwrap();
+        assert_eq!(scalar["assessment"], "low");
+        assert_eq!(scalar["pre_anchor"], 3);
+        for limit in [Some(0), Some(1001)] {
+            assert!(project_scratchpad_diagnostic(
+                Ok(original.clone()),
+                false,
+                Some("shifts"),
+                limit,
+                None,
+            )
+            .is_err());
+        }
+        assert!(project_scratchpad_diagnostic(
+            Ok(original),
+            false,
+            Some("shifts"),
+            Some(2),
+            Some(0),
+        )
+        .is_err());
     }
 
     #[cfg(feature = "scratchpad")]

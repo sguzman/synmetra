@@ -192,7 +192,7 @@ jobs:
           grep -Fq 'codex mcp add synmetra -- ~/.local/bin/synmetra serve' docs/CODEX.md
           grep -Fq 'codex mcp remove synmetra' docs/CODEX.md
           grep -Fq 'one trusted local user' docs/MCP_CLIENTS.md
-          grep -Fq '14 SednaLabs inputs not advertised natively' docs/MIGRATION.md
+          grep -Fq '10 SednaLabs inputs not advertised natively' docs/MIGRATION.md
           grep -Fq '0.0.1' Cargo.toml
           grep -Fq 'docs/CODEX.md' README.md
           grep -Fq 'docs/MIGRATION.md' README.md

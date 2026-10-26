@@ -5,7 +5,7 @@
   "source_ci_run": "https://github.com/sguzman/synmetra/actions/runs/40269115096",
   "profile": "--features scratchpad; --allow-write; --scratchpad",
   "toolchain": "Rust 1.99.1",
-  "notes": "Captured from real rmcp router, not inferred from pinned SednaLabs schema. This is a native input-schema snapshot, not live Google or complete upstream parameter parity. Extended table describe/summarize controls are source-reviewed and require feature-CI schema equality; source_commit is the original capture provenance, not an assertion that all later fields came from that historical SHA.",
+  "notes": "Captured from real rmcp router, not inferred from pinned SednaLabs schema. This is a native input-schema snapshot, not live Google or complete upstream parameter parity. Extended table describe/summarize controls are source-reviewed and require feature-CI schema equality; source_commit is the original capture provenance, not an assertion that all later fields came from that historical SHA. The local diagnostic release/landing tools additionally advertise bounded max_rows/max_cell_chars; the historical source commit in this file refers to the original capture only, not later CI-updated additions.",
   "tools": [
     {
       "inputSchema": {
@@ -2323,6 +2323,24 @@
               "null"
             ]
           },
+          "max_cell_chars": {
+            "default": null,
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "max_rows": {
+            "default": null,
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
           "output_mode": {
             "default": null,
             "type": [
@@ -2536,6 +2554,24 @@
             "default": null,
             "type": [
               "string",
+              "null"
+            ]
+          },
+          "max_cell_chars": {
+            "default": null,
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "max_rows": {
+            "default": null,
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
               "null"
             ]
           },
