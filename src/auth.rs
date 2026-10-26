@@ -654,7 +654,7 @@ mod tests {
             let read = stream.read(&mut buffer).await.unwrap();
             let request = String::from_utf8_lossy(&buffer[..read]);
             assert!(request.starts_with("POST /token "));
-            let body = json!({
+            let body = serde_json::json!({
                 "access_token":"fixture-new-access",
                 "refresh_token":"fixture-new-refresh",
                 "expires_in":3600,
