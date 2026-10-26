@@ -223,7 +223,11 @@ impl GoogleClient {
             http,
             bearer: bearer.filter(|t| !t.trim().is_empty()),
             quota_project: std::env::var_os("SYNMETRA_GOOGLE_QUOTA_PROJECT")
-                .map(|value| value.into_string().map_err(|_| ApiError::InvalidQuotaProject))
+                .map(|value| {
+                    value
+                        .into_string()
+                        .map_err(|_| ApiError::InvalidQuotaProject)
+                })
                 .transpose(),
             admin_base: admin.to_owned(),
             data_base: data.to_owned(),
@@ -1634,7 +1638,10 @@ mod tests {
             "01234",
             "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         ] {
-            assert!(!valid_quota_project(invalid), "Invalid quota project passed");
+            assert!(
+                !valid_quota_project(invalid),
+                "Invalid quota project passed"
+            );
         }
     }
 
@@ -1675,18 +1682,16 @@ mod tests {
             }
             observed
         });
-        let mut client = GoogleClient::with_endpoints(
-            Some("synthetic-google-token".into()),
-            &host,
-            &host,
-        );
+        let mut client =
+            GoogleClient::with_endpoints(Some("synthetic-google-token".into()), &host, &host);
         client.quota_project = Ok(Some("quota-project-123".into()));
         assert_eq!(
             client.account_summaries().await.unwrap()["accountSummaries"],
             json!([])
         );
         assert_eq!(
-            client.create_annotation("42", json!({"reportingDataAnnotation":{"title":"fixture"}}))
+            client
+                .create_annotation("42", json!({"reportingDataAnnotation":{"title":"fixture"}}))
                 .await
                 .unwrap()["name"],
             "properties/42/reportingDataAnnotations/9"
