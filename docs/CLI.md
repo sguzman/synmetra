@@ -24,7 +24,7 @@ Flags are not implicitly persistent. Omitting `--allow-write` always restores th
 | `synmetra auth login --client-id-file PATH` | Start a one-time Desktop OAuth consent flow with PKCE and randomized localhost callback; requests `analytics.readonly` |
 | `--account EMAIL` | Optional Google login hint; **not** identity verification or authorization |
 | `--callback-port PORT` | Use a selected localhost callback port instead of OS-chosen ephemeral port; failure to bind is an error |
-| `--headless` | Print the authorization URL rather than launching `xdg-open`; the account owner must still consent in a browser |
+| `--headless` | Print the consent URL; after authorized browser consent, paste the **complete** `http://127.0.0.1:PORT/callback?code=...&state=...` redirect URL back into Synmetra's private terminal. The code/state/redirect are validated; nothing is written to public logs |
 | `--allow-edit` | Explicitly request additional `analytics.edit` permission; still requires `serve --allow-write` and an edit-capable property role |
 | `synmetra auth status` | Report configured credential tier and freshness without revealing access or refresh tokens |
 | `synmetra auth doctor` | Offline, redacted local diagnostics and setup guidance; no Google network request |
@@ -32,6 +32,18 @@ Flags are not implicitly persistent. Omitting `--allow-write` always restores th
 | `synmetra auth logout` | Delete only local Synmetra credentials; Google-side revocation requires a separate account action |
 
 The Google Cloud Desktop OAuth client JSON is a private local input; it must never be checked into public Git. Google Analytics Admin and Data APIs must be enabled for the appropriate project. A valid scope does not guarantee a property role or v1alpha feature eligibility. Actual account, role, consent and live report acceptance are tracked under T178–T186, not claimed by these instructions.
+
+## Headless browser copy-back (explicit, one-time)
+
+When the Google account owner uses a browser that cannot connect to Synmetra's local callback port (for example, a separately operated machine), run:
+
+```fish
+synmetra auth login --client-id-file ~/private/google-desktop-oauth.json --headless
+```
+
+Open the emitted Google consent link privately, approve only the intended scopes, and copy the **entire loopback redirect URL** from the browser address bar. Paste that URL into the *same* Synmetra terminal and press Enter. The browser may report that the local address is unreachable; the URL can still be copied. Synmetra checks the exact expected callback origin, ephemeral port, path and per-login OAuth state before redeeming the code with its original PKCE verifier. A missing, duplicated, modified or prior-session state is rejected. The callback contains a one-time authorization secret: never paste it in chat, shell history, a public issue or a tracked config file. The prompt and credential exchange time out; restart the login if the callback expires.
+
+Normal login **without** `--headless` continues to receive the loopback redirect automatically. Copy-back is a local login operation, not an MCP tool or a way to bypass Google's consent/role requirements.
 
 ## Environment variables
 

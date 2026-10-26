@@ -261,6 +261,78 @@ fn callback_code(request: &str, expected_state: &str) -> Result<String, String> 
         .ok_or("Missing authorization code".into())
 }
 
+fn copied_callback_code(
+    submitted_url: &str,
+    expected_redirect: &str,
+    expected_state: &str,
+) -> Result<String, String> {
+    let candidate = submitted_url.trim();
+    if candidate.is_empty()
+        || candidate.len() > 8192
+        || candidate.chars().any(char::is_control)
+    {
+        return Err("Invalid copied OAuth callback URL".into());
+    }
+    let submitted =
+        Url::parse(candidate).map_err(|_| "Invalid copied OAuth callback URL")?;
+    let expected = Url::parse(expected_redirect)
+        .map_err(|_| "Invalid configured OAuth redirect URI")?;
+    if submitted.scheme() != "http"
+        || submitted.scheme() != expected.scheme()
+        || submitted.host_str() != expected.host_str()
+        || submitted.port_or_known_default() != expected.port_or_known_default()
+        || submitted.path() != expected.path()
+        || !submitted.username().is_empty()
+        || submitted.password().is_some()
+        || submitted.fragment().is_some()
+    {
+        return Err("Copied OAuth callback does not match the exact local redirect".into());
+    }
+    let Some(query) = submitted.query() else {
+        return Err("Copied OAuth callback is missing parameters".into());
+    };
+    let mut states = 0usize;
+    let mut codes = 0usize;
+    for (key, _) in submitted.query_pairs() {
+        if key == "state" {
+            states += 1;
+        }
+        if key == "code" {
+            codes += 1;
+        }
+    }
+    if states != 1 || codes != 1 {
+        return Err("Copied OAuth callback needs exactly one code and state".into());
+    }
+    let path_and_query = format!("{}?{query}", submitted.path());
+    callback_code(&format!("GET {path_and_query} HTTP/1.1"), expected_state)
+}
+
+async fn read_headless_callback(
+    redirect: &str,
+    state: &str,
+) -> Result<String, String> {
+    let redirect = redirect.to_owned();
+    let state = state.to_owned();
+    eprintln!(
+        "After Google redirects, copy the COMPLETE http://127.0.0.1 callback URL from your browser address bar and paste it here. Keep it private; it contains a one-time authorization code."
+    );
+    let reading = tokio::task::spawn_blocking(move || {
+        let mut input = String::new();
+        let mut reader = std::io::BufReader::new(std::io::stdin().take(8193));
+        let amount = std::io::BufRead::read_line(&mut reader, &mut input)
+            .map_err(|_| "Cannot read private OAuth callback from terminal")?;
+        if amount == 0 || amount > 8192 {
+            return Err("Missing or oversized copied OAuth callback".into());
+        }
+        copied_callback_code(&input, &redirect, &state)
+    });
+    timeout(Duration::from_secs(300), reading)
+        .await
+        .map_err(|_| "Headless OAuth callback timed out")?
+        .map_err(|_| "Headless OAuth callback reader failed")?
+}
+
 async fn token_exchange_at(
     endpoint: &str,
     fields: &[(&str, &str)],
@@ -463,30 +535,34 @@ async fn login(options: &LoginOptions) -> Result<(), String> {
             .stderr(std::process::Stdio::null())
             .spawn();
     }
-    let code = loop {
-        let (mut socket, _) = timeout(Duration::from_secs(300), listener.accept())
-            .await
-            .map_err(|_| "Google login timed out")?
-            .map_err(|_| "OAuth callback listener failed")?;
-        let mut req = vec![0u8; 8192];
-        let n = timeout(Duration::from_secs(10), socket.read(&mut req))
-            .await
-            .map_err(|_| "OAuth callback timed out")?
-            .map_err(|_| "Cannot read callback")?;
-        let input = std::str::from_utf8(&req[..n]).map_err(|_| "Callback encoding invalid")?;
-        let code = callback_code(input, &state);
-        let (status, body) = if code.is_ok() {
-            (
-                "200 OK",
-                "Synmetra authorization received. You may close this page.",
-            )
-        } else {
-            ("400 Bad Request", "Invalid authorization callback.")
-        };
-        let reply = format!("HTTP/1.1 {status}\r\nContent-Type: text/plain; charset=utf-8\r\nCache-Control: no-store\r\nConnection: close\r\nContent-Length: {}\r\n\r\n{body}", body.len());
-        let _ = socket.write_all(reply.as_bytes()).await;
-        if let Ok(code) = code {
-            break code;
+    let code = if options.headless {
+        read_headless_callback(&redirect, &state).await?
+    } else {
+        loop {
+            let (mut socket, _) = timeout(Duration::from_secs(300), listener.accept())
+                .await
+                .map_err(|_| "Google login timed out")?
+                .map_err(|_| "OAuth callback listener failed")?;
+            let mut req = vec![0u8; 8192];
+            let n = timeout(Duration::from_secs(10), socket.read(&mut req))
+                .await
+                .map_err(|_| "OAuth callback timed out")?
+                .map_err(|_| "Cannot read callback")?;
+            let input = std::str::from_utf8(&req[..n]).map_err(|_| "Callback encoding invalid")?;
+            let code = callback_code(input, &state);
+            let (status, body) = if code.is_ok() {
+                (
+                    "200 OK",
+                    "Synmetra authorization received. You may close this page.",
+                )
+            } else {
+                ("400 Bad Request", "Invalid authorization callback.")
+            };
+            let reply = format!("HTTP/1.1 {status}\r\nContent-Type: text/plain; charset=utf-8\r\nCache-Control: no-store\r\nConnection: close\r\nContent-Length: {}\r\n\r\n{body}", body.len());
+            let _ = socket.write_all(reply.as_bytes()).await;
+            if let Ok(code) = code {
+                break code;
+            }
         }
     };
     let token = token_exchange(&[
@@ -568,7 +644,7 @@ Login options:
   --client-id-file PATH  Google Cloud Desktop OAuth client JSON (required)
   --account EMAIL        Optional Google login hint; not an authorization boundary
   --callback-port PORT   Optional loopback port; default ephemeral
-  --headless             Print the consent URL without launching a browser
+  --headless             Print consent URL; paste complete redirected callback URL into terminal
   --allow-edit           Request analytics.edit in addition to analytics.readonly
 
 Credentials: private XDG Synmetra config, 0700 directory and 0600 file.
@@ -713,6 +789,45 @@ mod tests {
             .iter()
             .all(|text| !text.contains("synthetic-secret-canary")));
         assert!(expired.iter().all(|text| !text.contains("refresh_token")));
+    }
+
+    #[test]
+    fn headless_copy_back_verifies_exact_redirect_state_and_single_use() {
+        let redirect = "http://127.0.0.1:41122/callback";
+        let consent_state = "synthetic-random-state";
+        let valid = format!(
+            "{redirect}?code=synthetic%2Fauth%2Bcode&state={consent_state}"
+        );
+        assert_eq!(
+            copied_callback_code(&valid, redirect, consent_state).unwrap(),
+            "synthetic/auth+code"
+        );
+        for altered in [
+            valid.replace("127.0.0.1", "example.invalid"),
+            valid.replace("41122", "41123"),
+            valid.replace("http://", "https://"),
+            valid.replace("/callback?", "/another?"),
+            valid.replace("state=synthetic-random-state", "state=wrong"),
+            format!("{valid}&state={consent_state}"),
+            format!("{valid}&code=second"),
+            format!("{valid}#fragment"),
+            valid.replace("?code=", "?error=access_denied&code="),
+            "synthetic/auth+code".to_owned(),
+        ] {
+            assert!(
+                copied_callback_code(&altered, redirect, consent_state).is_err(),
+                "A mismatched headless callback was accepted"
+            );
+        }
+        // A callback captured in an earlier session cannot pass the next
+        // login's independently generated CSRF state.
+        assert!(copied_callback_code(&valid, redirect, "new-session-state").is_err());
+        assert!(copied_callback_code(
+            "http://127.0.0.1:41122/callback?state=synthetic-random-state",
+            redirect,
+            consent_state,
+        )
+        .is_err());
     }
 
     #[test]
