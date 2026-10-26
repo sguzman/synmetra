@@ -9,8 +9,11 @@ on:
     - cron: "17 9 * * 1"
   workflow_dispatch:
 
+# The watch is read-only against upstream repositories; issues are the
+# explicitly permitted local maintenance artifact, never automatic repinning.
 permissions:
   contents: read
+  issues: write
 
 jobs:
   source-drift:
@@ -42,6 +45,30 @@ jobs:
             if [[ "$current" != "$expected" ]]; then
               echo "Upstream $source signature-source blob changed: pinned $expected, current $current" >&2
               echo "Review $repository/$path for name, argument, or behavior changes; do not silently repin." >> "$GITHUB_STEP_SUMMARY"
+
+              # Keep one OPEN maintenance issue per upstream source. No copied
+              # sources, automatic repinning, new parity credit, or issue spam.
+              title="[upstream-drift] Review $source signature source"
+              open_count="$(gh api --paginate \\
+                "repos/$GITHUB_REPOSITORY/issues?state=open&per_page=100" \\
+                | jq -s --arg title "$title" \\
+                  '[.[][] | select(.pull_request == null and .title == $title)] | length')"
+              if test "$open_count" -eq 0; then
+                body="$(printf '%s\\n' \\
+                  'Automated upstream signature-source drift warning (not proof of a breaking change).' \\
+                  '' \\
+                  "Source: https://github.com/$repository/blob/main/$path" \\
+                  "Reviewed/pinned Git blob: \\x60$expected\\x60" \\
+                  "Observed current Git blob: \\x60$current\\x60" \\
+                  '' \\
+                  'Review tool names, parameters, defaults, errors and response schemas against the frozen pinned baselines. Update the source pin, fixtures, parity ledger and tests only through a reviewed commit; do not claim parity from this automated signal.' \\
+                  '' \\
+                  "Detection: https://github.com/$GITHUB_REPOSITORY/actions/workflows/upstream-drift.yml")"
+                gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" --body "$body"
+                echo "Opened maintenance issue: $title" >> "$GITHUB_STEP_SUMMARY"
+              else
+                echo "Existing open maintenance issue: $title" >> "$GITHUB_STEP_SUMMARY"
+              fi
               changed=1
             else
               echo "✅ $source signature-source blob unchanged" >> "$GITHUB_STEP_SUMMARY"
