@@ -534,6 +534,39 @@ jobs:
           cargo run --locked --bin synmetra-progress -- --write-bars
           git diff --exit-code -- README.md docs/ROADMAP.md
 
+      - name: Measure cache-cleared versus warm Linux startup (ephemeral CI only)
+        shell: bash
+        env:
+          SYNMETRA_BENCH_RUNS: "3"
+        run: |
+          set -euo pipefail
+          bash -n ci/benchmark-native.sh
+          SYNMETRA_BENCH_CACHE_MODE=page-cache-cleared \
+            SYNMETRA_ALLOW_GLOBAL_CACHE_FLUSH=ci-only \
+            bash ci/benchmark-native.sh target/debug/synmetra \
+            > "$RUNNER_TEMP/synmetra-page-cache-cleared.json"
+          SYNMETRA_BENCH_CACHE_MODE=warm \
+            bash ci/benchmark-native.sh target/debug/synmetra \
+            > "$RUNNER_TEMP/synmetra-page-cache-warm.json"
+          jq -s -e '
+            length == 2
+            and .[0].source_sha == .[1].source_sha
+            and .[0].kernel == .[1].kernel
+            and .[0].cache_mode == "page-cache-cleared"
+            and .[1].cache_mode == "warm"
+            and all(.[]; (.measurements | length) == 7)
+            and all(.[]; all(.measurements[]; .wall_ms > 0 and .max_rss_kib > 0))
+          ' "$RUNNER_TEMP/synmetra-page-cache-cleared.json" "$RUNNER_TEMP/synmetra-page-cache-warm.json" > /dev/null
+          jq -s '
+            {
+              source_sha:.[0].source_sha,
+              kernel:.[0].kernel,
+              methodology:"Separate source-identical samples on one ephemeral GitHub runner; Linux page/dentry/inode caches were explicitly cleared before each cold measurement. No CPU-cache, live Google API or cross-runner guarantee.",
+              cache_cleared:.[0].measurements,
+              warmed:.[1].measurements
+            }
+          ' "$RUNNER_TEMP/synmetra-page-cache-cleared.json" "$RUNNER_TEMP/synmetra-page-cache-warm.json"
+
   duckdb:
     concurrency:
       group: synmetra-duckdb-${{ github.ref }}

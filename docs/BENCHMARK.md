@@ -35,3 +35,11 @@ The [passing core CI run 40336644502](https://github.com/sguzman/synmetra/action
 | One session, five synthetic calls | **14.896 ms total** | **17,692 KiB** | 1 |
 
 The first help process measured **14.537 ms**, illustrating loader/scheduler/cache sensitivity. The benchmark is repeatable but these particular results represent **one CI runner, one source SHA, one debug build, warmed runner caches**, and a wall-clock timer including shell/process overhead. They do **not** establish per-tool request latency, a cold-cache run, release-build throughput or a speed improvement over either upstream server. T189's cold/warm comparison gate remains open.
+
+## Runner-isolated page-cache experiment (acceptance pending)
+
+The source-controlled `ci/benchmark-native.sh` now supports `SYNMETRA_BENCH_CACHE_MODE=page-cache-cleared` **only** when `GITHUB_ACTIONS=true`, `RUNNER_ENVIRONMENT=github-hosted` and `SYNMETRA_ALLOW_GLOBAL_CACHE_FLUSH=ci-only`. It must never reset cache on a user's workstation or on a self-hosted runner. The CI step runs three cache-cleared and three warm fresh-process rounds for both help and synthetic MCP round-trip profiles, plus one repeated-call process per mode.
+
+For each cleared-cache measurement, the script runs `sync` and uses noninteractive CI-only `sudo` to write `3` to Linux `/proc/sys/vm/drop_caches`. If access is denied, the benchmark **fails closed** rather than silently labeling warm data as cold. This resets Linux page, dentry and inode caches; it does not clear CPU caches, control GitHub VM load, isolate shell startup overhead or claim a new hardware boot. The same compiled debug binary and single CI VM are used in both conditions. The warm samples run after the cleared-cache phase. Neither is an independent cross-machine production-performance baseline.
+
+No performance comparison or T189 second-gate credit is claimed until the CI cache-reset step actually passes, the resulting values are checked, and a pinned machine-readable source-run record is committed. The earlier unqualified warmed-runner baseline remains separate.
