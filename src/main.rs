@@ -6516,6 +6516,7 @@ mod tests {
 
         for name in [
             "scratchpad_describe_table",
+            "scratchpad_summarize_table",
             "scratchpad_ingest_report",
             "scratchpad_ingest_realtime_report",
             "scratchpad_query",
