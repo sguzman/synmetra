@@ -2963,7 +2963,7 @@
               "id": "T146",
               "emoji": "🧯",
               "name": "Handle unexpected termination and session cleanup",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Leftover temp files sanitized on restart",
               "checks": [
                 {
@@ -2973,7 +2973,8 @@
                 },
                 {
                   "text": "Leftover temp files sanitized on restart",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/scratchpad.rs crash_restart_child_fixture now starts a second OS process under the exact private working directory after the populated first child is forcibly killed; it proves no sessions or old table can be reopened, allows safe reuse of the old session name with an empty table list, and confirms the directory remains empty. killed_in_memory_session_leaves_no_spill_files_or_persisted_rows and crash_safe_scratchpad_disables_spills_and_locks_configuration passed both pinned Rust native DuckDB tests and strict feature Clippy in https://github.com/sguzman/synmetra/actions/runs/40420541285. Zero-byte locked DuckDB spill quota means there are no new engine spill files to sanitize on restart. This does not certify historical-release spill recovery, swap/core dumps, malicious same-UID access or all native-engine bugs."
                 }
               ]
             },
