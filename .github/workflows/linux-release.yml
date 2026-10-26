@@ -1,0 +1,85 @@
+name: Experimental Linux x86-64 release artifact
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+    paths:
+      - .github/workflows/linux-release.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  linux-x86_64:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      CARGO_BUILD_JOBS: 2
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install pinned Rust 1.99.1
+        run: |
+          rustup toolchain install 1.99.1 --profile minimal
+          rustc +1.99.1 --version | grep -F 'rustc 1.99.1'
+      - uses: Swatinem/rust-cache@v2
+      - name: Build native release binary from Cargo.lock
+        run: |
+          cargo +1.99.1 build --release --locked --bin synmetra
+          test -x target/release/synmetra
+          if ldd target/release/synmetra | grep -Eiq 'lib(ssl|crypto|python|node)'; then
+            echo 'Forbidden runtime shared library in release build' >&2
+            exit 1
+          fi
+      - name: Package provenance, checksums and extracted-binary smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(grep -m1 '^version = ' Cargo.toml | cut -d '"' -f2)"
+          test -n "$version"
+          source_sha="$(git rev-parse --verify HEAD)"
+          stage="$(mktemp -d "$RUNNER_TEMP/synmetra-linux-stage.XXXXXX")"
+          extracted="$(mktemp -d "$RUNNER_TEMP/synmetra-linux-extract.XXXXXX")"
+          config="$(mktemp -d "$RUNNER_TEMP/synmetra-linux-config.XXXXXX")"
+          trap 'rm -rf "$stage" "$extracted" "$config"' EXIT
+          install -Dm755 target/release/synmetra "$stage/synmetra"
+          install -Dm644 LICENSE "$stage/LICENSE"
+          install -Dm644 README.md "$stage/README.md"
+          install -Dm644 docs/INSTALL.md "$stage/INSTALL.md"
+          printf '%s\n' "$source_sha" > "$stage/SOURCE_COMMIT"
+          epoch="$(git show -s --format=%ct "$source_sha")"
+          mkdir -p dist
+          archive="synmetra-experimental-linux-x86_64.tar.gz"
+          tar -C "$stage" --sort=name --mtime="@$epoch" \
+            --owner=0 --group=0 --numeric-owner \
+            -cf - . | gzip -n > "dist/$archive"
+          (
+            cd dist
+            sha256sum "$archive" > "$archive.sha256"
+            sha256sum --check "$archive.sha256"
+          )
+          tar -xf "dist/$archive" -C "$extracted"
+          test -x "$extracted/synmetra"
+          test "$(cat "$extracted/SOURCE_COMMIT")" = "$source_sha"
+          env -i PATH=/nonexistent XDG_CONFIG_HOME="$config" \
+            "$extracted/synmetra" auth doctor > "$RUNNER_TEMP/release-doctor.txt"
+          grep -Fq 'To configure native OAuth:' "$RUNNER_TEMP/release-doctor.txt"
+          env -i PATH=/nonexistent XDG_CONFIG_HOME="$config" \
+            "$extracted/synmetra" --version > "$RUNNER_TEMP/release-version.txt"
+          grep -Fq "synmetra $version" "$RUNNER_TEMP/release-version.txt"
+          if grep -Fq 'refresh_token' "$RUNNER_TEMP/release-doctor.txt"; then
+            echo 'Credential field in release doctor output' >&2
+            exit 1
+          fi
+      - name: Preserve checksum-verified experimental artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: synmetra-experimental-linux-x86_64
+          if-no-files-found: error
+          retention-days: 30
+          path: |
+            dist/synmetra-experimental-linux-x86_64.tar.gz
+            dist/synmetra-experimental-linux-x86_64.tar.gz.sha256
