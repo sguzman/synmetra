@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `████████░░ 77.3%` · **+77.31 percentage points from initial empty repo; +0.44 pp from verified optional native ARM64 Linux release artifact
+**Overall:** `████████░░ 77.8%` · **+77.75 percentage points from initial empty repo; +0.44 pp from tested local OAuth-scope versus provider-403 error taxonomy and no escalation
 
 ### 📏 Progress conventions
 
@@ -126,7 +126,7 @@
   - ✅ **Gate:** Protocol wire fixtures pass multiple clients
 
 
-## 🔑 M2 — Google authentication and credential isolation — `██████░░░░ 57.7%`
+## 🔑 M2 — Google authentication and credential isolation — `██████░░░░ 61.5%`
 
 **Scope:** MVP. **Acceptance gate:** Secure, least-privilege, non-Python auth across interactive, local and service configurations; no secret leaks.
 
@@ -174,7 +174,7 @@
 - ⏳ **T057 — Guard clock skew and rotation races** — `██████████ 100.0%`
   - ✅ **Gate:** Expiring secrets renew safely during concurrent calls · **Evidence:** src/auth.rs access_token_at re-reads credentials within an async refresh lock, renews 120 seconds before expiry and rotates refresh tokens using private atomic persistence; the concurrent_expired_credentials_refresh_once_and_rotate_privately test passed in core CI https://github.com/sguzman/synmetra/actions/runs/40266208686.; src/auth.rs concurrent_expired_credentials_refresh_once_and_rotate_privately verifies two concurrent callers perform exactly one local OAuth token exchange, both receive the new access token, rotated refresh token persists privately, and later calls reuse the refreshed credential; core CI https://github.com/sguzman/synmetra/actions/runs/40266208686 passed. This does not certify live Google refresh/revocation behavior.
 
-### 🛡️ P07 — Inbound versus upstream trust — `████████░░ 77.8%`
+### 🛡️ P07 — Inbound versus upstream trust — `█████████░ 88.9%`
 
 **Feature:** Identity security.
 
@@ -184,8 +184,8 @@
   - ✅ **Gate:** Google and local permissions checked per tool call · **Evidence:** docs/LIVE_ACCEPTANCE_MATRIX.md inventories every one of the pinned 36 tool names, separates local-only, GA Data/Admin read, privileged Admin access reports, opt-in analytics.edit annotation writes and Google-to-local DuckDB ingest, and records intended scope, property role, trust boundary and explicit live-eligibility limitations. The inventory name equality and permission-boundary checks have CI protection in .github/workflows/ci.yml; the existing 36-name check passed https://github.com/sguzman/synmetra/actions/runs/40359970293. Per-call Google scope/role enforcement against live identities remains unaccepted.
 - 💼 **T060 — Avoid credential exposure in crash logs and traces** — `██████████ 100.0%`
   - ✅ **Gate:** Secret scanner fixtures remain clean · **Evidence:** ci/test-secret-scanner.sh runs a disposable tracked Git repository with dynamically assembled fake GitHub, Google, OpenAI and PEM signatures, proving ci/scan-secrets.sh rejects each match without printing it. The native core test step exercises status/doctor/invalid CLI failure output with private synthetic Google/MCP bearer canaries and asserts no disclosure. Core CI https://github.com/sguzman/synmetra/actions/runs/40348154909 passed. This is synthetic local failure/diagnostics and source redaction, not proof against every panic, crash dump or telemetry sink.; The standalone Public source secret-heuristic check https://github.com/sguzman/synmetra/actions/runs/40348154251 passed on the identical source SHA: all generated credential-shaped negative fixtures were rejected with suppressed match details, harmless/near-miss controls passed, and the complete tracked repository scan found no recognized high-confidence signatures. No actual credentials were generated or stored. This does not inspect Git history, binary artifacts, arbitrary CI logs or unknown secret formats.
-- 🔍 **T061 — Validate Google scope and role errors distinctly** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** No broad-scope silent escalation on 403
+- 🔍 **T061 — Validate Google scope and role errors distinctly** — `██████████ 100.0%`
+  - ✅ **Gate:** No broad-scope silent escalation on 403 · **Evidence:** src/main.rs api_error_code distinguishes local OAuth analytics.edit preflight denial as EDIT_SCOPE_REQUIRED/authorization from Google HTTP 403 as GOOGLE_HTTP_ERROR/upstream with status_code=403; src/google.rs supplies typed redacted 403 diagnostics without exposing the provider's body. The tests local_edit_scope_denial_is_distinct_from_google_property_forbidden and google_forbidden_read_is_not_retried_or_silently_scope_escalated passed default Rust core CI https://github.com/sguzman/synmetra/actions/runs/40402013636. A Google 403 may arise from property roles, disabled API, quota-project permission or other policy; the server never claims to infer its exact cause.; Synthetic loopback Google 403 fixture in src/google.rs verifies only the original read-scoped Authorization bearer reaches the test endpoint and no retry or automated OAuth scope escalation follows; readonly_retry_policy_honors_backoff_limits_and_never_retries_forbidden separately rejects 403 for backoff. src/auth.rs requests analytics.edit only when a consenting operator explicitly uses auth login --allow-edit, and the write handler fails locally when the native grant is insufficient. Passed default core CI https://github.com/sguzman/synmetra/actions/runs/40402013636. This does not claim authorized live property-role verification, which remains T118/T186.
 - 🔐 **T062 — Protect local credential files from symlink attacks** — `██████████ 100.0%`
   - ✅ **Gate:** No world-readable files and atomic writes · **Evidence:** src/auth.rs private_file/read_credentials/persist_credentials reject symlinks and world-readable files; CI 40202015488 compilation; security tests pending; Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.
 - 🚫 **T063 — Block SSRF via URLs in config or request arguments** — `██████████ 100.0%`

@@ -1224,16 +1224,18 @@
               "id": "T061",
               "emoji": "🔍",
               "name": "Validate Google scope and role errors distinctly",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "No broad-scope silent escalation on 403",
               "checks": [
                 {
                   "text": "Deliver validate google scope and role errors distinctly as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs api_error_code distinguishes local OAuth analytics.edit preflight denial as EDIT_SCOPE_REQUIRED/authorization from Google HTTP 403 as GOOGLE_HTTP_ERROR/upstream with status_code=403; src/google.rs supplies typed redacted 403 diagnostics without exposing the provider's body. The tests local_edit_scope_denial_is_distinct_from_google_property_forbidden and google_forbidden_read_is_not_retried_or_silently_scope_escalated passed default Rust core CI https://github.com/sguzman/synmetra/actions/runs/40402013636. A Google 403 may arise from property roles, disabled API, quota-project permission or other policy; the server never claims to infer its exact cause."
                 },
                 {
                   "text": "No broad-scope silent escalation on 403",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "Synthetic loopback Google 403 fixture in src/google.rs verifies only the original read-scoped Authorization bearer reaches the test endpoint and no retry or automated OAuth scope escalation follows; readonly_retry_policy_honors_backoff_limits_and_never_retries_forbidden separately rejects 403 for backoff. src/auth.rs requests analytics.edit only when a consenting operator explicitly uses auth login --allow-edit, and the write handler fails locally when the native grant is insufficient. Passed default core CI https://github.com/sguzman/synmetra/actions/runs/40402013636. This does not claim authorized live property-role verification, which remains T118/T186."
                 }
               ]
             },

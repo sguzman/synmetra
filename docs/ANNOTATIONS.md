@@ -15,3 +15,13 @@ Annotation inputs: `property_id`, `title` (1–60 characters), `start_date` (YYY
 Do not expose `--allow-write` over a publicly reachable HTTP transport.
 
 **Native edit consent:** The new `auth login --client-id-file PATH --allow-edit` mode explicitly requests Google Analytics read and edit scopes with PKCE. Regular login remains read-only, and the token response must include *every* requested scope before credentials are saved. Locally stored read+edit credentials do not enable writes by themselves; the MCP server still defaults to no `create_property_annotation` tool. Synthetic scope tests pass only after CI, and an actual Google consent / annotation write remains unverified.
+
+### Scope-denial versus Google 403
+
+| Failure | MCP error code / category | What is actually established | Safe action |
+| --- | --- | --- | --- |
+| No native OAuth credential | `AUTH_NOT_CONFIGURED` / authentication | No locally usable Google credential has been configured | Use `auth doctor` and consent through the account owner's browser only if authorized |
+| Native OAuth grant lacks exact `analytics.edit`, or token override has no locally attestable scope | `EDIT_SCOPE_REQUIRED` / authorization | The mutation is **blocked before any Google request**; no broader OAuth consent or token refresh is initiated by the mutation | Explicitly reauthorize using `auth login --allow-edit` with permission, then restart with `--allow-write` |
+| Google responds HTTP 403 after a locally verified edit-scope preflight | `GOOGLE_HTTP_ERROR` / upstream, `status_code=403` | The **provider** denied the request; this alone does not prove which of Google Analytics property role, API activation, quota-project permission or other policies caused it | Check the requested account/property role and API configuration independently, without blindly expanding scopes |
+
+The server never silently escalates OAuth permissions after a 403 or replays an annotation write. These distinctions are covered by offline synthetic tests, **not** by a real GA4 account role trial. The stored scope is merely the OAuth grant; Google remains the authority on live property permission, and client-side per-call confirmation stays a separate release gate.
