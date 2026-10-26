@@ -1191,6 +1191,7 @@ fn api_error_code(error: &ApiError) -> (&'static str, &'static str) {
         ApiError::InvalidQuotaProject => ("INVALID_QUOTA_PROJECT", "validation"),
         ApiError::UnsupportedRealtimeOffset => ("UNSUPPORTED_REALTIME_OFFSET", "validation"),
         ApiError::InvalidAnnotation => ("INVALID_ANNOTATION", "validation"),
+        ApiError::EditScopeRequired => ("EDIT_SCOPE_REQUIRED", "authorization"),
         ApiError::RequestFailed => ("UPSTREAM_UNAVAILABLE", "transport"),
         ApiError::Http(_) => ("GOOGLE_HTTP_ERROR", "upstream"),
         ApiError::ResponseTooLarge => ("RESPONSE_TOO_LARGE", "limits"),
@@ -1531,6 +1532,13 @@ impl Synmetra {
         if !self.writes_allowed {
             emit_write_audit("blocked_read_only_profile");
             return result(Err(ApiError::InvalidRequest));
+        }
+        // Tool visibility alone is not permission to write. Fail before
+        // network I/O unless the private native OAuth grant contains exactly
+        // analytics.edit. An unverified bearer override is never sufficient.
+        if let Err(error) = self.api.ensure_annotation_edit_scope() {
+            emit_write_audit("blocked_edit_scope");
+            return result(Err(error));
         }
         let body = annotation_payload(
             &args.title,
@@ -7422,6 +7430,34 @@ mod tests {
             unauthenticated.structured_content.unwrap()["error"]["code"],
             "AUTH_NOT_CONFIGURED"
         );
+    }
+
+    #[tokio::test]
+    async fn write_profile_rejects_unverified_external_bearer_before_google_network() {
+        let server = Synmetra::new(
+            GoogleClient::with_endpoints(
+                Some("synthetic-readonly-bearer".into()),
+                "http://127.0.0.1:9",
+                "http://127.0.0.1:9",
+            ),
+            true,
+        );
+        let input = serde_json::from_value(json!({
+            "property_id":"42",
+            "title":"Synthetic no-write canary",
+            "start_date":"2026-10-25",
+            "color":"BLUE"
+        }))
+        .unwrap();
+        let response = server
+            .create_property_annotation(Parameters(input))
+            .await;
+        assert_eq!(response.is_error, Some(true));
+        let payload = response.structured_content.unwrap();
+        assert_eq!(payload["error"]["code"], "EDIT_SCOPE_REQUIRED");
+        assert_eq!(payload["error"]["category"], "authorization");
+        assert!(!payload.to_string().contains("synthetic-readonly-bearer"));
+        assert!(!payload.to_string().contains("Synthetic no-write canary"));
     }
 
     #[tokio::test]

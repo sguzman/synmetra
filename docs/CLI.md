@@ -49,7 +49,7 @@ Normal login **without** `--headless` continues to receive the loopback redirect
 
 | Variable | Purpose | Security |
 | --- | --- | --- |
-| `SYNMETRA_GOOGLE_ACCESS_TOKEN` | Optional Google OAuth access-token override for a session | Overrides stored local credentials, does **not** automatically refresh; never echo or put into command history |
+| `SYNMETRA_GOOGLE_ACCESS_TOKEN` | Optional Google OAuth access-token override for a session | Overrides stored local credentials for **read calls only**; the annotation mutation rejects unverified external token scopes. Does **not** automatically refresh; never echo or put into command history |
 | `SYNMETRA_MCP_BEARER_TOKEN` | Required for `--http-loopback`; independent local HTTP principal secret | Minimum 32 printable nonspace ASCII characters; **never** forward to Google |
 | `SYNMETRA_GOOGLE_QUOTA_PROJECT` | Optional Google Cloud project ID/number for outbound `x-goog-user-project` quota attribution | Explicit operator opt-in. Requires `serviceusage.services.use` permission on that project; malformed values are rejected **before** any Google request |
 | `SYNMETRA_MCP_PORT` | Optional positive u16 loopback HTTP port, default `44128` | Bound to `127.0.0.1` regardless of caller-specified address |

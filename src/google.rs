@@ -52,6 +52,7 @@ pub enum ApiError {
     CollectionTooLarge,
     AuthenticationFailed,
     InvalidAnnotation,
+    EditScopeRequired,
 }
 
 impl fmt::Display for ApiError {
@@ -93,6 +94,7 @@ impl fmt::Display for ApiError {
             Self::CollectionTooLarge => write!(f, "Google Analytics collection exceeded the 10,000-item or 16 MiB safety limit."),
             Self::AuthenticationFailed => write!(f, "Synmetra OAuth credentials could not be loaded or refreshed. Run synmetra auth status, then login again if necessary."),
             Self::InvalidAnnotation => write!(f, "Invalid annotation: check title, dates, description and allowed color."),
+            Self::EditScopeRequired => write!(f, "Annotation writes require a locally verified Google analytics.edit OAuth scope. Reauthorize via synmetra auth login --client-id-file PATH --allow-edit. Unverifiable external bearer overrides are read-only for mutations; Google property editor permission is separately required."),
         }
     }
 }
@@ -263,6 +265,22 @@ impl GoogleClient {
         }
         match crate::auth::access_token().await {
             Ok(Some(token)) => Ok(token),
+            Ok(None) => Err(ApiError::MissingCredentials),
+            Err(_) => Err(ApiError::AuthenticationFailed),
+        }
+    }
+
+    /// Fail closed *before* sending a Google mutation. Only the private native
+    /// OAuth store carries scope provenance that this process can verify.
+    /// Bearer overrides have no locally attested scope and remain read-only.
+    /// A matching scope never implies a sufficient Google property role.
+    pub(crate) fn ensure_annotation_edit_scope(&self) -> Result<(), ApiError> {
+        if self.bearer.is_some() {
+            return Err(ApiError::EditScopeRequired);
+        }
+        match crate::auth::native_edit_scope_granted() {
+            Ok(Some(true)) => Ok(()),
+            Ok(Some(false)) => Err(ApiError::EditScopeRequired),
             Ok(None) => Err(ApiError::MissingCredentials),
             Err(_) => Err(ApiError::AuthenticationFailed),
         }
