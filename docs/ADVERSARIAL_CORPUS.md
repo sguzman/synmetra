@@ -8,6 +8,7 @@
 | --- | --- | ---: | --- |
 | `src/tabular.rs::seeded_resource_and_cursor_mutations_fail_closed_without_panics` | `7B13C451F239A02D`, `13C400D5AABB9F17`, `EADBEEF045678913` | 256 | Invalid resource IDs and modified query-bound pagination cursors are denied; attempted report body remains unmodified |
 | `src/google.rs::seeded_json_and_filter_mutations_are_bounded_and_panic_free` | `C0DE42F019A588E1`, `000000000001CAFE`, `9A3D75F1B2C40E87` | 128 | Trailing-NUL malformed JSON, oversized text filters and report preflight are rejected locally |
+| `src/scratchpad.rs::seeded_sql_policy_mutations_cannot_write_or_escape_the_in_memory_engine` | `1C0FFEE012345678`, `BADC0FFEEE010203`, `9D71237FC4B219A8` | 128 | Multi-statement SQL escapes, filesystem-copy attempts, engine configuration changes and writes are denied; seeded DuckDB table contents remain unchanged |
 
 Both use a fixed `xorshift64` mutation generator scoped to the test, with a known ASCII punctuation alphabet and explicit maximum lengths. A panicking parser is a failing test, not merely an error return. Seeds and the failing iteration are included in the test assertion, making a failure reproducible without writing the potentially sensitive input into CI logs.
 
@@ -22,6 +23,7 @@ To rerun the two named tests in an isolated developer workspace with Rust 1.99.1
 ```fish
 cargo +1.99.1 test --locked seeded_resource_and_cursor_mutations_fail_closed_without_panics
 cargo +1.99.1 test --locked seeded_json_and_filter_mutations_are_bounded_and_panic_free
+cargo +1.99.1 test --locked --features scratchpad seeded_sql_policy_mutations_cannot_write_or_escape_the_in_memory_engine
 ```
 
-Standard CI runs both through `cargo test --locked`. Security gates for credential isolation, native DuckDB sandboxing, authorized live OAuth and complete third-party MCP interoperability remain independent in [progress.json](progress.json) and [ROADMAP.md](ROADMAP.md).
+Standard CI runs the first two through `cargo test --locked`; the separate `duckdb` job runs the SQL corpus through `cargo test --locked --features scratchpad`. No account secrets or personal analytics are used. Security gates for credential isolation, native DuckDB sandboxing, authorized live OAuth and complete third-party MCP interoperability remain independent in [progress.json](progress.json) and [ROADMAP.md](ROADMAP.md).

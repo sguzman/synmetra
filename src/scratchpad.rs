@@ -1812,6 +1812,86 @@ mod tests {
     }
 
     #[test]
+    fn seeded_sql_policy_mutations_cannot_write_or_escape_the_in_memory_engine() {
+        fn next(state: &mut u64) -> u64 {
+            *state ^= *state << 13;
+            *state ^= *state >> 7;
+            *state ^= *state << 17;
+            *state
+        }
+
+        let state = ScratchState::new();
+        state.open("seeded_sql").unwrap();
+        state
+            .ingest_ga_response(
+                "seeded_sql",
+                "events",
+                &json!({
+                    "dimensionHeaders":[{"name":"country"}],
+                    "metricHeaders":[{"name":"users"}],
+                    "rows":[
+                        {"dimensionValues":[{"value":"Mexico"}],"metricValues":[{"value":"7"}]},
+                        {"dimensionValues":[{"value":"Canada"}],"metricValues":[{"value":"3"}]}
+                    ]
+                }),
+                false,
+            )
+            .unwrap();
+
+        // All variants contain an additional statement separator after an
+        // otherwise legitimate projection. Random suffixes are bounded, and
+        // the parser must reject them *before* reaching the native SQL engine.
+        let prefixes = [
+            "SELECT * FROM events",
+            "SELECT COUNT(*) FROM events",
+            "SELECT country, users FROM events LIMIT 1",
+        ];
+        let injections = [
+            "; DROP TABLE events ",
+            "; COPY events TO '/tmp/untrusted.csv' ",
+            "; ATTACH '/tmp/untrusted.db' AS other ",
+            "; SET enable_external_access=true ",
+            "; INSTALL httpfs ",
+            "; DELETE FROM events ",
+            "; UPDATE events SET users=999 ",
+            "; SELECT * FROM read_csv_auto('/etc/passwd') ",
+        ];
+        let alphabet = b"abcXYZ0123456789 _-/%?#:;\"'";
+        for seed in [
+            0x1C0F_FEE0_1234_5678u64,
+            0xBADC_0FFE_EE01_0203,
+            0x9D71_237F_C4B2_19A8,
+        ] {
+            let mut rng = seed;
+            for iteration in 0..128 {
+                let prefix = prefixes[(next(&mut rng) as usize) % prefixes.len()];
+                let attack = injections[(next(&mut rng) as usize) % injections.len()];
+                let length = (next(&mut rng) % 97) as usize;
+                let suffix = (0..length)
+                    .map(|_| alphabet[(next(&mut rng) as usize) % alphabet.len()] as char)
+                    .collect::<String>();
+                let sql = format!("{prefix}{attack}{suffix}");
+                let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    state.query_bounded("seeded_sql", &sql, Some(10), Some(64), false)
+                }));
+                assert!(
+                    result.is_ok(),
+                    "SQL parser panicked at seed {seed:016x} iteration {iteration}"
+                );
+                assert!(
+                    result.unwrap().is_err(),
+                    "SQL policy bypass at seed {seed:016x} iteration {iteration}"
+                );
+            }
+        }
+        assert_eq!(
+            state.summarize_table("seeded_sql", "events").unwrap()["row_count"],
+            2
+        );
+        assert_eq!(state.tables("seeded_sql", None).unwrap()["total_tables"], 1);
+    }
+
+    #[test]
     fn hostile_sql_corpus_and_deterministic_mutations_never_execute() {
         let state = ScratchState::new();
         state.open("hostile_sql").unwrap();
