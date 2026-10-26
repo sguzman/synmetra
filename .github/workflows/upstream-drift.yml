@@ -1,56 +1,50 @@
-name: Pinned GA4 upstream contract drift
+name: Pinned upstream schema and signature drift
 
 on:
   push:
-    branches: [main]
     paths:
       - .github/workflows/upstream-drift.yml
-      - spec/upstream/schema-lock.tsv
+      - spec/upstream/drift-lock.json
   schedule:
-    - cron: '19 7 * * 1'
+    - cron: "17 9 * * 1"
   workflow_dispatch:
 
 permissions:
   contents: read
-  issues: write
 
 jobs:
-  source-revision-watch:
+  source-drift:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - name: Compare pinned revisions and open deduplicated review issues
+      - name: Detect changes in upstream signature-bearing Git blobs
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           changed=0
-          check_source() {
-            label="$1"
-            upstream="$2"
-            pinned="$3"
-            actual="$(git ls-remote "https://github.com/${upstream}.git" HEAD | cut -f1)"
-            if ! [[ "$actual" =~ ^[[:xdigit:]]{40}$ ]]; then
-              echo "Unable to verify upstream HEAD for $upstream" >&2
-              return 1
+          for source in sednalabs googleanalytics; do
+            repository=$(jq -er --arg name "$source" '.[$name].repository' spec/upstream/drift-lock.json)
+            path=$(jq -er --arg name "$source" '.[$name].path' spec/upstream/drift-lock.json)
+            expected=$(jq -er --arg name "$source" '.[$name].blob_sha' spec/upstream/drift-lock.json)
+            case "$repository:$path" in
+              sednalabs/ga4-mcp:spec/tool_schema_snapshot.v1.json | \
+              googleanalytics/google-analytics-mcp:analytics_mcp/coordinator.py) ;;
+              *) echo "Unrecognized reference source: $source" >&2; exit 1 ;;
+            esac
+            current=$(curl --fail --silent --show-error --retry 2 --max-time 25 \
+              --header "Accept: application/vnd.github+json" \
+              --header "Authorization: Bearer $GH_TOKEN" \
+              "https://api.github.com/repos/$repository/contents/$path?ref=main" \
+              | jq -er '.sha')
+            if [[ "$current" != "$expected" ]]; then
+              echo "Upstream $source signature-source blob changed: pinned $expected, current $current" >&2
+              echo "Review $repository/$path for name, argument, or behavior changes; do not silently repin." >> "$GITHUB_STEP_SUMMARY"
+              changed=1
+            else
+              echo "✅ $source signature-source blob unchanged" >> "$GITHUB_STEP_SUMMARY"
             fi
-            if test "$actual" = "$pinned"; then
-              echo "$label remains pinned at $pinned"
-              return 0
-            fi
-            title="Pinned upstream revision review required: $label"
-            if ! gh issue list --state open --limit 200 --json title --jq '.[].title' | grep -Fxq "$title"; then
-              body="The upstream revision for $upstream has changed from the reviewed Synmetra pin.\n\nPinned: $pinned\nObserved HEAD: $actual\n\nReview tools, schemas, licenses and tests before updating snapshots and schema-lock.tsv. Do not treat this as established parity or automatically import code/data."
-              gh issue create --title "$title" --body "$(printf '%b' "$body")"
-            fi
-            echo "Review required for $upstream: pinned $pinned; current $actual" >&2
-            return 1
-          }
-          if ! check_source 'SednaLabs GA4 MCP' 'sednalabs/ga4-mcp' '039fd4620064fc4b76dc6bca641945aba52c14bc'; then changed=1; fi
-          if ! check_source 'Google Analytics MCP' 'googleanalytics/google-analytics-mcp' 'ce84226bf4cedea7f2910f5afb07a6b9138f6553'; then changed=1; fi
-          if test "$changed" -ne 0; then
-            echo 'Upstream revisions need explicit source and contract review.' >&2
-            exit 1
-          fi
+          done
+          exit "$changed"
