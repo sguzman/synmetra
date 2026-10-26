@@ -274,17 +274,9 @@ jobs:
           rustc --version | grep -F 'rustc 1.99.1'
           cargo --version
       - uses: Swatinem/rust-cache@v2
-      - name: Determine whether the native feature changed
-        id: native
-        shell: bash
-        run: |
-          if git diff --name-only HEAD^ HEAD | grep -Eq '^(src/(main|scratchpad)\.rs$|Cargo\.toml$|Cargo\.lock$|\.github/workflows/ci\.yml$)'; then
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-          fi
+      # Always check the final branch head: a docs-only push must not cancel
+      # a previous native run and silently skip feature acceptance.
       - name: Test bounded DuckDB scratchpad
-        if: steps.native.outputs.changed == 'true' || startsWith(github.ref, 'refs/tags/v')
         env:
           SYNMETRA_CAPTURE_INPUT_SCHEMAS: "1"
         run: cargo test --all-targets --locked --features scratchpad -- --nocapture
