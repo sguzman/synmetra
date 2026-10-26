@@ -1,0 +1,63 @@
+name: Pinned SednaLabs Contract V1 golden capture
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pinned-upstream-golden.yml
+      - ci/upstream-contract-golden.rs
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    name: Execute frozen upstream contract golden fixtures
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    env:
+      CARGO_BUILD_JOBS: 2
+      CARGO_INCREMENTAL: 0
+    steps:
+      - name: Checkout Synmetra without persisted credentials
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install pinned Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: 1.99.1
+      - name: Fetch exactly reviewed SednaLabs revision
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --quiet --filter=blob:none https://github.com/sednalabs/ga4-mcp.git upstream
+          git -C upstream checkout --quiet --detach 039fd4620064fc4b76dc6bca641945aba52c14bc
+          test "$(git -C upstream rev-parse HEAD)" = 039fd4620064fc4b76dc6bca641945aba52c14bc
+          test -f upstream/Cargo.lock
+          test -f upstream/src/contract.rs
+          cp ci/upstream-contract-golden.rs upstream/tests/synmetra_contract_golden.rs
+          mkdir -p upstream/generated
+      - name: Execute upstream Rust contract against synthetic inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd upstream
+          SYNMETRA_GOLDEN_OUTPUT="$PWD/generated/contract-v1-goldens.json" \
+            cargo +1.99.1 test --locked --test synmetra_contract_golden -- --nocapture
+          jq -e '
+            .schema == "synmetra_pinned_executed_upstream_contract_v1"
+            and .source.commit == "039fd4620064fc4b76dc6bca641945aba52c14bc"
+            and (.goldens | length) == 4
+            and any(.goldens[]; .name == "cursor_query_mismatch_source_assertions" and .structured_content.error.code == "CURSOR_QUERY_MISMATCH")
+            and any(.goldens[]; .name == "summary_only_source_assertions" and .structured_content.data == null)
+          ' generated/contract-v1-goldens.json > /dev/null
+          cat generated/contract-v1-goldens.json
+      - name: Publish synthetic pinned baseline golden JSON
+        uses: actions/upload-artifact@v4
+        with:
+          name: sednalabs-pinned-contract-v1-goldens
+          path: upstream/generated/contract-v1-goldens.json
+          if-no-files-found: error
+          retention-days: 30
