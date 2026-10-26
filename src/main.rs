@@ -7616,39 +7616,38 @@ mod tests {
                 offset: 0,
             };
             let page = cursor_allowed.then_some(&pagination);
-            let known_result = result_with_tabular_projection(
-                Ok(known.clone()),
-                controls,
-                realtime,
-                page,
-            );
+            let known_result =
+                result_with_tabular_projection(Ok(known.clone()), controls, realtime, page);
             assert_eq!(known_result.is_error, Some(false), "{family}");
             let known_value = known_result.structured_content.as_ref().unwrap();
             assert_eq!(known_value["meta"]["row_count_total"], 5, "{family}");
-            assert_eq!(known_value["meta"]["row_count_total_known"], true, "{family}");
+            assert_eq!(
+                known_value["meta"]["row_count_total_known"], true,
+                "{family}"
+            );
             assert_eq!(known_value["meta"]["row_count_returned"], 1, "{family}");
             assert_eq!(known_value["meta"]["truncated"], true, "{family}");
-            assert_eq!(known_value["meta"]["ga4"]["propertyQuota"], known["propertyQuota"]);
+            assert_eq!(
+                known_value["meta"]["ga4"]["propertyQuota"],
+                known["propertyQuota"]
+            );
             assert_eq!(
                 known_value["meta"]["next_cursor"].is_string(),
                 cursor_allowed,
                 "{family}"
             );
-            let legacy: Value = serde_json::from_str(
-                &known_result.content[0].as_text().unwrap().text,
-            )
-            .unwrap();
+            let legacy: Value =
+                serde_json::from_str(&known_result.content[0].as_text().unwrap().text).unwrap();
             assert_eq!(&legacy, known_value, "{family}");
 
-            let unknown_result = result_with_tabular_projection(
-                Ok(unknown.clone()),
-                controls,
-                realtime,
-                page,
-            );
+            let unknown_result =
+                result_with_tabular_projection(Ok(unknown.clone()), controls, realtime, page);
             let unknown_value = unknown_result.structured_content.as_ref().unwrap();
             assert_eq!(unknown_value["meta"]["row_count_total"], 2, "{family}");
-            assert_eq!(unknown_value["meta"]["row_count_total_known"], false, "{family}");
+            assert_eq!(
+                unknown_value["meta"]["row_count_total_known"], false,
+                "{family}"
+            );
             assert_eq!(unknown_value["meta"]["row_count_returned"], 1, "{family}");
             assert_eq!(unknown_value["meta"]["truncated"], true, "{family}");
             assert!(unknown_value["meta"]["next_cursor"].is_null(), "{family}");
@@ -7675,7 +7674,10 @@ mod tests {
         );
         assert!(data["meta"]["funnel_table"]["next_cursor"].is_null());
         assert!(data["meta"]["funnel_visualization"]["next_cursor"].is_null());
-        assert_eq!(data["meta"]["ga4"]["propertyQuota"]["tokensPerDay"]["remaining"], 90);
+        assert_eq!(
+            data["meta"]["ga4"]["propertyQuota"]["tokensPerDay"]["remaining"],
+            90
+        );
     }
 
     #[test]
