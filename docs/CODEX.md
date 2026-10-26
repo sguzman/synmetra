@@ -1,6 +1,6 @@
 # 🤖 Codex CLI: local Synmetra registration
 
-**Status:** documented against the current [official Codex CLI MCP command reference](https://learn.chatgpt.com/docs/cli/reference). The native Rust Synmetra stdio endpoint is exercised by project CI, but **a full live Codex multi-tool session is not yet accepted** (T185). This is a user-level setup recipe, not proof of real GA authorization or a requirement to use npm, Python, Node, or gcloud.
+**Status:** based on [Codex CLI's pinned native MCP command implementation](https://github.com/openai/codex/blob/rust-v0.164.0/codex-rs/cli/src/mcp_cmd.rs). Core CI now includes an isolated registration/get/list/remove smoke using official Codex `rust-v0.164.0` Linux musl release archive verified against GitHub's published SHA-256; this new CI step must pass before its registration acceptance is credited. **A full live Codex multi-tool session is not yet accepted** (T185). This is a user-level setup recipe, not proof of real GA authorization or a requirement to use npm, Python, Node, or gcloud.
 
 ## Register one native Rust stdio executable
 
@@ -27,6 +27,10 @@ The installation path must exist and be executable on the machine that runs Code
 `synmetra auth doctor` runs offline. A future consenting operator can authorize `synmetra auth login --client-id-file PRIVATE_PATH` through a Desktop browser OAuth flow; see [GOOGLE_CLOUD.md](GOOGLE_CLOUD.md). Neither registering Codex nor listing tools proves Google property access. The read-only discovery names should be **20** by default; optional 15 DuckDB tools require building with `--features scratchpad` and explicit `serve --scratchpad`. The single annotation mutation requires `--allow-write` and separate edit-scoped Google authorization.
 
 If Codex reports a missing executable, verify Synmetra's location. If it reports Google authentication errors, inspect local `auth doctor/status` rather than forwarding tokens into Codex prompts. If an MCP client produces a transport/schema error, use synthetic CI fixtures and record only redacted source SHA and error categories. The full Codex acceptance gate requires independent automated client execution and a separately authorized GA test identity/property; no manual user QA is substituted.
+
+## Offline registration acceptance
+
+Synmetra's GitHub Actions core job installs a reviewed and **SHA-256-checked official native Codex Linux binary** from the `rust-v0.164.0` release into a disposable CI directory. It uses an isolated `CODEX_HOME` (not the runner user's real configuration), performs `codex mcp add synmetra -- ABSOLUTE_BIN serve`, validates the JSON values returned by `codex mcp get synmetra --json`, confirms `mcp list --json`, removes the entry, and verifies the list is empty. Neither Google OAuth nor a Codex account login is required for this configuration-only smoke. Archive hash: `90dd0b03b28afcb7fa733a4f73b413db2916a47347efd43fb669cc1c774ee8e4`. This test does **not** establish T185's authenticated end-to-end analysis or third-party MCP Inspector compatibility.
 
 ## Configuration and security limits
 
