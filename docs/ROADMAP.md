@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `███████░░░ 68.5%` · **+68.50 percentage points from initial empty repo; +0.66 pp from verified dependency, license, advisory and redacted source credential checks
+**Overall:** `███████░░░ 68.9%` · **+68.94 percentage points from initial empty repo; +0.44 pp from verified synthetic credential redaction and scanner fixtures
 
 ### 📏 Progress conventions
 
@@ -126,7 +126,7 @@
   - ✅ **Gate:** Protocol wire fixtures pass multiple clients
 
 
-## 🔑 M2 — Google authentication and credential isolation — `████░░░░░░ 42.3%`
+## 🔑 M2 — Google authentication and credential isolation — `█████░░░░░ 46.2%`
 
 **Scope:** MVP. **Acceptance gate:** Secure, least-privilege, non-Python auth across interactive, local and service configurations; no secret leaks.
 
@@ -174,7 +174,7 @@
 - ⏳ **T057 — Guard clock skew and rotation races** — `██████████ 100.0%`
   - ✅ **Gate:** Expiring secrets renew safely during concurrent calls · **Evidence:** src/auth.rs access_token_at re-reads credentials within an async refresh lock, renews 120 seconds before expiry and rotates refresh tokens using private atomic persistence; the concurrent_expired_credentials_refresh_once_and_rotate_privately test passed in core CI https://github.com/sguzman/synmetra/actions/runs/40266208686.; src/auth.rs concurrent_expired_credentials_refresh_once_and_rotate_privately verifies two concurrent callers perform exactly one local OAuth token exchange, both receive the new access token, rotated refresh token persists privately, and later calls reuse the refreshed credential; core CI https://github.com/sguzman/synmetra/actions/runs/40266208686 passed. This does not certify live Google refresh/revocation behavior.
 
-### 🛡️ P07 — Inbound versus upstream trust — `██████░░░░ 55.6%`
+### 🛡️ P07 — Inbound versus upstream trust — `███████░░░ 66.7%`
 
 **Feature:** Identity security.
 
@@ -182,8 +182,8 @@
   - ✅ **Gate:** No identity-conflation in HTTP transport · **Evidence:** src/http.rs uses SYNMETRA_MCP_BEARER_TOKEN for inbound requests while src/google.rs and src/auth.rs independently load SYNMETRA_GOOGLE_ACCESS_TOKEN or isolated private OAuth credentials for Google API calls; src/main.rs denies scratchpad HTTP. Core CI https://github.com/sguzman/synmetra/actions/runs/40266208686 passed local identity boundary tests. Separate explicit end-to-end identity-conflation regression remains open.; src/http.rs local_mcp_bearer_is_not_forwarded_to_google_api exercises an authenticated 2025-11-25 MCP initialization, notification and tools/call with one inbound token and a separate local mock Google API endpoint with a different upstream token; it asserts the Google request contains only the upstream bearer and neither token enters the MCP response. Core CI https://github.com/sguzman/synmetra/actions/runs/40267346239 passed. This is a synthetic local isolation test, not multi-tenant hosted security certification.
 - 🧾 **T059 — Define capability authorization matrices** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Google and local permissions checked per tool call
-- 💼 **T060 — Avoid credential exposure in crash logs and traces** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Secret scanner fixtures remain clean
+- 💼 **T060 — Avoid credential exposure in crash logs and traces** — `██████████ 100.0%`
+  - ✅ **Gate:** Secret scanner fixtures remain clean · **Evidence:** ci/test-secret-scanner.sh runs a disposable tracked Git repository with dynamically assembled fake GitHub, Google, OpenAI and PEM signatures, proving ci/scan-secrets.sh rejects each match without printing it. The native core test step exercises status/doctor/invalid CLI failure output with private synthetic Google/MCP bearer canaries and asserts no disclosure. Core CI https://github.com/sguzman/synmetra/actions/runs/40348154909 passed. This is synthetic local failure/diagnostics and source redaction, not proof against every panic, crash dump or telemetry sink.; The standalone Public source secret-heuristic check https://github.com/sguzman/synmetra/actions/runs/40348154251 passed on the identical source SHA: all generated credential-shaped negative fixtures were rejected with suppressed match details, harmless/near-miss controls passed, and the complete tracked repository scan found no recognized high-confidence signatures. No actual credentials were generated or stored. This does not inspect Git history, binary artifacts, arbitrary CI logs or unknown secret formats.
 - 🔍 **T061 — Validate Google scope and role errors distinctly** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** No broad-scope silent escalation on 403
 - 🔐 **T062 — Protect local credential files from symlink attacks** — `██████████ 100.0%`
@@ -571,7 +571,7 @@
   - ✅ **Gate:** Signed provenance and dependency audit evidence
 
 
-## 🚀 M9 — Linux release and Codex-ready inauguration — `█████░░░░░ 54.5%`
+## 🚀 M9 — Linux release and Codex-ready inauguration — `█████░░░░░ 54.6%`
 
 **Scope:** MVP. **Acceptance gate:** A documented stable native binary with 36-tool verified parity and release artifacts; no Python/npm runtime.
 

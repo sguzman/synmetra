@@ -577,6 +577,40 @@ credentials; revoke Google-side access separately if needed.
 A real consent flow requires the Google account owner in a browser.
 "#;
 
+fn doctor_guidance(status: &serde_json::Value) -> Vec<&'static str> {
+    let mut advice = Vec::new();
+    if status["local_oauth_status"] == "unreadable_private_credentials" {
+        advice.push(
+            "Stored credentials could not be read safely. Check the private XDG config path, ownership, symlinks, and 0700 directory/0600 file permissions; never relax permissions or paste the file into logs.",
+        );
+    } else if status["local_oauth_configured"] != true
+        && status["override_token_present"] != true
+    {
+        advice.push(
+            "To configure native OAuth: synmetra auth login --client-id-file /path/to/desktop-client.json",
+        );
+    } else if status["cached_token_fresh"] == false
+        && status["local_oauth_configured"] == true
+    {
+        advice.push(
+            "Cached access token may be stale; the next MCP request attempts a refresh. If refresh is revoked, reauthorize with the account owner's consent.",
+        );
+    }
+
+    if status["override_token_present"] == true {
+        advice.push(
+            "An environment-provided Google access token takes precedence over local OAuth credentials and is not automatically refreshed.",
+        );
+    }
+    advice.push(
+        "Google Analytics Admin and Data APIs must be enabled in your Google Cloud project.",
+    );
+    advice.push(
+        "An enabled Cloud API and granted OAuth scope do not automatically grant GA4 account/property access; confirm the property role separately.",
+    );
+    advice
+}
+
 pub async fn command(args: &[String]) -> Result<(), String> {
     match args {
         [mode] if mode == "--help" || mode == "-h" => {
@@ -615,14 +649,9 @@ pub async fn command(args: &[String]) -> Result<(), String> {
             let status = public_status();
             println!("Synmetra local authentication diagnostic (no Google network call):");
             println!("{}", serde_json::to_string_pretty(&status).map_err(|_| "Cannot render auth status")?);
-            if status["local_oauth_configured"] != true
-                && status["override_token_present"] != true
-            {
-                println!("To configure native OAuth: synmetra auth login --client-id-file /path/to/desktop-client.json");
-            } else if status["cached_token_fresh"] == false {
-                println!("Cached access token may be stale; the next MCP request attempts a refresh.");
+            for message in doctor_guidance(&status) {
+                println!("{message}");
             }
-            println!("Google Analytics Admin and Data APIs must be enabled in your Google Cloud project.");
             Ok(())
         }
         [mode] if mode == "command" => {
@@ -644,6 +673,39 @@ pub async fn command(args: &[String]) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn doctor_guidance_is_actionable_and_does_not_echo_private_values() {
+        use serde_json::json;
+
+        let new_user = doctor_guidance(&json!({
+            "local_oauth_configured":false,
+            "override_token_present":false,
+            "scope":"none"
+        }));
+        assert!(new_user.iter().any(|text| text.contains("To configure native OAuth:")));
+        assert!(new_user.iter().any(|text| text.contains("Admin and Data APIs")));
+        assert!(new_user.iter().any(|text| text.contains("property role")));
+
+        let unreadable = doctor_guidance(&json!({
+            "local_oauth_status":"unreadable_private_credentials",
+            "scope":"synthetic-secret-canary",
+            "override_token_present":false
+        }));
+        assert!(unreadable.iter().any(|text| text.contains("0700 directory/0600 file")));
+        assert!(!unreadable.iter().any(|text| text.contains("To configure native OAuth:")));
+
+        let expired = doctor_guidance(&json!({
+            "local_oauth_configured":true,
+            "cached_token_fresh":false,
+            "override_token_present":true,
+            "scope":"synthetic-secret-canary"
+        }));
+        assert!(expired.iter().any(|text| text.contains("next MCP request attempts a refresh")));
+        assert!(expired.iter().any(|text| text.contains("not automatically refreshed")));
+        assert!(expired.iter().all(|text| !text.contains("synthetic-secret-canary")));
+        assert!(expired.iter().all(|text| !text.contains("refresh_token")));
+    }
+
     #[test]
     fn auth_help_documents_complete_opt_in_scope_and_private_status() {
         for option in [

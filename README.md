@@ -10,20 +10,20 @@
 
 ## 📊 Evidence-backed progress
 
-**Overall:** `███████░░░ 68.5%` · **overall delta: +68.50 percentage points** from initial 0% (**latest accepted round: +0.66 pp**). **35/35 SednaLabs tool names implemented provisionally plus 1 opt-in annotation handler; 0/36 fully accepted upstream parity.** Real Google account acceptance and full tool schemas remain pending.
+**Overall:** `███████░░░ 68.9%` · **overall delta: +68.94 percentage points** from initial 0% (**latest accepted round: +0.44 pp**). **35/35 SednaLabs tool names implemented provisionally plus 1 opt-in annotation handler; 0/36 fully accepted upstream parity.** Real Google account acceptance and full tool schemas remain pending.
 
 | Milestone | Progress | Gate |
 | --- | --- | --- |
 | 🧭 M0 Reference baseline and project governance | `██████████ 97.1%` | MVP |
 | 🔌 M1 MCP protocol and transport fidelity | `███████░░░ 65.2%` | MVP |
-| 🔑 M2 Google authentication and credential isolation | `████░░░░░░ 42.3%` | MVP |
+| 🔑 M2 Google authentication and credential isolation | `█████░░░░░ 46.2%` | MVP |
 | 🏢 M3 Admin API information parity | `██████████ 100.0%` | MVP |
 | 📊 M4 Reporting, preflight and Data API parity | `██████████ 100.0%` | MVP |
 | ✍️ M5 Explicitly gated GA mutation parity | `████████░░ 84.6%` | MVP |
 | 🗃️ M6 DuckDB scratchpad and advanced analytics parity | `████████░░ 78.0%` | MVP |
 | 🧬 M7 Tool contract interoperability and parity audits | `███████░░░ 73.5%` | MVP |
 | 🧪 M8 Verification, resilience and security acceptance | `████░░░░░░ 42.9%` | MVP |
-| 🚀 M9 Linux release and Codex-ready inauguration | `█████░░░░░ 54.5%` | MVP |
+| 🚀 M9 Linux release and Codex-ready inauguration | `█████░░░░░ 54.6%` | MVP |
 | 🔭 M10 Post-MVP extensions and sustained stewardship | `░░░░░░░░░░ 0.0%` | POST_MVP |
 
 The [pinned upstream parameter-union audit](docs/UPSTREAM_PARAMETER_AUDIT.md) preserves all source fields and their known compatibility limits. The [pinned native input-schema parity audit](docs/SCHEMA_PARITY_AUDIT.md) documents measured argument/schema gaps from an earlier feature-enabled CI run; these gaps are tracked separately from the 36-name inventory and are not yet all resolved.
