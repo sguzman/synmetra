@@ -245,7 +245,7 @@ jobs:
             and all(.cases[]; .difference_note != null)
             and any(.negative_parity_findings[]; .source_expected.code == "CURSOR_QUERY_MISMATCH" and .native_status == "not_equivalent")
           ' spec/fixtures/sednalabs-response-differential.v1.json > /dev/null
-          grep -Fq 'not execution of SednaLabs' docs/RESPONSE_DIFFERENTIAL.md
+          grep -Fq '*not* execution of SednaLabs' docs/RESPONSE_DIFFERENTIAL.md
 
       - name: Verify native operator reference and redacted smoke documentation
         shell: bash
