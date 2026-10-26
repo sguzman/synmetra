@@ -3248,7 +3248,7 @@
               "id": "T162",
               "emoji": "🧯",
               "name": "Avoid false confidence from mocked-only parity",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Document live coverage by tool and account eligibility",
               "checks": [
                 {
@@ -3258,7 +3258,8 @@
                 },
                 {
                   "text": "Document live coverage by tool and account eligibility",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "docs/LIVE_ACCEPTANCE_MATRIX.md enumerates all 36 pinned MCP tool names with intended Google account scope/role or no-Google local boundary, explicit unverified live status and remaining acceptance references; .github/workflows/ci.yml enforces set equality against docs/tool-inventory.json. The 'Check pinned 36-tool live eligibility matrix' step passed in core CI https://github.com/sguzman/synmetra/actions/runs/40268224846; no live property auth, role or production write tests are claimed."
                 }
               ]
             }

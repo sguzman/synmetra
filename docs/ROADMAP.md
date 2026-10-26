@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `██████░░░░ 61.7%` · **+61.67 percentage points from initial empty repo; +1.10 pp from verified identity, cursor, retry/failure and adversarial safety gates** · 126/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `██████░░░░ 61.9%` · **+61.89 percentage points from initial empty repo; +0.22 pp from verified 36-tool live eligibility documentation** · 127/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -441,7 +441,7 @@
   - ✅ **Gate:** Dependency license architecture and portability reviewed · **Evidence:** src/main.rs and src/scratchpad.rs; GitHub Actions run 40206168306 successfully completed bundled-DuckDB feature tests (initial seven-route implementation); full strict-Clippy/updated-parameter parity and live GA tests remain separate acceptance gates.; docs/SCRATCHPAD.md, docs/ARCHITECTURE.md, Cargo.toml and src/scratchpad.rs reviewed: optional bundled DuckDB 1.4.2 includes native C/C++ linking with compiler/linker/runtime portability caveats; upstream Rust and native dependency licenses must remain accounted for under T013/T177/T216, and clean-install proof is T200/M9. DuckDB feature test https://github.com/sguzman/synmetra/actions/runs/40264614297 passed.
 
 
-## 🧬 M7 — Tool contract interoperability and parity audits — `██████░░░░ 58.8%`
+## 🧬 M7 — Tool contract interoperability and parity audits — `██████░░░░ 61.8%`
 
 **Scope:** MVP. **Acceptance gate:** All 36 tool schemas and response mappings are independently snapshot-tested against both pinned upstreams.
 
@@ -456,7 +456,7 @@
 - 🗝️ **T153 — Implement ga4_auth_login_command** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Native CLI guidance and MCP schema parity for ga4_auth_login_command · **Evidence (implementation only):** src/main.rs AuthLoginCommandArgs advertises all six pinned optional inputs, compares input schema types/defaults/descriptions/formats to pinned SednaLabs, POSIX-quotes generated commands, and rejects unsupported shared ADC/quota-project options explicitly; src/auth.rs implements CLI --account OAuth login hint, --callback-port, --headless with bounds/duplication tests. GitHub Actions 40225871288 core job passed fmt, tests, strict Clippy, ledger. Runtime parity for shared ADC/quota-project and live auth still pending.
 
-### 📜 P20 — Schema and error contract — `██████░░░░ 55.6%`
+### 📜 P20 — Schema and error contract — `██████░░░░ 61.1%`
 
 **Feature:** Contracts and schemas.
 
@@ -476,8 +476,8 @@
   - ✅ **Gate:** Tool schema diff is reviewed during every upstream update · **Evidence:** spec/upstream/schema-lock.tsv published with Git object SHA-1 digests and upstream source commit identifiers, verified on each CI run using the native git hash-object command in .github/workflows/ci.yml. CI 40247973673 passed lock integrity without Python/npm. Full semantic schema diff/review on upstream version bumps remains open.
 - 🤝 **T161 — Test alternative MCP clients and structured output** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Codex and inspector consume every major response type
-- 🧯 **T162 — Avoid false confidence from mocked-only parity** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Document live coverage by tool and account eligibility · **Evidence:** README.md, docs/ROADMAP.md, docs/NATIVE_MCP.md, docs/LOCAL_EXECUTION_THREAT_MODEL.md and docs/RELEASE_POLICY.md explicitly distinguish synthetic tests, provisional 36-name registration, incomplete upstream parameter/response parity, unaccepted account-role permissions and unauthenticated live GA workflows; docs/progress.json retains no fully parity-accepted 36-tool claim. Core progress-integrity CI https://github.com/sguzman/synmetra/actions/runs/40267346239 passed. Per-tool live coverage and eligibility matrix remains unaccepted.
+- 🧯 **T162 — Avoid false confidence from mocked-only parity** — `██████████ 100.0%`
+  - ✅ **Gate:** Document live coverage by tool and account eligibility · **Evidence:** README.md, docs/ROADMAP.md, docs/NATIVE_MCP.md, docs/LOCAL_EXECUTION_THREAT_MODEL.md and docs/RELEASE_POLICY.md explicitly distinguish synthetic tests, provisional 36-name registration, incomplete upstream parameter/response parity, unaccepted account-role permissions and unauthenticated live GA workflows; docs/progress.json retains no fully parity-accepted 36-tool claim. Core progress-integrity CI https://github.com/sguzman/synmetra/actions/runs/40267346239 passed. Per-tool live coverage and eligibility matrix remains unaccepted.; docs/LIVE_ACCEPTANCE_MATRIX.md enumerates all 36 pinned MCP tool names with intended Google account scope/role or no-Google local boundary, explicit unverified live status and remaining acceptance references; .github/workflows/ci.yml enforces set equality against docs/tool-inventory.json. The 'Check pinned 36-tool live eligibility matrix' step passed in core CI https://github.com/sguzman/synmetra/actions/runs/40268224846; no live property auth, role or production write tests are claimed.
 
 ### 🔀 P21 — Feature-union conflict resolution — `█████░░░░░ 50.0%`
 

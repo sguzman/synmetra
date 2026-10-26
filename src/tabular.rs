@@ -884,8 +884,8 @@ mod tests {
         let fingerprint = prepare_historical(&mut prepared, "42", None, None).unwrap();
         let valid_cursor = format!("v1:{}:3", fingerprint.query_hash);
         let mut good = request.clone();
-        let valid = prepare_historical(&mut good, "properties/42", Some(&valid_cursor), None)
-            .unwrap();
+        let valid =
+            prepare_historical(&mut good, "properties/42", Some(&valid_cursor), None).unwrap();
         assert_eq!(valid.offset, 3);
 
         let bad_tokens = [
