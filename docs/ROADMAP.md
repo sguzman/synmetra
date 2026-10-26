@@ -151,7 +151,7 @@
 - 🔎 **T048 — Validate live token and quota-project configuration** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** API-enabled project and quota errors are distinguishable
 
-### 📂 P06 — ADC, service account and token policy — `█░░░░░░░░░ 5.6%`
+### 📂 P06 — ADC, service account and token policy — `█░░░░░░░░░ 11.1%`
 
 **Feature:** Google identities.
 
