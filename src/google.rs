@@ -1333,7 +1333,14 @@ pub fn report_request(
         || metrics
             .iter()
             .chain(dimensions.iter())
-            .any(|s| s.trim().is_empty())
+            .any(|name| {
+                name.is_empty()
+                    || name.len() > 128
+                    || name.trim() != name
+                    || name.chars().any(char::is_control)
+            })
+        || metrics.iter().collect::<HashSet<_>>().len() != metrics.len()
+        || dimensions.iter().collect::<HashSet<_>>().len() != dimensions.len()
     {
         return Err(ApiError::InvalidRequest);
     }
@@ -2469,6 +2476,27 @@ mod tests {
                 request,
                 Err(ApiError::InvalidRequest),
                 "network-boundary corpus item {index} was accepted"
+            );
+        }
+    }
+
+    #[test]
+    fn historical_report_rejects_ambiguous_or_malformed_field_names_before_google() {
+        for (dimensions, metrics) in [
+            (vec!["country".to_string(); 2], vec!["activeUsers".to_string()]),
+            (vec!["country".into()], vec!["activeUsers".to_string(); 2]),
+            (vec!["country".into()], vec!["bad\\nmetric".into()]),
+            (vec!["country".into()], vec![" activeUsers".into()]),
+            (vec!["country".into()], vec!["x".repeat(129)]),
+        ] {
+            assert_eq!(
+                report_request(
+                    Some(vec![json!({"startDate":"yesterday","endDate":"today"})]),
+                    dimensions,
+                    metrics,
+                    vec![],
+                ),
+                Err(ApiError::InvalidRequest)
             );
         }
     }
