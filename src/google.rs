@@ -2318,14 +2318,13 @@ mod tests {
         let recorded = events.clone();
         let began = Instant::now();
         let worker = tokio::spawn(async move {
-            for attempt in 0..3 {
+            for (attempt, delay) in delays.into_iter().enumerate() {
                 recorded.lock().unwrap().push((attempt, Instant::now()));
-                // Production caps read-only sends at 3 total attempts, even
-                // when Google keeps returning a retryable response.
-                if attempt < 2 {
-                    tokio::time::sleep(delays[attempt]).await;
-                }
+                tokio::time::sleep(delay).await;
             }
+            // Production caps read-only sends at 3 total attempts, even
+            // when Google keeps returning a retryable response.
+            recorded.lock().unwrap().push((2, Instant::now()));
         });
 
         tokio::task::yield_now().await;
@@ -2850,6 +2849,64 @@ mod tests {
                 Err(ApiError::InvalidRequest),
                 "network-boundary corpus item {index} was accepted"
             );
+        }
+    }
+
+    #[test]
+    fn seeded_json_and_filter_mutations_are_bounded_and_panic_free() {
+        // Fixed seeds plus bounded input sizes permit exact CI reproduction.
+        // Every filter exceeds the documented cell-length boundary; every
+        // raw JSON specimen has trailing NUL and must fail before networking.
+        fn next(state: &mut u64) -> u64 {
+            *state ^= *state << 13;
+            *state ^= *state >> 7;
+            *state ^= *state << 17;
+            *state
+        }
+        let alphabet = b"abcXYZ0123456789{}[]\"\\/:,%?<>\n";
+        for seed in [
+            0xC0DE_42F0_19A5_88E1u64,
+            0x0000_0000_0001_CAFE,
+            0x9A3D_75F1_B2C4_0E87,
+        ] {
+            let mut state = seed;
+            for index in 0..128 {
+                let count = (next(&mut state) % 129) as usize;
+                let mut bytes = vec![b'{'];
+                for _ in 0..count {
+                    bytes.push(alphabet[(next(&mut state) as usize) % alphabet.len()]);
+                }
+                bytes.push(0);
+                let tail = (0..16)
+                    .map(|_| alphabet[(next(&mut state) as usize) % alphabet.len()] as char)
+                    .collect::<String>();
+                let filter = json!({
+                    "filter": {
+                        "fieldName": "country",
+                        "stringFilter": {"value":format!("{}{tail}", "X".repeat(1025))}
+                    }
+                });
+                let result = std::panic::catch_unwind(|| {
+                    let parsed = serde_json::from_slice::<Value>(&bytes);
+                    let bounded = validate_bounded_filter(&filter);
+                    let prepared = report_request(
+                        Some(vec![json!({"startDate":"yesterday","endDate":"today"})]),
+                        vec!["country".into()],
+                        vec!["activeUsers".into()],
+                        vec![("dimensionFilter", Some(filter))],
+                    );
+                    (parsed, bounded, prepared)
+                });
+                assert!(
+                    result.is_ok(),
+                    "input caused panic: seed {seed:016x}, iteration {index}"
+                );
+                let (parsed, bounded, prepared) = result.unwrap();
+                assert!(
+                    parsed.is_err() && bounded.is_err() && prepared.is_err(),
+                    "input escaped local preflight: seed {seed:016x}, iteration {index}"
+                );
+            }
         }
     }
 

@@ -935,6 +935,64 @@ mod tests {
     }
 
     #[test]
+    fn seeded_resource_and_cursor_mutations_fail_closed_without_panics() {
+        // Fixed seeds make this a repeatable mutation corpus rather than
+        // nondeterministic CI fuzzing. Every generated value has a forbidden
+        // delimiter even if its random suffix happens to contain digits.
+        fn next(state: &mut u64) -> u64 {
+            *state ^= *state << 13;
+            *state ^= *state >> 7;
+            *state ^= *state << 17;
+            *state
+        }
+        let original = json!({
+            "dateRanges":[{"startDate":"yesterday","endDate":"today"}],
+            "dimensions":[{"name":"country"}],
+            "metrics":[{"name":"activeUsers"}],
+            "limit":"4"
+        });
+        let mut request = original.clone();
+        let hash = prepare_historical(&mut request, "42", None, None)
+            .unwrap()
+            .query_hash;
+        let cursor = format!("v1:{hash}:2");
+        let alphabet = b"0123456789abcDEF?/#%:._-+;@";
+        for seed in [
+            0x7B13_C451_F239_A02Du64,
+            0x13C4_00D5_AABB_9F17,
+            0xEADB_EEF0_4567_8913,
+        ] {
+            let mut state = seed;
+            for index in 0..256 {
+                let size = (next(&mut state) % 65) as usize;
+                let suffix = (0..size)
+                    .map(|_| alphabet[(next(&mut state) as usize) % alphabet.len()] as char)
+                    .collect::<String>();
+                let invalid_resource = format!("42?{suffix}");
+                let invalid_cursor = format!("{cursor}?{suffix}");
+                let result = std::panic::catch_unwind(|| {
+                    let property = crate::google::property_name(&invalid_resource);
+                    let account = crate::google::account_name(&invalid_resource);
+                    let mut candidate = original.clone();
+                    let cursor_result =
+                        prepare_historical(&mut candidate, "42", Some(&invalid_cursor), None);
+                    (property, account, cursor_result, candidate)
+                });
+                assert!(
+                    result.is_ok(),
+                    "mutation panicked: seed {seed:016x}, iteration {index}"
+                );
+                let (property, account, cursor_result, candidate) = result.unwrap();
+                assert!(
+                    property.is_err() && account.is_err() && cursor_result.is_err(),
+                    "mutation bypassed parser: seed {seed:016x}, iteration {index}"
+                );
+                assert_eq!(candidate, original);
+            }
+        }
+    }
+
+    #[test]
     fn rejects_invalid_controls_and_malformed_provider_shapes() {
         let mut options = controls();
         options.max_rows = Some(0);
