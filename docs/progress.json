@@ -607,7 +607,7 @@
               "id": "T030",
               "emoji": "📡",
               "name": "Support authenticated sessions and request routing",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Sessions terminate and cannot cross principal boundaries",
               "checks": [
                 {
@@ -617,7 +617,8 @@
                 },
                 {
                   "text": "Sessions terminate and cannot cross principal boundaries",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/http.rs authenticated_http_session_lists_and_calls_tools_but_rejects_invalid_sessions verifies initialized session tokens, authenticated read-only MCP tool routing, invalid/foreign IDs rejected, HTTP session DELETE terminates and cannot be reused; separate_local_bearer_principals_cannot_replay_foreign_sessions runs two independently authenticated loopback servers and proves a valid token for server B cannot replay server A session, token A on B is denied, and sessions are distinct. GitHub Actions 40247495277 passed core+DuckDB, fmt and Clippy. A server is single-principal by design; this does not imply multi-tenant principal management."
                 }
               ]
             },
