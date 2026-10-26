@@ -688,6 +688,20 @@ mod tests {
             .unwrap();
         assert_eq!(oversized.status(), StatusCode::PAYLOAD_TOO_LARGE);
 
+        // Transfer-Encoding: chunked deliberately omits Content-Length, so the
+        // body-stream limit must enforce the same bound independently.
+        let unannounced = reqwest::Body::wrap_stream(futures_util::stream::iter(vec![
+            Ok::<Vec<u8>, std::io::Error>(vec![b'x'; MAX_HTTP_REQUEST_BYTES + 1]),
+        ]));
+        let oversized_chunked = client
+            .post(&endpoint)
+            .header(header::AUTHORIZATION, format!("Bearer {token}"))
+            .body(unannounced)
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(oversized_chunked.status(), StatusCode::PAYLOAD_TOO_LARGE);
+
         let held = limiter.clone().acquire_owned().await.unwrap();
         let overloaded = client
             .post(&endpoint)
