@@ -5073,6 +5073,92 @@ mod tests {
 
     #[cfg(feature = "scratchpad")]
     #[test]
+    fn scratchpad_mcp_lifecycle_limits_and_private_tables_have_stable_envelopes() {
+        let server = Synmetra::new(GoogleClient::new(None), false).enable_scratchpad();
+        let open = server.scratchpad_open_session(Parameters(ScratchOpenArgs {
+            session_id: "fixture_a".into(),
+        }));
+        assert_eq!(open.is_error, Some(false));
+        assert_eq!(open.structured_content.unwrap()["data"]["refreshed"], false);
+
+        let limits = server.scratchpad_get_runtime_limits();
+        assert_eq!(limits.is_error, Some(false));
+        assert_eq!(limits.structured_content.unwrap()["data"]["max_sessions"], 4);
+        let changed = server.scratchpad_set_runtime_limits(Parameters(ScratchLimitArgs {
+            max_sessions: Some(2),
+            max_tables_per_session: Some(1),
+        }));
+        assert_eq!(changed.structured_content.unwrap()["data"]["max_tables_per_session"], 1);
+        let listed = server.scratchpad_list_sessions(Parameters(ScratchListArgs {
+            limit: Some(1),
+        }));
+        assert_eq!(listed.structured_content.unwrap()["data"]["session_ids"], json!(["fixture_a"]));
+
+        let payload = json!({
+            "dimensionHeaders":[{"name":"country"}],
+            "metricHeaders":[{"name":"activeUsers"}],
+            "rows":[{"dimensionValues":[{"value":"Mexico"}],
+                     "metricValues":[{"value":"42"}]}]
+        });
+        server.scratchpad.as_ref().unwrap()
+            .ingest_ga_response("fixture_a","events",&payload,false).unwrap();
+        let tables = server.scratchpad_list_tables(Parameters(ScratchListTablesArgs {
+            session_id: "fixture_a".into(),
+            limit: None,
+        }));
+        assert_eq!(tables.structured_content.unwrap()["data"]["tables"], json!(["events"]));
+        let describe = server.scratchpad_describe_table(Parameters(ScratchReadTableArgs {
+            session_id: "fixture_a".into(),
+            table_name: "events".into(),
+        }));
+        assert_eq!(describe.structured_content.unwrap()["data"]["columns"]
+            .as_array().unwrap().len(),2);
+        let summary = server.scratchpad_summarize_table(Parameters(ScratchReadTableArgs {
+            session_id: "fixture_a".into(),
+            table_name: "events".into(),
+        }));
+        assert_eq!(summary.structured_content.unwrap()["data"]["row_count"], 1);
+        let query = server.scratchpad_query(Parameters(ScratchQueryArgs {
+            session_id: "fixture_a".into(),
+            sql: "SELECT country FROM events".into(),
+            max_rows: Some(1),
+            max_cell_chars: Some(30),
+            summary_only: false,
+            output_mode: Some("rows".into()),
+            cursor: None,
+        }));
+        assert_eq!(query.structured_content.unwrap()["data"]["rows"][0]["country"], "Mexico");
+        let invalid_query = server.scratchpad_query(Parameters(ScratchQueryArgs {
+            session_id: "fixture_a".into(),
+            sql: "DROP TABLE events".into(),
+            max_rows: None,
+            max_cell_chars: None,
+            summary_only: false,
+            output_mode: None,
+            cursor: None,
+        }));
+        assert_eq!(invalid_query.is_error, Some(true));
+        assert_eq!(invalid_query.structured_content.unwrap()["error"]["code"], "SCRATCHPAD_ERROR");
+        let destroyed = server.scratchpad_drop_table(Parameters(ScratchTableArgs {
+            session_id: "fixture_a".into(),
+            table_name: "events".into(),
+            if_exists: false,
+        }));
+        assert_eq!(destroyed.structured_content.unwrap()["data"]["dropped"], true);
+        let closed = server.scratchpad_close_session(Parameters(ScratchSessionArgs {
+            session_id: "fixture_a".into(),
+        }));
+        assert_eq!(closed.structured_content.unwrap()["data"]["closed"], true);
+        let invalid = server.scratchpad_list_tables(Parameters(ScratchListTablesArgs {
+            session_id: "fixture_a".into(),
+            limit: None,
+        }));
+        assert_eq!(invalid.is_error, Some(true));
+        assert_eq!(invalid.structured_content.unwrap()["error"]["category"], "local");
+    }
+
+    #[cfg(feature = "scratchpad")]
+    #[test]
     fn full_capability_profile_matches_exact_pinned_36_tool_union() {
         use std::collections::BTreeSet;
 
