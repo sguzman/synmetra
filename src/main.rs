@@ -6201,15 +6201,10 @@ mod tests {
         }))
         .unwrap();
         assert_eq!(large_width_args.limit, Some(4_294_967_296));
-        assert!(validated_ingest_page_limit(
-            large_width_args.limit,
-            None,
-            None,
-            None,
-            false,
-            None
-        )
-        .is_err());
+        assert!(
+            validated_ingest_page_limit(large_width_args.limit, None, None, None, false, None)
+                .is_err()
+        );
         let sample = json!({
             "table_name":"synthetic_very_long_name",
             "rows_ingested":8,
