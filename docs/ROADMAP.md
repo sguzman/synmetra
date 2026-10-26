@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `███████░░░ 68.9%` · **+68.94 percentage points from initial empty repo; +0.44 pp from verified synthetic credential redaction and scanner fixtures
+**Overall:** `███████░░░ 69.8%` · **+69.82 percentage points from initial empty repo; +0.88 pp from verified capability filtering, native auth guidance and Fish QA
 
 ### 📏 Progress conventions
 
@@ -60,7 +60,7 @@
   - ✅ **Gate:** Document semver and provenance gates · **Evidence:** CHANGELOG.md defines an Unreleased section and the experimental 0.0.1 baseline; docs/RELEASE_POLICY.md defines SemVer, immutable source and lockfile pinning, secure provenance requirements, live Google gating and non-production CI artifacts; README links both. GitHub Actions 40259902417 core checked manifest/changelog version and required policy gates.; docs/RELEASE_POLICY.md explains independent reproducibility, checksums, source SHA and release promotion requirements and distinguishes a successful CI build from a signed/stable release. CI 40259902417 changelog/version policy validation passed; actual reproducible binary acceptance remains an independent M9 task.
 
 
-## 🔌 M1 — MCP protocol and transport fidelity — `███████░░░ 65.2%`
+## 🔌 M1 — MCP protocol and transport fidelity — `███████░░░ 67.4%`
 
 **Scope:** MVP. **Acceptance gate:** Spec-conforming native MCP discovery and calls over stdio plus bounded Streamable HTTP; all transport safety tests pass.
 
@@ -106,7 +106,7 @@
 - 🧫 **T033 — Test MCP HTTP inspector interoperability** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** End-to-end tool invocation under loopback and protected remote modes
 
-### 🧾 P04 — MCP schema semantics — `██████░░░░ 57.1%`
+### 🧾 P04 — MCP schema semantics — `██████░░░░ 64.3%`
 
 **Feature:** MCP contract.
 
@@ -114,8 +114,8 @@
   - ✅ **Gate:** Tool arguments validated with stable user-facing errors
 - 🧩 **T035 — Declare read-only versus mutating tool annotations** — `██████████ 100.0%`
   - ✅ **Gate:** Annotation write differs accurately from read tools · **Evidence:** src/main.rs: 21 #[tool] annotations including additive non-idempotent GA write; explicit in-memory metadata assertions. GitHub Actions run 40205211110 passed tests, strict rustfmt and Clippy.; src/main.rs: 21 #[tool] annotations including additive non-idempotent GA write; explicit in-memory metadata assertions. GitHub Actions run 40205211110 passed tests, strict rustfmt and Clippy.
-- 🎛️ **T036 — Expose capability-profile filtered tool lists** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Default read-only excludes writes and scratchpad effects
+- 🎛️ **T036 — Expose capability-profile filtered tool lists** — `██████████ 100.0%`
+  - ✅ **Gate:** Default read-only excludes writes and scratchpad effects · **Evidence:** Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.; src/main.rs only_implemented_tools_are_discovered, in_memory_mcp_client_negotiates_and_calls_read_only_tools, write_capability_is_hidden_by_default_and_requires_scope, and mcp_tool_annotations_match_read_only_and_opt_in_write_effects verify 20 default stdio read-only names, no create_property_annotation route, explicit --allow-write additional route, and correct read/write effect annotations. Optional --scratchpad tools require separate native feature plus serve flag; src/main.rs rejects scratchpad --http-loopback. These synthetic tests and the native default-profile 20-tool smoke passed core CI https://github.com/sguzman/synmetra/actions/runs/40349474901.
 - ♻️ **T037 — Honor deterministic pagination and tool list consistency** — `██████████ 100.0%`
   - ✅ **Gate:** Discovery pagination and list change tests pass · **Evidence:** src/http.rs authenticated_http_session_lists_and_calls_tools_but_rejects_invalid_sessions now repeats real MCP tools/list after initialization and asserts identical catalog ordering, no duplicates and no nextCursor when the complete 20-tool read-only catalog fits in a single response. No hidden multi-page cursor state is introduced.; src/http.rs performs two authenticated tools/list requests within one MCP session and verifies identical results/no spurious pagination. src/main.rs full_capability_profile_matches_exact_pinned_36_tool_union and scratchpad_tools_are_hidden_without_explicit_capability prove opt-in write/scratchpad profile differences and bounded complete inventories (20/35/36 tool names). GitHub Actions 40247290466 passed core and DuckDB. This accepts deterministic single-page discovery, not a fictitious paginated listing.
 - ⚠️ **T038 — Normalize MCP protocol errors separately from GA failures** — `██████████ 100.0%`
@@ -126,18 +126,18 @@
   - ✅ **Gate:** Protocol wire fixtures pass multiple clients
 
 
-## 🔑 M2 — Google authentication and credential isolation — `█████░░░░░ 46.1%`
+## 🔑 M2 — Google authentication and credential isolation — `█████░░░░░ 50.0%`
 
 **Scope:** MVP. **Acceptance gate:** Secure, least-privilege, non-Python auth across interactive, local and service configurations; no secret leaks.
 
-### 🪪 P05 — Native OAuth login and operators — `█████░░░░░ 50.0%`
+### 🪪 P05 — Native OAuth login and operators — `██████░░░░ 62.5%`
 
 **Feature:** Native OAuth.
 
 - 🧭 **T041 — Implement auth login and auth status CLI** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** One-time login and status work without invoking Python or npm
-- 🧰 **T042 — Implement auth doctor and login-command helper** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Operator gets actionable non-secret diagnostics
+- 🧰 **T042 — Implement auth doctor and login-command helper** — `██████████ 100.0%`
+  - ✅ **Gate:** Operator gets actionable non-secret diagnostics · **Evidence:** src/auth.rs public_status, doctor_guidance and command implement native auth doctor and auth command without calling Google or external tools; tests doctor_guidance_is_actionable_and_does_not_echo_private_values and auth_help_documents_complete_opt_in_scope_and_private_status exercise setup, stale/override, unreadable-credential and nonsecret guidance. CI https://github.com/sguzman/synmetra/actions/runs/40349474901 passed native doctor/command setup, canary-redaction and PATH=/nonexistent checks.; CI https://github.com/sguzman/synmetra/actions/runs/40349474901 ran target/debug/synmetra auth doctor and auth command under private temp XDG_CONFIG_HOME both normally and env -i PATH=/nonexistent, checked Admin/Data API guidance, login template, configured bearer presence without revealing synthetic token, and safe no-credentials/status behavior. src/auth.rs doctor_guidance also identifies private-file permission/symlink failures and expired refresh options; no live Google authorization is claimed.
 - 🌐 **T043 — Implement browser OAuth PKCE loopback flow** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** CSRF state, PKCE, timeout and redirect checks pass
 - 🖥️ **T044 — Support headless copy-back OAuth setup** — `░░░░░░░░░░ 0.0%`
@@ -571,11 +571,11 @@
   - ✅ **Gate:** Signed provenance and dependency audit evidence
 
 
-## 🚀 M9 — Linux release and Codex-ready inauguration — `█████░░░░░ 54.5%`
+## 🚀 M9 — Linux release and Codex-ready inauguration — `██████░░░░ 56.8%`
 
 **Scope:** MVP. **Acceptance gate:** A documented stable native binary with 36-tool verified parity and release artifacts; no Python/npm runtime.
 
-### 📦 P25 — Packaging and installation — `█████░░░░░ 50.0%`
+### 📦 P25 — Packaging and installation — `██████░░░░ 57.1%`
 
 **Feature:** Native packaging.
 
@@ -591,8 +591,8 @@
   - ✅ **Gate:** Fresh-system runtime prerequisites verified · **Evidence:** docs/SCRATCHPAD.md explicitly documents optional bundled DuckDB 1.4.2 C/C++ source and linker prerequisites, feature flags, local-only limitations, native dependency inspections, Rust-vs-native licensing, and portability limits; fresh EndeavourOS install and native linkage audit remain unaccepted.
 - 🖋️ **T201 — Publish install/uninstall and upgrades guide** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** No writes outside approved local paths · **Evidence:** docs/INSTALL.md publishes EndeavourOS/Arch and other Linux source setup, native default and optional DuckDB builds, pinned Rust 1.99.1, install/verify/upgrade/uninstall and explicit local OAuth deletion caveats. Core CI https://github.com/sguzman/synmetra/actions/runs/40324582737 exercised installed native binary, isolated Cargo --root installation, auth doctor and uninstall without Python, npm or gcloud. Full external-path mutation audit remains open.
-- 🐚 **T202 — Provide Fish-friendly CLI configuration examples** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** No npm Python or bash-only assumptions · **Evidence:** docs/CLI.md contains Fish-native read-only OAuth, diagnostics, native cargo/DuckDB build, private inbound bearer read -s -P and set -gx examples; docs/INSTALL.md uses fish_add_path. Syntax and semantics checked against fish-shell 4.0 read/set documentation and native PATH-isolation core CI https://github.com/sguzman/synmetra/actions/runs/40324582737. Formal Fish shell execution QA remains separate.
+- 🐚 **T202 — Provide Fish-friendly CLI configuration examples** — `██████████ 100.0%`
+  - ✅ **Gate:** No npm Python or bash-only assumptions · **Evidence:** docs/CLI.md contains Fish-native read-only OAuth, diagnostics, native cargo/DuckDB build, private inbound bearer read -s -P and set -gx examples; docs/INSTALL.md uses fish_add_path. Syntax and semantics checked against fish-shell 4.0 read/set documentation and native PATH-isolation core CI https://github.com/sguzman/synmetra/actions/runs/40324582737. Formal Fish shell execution QA remains separate.; docs/INSTALL.md and docs/CLI.md provide five Fish-native code blocks for install, native login, diagnostics, DuckDB feature build and private local bearer configuration; CI https://github.com/sguzman/synmetra/actions/runs/40349474901 installs fish, extracts all five fenced examples, executes fish -n for each, verifies Fish set -gx semantics, and asserts the read -s -P secret prompt. Installed Synmetra help/auth also passes env -i PATH=/nonexistent checks: no npm, Python, gcloud or Bash runtime requirement for native CLI. The optional ci/benchmark-native.sh is a Linux CI Bash harness, not a required Fish operator command.
 
 ### 📖 P26 — Documentation and agent onboarding — `█████████░ 93.8%`
 

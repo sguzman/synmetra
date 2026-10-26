@@ -732,7 +732,7 @@
               "id": "T036",
               "emoji": "🎛️",
               "name": "Expose capability-profile filtered tool lists",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Default read-only excludes writes and scratchpad effects",
               "checks": [
                 {
@@ -742,7 +742,8 @@
                 },
                 {
                   "text": "Default read-only excludes writes and scratchpad effects",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs only_implemented_tools_are_discovered, in_memory_mcp_client_negotiates_and_calls_read_only_tools, write_capability_is_hidden_by_default_and_requires_scope, and mcp_tool_annotations_match_read_only_and_opt_in_write_effects verify 20 default stdio read-only names, no create_property_annotation route, explicit --allow-write additional route, and correct read/write effect annotations. Optional --scratchpad tools require separate native feature plus serve flag; src/main.rs rejects scratchpad --http-loopback. These synthetic tests and the native default-profile 20-tool smoke passed core CI https://github.com/sguzman/synmetra/actions/runs/40349474901."
                 }
               ]
             },
@@ -857,16 +858,18 @@
               "id": "T042",
               "emoji": "🧰",
               "name": "Implement auth doctor and login-command helper",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "Operator gets actionable non-secret diagnostics",
               "checks": [
                 {
                   "text": "Deliver implement auth doctor and login-command helper as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/auth.rs public_status, doctor_guidance and command implement native auth doctor and auth command without calling Google or external tools; tests doctor_guidance_is_actionable_and_does_not_echo_private_values and auth_help_documents_complete_opt_in_scope_and_private_status exercise setup, stale/override, unreadable-credential and nonsecret guidance. CI https://github.com/sguzman/synmetra/actions/runs/40349474901 passed native doctor/command setup, canary-redaction and PATH=/nonexistent checks."
                 },
                 {
                   "text": "Operator gets actionable non-secret diagnostics",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "CI https://github.com/sguzman/synmetra/actions/runs/40349474901 ran target/debug/synmetra auth doctor and auth command under private temp XDG_CONFIG_HOME both normally and env -i PATH=/nonexistent, checked Admin/Data API guidance, login template, configured bearer presence without revealing synthetic token, and safe no-credentials/status behavior. src/auth.rs doctor_guidance also identifies private-file permission/symlink failures and expired refresh options; no live Google authorization is claimed."
                 }
               ]
             },
@@ -4031,7 +4034,7 @@
               "id": "T202",
               "emoji": "🐚",
               "name": "Provide Fish-friendly CLI configuration examples",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "No npm Python or bash-only assumptions",
               "checks": [
                 {
@@ -4041,7 +4044,8 @@
                 },
                 {
                   "text": "No npm Python or bash-only assumptions",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "docs/INSTALL.md and docs/CLI.md provide five Fish-native code blocks for install, native login, diagnostics, DuckDB feature build and private local bearer configuration; CI https://github.com/sguzman/synmetra/actions/runs/40349474901 installs fish, extracts all five fenced examples, executes fish -n for each, verifies Fish set -gx semantics, and asserts the read -s -P secret prompt. Installed Synmetra help/auth also passes env -i PATH=/nonexistent checks: no npm, Python, gcloud or Bash runtime requirement for native CLI. The optional ci/benchmark-native.sh is a Linux CI Bash harness, not a required Fish operator command."
                 }
               ]
             }
