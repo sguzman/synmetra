@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `█████░░░░░ 52.2%` · **+52.20 percentage points from initial empty repo; +0.66 pp from verified read-only bypass defense and redacted write audit events** · 102/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `█████░░░░░ 52.6%` · **+52.64 percentage points from initial empty repo; +0.44 pp from CI-verified isolated native Linux installation** · 103/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -571,18 +571,18 @@
   - ✅ **Gate:** Signed provenance and dependency audit evidence
 
 
-## 🚀 M9 — Linux release and Codex-ready inauguration — `░░░░░░░░░░ 0.0%`
+## 🚀 M9 — Linux release and Codex-ready inauguration — `░░░░░░░░░░ 4.5%`
 
 **Scope:** MVP. **Acceptance gate:** A documented stable native binary with 36-tool verified parity and release artifacts; no Python/npm runtime.
 
-### 📦 P25 — Packaging and installation — `░░░░░░░░░░ 0.0%`
+### 📦 P25 — Packaging and installation — `█░░░░░░░░░ 14.3%`
 
 **Feature:** Native packaging.
 
 - 🏗️ **T196 — Build reproducible x86-64 Linux binary** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Artifact installs without Python npm or node
-- 🦀 **T197 — Provide rustup and cargo-based source installation** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Native build documented for Arch and other Linux
+- 🦀 **T197 — Provide rustup and cargo-based source installation** — `██████████ 100.0%`
+  - ✅ **Gate:** Native build documented for Arch and other Linux · **Evidence:** docs/INSTALL.md documents pinning Rust 1.99.1, Arch pacman prerequisites, Cargo --locked --bin synmetra install into a user-local root, Fish PATH, other Linux build prerequisites, isolated diagnostics, optional DuckDB boundary, upgrade and uninstall; linked from README. Main commit 866847051.; GitHub Actions 40258199187 core job successfully ran an isolated Cargo +1.99.1 install --path . --locked --debug --bin synmetra to a temp root, verified installed executable without progress utility, invoked native auth doctor with PATH=/nonexistent and isolated XDG_CONFIG_HOME, checked no credential-value leakage, then uninstalled cleanly; DuckDB and core jobs both passed. Smoke was on Ubuntu Linux; Arch package prerequisites are documented but native Arch packaging is T198.
 - 📦 **T198 — Provide Arch PKGBUILD or local packaging recipe** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Pacman-managed or local user installation path tested
 - 🧷 **T199 — Offer optional ARM64 Linux release binary** — `░░░░░░░░░░ 0.0%`

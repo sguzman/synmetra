@@ -3888,16 +3888,18 @@
               "id": "T197",
               "emoji": "🦀",
               "name": "Provide rustup and cargo-based source installation",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "Native build documented for Arch and other Linux",
               "checks": [
                 {
                   "text": "Deliver provide rustup and cargo-based source installation as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "docs/INSTALL.md documents pinning Rust 1.99.1, Arch pacman prerequisites, Cargo --locked --bin synmetra install into a user-local root, Fish PATH, other Linux build prerequisites, isolated diagnostics, optional DuckDB boundary, upgrade and uninstall; linked from README. Main commit 866847051."
                 },
                 {
                   "text": "Native build documented for Arch and other Linux",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "GitHub Actions 40258199187 core job successfully ran an isolated Cargo +1.99.1 install --path . --locked --debug --bin synmetra to a temp root, verified installed executable without progress utility, invoked native auth doctor with PATH=/nonexistent and isolated XDG_CONFIG_HOME, checked no credential-value leakage, then uninstalled cleanly; DuckDB and core jobs both passed. Smoke was on Ubuntu Linux; Arch package prerequisites are documented but native Arch packaging is T198."
                 }
               ]
             },
