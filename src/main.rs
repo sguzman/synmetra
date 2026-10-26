@@ -5294,7 +5294,10 @@ mod tests {
         let content = export.structured_content.unwrap();
         assert_eq!(content["data"]["provider_called"], false);
         assert_eq!(content["data"]["tables"][0]["row_count"], 1);
-        assert_eq!(content["data"]["tables"][0]["sample_rows"][0]["country"], "Mexico");
+        assert_eq!(
+            content["data"]["tables"][0]["sample_rows"][0]["country"],
+            "Mexico"
+        );
         assert_eq!(
             content["data"]["tables"][0]["sample_query_sha256"]
                 .as_str()
