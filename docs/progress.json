@@ -4066,16 +4066,18 @@
               "id": "T204",
               "emoji": "🔌",
               "name": "Publish tested Codex global MCP registration",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "One-line setup verified with official Codex",
               "checks": [
                 {
                   "text": "Deliver publish tested codex global mcp registration as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "docs/CODEX.md contains the native Fish-ready single-line user-level stdio registration with official Codex CLI, plus get/list/remove, permissions and auth isolation. .github/workflows/ci.yml pins the official Codex rust-v0.164.0 Linux x86_64 musl release SHA-256 and executes the synthetic registration lifecycle. Passing core CI https://github.com/sguzman/synmetra/actions/runs/40330002338."
                 },
                 {
                   "text": "One-line setup verified with official Codex",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "The 'Smoke test official pinned Codex MCP global registration' step passed in core CI https://github.com/sguzman/synmetra/actions/runs/40330002338: download/checksum pinned native Codex binary, set isolated CODEX_HOME, `codex mcp add synmetra -- ABSOLUTE_SYNEMTRA_BIN serve`, assert `mcp get --json` stdio executable and args, `mcp list --json`, remove registration and verify empty list. No Codex account, Google OAuth or npm used; does not satisfy live multi-tool T185."
                 }
               ]
             },

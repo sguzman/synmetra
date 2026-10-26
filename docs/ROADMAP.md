@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `███████░░░ 65.9%` · **+65.86 percentage points from initial empty repo; +0.66 pp from verified 36-tool schema/provenance/guide acceptance
+**Overall:** `███████░░░ 66.3%` · **+66.30 percentage points from initial empty repo; +0.44 pp from tested official Codex native registration
 
 ### 📏 Progress conventions
 
@@ -441,7 +441,7 @@
   - ✅ **Gate:** Dependency license architecture and portability reviewed · **Evidence:** src/main.rs and src/scratchpad.rs; GitHub Actions run 40206168306 successfully completed bundled-DuckDB feature tests (initial seven-route implementation); full strict-Clippy/updated-parameter parity and live GA tests remain separate acceptance gates.; docs/SCRATCHPAD.md, docs/ARCHITECTURE.md, Cargo.toml and src/scratchpad.rs reviewed: optional bundled DuckDB 1.4.2 includes native C/C++ linking with compiler/linker/runtime portability caveats; upstream Rust and native dependency licenses must remain accounted for under T013/T177/T216, and clean-install proof is T200/M9. DuckDB feature test https://github.com/sguzman/synmetra/actions/runs/40264614297 passed.
 
 
-## 🧬 M7 — Tool contract interoperability and parity audits — `███████░░░ 67.7%`
+## 🧬 M7 — Tool contract interoperability and parity audits — `███████░░░ 67.6%`
 
 **Scope:** MVP. **Acceptance gate:** All 36 tool schemas and response mappings are independently snapshot-tested against both pinned upstreams.
 
@@ -571,7 +571,7 @@
   - ✅ **Gate:** Signed provenance and dependency audit evidence
 
 
-## 🚀 M9 — Linux release and Codex-ready inauguration — `█████░░░░░ 45.5%`
+## 🚀 M9 — Linux release and Codex-ready inauguration — `█████░░░░░ 50.0%`
 
 **Scope:** MVP. **Acceptance gate:** A documented stable native binary with 36-tool verified parity and release artifacts; no Python/npm runtime.
 
@@ -594,14 +594,14 @@
 - 🐚 **T202 — Provide Fish-friendly CLI configuration examples** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** No npm Python or bash-only assumptions · **Evidence:** docs/CLI.md contains Fish-native read-only OAuth, diagnostics, native cargo/DuckDB build, private inbound bearer read -s -P and set -gx examples; docs/INSTALL.md uses fish_add_path. Syntax and semantics checked against fish-shell 4.0 read/set documentation and native PATH-isolation core CI https://github.com/sguzman/synmetra/actions/runs/40324582737. Formal Fish shell execution QA remains separate.
 
-### 📖 P26 — Documentation and agent onboarding — `████████░░ 81.2%`
+### 📖 P26 — Documentation and agent onboarding — `█████████░ 93.8%`
 
 **Feature:** Operator docs.
 
 - 📋 **T203 — Write complete CLI help config and environment reference** — `██████████ 100.0%`
   - ✅ **Gate:** All flags options and permissions documented · **Evidence:** src/main.rs CLI_HELP and src/auth.rs AUTH_HELP implement offline --help/-h and auth help, alongside native --version; docs/CLI.md covers server, auth, environment, permissions and failure modes. Core CI https://github.com/sguzman/synmetra/actions/runs/40324582737 passed Verify offline CLI help across native invocation modes with PATH=/nonexistent.; docs/CLI.md lists all 3 server flags, 5 OAuth login options, four auth subcommands plus command, version/help modes, four documented environment overrides, permission tiers and loopback/stdio trust limits; .github/workflows/ci.yml asserts flags and env references and offline native help. Core CI https://github.com/sguzman/synmetra/actions/runs/40324582737 passed the reference and operator help checks.
-- 🔌 **T204 — Publish tested Codex global MCP registration** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** One-line setup verified with official Codex
+- 🔌 **T204 — Publish tested Codex global MCP registration** — `██████████ 100.0%`
+  - ✅ **Gate:** One-line setup verified with official Codex · **Evidence:** docs/CODEX.md contains the native Fish-ready single-line user-level stdio registration with official Codex CLI, plus get/list/remove, permissions and auth isolation. .github/workflows/ci.yml pins the official Codex rust-v0.164.0 Linux x86_64 musl release SHA-256 and executes the synthetic registration lifecycle. Passing core CI https://github.com/sguzman/synmetra/actions/runs/40330002338.; The 'Smoke test official pinned Codex MCP global registration' step passed in core CI https://github.com/sguzman/synmetra/actions/runs/40330002338: download/checksum pinned native Codex binary, set isolated CODEX_HOME, `codex mcp add synmetra -- ABSOLUTE_SYNEMTRA_BIN serve`, assert `mcp get --json` stdio executable and args, `mcp list --json`, remove registration and verify empty list. No Codex account, Google OAuth or npm used; does not satisfy live multi-tool T185.
 - 🧠 **T205 — Document other MCP agents using stdio and HTTP** — `██████████ 100.0%`
   - ✅ **Gate:** Secure example configurations and token separation · **Evidence:** docs/MCP_CLIENTS.md provides independently scoped stdio and authenticated loopback Streamable HTTP configurations for other MCP clients; documents 20 default read-only, 15 opt-in DuckDB and one gated annotation route, with native executable requirements and no Python/npm runtime.; docs/MCP_CLIENTS.md explicitly distinguishes inbound MCP bearer vs upstream Google OAuth, bounds loopback Host/Origin, rejects public proxy/multiuser/scratchpad HTTP, and cites synthetic identity and transport acceptance in src/http.rs and docs/HTTP.md. No third-party client conformance is claimed.
 - 🔑 **T206 — Write Google Cloud setup without mandatory gcloud** — `██████████ 100.0%`

@@ -1,6 +1,6 @@
 # 🤖 Codex CLI: local Synmetra registration
 
-**Status:** based on [Codex CLI's pinned native MCP command implementation](https://github.com/openai/codex/blob/rust-v0.164.0/codex-rs/cli/src/mcp_cmd.rs). Core CI now includes an isolated registration/get/list/remove smoke using official Codex `rust-v0.164.0` Linux musl release archive verified against GitHub's published SHA-256; this new CI step must pass before its registration acceptance is credited. **A full live Codex multi-tool session is not yet accepted** (T185). This is a user-level setup recipe, not proof of real GA authorization or a requirement to use npm, Python, Node, or gcloud.
+**Status:** based on [Codex CLI's pinned native MCP command implementation](https://github.com/openai/codex/blob/rust-v0.164.0/codex-rs/cli/src/mcp_cmd.rs). Core CI now includes an isolated registration/get/list/remove smoke using official Codex `rust-v0.164.0` Linux musl release archive verified against GitHub's published SHA-256; this registration lifecycle passed in GitHub Actions core CI run 40330002338. **A full live Codex multi-tool session is not yet accepted** (T185). This is a user-level setup recipe, not proof of real GA authorization or a requirement to use npm, Python, Node, or gcloud.
 
 ## Register one native Rust stdio executable
 
