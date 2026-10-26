@@ -3252,10 +3252,15 @@ mod tests {
                     .unwrap_or_else(|| json!({})),
                 "nested schemas differ for {name}"
             );
-            let pinned_fields = tool["inputSchema"]["properties"].as_object().unwrap();
+            let pinned_fields = tool["inputSchema"]["properties"].as_object();
             let captured = record["sednalabs_parameters"].as_array().unwrap();
-            assert_eq!(captured.len(), pinned_fields.len(), "{name} field count");
-            for (field, schema) in pinned_fields {
+            assert_eq!(
+                captured.len(),
+                pinned_fields.map_or(0, |fields| fields.len()),
+                "{name} field count"
+            );
+            if let Some(pinned_fields) = pinned_fields {
+                for (field, schema) in pinned_fields {
                 let reported = captured
                     .iter()
                     .find(|item| item["name"] == field.as_str())
@@ -3264,7 +3269,8 @@ mod tests {
                 let required = tool["inputSchema"]["required"]
                     .as_array()
                     .is_some_and(|set| set.contains(&json!(field)));
-                assert_eq!(reported["required"], required, "{name}.{field}");
+                    assert_eq!(reported["required"], required, "{name}.{field}");
+                }
             }
         }
         for tool in google["tools"].as_array().unwrap() {
