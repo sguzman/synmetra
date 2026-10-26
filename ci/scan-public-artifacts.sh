@@ -72,7 +72,7 @@ scan_package() (
   echo 'Experimental release text/manifest guard passed (high-confidence signatures only)'
 )
 
-self_test() {
+self_test() (
   local root
   root="$(mktemp -d)"
   trap 'rm -rf "$root"' EXIT
@@ -125,7 +125,7 @@ self_test() {
     exit 1
   fi
   echo 'Synthetic artifact scanner self-test passed: safe package accepted; archive, SBOM and unexpected path rejected without disclosure'
-}
+)
 
 if [[ "${1:-}" == "--self-test" && "$#" -eq 1 ]]; then
   self_test
