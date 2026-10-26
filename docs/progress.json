@@ -2400,12 +2400,13 @@
               "id": "T119",
               "emoji": "✋",
               "name": "Require user confirmation at client boundary when supported",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "High-impact writes annotated and host approval guidance explicit",
               "checks": [
                 {
                   "text": "Deliver require user confirmation at client boundary when supported as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "spec/security/client-approval.v1.json defines create_property_annotation as the only Google mutation requiring host per-call human approval and fail-closed denial when the MCP client cannot confirm. src/main.rs advertises readOnlyHint=false, idempotentHint=false and a clear host-approval requirement; tests mutation_approval_policy_has_one_tool_and_never_claims_server_enforcement and mcp_tool_annotations_match_read_only_and_opt_in_write_effects passed core CI https://github.com/sguzman/synmetra/actions/runs/40412000035. docs/ANNOTATIONS.md documents operator --allow-write versus client confirmation and explicitly states Synmetra cannot attest to third-party approval. Actual host confirmation remains unverified."
                 },
                 {
                   "text": "High-impact writes annotated and host approval guidance explicit",

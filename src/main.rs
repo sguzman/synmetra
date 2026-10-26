@@ -156,7 +156,7 @@ struct ScratchReadTableArgs {
     #[serde(default)]
     max_cell_chars: Option<usize>,
     #[serde(default)]
-    output_mode: Option<String>,
+    output_mode: Option<tabular::OutputMode>,
     #[serde(default)]
     summary_only: bool,
 }
@@ -202,7 +202,7 @@ struct ScratchIngestReportArgs {
     #[serde(default)]
     max_cell_chars: Option<usize>,
     #[serde(default)]
-    output_mode: Option<String>,
+    output_mode: Option<tabular::OutputMode>,
     #[serde(default)]
     summary_only: bool,
     #[schemars(with = "Vec<ReportDateRangeInput>")]
@@ -242,7 +242,7 @@ struct ScratchIngestRealtimeArgs {
     #[serde(default)]
     max_cell_chars: Option<usize>,
     #[serde(default)]
-    output_mode: Option<String>,
+    output_mode: Option<tabular::OutputMode>,
     #[serde(default)]
     summary_only: bool,
 }
@@ -259,7 +259,7 @@ struct ScratchQueryArgs {
     #[serde(default)]
     summary_only: bool,
     #[serde(default)]
-    output_mode: Option<String>,
+    output_mode: Option<tabular::OutputMode>,
     #[serde(default)]
     cursor: Option<String>,
 }
@@ -291,7 +291,7 @@ struct ScratchReleaseArgs {
     #[serde(default)]
     summary_only: bool,
     #[serde(default)]
-    output_mode: Option<String>,
+    output_mode: Option<tabular::OutputMode>,
     #[serde(default)]
     cursor: Option<String>,
 }
@@ -325,7 +325,7 @@ struct ScratchLandingArgs {
     #[serde(default)]
     summary_only: bool,
     #[serde(default)]
-    output_mode: Option<String>,
+    output_mode: Option<tabular::OutputMode>,
     #[serde(default)]
     cursor: Option<String>,
 }
@@ -361,7 +361,10 @@ fn project_scratchpad_table_catalog(
     if row_cap == 0 || row_cap > 1000 || cell_cap == 0 || cell_cap > 2048 {
         return Err("Table metadata bounds must be 1-1000 rows and 1-2048 characters".into());
     }
-    let mode = args.output_mode.as_deref().unwrap_or("rows");
+    let mode = args
+        .output_mode
+        .map(tabular::OutputMode::label)
+        .unwrap_or("rows");
     if !matches!(mode, "rows" | "tuples" | "compact" | "scalar") {
         return Err("Unknown table metadata output_mode".into());
     }
@@ -2495,7 +2498,7 @@ impl Synmetra {
             args.max_cell_chars,
             args.cursor.as_deref(),
             args.summary_only,
-            args.output_mode.as_deref(),
+            args.output_mode.map(tabular::OutputMode::label),
         ) {
             Ok(value) => value,
             Err(reason) => return local_result(Err(reason)),
@@ -2620,7 +2623,7 @@ impl Synmetra {
             args.max_cell_chars,
             args.cursor.as_deref(),
             args.summary_only,
-            args.output_mode.as_deref(),
+            args.output_mode.map(tabular::OutputMode::label),
         ) {
             Ok(value) => value,
             Err(reason) => return local_result(Err(reason)),
@@ -2670,7 +2673,7 @@ impl Synmetra {
         if args.cursor.is_some()
             || args
                 .output_mode
-                .as_deref()
+                .map(tabular::OutputMode::label)
                 .is_some_and(|mode| mode != "rows")
         {
             return local_result(Err(
@@ -2703,7 +2706,12 @@ impl Synmetra {
         &self,
         Parameters(args): Parameters<ScratchReleaseArgs>,
     ) -> CallToolResult {
-        if args.cursor.is_some() || args.output_mode.as_deref().is_some_and(|m| m != "rows") {
+        if args.cursor.is_some()
+            || args
+                .output_mode
+                .map(tabular::OutputMode::label)
+                .is_some_and(|m| m != "rows")
+        {
             return local_result(Err(
                 "Release diagnostics do not yet support cursors or alternate output modes".into(),
             ));
@@ -2745,7 +2753,12 @@ impl Synmetra {
         &self,
         Parameters(args): Parameters<ScratchLandingArgs>,
     ) -> CallToolResult {
-        if args.cursor.is_some() || args.output_mode.as_deref().is_some_and(|v| v != "rows") {
+        if args.cursor.is_some()
+            || args
+                .output_mode
+                .map(tabular::OutputMode::label)
+                .is_some_and(|v| v != "rows")
+        {
             return local_result(Err(
                 "Landing diagnostics do not yet support cursors or alternate output modes".into(),
             ));
@@ -5986,7 +5999,7 @@ mod tests {
             max_rows: Some(10),
             max_cell_chars: Some(50),
             summary_only: false,
-            output_mode: Some("rows".into()),
+            output_mode: Some(tabular::OutputMode::Rows),
             cursor: None,
         }));
         assert_eq!(query.is_error, Some(false));
@@ -6023,7 +6036,7 @@ mod tests {
             max_rows: Some(10),
             max_cell_chars: Some(50),
             summary_only: false,
-            output_mode: Some("rows".into()),
+            output_mode: Some(tabular::OutputMode::Rows),
             cursor: None,
         }));
         assert_eq!(foreign_query.is_error, Some(true));
@@ -6443,7 +6456,7 @@ mod tests {
             max_rows: Some(1),
             max_cell_chars: Some(30),
             summary_only: false,
-            output_mode: Some("rows".into()),
+            output_mode: Some(tabular::OutputMode::Rows),
             cursor: None,
         }));
         assert_eq!(
@@ -6486,6 +6499,42 @@ mod tests {
             invalid.structured_content.unwrap()["error"]["category"],
             "local"
         );
+    }
+
+    #[cfg(feature = "scratchpad")]
+    #[test]
+    fn scratchpad_output_modes_use_the_same_four_value_schema_as_reporting() {
+        let full = Synmetra::new(GoogleClient::new(None), true).enable_scratchpad();
+        let tools = full.router.list_all();
+        let expected = tools
+            .iter()
+            .find(|tool| tool.name == "run_report")
+            .unwrap()
+            .input_schema["properties"]["output_mode"]
+            .clone();
+        assert!(expected.get("anyOf").is_some());
+
+        for name in [
+            "scratchpad_describe_table",
+            "scratchpad_ingest_report",
+            "scratchpad_ingest_realtime_report",
+            "scratchpad_query",
+            "scratchpad_release_regression_report",
+            "scratchpad_landing_param_shift_report",
+        ] {
+            let tool = tools.iter().find(|tool| tool.name == name).unwrap();
+            assert_eq!(
+                tool.input_schema["properties"]["output_mode"],
+                expected,
+                "{name} must advertise a typed nullable four-value enum"
+            );
+        }
+        assert!(serde_json::from_value::<ScratchQueryArgs>(json!({
+            "session_id":"test",
+            "sql":"SELECT country FROM events",
+            "output_mode":"malicious-arbitrary-mode"
+        }))
+        .is_err());
     }
 
     #[cfg(feature = "scratchpad")]
@@ -6839,13 +6888,12 @@ mod tests {
         }))
         .unwrap();
         assert!(project_scratchpad_table_catalog(schema.clone(), &invalid).is_err());
-        let invalid_mode: ScratchReadTableArgs = serde_json::from_value(json!({
+        assert!(serde_json::from_value::<ScratchReadTableArgs>(json!({
             "session_id":"local_fixture",
             "table_name":"synthetic",
             "output_mode":"arbitrary_sql"
         }))
-        .unwrap();
-        assert!(project_scratchpad_table_catalog(schema.clone(), &invalid_mode).is_err());
+        .is_err());
 
         let legacy: ScratchReadTableArgs = serde_json::from_value(json!({
             "session_id":"local_fixture",

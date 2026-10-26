@@ -23,7 +23,7 @@ pub enum OutputMode {
 }
 
 impl OutputMode {
-    fn label(self) -> &'static str {
+    pub(crate) fn label(self) -> &'static str {
         match self {
             Self::Rows => "rows",
             Self::Tuples => "tuples",
