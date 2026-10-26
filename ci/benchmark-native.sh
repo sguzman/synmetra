@@ -21,6 +21,11 @@ scratch="$(mktemp -d)"
 trap 'rm -rf "$scratch"' EXIT
 mkdir -p "$scratch/xdg"
 
+wall_milliseconds() {
+  local delta_ns=$(( $2 - $1 ))
+  printf '%d.%03d' "$((delta_ns / 1000000))" "$(((delta_ns % 1000000) / 1000))"
+}
+
 initialize='{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"synmetra-bench","version":"1"}}}'
 initialized='{"jsonrpc":"2.0","method":"notifications/initialized"}'
 list='{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}'
@@ -29,18 +34,24 @@ printf '%s\n' "$initialize" "$initialized" "$list" "$call" > "$scratch/protocol.
 
 : > "$scratch/measurements.jsonl"
 for ((i = 1; i <= runs; i++)); do
+  start_ns="$(date +%s%N)"
   /usr/bin/time -f '%e %M' -o "$scratch/timing" \
     env -u SYNMETRA_GOOGLE_ACCESS_TOKEN -u SYNMETRA_MCP_BEARER_TOKEN \
       XDG_CONFIG_HOME="$scratch/xdg" "$binary" --help > "$scratch/help.txt"
+  end_ns="$(date +%s%N)"
+  elapsed_ms="$(wall_milliseconds "$start_ns" "$end_ns")"
   read -r elapsed rss < "$scratch/timing"
   grep -Fq 'Synmetra' "$scratch/help.txt"
-  printf '{"run":%d,"profile":"fresh_help","elapsed_s":%s,"max_rss_kib":%s}\n' \
-    "$i" "$elapsed" "$rss" >> "$scratch/measurements.jsonl"
+  printf '{"run":%d,"profile":"fresh_help","elapsed_s":%s,"wall_ms":%s,"max_rss_kib":%s}\n' \
+    "$i" "$elapsed" "$elapsed_ms" "$rss" >> "$scratch/measurements.jsonl"
 
+  start_ns="$(date +%s%N)"
   /usr/bin/time -f '%e %M' -o "$scratch/timing" \
     env -u SYNMETRA_GOOGLE_ACCESS_TOKEN -u SYNMETRA_MCP_BEARER_TOKEN \
       XDG_CONFIG_HOME="$scratch/xdg" "$binary" serve \
       < "$scratch/protocol.jsonl" > "$scratch/responses.jsonl" 2> "$scratch/err.txt"
+  end_ns="$(date +%s%N)"
+  elapsed_ms="$(wall_milliseconds "$start_ns" "$end_ns")"
   read -r elapsed rss < "$scratch/timing"
   jq -s -e '
     length == 3
@@ -49,8 +60,8 @@ for ((i = 1; i <= runs; i++)); do
     and any(.[]; .id == 3 and .result.structuredContent.ok == true)
   ' "$scratch/responses.jsonl" > /dev/null
   test ! -s "$scratch/err.txt"
-  printf '{"run":%d,"profile":"fresh_mcp_roundtrip","elapsed_s":%s,"max_rss_kib":%s}\n' \
-    "$i" "$elapsed" "$rss" >> "$scratch/measurements.jsonl"
+  printf '{"run":%d,"profile":"fresh_mcp_roundtrip","elapsed_s":%s,"wall_ms":%s,"max_rss_kib":%s}\n' \
+    "$i" "$elapsed" "$elapsed_ms" "$rss" >> "$scratch/measurements.jsonl"
 done
 
 # A separate process contains multiple calls in one initialized session.
@@ -61,18 +72,21 @@ done
     printf '{"jsonrpc":"2.0","id":%d,"method":"tools/call","params":{"name":"ga4_get_started","arguments":{}}}\n' "$((i + 2))"
   done
 } > "$scratch/repeated.jsonl"
+start_ns="$(date +%s%N)"
 /usr/bin/time -f '%e %M' -o "$scratch/timing" \
   env -u SYNMETRA_GOOGLE_ACCESS_TOKEN -u SYNMETRA_MCP_BEARER_TOKEN \
     XDG_CONFIG_HOME="$scratch/xdg" "$binary" serve \
     < "$scratch/repeated.jsonl" > "$scratch/repeated-responses.jsonl" 2> "$scratch/repeated-err.txt"
+end_ns="$(date +%s%N)"
+elapsed_ms="$(wall_milliseconds "$start_ns" "$end_ns")"
 read -r elapsed rss < "$scratch/timing"
 jq -s -e --argjson runs "$runs" '
   length == ($runs + 2)
   and ([.[] | select(.result.structuredContent.ok == true)] | length) == $runs
 ' "$scratch/repeated-responses.jsonl" > /dev/null
 test ! -s "$scratch/repeated-err.txt"
-printf '{"run":1,"profile":"same_process_repeated_calls","calls":%d,"elapsed_s":%s,"max_rss_kib":%s}\n' \
-  "$runs" "$elapsed" "$rss" >> "$scratch/measurements.jsonl"
+printf '{"run":1,"profile":"same_process_repeated_calls","calls":%d,"elapsed_s":%s,"wall_ms":%s,"max_rss_kib":%s}\n' \
+  "$runs" "$elapsed" "$elapsed_ms" "$rss" >> "$scratch/measurements.jsonl"
 
 jq -s --arg sha "$(git rev-parse HEAD)" --arg kernel "$(uname -srmo)" \
   --arg binary "$binary" --arg note 'Synthetic offline test; fresh process is not an OS cold page cache. Timings include process startup/teardown and full calls. No latency SLO is claimed.' \

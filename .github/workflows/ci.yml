@@ -422,6 +422,7 @@ jobs:
             and any(.[]; .profile == "fresh_help" and .max_rss_kib > 0)
             and any(.[]; .profile == "fresh_mcp_roundtrip" and .max_rss_kib > 0)
             and any(.[]; .profile == "same_process_repeated_calls" and .calls == 5)
+            and all(.[]; .wall_ms > 0)
           ' "$RUNNER_TEMP/synmetra-benchmark.json" > /dev/null
 
       - name: Verify progress ledger and pinned contracts
