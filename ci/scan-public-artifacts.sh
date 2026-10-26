@@ -45,14 +45,14 @@ scan_package() (
 
   # Verify the known archive manifest *before extraction* so a staged
   # traversal path, extra file or unexpected symlink never reaches publish.
-  tar -tzf "$archive" | sed 's#^\./##' | sed '/^$/d' | sort > "$root/observed"
+  tar -tzf "$archive" | sed 's#^\./##' | sed '/^$/d' | sort > "$root/observed" || { echo 'Unreadable release archive manifest' >&2; return 1; }
   printf '%s\n' INSTALL.md LICENSE README.md SOURCE_COMMIT synmetra | sort > "$root/expected"
   if ! cmp -s "$root/observed" "$root/expected"; then
     echo 'Experimental release archive contains an unexpected path' >&2
     exit 1
   fi
   mkdir -p "$root/unpacked"
-  tar -xzf "$archive" -C "$root/unpacked"
+  tar -xzf "$archive" -C "$root/unpacked" || { echo 'Invalid release archive extraction' >&2; return 1; }
   if [[ -n "$(find "$root/unpacked" -type l -print -quit)" ]]; then
     echo 'Release archive contains a symlink' >&2
     exit 1
@@ -60,15 +60,15 @@ scan_package() (
 
   local name
   for name in README.md INSTALL.md LICENSE SOURCE_COMMIT; do
-    scan_text "$root/unpacked/$name"
+    scan_text "$root/unpacked/$name" || return 1
   done
   for name in \
     synmetra-experimental-linux-x86_64.tar.gz.sha256 \
     synmetra-rust-sbom.cdx.json \
     synmetra-native-runtime.json; do
-    scan_text "$dist/$name"
+    scan_text "$dist/$name" || return 1
   done
-  test -x "$root/unpacked/synmetra"
+  test -x "$root/unpacked/synmetra" || { echo 'Expected executable missing from release archive' >&2; return 1; }
   echo 'Experimental release text/manifest guard passed (high-confidence signatures only)'
 )
 
@@ -103,7 +103,28 @@ self_test() {
     echo 'Artifact scanner exposed a canary value in diagnostics' >&2
     exit 1
   fi
-  echo 'Synthetic artifact scanner self-test passed: safe package accepted, fake credential rejected without disclosure'
+  # Failure propagation must work inside "if scan_package", where Bash
+  # normally suppresses errexit throughout the called function.
+  printf '%s\n' 'offline synthetic README' > "$root/stage/README.md"
+  printf '%s\n' "$canary" > "$root/dist/synmetra-rust-sbom.cdx.json"
+  tar -C "$root/stage" -czf "$archive" .
+  if scan_package "$archive" "$root/dist" > "$root/rejected.log" 2>&1; then
+    echo 'Artifact scanner accepted a deliberately fake SBOM credential marker' >&2
+    exit 1
+  fi
+  if grep -Fq "$canary" "$root/rejected.log"; then
+    echo 'Artifact scanner exposed an SBOM canary in diagnostics' >&2
+    exit 1
+  fi
+
+  printf '%s\n' '{}' > "$root/dist/synmetra-rust-sbom.cdx.json"
+  printf '%s\n' 'unlisted' > "$root/stage/unexpected-file"
+  tar -C "$root/stage" -czf "$archive" .
+  if scan_package "$archive" "$root/dist" > "$root/rejected.log" 2>&1; then
+    echo 'Artifact scanner accepted an unlisted release archive member' >&2
+    exit 1
+  fi
+  echo 'Synthetic artifact scanner self-test passed: safe package accepted; archive, SBOM and unexpected path rejected without disclosure'
 }
 
 if [[ "${1:-}" == "--self-test" && "$#" -eq 1 ]]; then
