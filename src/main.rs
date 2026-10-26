@@ -3078,6 +3078,7 @@ mod tests {
 
     #[tokio::test]
     async fn cancelled_stdio_report_drops_upstream_request_and_keeps_peer_responsive() {
+        use std::time::Duration;
         use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader};
         use tokio::net::TcpListener;
 
