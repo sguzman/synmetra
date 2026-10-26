@@ -1408,6 +1408,26 @@ mod tests {
     }
 
     #[test]
+    fn crash_restart_child_fixture() {
+        if std::env::var_os("SYNMETRA_CRASH_RESTART_CHILD").is_none() {
+            return;
+        }
+        // A second OS process in the same working directory must not recover
+        // the previous process's private in-memory DuckDB table or session.
+        let scratch = ScratchState::new();
+        assert_eq!(scratch.sessions(None).unwrap()["total_sessions"], 0);
+        assert!(scratch.tables("crash_fixture", None).is_err());
+        scratch.open("crash_fixture").unwrap();
+        assert_eq!(
+            scratch.tables("crash_fixture", None).unwrap()["total_tables"],
+            0
+        );
+        assert!(scratch.describe_table("crash_fixture", "events").is_err());
+        scratch.close("crash_fixture").unwrap();
+        println!("SYNMETRA_RESTART_FIXTURE_CLEAN");
+    }
+
+    #[test]
     fn killed_in_memory_session_leaves_no_spill_files_or_persisted_rows() {
         use std::io::{BufRead, BufReader};
         use std::os::unix::fs::DirBuilderExt;
@@ -1463,11 +1483,36 @@ mod tests {
             .unwrap()
             .map(|entry| entry.unwrap().file_name())
             .collect();
-        std::fs::remove_dir_all(&root).unwrap();
         assert!(
             left_behind.is_empty(),
             "Unexpected DuckDB disk files after abrupt process termination"
         );
+
+        // Restart in a distinct OS process using the SAME working directory;
+        // unlike an in-process state reset, this also tests filesystem
+        // isolation across process lifetimes and session-ID reuse.
+        let restarted_child = Command::new(std::env::current_exe().unwrap())
+            .args([
+                "--exact",
+                "scratchpad::tests::crash_restart_child_fixture",
+                "--nocapture",
+            ])
+            .env("SYNMETRA_CRASH_RESTART_CHILD", "1")
+            .current_dir(&root)
+            .output()
+            .unwrap();
+        assert!(
+            restarted_child.status.success()
+                && String::from_utf8_lossy(&restarted_child.stdout)
+                    .contains("SYNMETRA_RESTART_FIXTURE_CLEAN"),
+            "Restarted isolated child could not establish an empty private session"
+        );
+        assert_eq!(
+            std::fs::read_dir(&root).unwrap().count(),
+            0,
+            "Restarted DuckDB process created unexpected files"
+        );
+        std::fs::remove_dir_all(&root).unwrap();
 
         let restarted = ScratchState::new();
         assert_eq!(restarted.sessions(None).unwrap()["total_sessions"], 0);
