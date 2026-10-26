@@ -2889,16 +2889,10 @@ mod tests {
                 stream.write_all(response.as_bytes()).await.unwrap();
             }
         });
-        let first = GoogleClient::with_endpoints(
-            Some("token-for-caller-a".into()),
-            &endpoint,
-            &endpoint,
-        );
-        let mut second = GoogleClient::with_endpoints(
-            Some("token-for-caller-b".into()),
-            &endpoint,
-            &endpoint,
-        );
+        let first =
+            GoogleClient::with_endpoints(Some("token-for-caller-a".into()), &endpoint, &endpoint);
+        let mut second =
+            GoogleClient::with_endpoints(Some("token-for-caller-b".into()), &endpoint, &endpoint);
         // Simulate an intentionally shared cache across client instances; the
         // bearer fingerprint must prevent cross-caller result reuse.
         second.compatibility_cache = first.compatibility_cache.clone();
@@ -2924,7 +2918,10 @@ mod tests {
             .await
             .unwrap();
         responder.await.unwrap();
-        assert_eq!(one["metricCompatibilities"][0]["metricMetadata"]["apiName"], "metric1");
+        assert_eq!(
+            one["metricCompatibilities"][0]["metricMetadata"]["apiName"],
+            "metric1"
+        );
         assert_eq!(
             other_property["metricCompatibilities"][0]["metricMetadata"]["apiName"],
             "metric2"
