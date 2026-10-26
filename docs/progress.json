@@ -3288,16 +3288,18 @@
               "id": "T167",
               "emoji": "🕵️",
               "name": "Detect new upstream tools and changes in CI",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "Changes open maintenance work rather than silently inflate parity",
               "checks": [
                 {
                   "text": "Deliver detect new upstream tools and changes in ci as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": ".github/workflows/upstream-drift.yml watches exact SednaLabs schema and Google coordinator Git blob SHAs weekly and on reviewed lock/workflow changes; changes trigger stable [upstream-drift] local maintenance issue, never repin automatically. ci/test-upstream-drift-watch.sh executes the actual workflow shell body with mocked curl/gh, verifying unchanged, changed and duplicate issue cases. GitHub Actions drift workflow 40249957815 succeeded."
                 },
                 {
                   "text": "Changes open maintenance work rather than silently inflate parity",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "GitHub Actions 40249957815 offline fixture checks verify an upstream blob change fails the watch and opens exactly one review issue per source; repeat unchanged pin mismatch reuses an existing open issue and a second changed source opens a separate one. Real unchanged upstream watch also passed. No real upstream drift was forced and no real maintenance issue was created; this is synthetic acceptance of the detection/mutation control, not a source parity claim."
                 }
               ]
             }
