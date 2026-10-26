@@ -3247,7 +3247,10 @@ mod tests {
                 .unwrap();
             assert_eq!(
                 record["sednalabs_defs"],
-                tool["inputSchema"]["$defs"],
+                tool["inputSchema"]
+                    .get("$defs")
+                    .cloned()
+                    .unwrap_or_else(|| json!({})),
                 "nested schemas differ for {name}"
             );
             let pinned_fields = tool["inputSchema"]["properties"].as_object().unwrap();
