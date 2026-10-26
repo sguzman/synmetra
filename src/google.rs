@@ -3224,11 +3224,12 @@ mod tests {
             let actual = client.retention_settings("properties/42").await.unwrap();
             let expected: Value = serde_json::from_str(payload).unwrap();
             assert_eq!(actual, expected);
-            assert_eq!(actual.get("resetUserDataOnNewActivity"), expected.get("resetUserDataOnNewActivity"));
+            assert_eq!(
+                actual.get("resetUserDataOnNewActivity"),
+                expected.get("resetUserDataOnNewActivity")
+            );
             let request = handle.await.unwrap();
-            assert!(request.starts_with(
-                "GET /v1beta/properties/42/dataRetentionSettings HTTP/1.1"
-            ));
+            assert!(request.starts_with("GET /v1beta/properties/42/dataRetentionSettings HTTP/1.1"));
         }
     }
 
@@ -3320,10 +3321,7 @@ mod tests {
         assert_eq!(dimensions[2]["parameterName"], "session_id");
         assert_eq!(metrics[0]["measurementUnit"], "CURRENCY");
         assert_eq!(metrics[1]["parameterName"], "reserved_revenue");
-        assert_eq!(
-            dimensions[2]["name"],
-            "properties/42/customDimensions/3"
-        );
+        assert_eq!(dimensions[2]["name"], "properties/42/customDimensions/3");
         assert!(catalog.get("nextPageToken").is_none());
     }
 
