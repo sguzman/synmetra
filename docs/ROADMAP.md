@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `███████░░░ 65.2%` · **+65.20 percentage points from initial empty repo; +1.10 pp from native MCP client and upstream migration guide evidence
+**Overall:** `███████░░░ 65.9%` · **+65.86 percentage points from initial empty repo; +0.66 pp from verified 36-tool schema/provenance/guide acceptance
 
 ### 📏 Progress conventions
 
@@ -441,7 +441,7 @@
   - ✅ **Gate:** Dependency license architecture and portability reviewed · **Evidence:** src/main.rs and src/scratchpad.rs; GitHub Actions run 40206168306 successfully completed bundled-DuckDB feature tests (initial seven-route implementation); full strict-Clippy/updated-parameter parity and live GA tests remain separate acceptance gates.; docs/SCRATCHPAD.md, docs/ARCHITECTURE.md, Cargo.toml and src/scratchpad.rs reviewed: optional bundled DuckDB 1.4.2 includes native C/C++ linking with compiler/linker/runtime portability caveats; upstream Rust and native dependency licenses must remain accounted for under T013/T177/T216, and clean-install proof is T200/M9. DuckDB feature test https://github.com/sguzman/synmetra/actions/runs/40264614297 passed.
 
 
-## 🧬 M7 — Tool contract interoperability and parity audits — `██████░░░░ 61.8%`
+## 🧬 M7 — Tool contract interoperability and parity audits — `███████░░░ 67.7%`
 
 **Scope:** MVP. **Acceptance gate:** All 36 tool schemas and response mappings are independently snapshot-tested against both pinned upstreams.
 
@@ -456,7 +456,7 @@
 - 🗝️ **T153 — Implement ga4_auth_login_command** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Native CLI guidance and MCP schema parity for ga4_auth_login_command · **Evidence (implementation only):** src/main.rs AuthLoginCommandArgs advertises all six pinned optional inputs, compares input schema types/defaults/descriptions/formats to pinned SednaLabs, POSIX-quotes generated commands, and rejects unsupported shared ADC/quota-project options explicitly; src/auth.rs implements CLI --account OAuth login hint, --callback-port, --headless with bounds/duplication tests. GitHub Actions 40225871288 core job passed fmt, tests, strict Clippy, ledger. Runtime parity for shared ADC/quota-project and live auth still pending.
 
-### 📜 P20 — Schema and error contract — `██████░░░░ 61.1%`
+### 📜 P20 — Schema and error contract — `███████░░░ 66.7%`
 
 **Feature:** Contracts and schemas.
 
@@ -472,14 +472,14 @@
   - ✅ **Gate:** Document compatibility choice and adapters
 - 📏 **T159 — Enforce stable cursor and truncation metadata** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** All tabular tools report known/unknown totals honestly · **Evidence:** src/tabular.rs prepare_historical, prepare_access and project implement canonical resource/query SHA-256 scoped v1 cursors with bounded offsets, known/unknown provider row totals, correct final-page truncation, no imaginary pivot or realtime cursor, and explicit metadata on the projected report modes. Tests historical_cursor_round_trip_enforces_query_hash_and_bounded_offset, historical_last_page_is_not_marked_truncated_and_accepts_string_totals, unknown_total_is_marked_unknown_and_metric_only_reports_are_valid and admin_access_headers_and_resource_boundaries_have_distinct_cursors passed core CI https://github.com/sguzman/synmetra/actions/runs/40267346239. All remaining unprojected or unsupported tool families are outside this first gate.
-- 📂 **T160 — Publish schema snapshot with generated reference SHA** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Tool schema diff is reviewed during every upstream update · **Evidence:** spec/upstream/schema-lock.tsv published with Git object SHA-1 digests and upstream source commit identifiers, verified on each CI run using the native git hash-object command in .github/workflows/ci.yml. CI 40247973673 passed lock integrity without Python/npm. Full semantic schema diff/review on upstream version bumps remains open.
+- 📂 **T160 — Publish schema snapshot with generated reference SHA** — `██████████ 100.0%`
+  - ✅ **Gate:** Tool schema diff is reviewed during every upstream update · **Evidence:** spec/upstream/schema-lock.tsv published with Git object SHA-1 digests and upstream source commit identifiers, verified on each CI run using the native git hash-object command in .github/workflows/ci.yml. CI 40247973673 passed lock integrity without Python/npm. Full semantic schema diff/review on upstream version bumps remains open.; The pinned source snapshots in spec/upstream/schema-lock.tsv are verified by git hash-object on every core CI run; a reviewed native 36-tool input schema snapshot in spec/native/tool-schema.v1.json is asserted against the actual full-profile rmcp router by src/main.rs on feature CI. Source provenance/update rules in docs/PROVENANCE.md require deliberate schema lock/review on upstream changes; unreviewed native drift fails the feature test. Both core and bundled DuckDB jobs passed https://github.com/sguzman/synmetra/actions/runs/40326258256; latest core validator passed https://github.com/sguzman/synmetra/actions/runs/40328589659. This is schema drift review gating, not upstream full behavioral parity.
 - 🤝 **T161 — Test alternative MCP clients and structured output** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Codex and inspector consume every major response type
 - 🧯 **T162 — Avoid false confidence from mocked-only parity** — `██████████ 100.0%`
   - ✅ **Gate:** Document live coverage by tool and account eligibility · **Evidence:** README.md, docs/ROADMAP.md, docs/NATIVE_MCP.md, docs/LOCAL_EXECUTION_THREAT_MODEL.md and docs/RELEASE_POLICY.md explicitly distinguish synthetic tests, provisional 36-name registration, incomplete upstream parameter/response parity, unaccepted account-role permissions and unauthenticated live GA workflows; docs/progress.json retains no fully parity-accepted 36-tool claim. Core progress-integrity CI https://github.com/sguzman/synmetra/actions/runs/40267346239 passed. Per-tool live coverage and eligibility matrix remains unaccepted.; docs/LIVE_ACCEPTANCE_MATRIX.md enumerates all 36 pinned MCP tool names with intended Google account scope/role or no-Google local boundary, explicit unverified live status and remaining acceptance references; .github/workflows/ci.yml enforces set equality against docs/tool-inventory.json. The 'Check pinned 36-tool live eligibility matrix' step passed in core CI https://github.com/sguzman/synmetra/actions/runs/40268224846; no live property auth, role or production write tests are claimed.
 
-### 🔀 P21 — Feature-union conflict resolution — `█████░░░░░ 50.0%`
+### 🔀 P21 — Feature-union conflict resolution — `██████░░░░ 60.0%`
 
 **Feature:** Compatibility governance.
 
@@ -489,8 +489,8 @@
   - ✅ **Gate:** All documented upstream inputs remain expressible
 - ⚙️ **T165 — Version compatibility adapters and response projections** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Legacy tool expectations and version policy documented
-- 📚 **T166 — Keep per-tool source-to-Rust test reference links** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Each one of 36 tools has provenance and acceptance evidence · **Evidence (partial):** docs/TOOL_PROVENANCE.md maps every name from docs/tool-inventory.json (36 union) to pinned SednaLabs and/or Google source, native Rust handler/Google/DuckDB code, implementation task ID/progress, and source or CI evidence link from accepted progress.json checks. Current mapping: 36/36 source links, 35/36 at least one accepted synthetic/source check; scratchpad_export_evidence_bundle T140 lacks acceptance, so the all-tool completion gate stays open.
+- 📚 **T166 — Keep per-tool source-to-Rust test reference links** — `██████████ 100.0%`
+  - ✅ **Gate:** Each one of 36 tools has provenance and acceptance evidence · **Evidence:** docs/TOOL_PROVENANCE.md maps every name from docs/tool-inventory.json (36 union) to pinned SednaLabs and/or Google source, native Rust handler/Google/DuckDB code, implementation task ID/progress, and source or CI evidence link from accepted progress.json checks. Current mapping: 36/36 source links, 36/36 now have accepted implementation checks in the ledger; full upstream and live account behavioral acceptance remains open.; docs/TOOL_PROVENANCE.md now has exactly one mapping row for each of 36 pinned tool names: upstream pinned reference, source-pinned native handler, original implementation task, dynamically reconciled accepted check count and source/CI evidence. src/bin/synmetra-progress.rs rejects missing rows, mismatched task IDs/progress or missing native source links. Core CI https://github.com/sguzman/synmetra/actions/runs/40328589659 passed the progress/inventory/provenance validator. A completed implementation task still does not mean upstream or live GA parity.
 - 🕵️ **T167 — Detect new upstream tools and changes in CI** — `██████████ 100.0%`
   - ✅ **Gate:** Changes open maintenance work rather than silently inflate parity · **Evidence:** .github/workflows/upstream-drift.yml watches exact SednaLabs schema and Google coordinator Git blob SHAs weekly and on reviewed lock/workflow changes; changes trigger stable [upstream-drift] local maintenance issue, never repin automatically. ci/test-upstream-drift-watch.sh executes the actual workflow shell body with mocked curl/gh, verifying unchanged, changed and duplicate issue cases. GitHub Actions drift workflow 40249957815 succeeded.; GitHub Actions 40249957815 offline fixture checks verify an upstream blob change fails the watch and opens exactly one review issue per source; repeat unchanged pin mismatch reuses an existing open issue and a second changed source opens a separate one. Real unchanged upstream watch also passed. No real upstream drift was forced and no real maintenance issue was created; this is synthetic acceptance of the detection/mutation control, not a source parity claim.
 
@@ -571,7 +571,7 @@
   - ✅ **Gate:** Signed provenance and dependency audit evidence
 
 
-## 🚀 M9 — Linux release and Codex-ready inauguration — `████░░░░░░ 43.2%`
+## 🚀 M9 — Linux release and Codex-ready inauguration — `█████░░░░░ 45.5%`
 
 **Scope:** MVP. **Acceptance gate:** A documented stable native binary with 36-tool verified parity and release artifacts; no Python/npm runtime.
 
@@ -594,7 +594,7 @@
 - 🐚 **T202 — Provide Fish-friendly CLI configuration examples** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** No npm Python or bash-only assumptions · **Evidence:** docs/CLI.md contains Fish-native read-only OAuth, diagnostics, native cargo/DuckDB build, private inbound bearer read -s -P and set -gx examples; docs/INSTALL.md uses fish_add_path. Syntax and semantics checked against fish-shell 4.0 read/set documentation and native PATH-isolation core CI https://github.com/sguzman/synmetra/actions/runs/40324582737. Formal Fish shell execution QA remains separate.
 
-### 📖 P26 — Documentation and agent onboarding — `████████░░ 75.0%`
+### 📖 P26 — Documentation and agent onboarding — `████████░░ 81.3%`
 
 **Feature:** Operator docs.
 
@@ -606,8 +606,8 @@
   - ✅ **Gate:** Secure example configurations and token separation · **Evidence:** docs/MCP_CLIENTS.md provides independently scoped stdio and authenticated loopback Streamable HTTP configurations for other MCP clients; documents 20 default read-only, 15 opt-in DuckDB and one gated annotation route, with native executable requirements and no Python/npm runtime.; docs/MCP_CLIENTS.md explicitly distinguishes inbound MCP bearer vs upstream Google OAuth, bounds loopback Host/Origin, rejects public proxy/multiuser/scratchpad HTTP, and cites synthetic identity and transport acceptance in src/http.rs and docs/HTTP.md. No third-party client conformance is claimed.
 - 🔑 **T206 — Write Google Cloud setup without mandatory gcloud** — `██████████ 100.0%`
   - ✅ **Gate:** Project API activation and scopes clearly explained · **Evidence:** docs/GOOGLE_CLOUD.md provides browser-console Cloud project setup, separately enabled Google Analytics Admin and Data APIs, Google Auth Platform Desktop OAuth client JSON, private file storage, user role distinctions and native Fish PKCE login without mandatory gcloud/Python/npm. CI https://github.com/sguzman/synmetra/actions/runs/40324582737 passed the native operator reference check.; docs/GOOGLE_CLOUD.md explicitly covers Admin/Data API activation, testing user and Desktop-client consent setup, analytics.readonly versus analytics.edit, admin audit roles, edit-capable annotation roles, Google-side access and alpha eligibility; sources Google's Analytics quickstarts, OAuth Desktop app and scopes references; CI https://github.com/sguzman/synmetra/actions/runs/40324582737 verified both API names and full OAuth scope URLs.
-- 🔍 **T207 — Document per-tool parameter guides for all 36 tools** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Each tool includes input output limits and examples · **Evidence:** docs/NATIVE_TOOL_GUIDE.md provides distinct parameter headings, required and optional native schema fields, output semantics, explicit limits/permissions and synthetic JSON examples for all 36 planned MCP tools. Source is the captured real Rust rmcp router in spec/native/tool-schema.v1.json from feature CI 40269115096; source review confirmed 36 unique entries and no missing required sample inputs. Automated documentation-example acceptance remains open until CI passes.
+- 🔍 **T207 — Document per-tool parameter guides for all 36 tools** — `██████████ 100.0%`
+  - ✅ **Gate:** Each tool includes input output limits and examples · **Evidence:** docs/NATIVE_TOOL_GUIDE.md provides distinct parameter headings, required and optional native schema fields, output semantics, explicit limits/permissions and synthetic JSON examples for all 36 planned MCP tools. Source is the captured real Rust rmcp router in spec/native/tool-schema.v1.json from feature CI 40269115096; source review confirmed 36 unique entries and no missing required sample inputs. Automated documentation-example acceptance remains open until CI passes.; docs/NATIVE_TOOL_GUIDE.md contains 36 unique tool headings, explicit advertised required and optional names, limits and permissions, output envelope semantics and a parseable synthetic JSON argument example for each. Core CI https://github.com/sguzman/synmetra/actions/runs/40328589659 passed 'Validate 36 documented native tools and JSON examples', confirming set equality with pinned 36-tool inventory and actual native rmcp schemas plus JSON/required-field checks. Full external API and upstream input/output parity remains open.
 - 🧪 **T208 — Publish anonymized smoke scenarios and QA limits** — `██████████ 100.0%`
   - ✅ **Gate:** Operator can diagnose errors without pasting secrets · **Evidence:** docs/SMOKE_SCENARIOS.md gives synthetic coverage for installation, auth, stdio, authenticated HTTP, Google network retry/error, hostile cursor/filter inputs, native DuckDB, and progress/contract integrity, plus clear limits of mocked-only acceptance; core CI https://github.com/sguzman/synmetra/actions/runs/40324582737 validates document and examples.; docs/SMOKE_SCENARIOS.md specifies safe incident ledger SHA/test/UTC/error category and redacted synthetic reproduction, identifies invalid credentials/API denial and build/Clippy errors without user screenshots or pasted tokens, and references a 36-tool eligibility matrix. Core CI https://github.com/sguzman/synmetra/actions/runs/40324582737 passed documentation presence and scrubbed diagnostics tests. No manual user QA is required for these smoke scenarios.
 - 📗 **T209 — Publish migrations from official and SednaLabs servers** — `██████████ 100.0%`

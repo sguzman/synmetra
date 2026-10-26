@@ -3213,7 +3213,7 @@
               "id": "T160",
               "emoji": "📂",
               "name": "Publish schema snapshot with generated reference SHA",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Tool schema diff is reviewed during every upstream update",
               "checks": [
                 {
@@ -3223,7 +3223,8 @@
                 },
                 {
                   "text": "Tool schema diff is reviewed during every upstream update",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "The pinned source snapshots in spec/upstream/schema-lock.tsv are verified by git hash-object on every core CI run; a reviewed native 36-tool input schema snapshot in spec/native/tool-schema.v1.json is asserted against the actual full-profile rmcp router by src/main.rs on feature CI. Source provenance/update rules in docs/PROVENANCE.md require deliberate schema lock/review on upstream changes; unreviewed native drift fails the feature test. Both core and bundled DuckDB jobs passed https://github.com/sguzman/synmetra/actions/runs/40326258256; latest core validator passed https://github.com/sguzman/synmetra/actions/runs/40328589659. This is schema drift review gating, not upstream full behavioral parity."
                 }
               ]
             },
@@ -3328,17 +3329,18 @@
               "id": "T166",
               "emoji": "📚",
               "name": "Keep per-tool source-to-Rust test reference links",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Each one of 36 tools has provenance and acceptance evidence",
               "checks": [
                 {
                   "text": "Deliver keep per-tool source-to-rust test reference links as reviewable repository evidence",
                   "passed": true,
-                  "evidence": "docs/TOOL_PROVENANCE.md maps every name from docs/tool-inventory.json (36 union) to pinned SednaLabs and/or Google source, native Rust handler/Google/DuckDB code, implementation task ID/progress, and source or CI evidence link from accepted progress.json checks. Current mapping: 36/36 source links, 35/36 at least one accepted synthetic/source check; scratchpad_export_evidence_bundle T140 lacks acceptance, so the all-tool completion gate stays open."
+                  "evidence": "docs/TOOL_PROVENANCE.md maps every name from docs/tool-inventory.json (36 union) to pinned SednaLabs and/or Google source, native Rust handler/Google/DuckDB code, implementation task ID/progress, and source or CI evidence link from accepted progress.json checks. Current mapping: 36/36 source links, 36/36 now have accepted implementation checks in the ledger; full upstream and live account behavioral acceptance remains open."
                 },
                 {
                   "text": "Each one of 36 tools has provenance and acceptance evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "docs/TOOL_PROVENANCE.md now has exactly one mapping row for each of 36 pinned tool names: upstream pinned reference, source-pinned native handler, original implementation task, dynamically reconciled accepted check count and source/CI evidence. src/bin/synmetra-progress.rs rejects missing rows, mismatched task IDs/progress or missing native source links. Core CI https://github.com/sguzman/synmetra/actions/runs/40328589659 passed the progress/inventory/provenance validator. A completed implementation task still does not mean upstream or live GA parity."
                 }
               ]
             },
@@ -4119,7 +4121,7 @@
               "id": "T207",
               "emoji": "🔍",
               "name": "Document per-tool parameter guides for all 36 tools",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Each tool includes input output limits and examples",
               "checks": [
                 {
@@ -4129,7 +4131,8 @@
                 },
                 {
                   "text": "Each tool includes input output limits and examples",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "docs/NATIVE_TOOL_GUIDE.md contains 36 unique tool headings, explicit advertised required and optional names, limits and permissions, output envelope semantics and a parseable synthetic JSON argument example for each. Core CI https://github.com/sguzman/synmetra/actions/runs/40328589659 passed 'Validate 36 documented native tools and JSON examples', confirming set equality with pinned 36-tool inventory and actual native rmcp schemas plus JSON/required-field checks. Full external API and upstream input/output parity remains open."
                 }
               ]
             },
