@@ -1,0 +1,77 @@
+name: Native Arch PKGBUILD install and uninstall QA
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - packaging/arch/PKGBUILD
+      - .github/workflows/arch-makepkg.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  arch-makepkg:
+    runs-on: ubuntu-24.04
+    container: archlinux:base-devel
+    timeout-minutes: 75
+    steps:
+      - name: Install build tools inside disposable Arch Linux container
+        shell: bash
+        run: |
+          set -euo pipefail
+          pacman -Syu --noconfirm --needed git rustup base-devel
+          useradd --create-home --shell /bin/bash pkgbuild
+          mkdir -p /home/pkgbuild/package
+      - name: Check out recipe without persisting GitHub credentials
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Build the immutable PKGBUILD as a non-root Arch user
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp packaging/arch/PKGBUILD /home/pkgbuild/package/PKGBUILD
+          chown -R pkgbuild:pkgbuild /home/pkgbuild/package
+          su - pkgbuild -c 'rustup toolchain install 1.99.1 --profile minimal'
+          su - pkgbuild -c 'cd ~/package && makepkg --noconfirm --clean'
+          test "$(find /home/pkgbuild/package -maxdepth 1 -name 'synmetra-*.pkg.tar.zst' | wc -l)" -eq 1
+          package="$(find /home/pkgbuild/package -maxdepth 1 -name 'synmetra-*.pkg.tar.zst' -print -quit)"
+          test -s "$package"
+          sha256sum "$package"
+      - name: Install, inspect, run offline, and uninstall using Arch package manager
+        shell: bash
+        run: |
+          set -euo pipefail
+          package="$(find /home/pkgbuild/package -maxdepth 1 -name 'synmetra-*.pkg.tar.zst' -print -quit)"
+          test -n "$package"
+          pacman -U --noconfirm "$package"
+          pacman -Q synmetra
+          test -x /usr/bin/synmetra
+          /usr/bin/synmetra --version | grep -Fq 'synmetra 0.0.1'
+          local_config="$(mktemp -d)"
+          trap 'rm -rf "$local_config"' EXIT
+          env -i PATH=/nonexistent XDG_CONFIG_HOME="$local_config" \
+            /usr/bin/synmetra auth doctor > "$local_config/doctor.txt"
+          grep -Fq 'To configure native OAuth:' "$local_config/doctor.txt"
+          test "$(find "$local_config" -type f | wc -l)" -eq 1
+          if ldd /usr/bin/synmetra | grep -Fq 'not found'; then
+            echo 'Unresolved native runtime library' >&2
+            exit 1
+          fi
+          pacman -Qlq synmetra | while IFS= read -r file; do
+            case "$file" in
+              /usr/|/usr/bin/|/usr/share/|/usr/share/doc/|/usr/share/licenses/) ;;
+              /usr/bin/synmetra|/usr/share/doc/synmetra/|/usr/share/licenses/synmetra/) ;;
+              /usr/share/doc/synmetra/*|/usr/share/licenses/synmetra/*) ;;
+              *) echo "Unexpected installed path: $file" >&2; exit 1 ;;
+            esac
+          done
+          pacman -R --noconfirm synmetra
+          if pacman -Q synmetra >/dev/null 2>&1; then
+            echo 'Arch package still installed' >&2
+            exit 1
+          fi
+          test ! -e /usr/bin/synmetra
+          command -v git >/dev/null
