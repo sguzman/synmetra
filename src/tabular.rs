@@ -484,7 +484,10 @@ mod tests {
             "../spec/fixtures/sednalabs-response-differential.v1.json"
         ))
         .unwrap();
-        assert_eq!(cases["schema"], "synmetra_pinned_sednalabs_response_differential");
+        assert_eq!(
+            cases["schema"],
+            "synmetra_pinned_sednalabs_response_differential"
+        );
         assert_eq!(
             cases["source"]["commit"],
             "039fd4620064fc4b76dc6bca641945aba52c14bc"
