@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `████████░░ 78.6%` · **+78.63 percentage points from initial empty repo; +0.44 pp from verified legacy MCP response-adapter and version documentation
+**Overall:** `████████░░ 78.8%` · **+78.85 percentage points from initial empty repo; +0.22 pp from verified native OAuth command/schema compatibility
 
 ### 📏 Progress conventions
 
@@ -441,11 +441,11 @@
   - ✅ **Gate:** Dependency license architecture and portability reviewed · **Evidence:** src/main.rs and src/scratchpad.rs; GitHub Actions run 40206168306 successfully completed bundled-DuckDB feature tests (initial seven-route implementation); full strict-Clippy/updated-parameter parity and live GA tests remain separate acceptance gates.; docs/SCRATCHPAD.md, docs/ARCHITECTURE.md, Cargo.toml and src/scratchpad.rs reviewed: optional bundled DuckDB 1.4.2 includes native C/C++ linking with compiler/linker/runtime portability caveats; upstream Rust and native dependency licenses must remain accounted for under T013/T177/T216, and clean-install proof is T200/M9. DuckDB feature test https://github.com/sguzman/synmetra/actions/runs/40264614297 passed.
 
 
-## 🧬 M7 — Tool contract interoperability and parity audits — `████████░░ 82.3%`
+## 🧬 M7 — Tool contract interoperability and parity audits — `█████████░ 85.3%`
 
 **Scope:** MVP. **Acceptance gate:** All 36 tool schemas and response mappings are independently snapshot-tested against both pinned upstreams.
 
-### 🧰 P19 — Setup and authentication MCP tools — `████████░░ 83.3%`
+### 🧰 P19 — Setup and authentication MCP tools — `██████████ 100.0%`
 
 **Feature:** Three auth/setup tools.
 
@@ -453,8 +453,8 @@
   - ✅ **Gate:** Native CLI guidance and MCP schema parity for ga4_get_started · **Evidence:** src/main.rs implements ga4_get_started with native synmetra auth login --client-id-file guidance, explicit read-only analytics scope, API prerequisites and no Python/npm runtime requirements; test get_started_matches_pinned_empty_input_schema_and_native_login_guidance passed GitHub Actions 40225106072 core job.; src/main.rs native getting-started test verifies registered MCP input properties match pinned SednaLabs ga4_get_started no-argument schema and response supplies copyable native read-only OAuth guidance without secrets. src/auth.rs implements the referenced native login command. GitHub Actions 40225106072 passed fmt, Rust tests, strict Clippy and progress validation. Other upstream feature/response acceptance remains open.
 - 🩺 **T152 — Implement ga4_auth_status** — `██████████ 100.0%`
   - ✅ **Gate:** Native CLI guidance and MCP schema parity for ga4_auth_status · **Evidence:** src/main.rs AuthStatusArgs and opt-in ga4_auth_status verify_token request with bounded Google account lookup and credential-free status; native schema and explicit-opt-in tests passed GitHub Actions 40223667547 core job (fmt, tests, strict Clippy). Live Google verification and exact upstream response parity remain open.; src/main.rs enforces ga4_auth_status verify_token type/default/description/optional required status against pinned SednaLabs inputSchema and tests opt-out plus explicitly authorized mock Google account-summary verification without exposing credential/account details; src/auth.rs native auth status guidance. GitHub Actions 40224853636 core job passed Rust tests, formatting, Clippy and ledger. This task does not certify entire upstream response parity or live Google acceptance.
-- 🗝️ **T153 — Implement ga4_auth_login_command** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Native CLI guidance and MCP schema parity for ga4_auth_login_command · **Evidence (implementation only):** src/main.rs AuthLoginCommandArgs advertises all six pinned optional inputs, compares input schema types/defaults/descriptions/formats to pinned SednaLabs, POSIX-quotes generated commands, and rejects unsupported shared ADC/quota-project options explicitly; src/auth.rs implements CLI --account OAuth login hint, --callback-port, --headless with bounds/duplication tests. GitHub Actions 40225871288 core job passed fmt, tests, strict Clippy, ledger. Runtime parity for shared ADC/quota-project and live auth still pending.
+- 🗝️ **T153 — Implement ga4_auth_login_command** — `██████████ 100.0%`
+  - ✅ **Gate:** Native CLI guidance and MCP schema parity for ga4_auth_login_command · **Evidence:** src/main.rs AuthLoginCommandArgs advertises all six pinned optional inputs, compares input schema types/defaults/descriptions/formats to pinned SednaLabs, POSIX-quotes generated commands, and rejects unsupported shared ADC/quota-project options explicitly; src/auth.rs implements CLI --account OAuth login hint, --callback-port, --headless with bounds/duplication tests. GitHub Actions 40225871288 core job passed fmt, tests, strict Clippy, ledger. Runtime parity for shared ADC/quota-project and live auth still pending.; src/main.rs auth_login_command_supports_pinned_optional_fields_without_shell_injection verifies every pinned ga4_auth_login_command optional input name and type/default/description/format/min/max with zero required-set mismatch; auth_login_command_renders_supported_safe_native_flags checks safely quoted Desktop OAuth client file, optional account, loopback callback port and headless CLI; auth_login_command_refuses_shared_adc_and_unimplemented_quota_routing explicitly rejects unsupported options with stable typed errors instead of silently changing behavior. docs/CLI.md, docs/CODEX.md and docs/GOOGLE_CLOUD.md give native no-Python/npm setup guidance. Default and feature CI https://github.com/sguzman/synmetra/actions/runs/40404146934 passed; live Google consent and unimplemented shared-ADC/runtime quota commands remain separately unaccepted under M2.
 
 ### 📜 P20 — Schema and error contract — `████████░░ 77.8%`
 

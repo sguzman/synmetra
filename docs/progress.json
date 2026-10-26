@@ -3104,7 +3104,7 @@
               "id": "T153",
               "emoji": "🗝️",
               "name": "Implement ga4_auth_login_command",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Native CLI guidance and MCP schema parity for ga4_auth_login_command",
               "checks": [
                 {
@@ -3114,7 +3114,8 @@
                 },
                 {
                   "text": "Native CLI guidance and MCP schema parity for ga4_auth_login_command",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs auth_login_command_supports_pinned_optional_fields_without_shell_injection verifies every pinned ga4_auth_login_command optional input name and type/default/description/format/min/max with zero required-set mismatch; auth_login_command_renders_supported_safe_native_flags checks safely quoted Desktop OAuth client file, optional account, loopback callback port and headless CLI; auth_login_command_refuses_shared_adc_and_unimplemented_quota_routing explicitly rejects unsupported options with stable typed errors instead of silently changing behavior. docs/CLI.md, docs/CODEX.md and docs/GOOGLE_CLOUD.md give native no-Python/npm setup guidance. Default and feature CI https://github.com/sguzman/synmetra/actions/runs/40404146934 passed; live Google consent and unimplemented shared-ADC/runtime quota commands remain separately unaccepted under M2."
                 }
               ]
             }
