@@ -1675,16 +1675,30 @@ mod tests {
         let host = format!("http://{}", listener.local_addr().unwrap());
         let capture = tokio::spawn(async move {
             let mut observed = Vec::new();
-            for (method, path, body) in [
+            for (method, path, quota, body) in [
                 (
                     "GET",
                     "/v1beta/accountSummaries",
+                    Some("quota-project-123"),
                     r#"{"accountSummaries":[]}"#,
                 ),
                 (
                     "POST",
                     "/v1alpha/properties/42/reportingDataAnnotations",
+                    Some("quota-project-123"),
                     r#"{"name":"properties/42/reportingDataAnnotations/9"}"#,
+                ),
+                (
+                    "GET",
+                    "/v1beta/accountSummaries",
+                    Some("123456789012"),
+                    r#"{"accountSummaries":[]}"#,
+                ),
+                (
+                    "GET",
+                    "/v1beta/accountSummaries",
+                    None,
+                    r#"{"accountSummaries":[]}"#,
                 ),
             ] {
                 let (mut stream, _) = listener.accept().await.unwrap();
@@ -1693,8 +1707,12 @@ mod tests {
                 let request = String::from_utf8_lossy(&buffer[..length]).to_string();
                 let headers = request.to_ascii_lowercase();
                 assert!(request.starts_with(&format!("{method} {path} HTTP/1.1")));
-                assert!(headers.contains("x-goog-user-project: quota-project-123"));
-                assert_eq!(headers.matches("x-goog-user-project:").count(), 1);
+                if let Some(project) = quota {
+                    assert!(headers.contains(&format!("x-goog-user-project: {project}")));
+                    assert_eq!(headers.matches("x-goog-user-project:").count(), 1);
+                } else {
+                    assert!(!headers.contains("x-goog-user-project:"));
+                }
                 assert!(headers.contains("authorization: bearer synthetic-google-token"));
                 assert!(!headers.contains("synthetic-inbound-mcp-token"));
                 let reply = format!(
@@ -1721,7 +1739,21 @@ mod tests {
                 .unwrap()["name"],
             "properties/42/reportingDataAnnotations/9"
         );
-        assert_eq!(capture.await.unwrap().len(), 2);
+        let mut numeric =
+            GoogleClient::with_endpoints(Some("synthetic-google-token".into()), &host, &host);
+        numeric.quota_project = Ok(Some("123456789012".into()));
+        assert_eq!(
+            numeric.account_summaries().await.unwrap()["accountSummaries"],
+            json!([])
+        );
+        let mut default =
+            GoogleClient::with_endpoints(Some("synthetic-google-token".into()), &host, &host);
+        default.quota_project = Ok(None);
+        assert_eq!(
+            default.account_summaries().await.unwrap()["accountSummaries"],
+            json!([])
+        );
+        assert_eq!(capture.await.unwrap().len(), 4);
 
         let mut invalid = GoogleClient::with_endpoints(
             Some("synthetic-google-token".into()),
