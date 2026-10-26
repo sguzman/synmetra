@@ -1,0 +1,97 @@
+{
+  "goldens": [
+    {
+      "name": "compact_source_assertions",
+      "structured_content": {
+        "data": [
+          {
+            "event_name": "page_view"
+          }
+        ],
+        "meta": {
+          "columns": [
+            {
+              "name": "event_name"
+            }
+          ],
+          "elapsed_ms": 8,
+          "next_cursor": "v1:abcd:25",
+          "output_mode": "compact",
+          "query_hash": "abcd",
+          "row_count_returned": 25,
+          "row_count_total": 100,
+          "summary_only": false,
+          "truncated": true
+        },
+        "ok": true
+      }
+    },
+    {
+      "name": "summary_only_source_assertions",
+      "structured_content": {
+        "data": null,
+        "meta": {
+          "columns": [
+            {
+              "name": "event_name"
+            }
+          ],
+          "elapsed_ms": 9,
+          "next_cursor": "v1:abc:5",
+          "output_mode": "rows",
+          "query_hash": null,
+          "row_count_returned": 5,
+          "row_count_total": 10,
+          "summary_only": true,
+          "truncated": true
+        },
+        "ok": true
+      }
+    },
+    {
+      "name": "policy_denied_source_assertions",
+      "structured_content": {
+        "error": {
+          "category": "policy",
+          "code": "POLICY_DENIED",
+          "detail": "profile=read_only;tool=scratchpad_query",
+          "hint": "Switch capability profile to scratchpad for scratchpad tools, or use GA read tools under read_only.",
+          "message": "tool 'scratchpad_query' is blocked by capability profile 'read_only'",
+          "reason": "policy_denied"
+        },
+        "meta": {
+          "elapsed_ms": 3
+        },
+        "ok": false
+      }
+    },
+    {
+      "name": "cursor_query_mismatch_source_assertions",
+      "structured_content": {
+        "error": {
+          "category": "cursor",
+          "code": "CURSOR_QUERY_MISMATCH",
+          "hint": "Use cursor with the exact same query parameters that produced it.",
+          "message": "cursor does not match query hash",
+          "reason": "invalid_cursor"
+        },
+        "meta": {
+          "elapsed_ms": 5
+        },
+        "ok": false
+      }
+    }
+  ],
+  "schema": "synmetra_pinned_executed_upstream_contract_v1",
+  "source": {
+    "commit": "039fd4620064fc4b76dc6bca641945aba52c14bc",
+    "environment": "No Google credentials, synthetic contract values only",
+    "execution": "cargo test --locked --test synmetra_contract_golden",
+    "files": [
+      "src/contract.rs",
+      "tests/contract_safety_conformance.rs"
+    ],
+    "repository": "sednalabs/ga4-mcp"
+  },
+  "version": 1
+}

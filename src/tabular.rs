@@ -572,6 +572,130 @@ mod tests {
     }
 
     #[test]
+    fn executed_pinned_upstream_goldens_match_only_shared_contract_fields() {
+        // This fixture is produced by compiling the exact pinned SednaLabs
+        // revision in CI, not inferred from its source assertions. It contains
+        // exclusively synthetic contract values, not Google Analytics data.
+        let captured: Value = serde_json::from_str(include_str!(
+            "../spec/fixtures/sednalabs-executed-contract-v1.json"
+        ))
+        .unwrap();
+        assert_eq!(
+            captured["schema"],
+            "synmetra_pinned_executed_upstream_contract_v1"
+        );
+        assert_eq!(
+            captured["source"]["commit"],
+            "039fd4620064fc4b76dc6bca641945aba52c14bc"
+        );
+        let source_cases: Value = serde_json::from_str(include_str!(
+            "../spec/fixtures/sednalabs-response-differential.v1.json"
+        ))
+        .unwrap();
+        let output = captured["goldens"].as_array().unwrap();
+        assert_eq!(output.len(), 4);
+        for scenario in source_cases["cases"].as_array().unwrap() {
+            let name = scenario["name"].as_str().unwrap();
+            let source = output
+                .iter()
+                .find(|case| case["name"] == name)
+                .unwrap();
+            let upstream = &source["structured_content"];
+            assert_eq!(upstream["ok"], true);
+            let expected = scenario["shared_expected"].as_object().unwrap();
+            for (key, value) in expected {
+                assert_eq!(
+                    upstream["meta"].get(key),
+                    Some(value),
+                    "Executed upstream differs from its pinned source assertions: {name}.{key}"
+                );
+            }
+            let rows = scenario["provider_rows"].as_u64().unwrap() as usize;
+            let field = scenario["dimension_name"].as_str().unwrap();
+            let value = scenario["dimension_value"].as_str().unwrap();
+            let provider = json!({
+                "dimensionHeaders":[{"name":field}],
+                "rows":vec![
+                    json!({"dimensionValues":[{"value":value}]});
+                    rows
+                ],
+                "rowCount":scenario["provider_total"]
+            });
+            let native = project(
+                &provider,
+                Controls {
+                    output_mode: Some(
+                        serde_json::from_value(scenario["output_mode"].clone()).unwrap(),
+                    ),
+                    summary_only: scenario["summary_only"].as_bool().unwrap(),
+                    max_rows: Some(scenario["max_rows"].as_u64().unwrap() as usize),
+                    max_cell_chars: None,
+                    cursor_supplied: false,
+                },
+                false,
+                Some(&Pagination {
+                    query_hash: scenario["query_hash"].as_str().unwrap().to_owned(),
+                    offset: scenario["offset"].as_u64().unwrap(),
+                }),
+            )
+            .unwrap();
+            for field in expected.keys() {
+                assert_eq!(
+                    native.meta.get(field),
+                    upstream["meta"].get(field),
+                    "Native and actually executed pinned upstream shared fields diverge: {name}.{field}"
+                );
+            }
+            // The upstream builder recorded real caller-provided milliseconds.
+            // Native elapsed_ms=0 is deliberately an *unmeasured* sentinel.
+            assert_eq!(native.meta["elapsed_ms"], 0);
+            assert_eq!(native.meta["elapsed_ms_measured"], false);
+            assert!(upstream["meta"]["elapsed_ms"].as_u64().unwrap() > 0);
+            if name == "summary_only_source_assertions" {
+                assert!(upstream["meta"]["query_hash"].is_null());
+                assert_eq!(
+                    native.meta["query_hash"],
+                    scenario["native_expected"]["query_hash"]
+                );
+                assert_eq!(
+                    upstream["meta"]["query_hash"],
+                    scenario["upstream_expected"]["query_hash"]
+                );
+                assert_ne!(
+                    native.meta["query_hash"], upstream["meta"]["query_hash"],
+                    "The source-executed summary-only hash is an unresolved native mismatch"
+                );
+            }
+            if name == "compact_source_assertions" {
+                assert_eq!(upstream["data"], scenario["source_data"]);
+                assert_ne!(
+                    native.data, upstream["data"],
+                    "Do not normalize different compact representations into false parity"
+                );
+            } else {
+                assert!(native.data.is_null());
+                assert!(upstream["data"].is_null());
+            }
+        }
+        for (name, code, category) in [
+            ("policy_denied_source_assertions", "POLICY_DENIED", "policy"),
+            (
+                "cursor_query_mismatch_source_assertions",
+                "CURSOR_QUERY_MISMATCH",
+                "cursor",
+            ),
+        ] {
+            let observed = output.iter().find(|v| v["name"] == name).unwrap();
+            assert_eq!(observed["structured_content"]["ok"], false);
+            assert_eq!(observed["structured_content"]["error"]["code"], code);
+            assert_eq!(
+                observed["structured_content"]["error"]["category"],
+                category
+            );
+        }
+    }
+
+    #[test]
     fn query_bound_cursors_distinguish_mismatches_from_malformed_inputs() {
         let original = json!({
             "dateRanges":[{"startDate":"7daysAgo","endDate":"today"}],

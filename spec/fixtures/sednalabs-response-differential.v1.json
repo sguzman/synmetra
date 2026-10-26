@@ -66,14 +66,17 @@
         "row_count_total": 10,
         "row_count_returned": 5,
         "truncated": true,
-        "next_cursor": "v1:abc:5",
-        "query_hash": "abc"
+        "next_cursor": "v1:abc:5"
       },
       "native_expected": {
-        "data_kind": "null"
+        "data_kind": "null",
+        "query_hash": "abc"
       },
       "source_data": null,
-      "difference_note": "Both normalize data to null. Upstream source test supplies one row with independent metadata reporting five; native derives returned count from five fixture provider rows."
+      "difference_note": "Executing the pinned SednaLabs success_tabular call returns summary-only data=null, and its independently populated next_cursor is v1:abc:5, but source TabularMeta never assigns query_hash so it serializes as null. Native historical output synthesizes query_hash=abc. Compare only shared counts, pagination and mode; preserve this extra query_hash mismatch as an explicit unresolved divergence.",
+      "upstream_expected": {
+        "query_hash": null
+      }
     }
   ],
   "negative_parity_findings": [
