@@ -6188,8 +6188,7 @@ mod tests {
             assert!(validated_ingest_page_limit(None, None, limit, None, false, None).is_err());
         }
         assert_eq!(
-            validated_ingest_page_limit(None, Some(1000), Some(2048), None, false, None)
-                .unwrap(),
+            validated_ingest_page_limit(None, Some(1000), Some(2048), None, false, None).unwrap(),
             1000
         );
         let sample = json!({

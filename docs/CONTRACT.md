@@ -17,3 +17,5 @@ The Google annotation mutation is disabled unless `--allow-write` is explicit an
 Required field names, tool presence, or mock-based HTTP tests are **implementation milestones, not full equivalence**. Every tool still needs contract-schema comparison (types/defaults/descriptions), error and response fixtures, bounded output semantics, appropriate privileges, live Google acceptance where allowed, and end-to-end Codex MCP usage. The [progress ledger](progress.json) records partial checks independently; no tool has passed all upstream parity gates yet.
 
 Pinned reference license: SednaLabs Apache-2.0 license in [licenses](../licenses/SEDNALABS-APACHE-2.0.txt).
+
+The current [canonical union policy and native/upstream schema-diff inventory](CANONICAL_CONTRACT_DECISION.md) covers all advertised input field names, distinct unresolved nested/default/output behavior, and versioning decisions. **A zero missing top-level field count does not establish behavioral parity.**

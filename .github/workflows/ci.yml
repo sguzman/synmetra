@@ -162,6 +162,26 @@ jobs:
           grep -Fq 'has not been independently verified' SECURITY.md
           grep -Fq 'docs/LOCAL_EXECUTION_THREAT_MODEL.md' SECURITY.md
 
+      - name: Verify canonical pinned union and explicit raw schema drift
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f docs/CANONICAL_CONTRACT_DECISION.md
+          test -f spec/audits/native-upstream-diff.v1.json
+          jq -e '
+            .schema == "synmetra_native_upstream_schema_diff"
+            and .summary.native_tools == 36
+            and .summary.sednalabs_tools == 35
+            and .summary.official_google_tools == 10
+            and .summary.missing_sednalabs_top_level_fields == 0
+            and .summary.missing_official_google_parameter_names == 0
+            and .summary.required_set_mismatches == 0
+            and .summary.raw_field_shape_differences == (.raw_field_differences | length)
+          ' spec/audits/native-upstream-diff.v1.json > /dev/null
+          grep -Fq 'second T164 acceptance gate and T165 remain open' docs/CANONICAL_CONTRACT_DECISION.md
+          grep -Fq 'One-page GA ingestion' docs/CANONICAL_CONTRACT_DECISION.md || \
+            grep -Fq 'one page' docs/CANONICAL_CONTRACT_DECISION.md
+
       - name: Validate 36 documented native tools and JSON examples
         shell: bash
         run: |

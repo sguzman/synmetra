@@ -53,3 +53,5 @@ The nine shared tools have **no disagreement about which overlapping parameters 
 ## Acceptance boundary
 
 This audit enumerates all fields available from both pinned sources, including optional controls that appear only in one. It deliberately marks unknown Google types/defaults and error behavior as **not captured**, rather than asserting full behavioral equivalence or live Google acceptance.
+
+**Current native-router comparison:** see [CANONICAL_CONTRACT_DECISION.md](CANONICAL_CONTRACT_DECISION.md) and [spec/audits/native-upstream-diff.v1.json](../spec/audits/native-upstream-diff.v1.json). The historical native baseline discussed above predates full top-level field coverage; the pinned upstream-to-upstream union source data remain unchanged.
