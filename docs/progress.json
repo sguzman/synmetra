@@ -3458,12 +3458,13 @@
               "id": "T171",
               "emoji": "📚",
               "name": "Differentially compare upstream response projections",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Normalized golden fixtures generated from pinned baseline",
               "checks": [
                 {
                   "text": "Deliver differentially compare upstream response projections as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/tabular.rs pinned_upstream_response_goldens_expose_shared_fields_and_real_divergences compares two source-derived pinned SednaLabs Contract V1 success fixtures (compact and summary-only) against a synthetic native projection, asserts equal shared row-count/cursor metadata, and explicitly preserves non-equivalent compact data, elapsed-time and cursor-taxonomy limits. spec/fixtures/sednalabs-response-differential.v1.json and docs/RESPONSE_DIFFERENTIAL.md retain upstream SHA, source-test identities, negative findings and fixture limits. The default Rust MCP tests and CI source-golden guard passed in GitHub Actions https://github.com/sguzman/synmetra/actions/runs/40373806570 (core steps); native DuckDB job also passed. The pinned upstream executable has not been run; the second executable-golden acceptance gate stays open."
                 },
                 {
                   "text": "Normalized golden fixtures generated from pinned baseline",

@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `███████░░░ 73.6%` · **+73.57 percentage points from initial empty repo; +0.22 pp from verified Arch PKGBUILD package build, install and uninstall
+**Overall:** `███████░░░ 73.8%` · **+73.79 percentage points from initial empty repo; +0.22 pp from pinned upstream response differential fixtures with explicit mismatches
 
 ### 📏 Progress conventions
 
@@ -495,11 +495,11 @@
   - ✅ **Gate:** Changes open maintenance work rather than silently inflate parity · **Evidence:** .github/workflows/upstream-drift.yml watches exact SednaLabs schema and Google coordinator Git blob SHAs weekly and on reviewed lock/workflow changes; changes trigger stable [upstream-drift] local maintenance issue, never repin automatically. ci/test-upstream-drift-watch.sh executes the actual workflow shell body with mocked curl/gh, verifying unchanged, changed and duplicate issue cases. GitHub Actions drift workflow 40249957815 succeeded.; GitHub Actions 40249957815 offline fixture checks verify an upstream blob change fails the watch and opens exactly one review issue per source; repeat unchanged pin mismatch reuses an existing open issue and a second changed source opens a separate one. Real unchanged upstream watch also passed. No real upstream drift was forced and no real maintenance issue was created; this is synthetic acceptance of the detection/mutation control, not a source parity claim.
 
 
-## 🧪 M8 — Verification, resilience and security acceptance — `█████░░░░░ 51.8%`
+## 🧪 M8 — Verification, resilience and security acceptance — `█████░░░░░ 53.6%`
 
 **Scope:** MVP. **Acceptance gate:** Full offline and authorized live verification including malformed inputs, MCP interoperability and threat model.
 
-### 🧫 P22 — Deterministic tests — `████████░░ 75.0%`
+### 🧫 P22 — Deterministic tests — `████████░░ 80.0%`
 
 **Feature:** Offline QA.
 
@@ -509,8 +509,8 @@
   - ✅ **Gate:** Tool-by-tool tests verify tool catalog and call behavior · **Evidence:** src/main.rs every_pinned_tool_name_dispatches_through_real_mcp_transport constructs an in-memory real rmcp client/server with all 36 tool profiles enabled and explicit fixture input maps for every pinned tool name, using synthetic no-Google credentials. GitHub Actions 40250470244 feature-enabled DuckDB job ran Test bounded DuckDB scratchpad successfully, and core job passed formatting/tests.; The feature-enabled test enumerates exactly the 36-name docs/tool-inventory.json union through tools/list, calls each name over actual MCP tools/call with bounded per-call timeout, requires successful RPC dispatch and a structured Contract V1 ok response (including correctly reported local/auth errors), and fails for an unhandled name. CI 40250470244 green core and DuckDB test job; this is transport dispatch coverage, not live Google provider behavior or upstream full payload parity.
 - 🧿 **T170 — Test JSON schema rejection and nested depth caps** — `██████████ 100.0%`
   - ✅ **Gate:** Adversarial payload corpus is bounded and rejected · **Evidence:** src/google.rs: exhaustive bounded filter tests reject excess nesting, too many nodes, long strings, oversize JSON, and invalid filter shapes; GitHub Actions core 40218035242. Full adversarial fuzz corpus remains unaccepted.; src/google.rs adversarial_report_filter_corpus_is_bounded_before_google_network_access tests deterministic invalid JSON and filter corpus: empty/primitive roots, empty nested filters, breadth 65, 1025-byte strings, 17-kibibyte serialized inputs, 129-byte keys, over 256 nested nodes, and depth over 12. Both bounded filter validation and report_request reject the corpus with INVALID_REQUEST before Google credentials/network access. Supplements existing historic/complex filter tests; GitHub Actions 40240559437 core fmt, Rust tests, Clippy succeeded. This is deterministic corpus coverage, not a stochastic fuzzing or live Google claim.
-- 📚 **T171 — Differentially compare upstream response projections** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Normalized golden fixtures generated from pinned baseline
+- 📚 **T171 — Differentially compare upstream response projections** — `█████░░░░░ 50.0%`
+  - ✅ **Gate:** Normalized golden fixtures generated from pinned baseline · **Evidence:** src/tabular.rs pinned_upstream_response_goldens_expose_shared_fields_and_real_divergences compares two source-derived pinned SednaLabs Contract V1 success fixtures (compact and summary-only) against a synthetic native projection, asserts equal shared row-count/cursor metadata, and explicitly preserves non-equivalent compact data, elapsed-time and cursor-taxonomy limits. spec/fixtures/sednalabs-response-differential.v1.json and docs/RESPONSE_DIFFERENTIAL.md retain upstream SHA, source-test identities, negative findings and fixture limits. The default Rust MCP tests and CI source-golden guard passed in GitHub Actions https://github.com/sguzman/synmetra/actions/runs/40373806570 (core steps); native DuckDB job also passed. The pinned upstream executable has not been run; the second executable-golden acceptance gate stays open.
 - 🪟 **T172 — Exercise stdio tools under an MCP inspector** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Every advertised tool can be called with synthetic fixtures
 - 🛰️ **T173 — Exercise protected Streamable HTTP end-to-end** — `██████████ 100.0%`
