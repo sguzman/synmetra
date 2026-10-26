@@ -95,8 +95,8 @@
         "reason": "invalid_cursor",
         "category": "cursor"
       },
-      "native_status": "not_equivalent",
-      "note": "Synmetra currently maps rejected historical pagination to generic INVALID_REQUEST/validation, not a dedicated upstream cursor-mismatch reason. T157/T158/T171 parity remains open."
+      "native_status": "matched_hash_mismatch_only",
+      "note": "Native CursorQueryMismatch now maps an otherwise well-formed cursor with another property's or query's SHA-256 to CURSOR_QUERY_MISMATCH / invalid_cursor / cursor. Malformed cursor syntax and other pagination error classifications still differ from upstream; complete T157/T171 parity remains open."
     }
   ],
   "excluded": [

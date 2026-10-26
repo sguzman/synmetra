@@ -243,7 +243,7 @@ jobs:
             and (.cases | length) == 2
             and (.negative_parity_findings | length) == 2
             and all(.cases[]; .difference_note != null)
-            and any(.negative_parity_findings[]; .source_expected.code == "CURSOR_QUERY_MISMATCH" and .native_status == "not_equivalent")
+            and any(.negative_parity_findings[]; .source_expected.code == "CURSOR_QUERY_MISMATCH" and .native_status == "matched_hash_mismatch_only")
           ' spec/fixtures/sednalabs-response-differential.v1.json > /dev/null
           grep -Fq '*not* execution of SednaLabs' docs/RESPONSE_DIFFERENTIAL.md
 

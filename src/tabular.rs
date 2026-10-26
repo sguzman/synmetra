@@ -134,11 +134,15 @@ fn prepare_resource(
         let parts = raw.split(':').collect::<Vec<_>>();
         if parts.len() != 3
             || parts[0] != "v1"
-            || parts[1] != query_hash
+            || parts[1].len() != 64
+            || !parts[1].bytes().all(|byte| byte.is_ascii_hexdigit())
             || parts[2].is_empty()
             || !parts[2].bytes().all(|byte| byte.is_ascii_digit())
         {
             return Err(ApiError::InvalidRequest);
+        }
+        if parts[1] != query_hash {
+            return Err(ApiError::CursorQueryMismatch);
         }
         parts[2]
             .parse::<u64>()
@@ -565,6 +569,48 @@ mod tests {
             "CURSOR_QUERY_MISMATCH"
         );
         assert_eq!(failures[1]["native_status"], "not_equivalent");
+    }
+
+    #[test]
+    fn query_bound_cursors_distinguish_mismatches_from_malformed_inputs() {
+        let original = json!({
+            "dateRanges":[{"startDate":"7daysAgo","endDate":"today"}],
+            "dimensions":[{"name":"country"}],
+            "metrics":[{"name":"activeUsers"}]
+        });
+        let mut first = original.clone();
+        let token = prepare_historical(&mut first, "42", None, None).unwrap();
+        let cursor = format!("v1:{}:5", token.query_hash);
+
+        let mut valid = original.clone();
+        let next = prepare_historical(&mut valid, "42", Some(&cursor), None).unwrap();
+        assert_eq!(next.offset, 5);
+        assert_eq!(valid["offset"], "5");
+
+        let mut different_property = original.clone();
+        assert_eq!(
+            prepare_historical(&mut different_property, "43", Some(&cursor), None).err(),
+            Some(ApiError::CursorQueryMismatch)
+        );
+        assert_eq!(different_property, original);
+
+        let mut changed_query = original.clone();
+        changed_query["metrics"] = json!([{"name":"sessions"}]);
+        let pristine = changed_query.clone();
+        assert_eq!(
+            prepare_historical(&mut changed_query, "42", Some(&cursor), None).err(),
+            Some(ApiError::CursorQueryMismatch)
+        );
+        assert_eq!(changed_query, pristine);
+
+        for malformed in ["v1:abc:5", "v2:abc:5", "v1:bad:10;DROP"] {
+            let mut query = original.clone();
+            assert_eq!(
+                prepare_historical(&mut query, "42", Some(malformed), None).err(),
+                Some(ApiError::InvalidRequest)
+            );
+            assert_eq!(query, original);
+        }
     }
 
     #[test]

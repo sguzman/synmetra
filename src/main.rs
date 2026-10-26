@@ -1145,6 +1145,7 @@ fn api_error_code(error: &ApiError) -> (&'static str, &'static str) {
         ApiError::AuthenticationFailed => ("AUTHENTICATION_FAILED", "authentication"),
         ApiError::InvalidIdentifier => ("INVALID_IDENTIFIER", "validation"),
         ApiError::InvalidRequest => ("INVALID_REQUEST", "validation"),
+        ApiError::CursorQueryMismatch => ("CURSOR_QUERY_MISMATCH", "cursor"),
         ApiError::UnsupportedAuthOption => ("UNSUPPORTED_AUTH_OPTION", "validation"),
         ApiError::UnsupportedRealtimeOffset => ("UNSUPPORTED_REALTIME_OFFSET", "validation"),
         ApiError::InvalidAnnotation => ("INVALID_ANNOTATION", "validation"),
@@ -1347,11 +1348,16 @@ fn result(r: Result<Value, ApiError>) -> CallToolResult {
         }
         Err(error) => {
             let (code, category) = api_error_code(&error);
+            let reason = if matches!(&error, ApiError::CursorQueryMismatch) {
+                "invalid_cursor".to_owned()
+            } else {
+                code.to_ascii_lowercase()
+            };
             let mut payload = json!({
                 "ok": false,
                 "error": {
                     "code": code,
-                    "reason": code.to_ascii_lowercase(),
+                    "reason": reason,
                     "message": error.to_string(),
                     "category": category
                 },
@@ -7084,6 +7090,18 @@ mod tests {
         let public = payload.to_string();
         assert!(!public.contains("fixture-only-token"));
         assert!(!public.contains("accounts/fixture-private"));
+    }
+
+    #[test]
+    fn pinned_cursor_hash_mismatch_has_specific_contract_v1_error_taxonomy() {
+        let output = result(Err(ApiError::CursorQueryMismatch));
+        let payload = output.structured_content.unwrap();
+        assert_eq!(payload["ok"], false);
+        assert_eq!(payload["error"]["code"], "CURSOR_QUERY_MISMATCH");
+        assert_eq!(payload["error"]["reason"], "invalid_cursor");
+        assert_eq!(payload["error"]["category"], "cursor");
+        assert!(payload["error"]["message"].is_string());
+        assert_eq!(payload["meta"]["elapsed_ms_measured"], false);
     }
 
     #[test]
