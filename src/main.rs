@@ -7582,26 +7582,121 @@ mod tests {
     #[test]
     fn every_native_api_error_has_a_stable_redacted_structured_and_text_envelope() {
         let cases = [
-            (ApiError::MissingCredentials, "AUTH_NOT_CONFIGURED", "authentication", None),
-            (ApiError::AuthenticationFailed, "AUTHENTICATION_FAILED", "authentication", None),
-            (ApiError::InvalidIdentifier, "INVALID_IDENTIFIER", "validation", None),
-            (ApiError::InvalidRequest, "INVALID_REQUEST", "validation", None),
-            (ApiError::CursorQueryMismatch, "CURSOR_QUERY_MISMATCH", "cursor", None),
-            (ApiError::UnsupportedAuthOption, "UNSUPPORTED_AUTH_OPTION", "validation", None),
-            (ApiError::InvalidQuotaProject, "INVALID_QUOTA_PROJECT", "validation", None),
-            (ApiError::UnsupportedRealtimeOffset, "UNSUPPORTED_REALTIME_OFFSET", "validation", None),
-            (ApiError::InvalidAnnotation, "INVALID_ANNOTATION", "validation", None),
-            (ApiError::EditScopeRequired, "EDIT_SCOPE_REQUIRED", "authorization", None),
-            (ApiError::RequestFailed, "UPSTREAM_UNAVAILABLE", "transport", None),
-            (ApiError::Http(400), "GOOGLE_HTTP_ERROR", "upstream", Some(400_u16)),
-            (ApiError::Http(401), "GOOGLE_HTTP_ERROR", "upstream", Some(401)),
-            (ApiError::Http(403), "GOOGLE_HTTP_ERROR", "upstream", Some(403)),
-            (ApiError::Http(429), "GOOGLE_HTTP_ERROR", "upstream", Some(429)),
-            (ApiError::Http(500), "GOOGLE_HTTP_ERROR", "upstream", Some(500)),
-            (ApiError::ResponseTooLarge, "RESPONSE_TOO_LARGE", "limits", None),
-            (ApiError::CollectionTooLarge, "COLLECTION_TOO_LARGE", "limits", None),
+            (
+                ApiError::MissingCredentials,
+                "AUTH_NOT_CONFIGURED",
+                "authentication",
+                None,
+            ),
+            (
+                ApiError::AuthenticationFailed,
+                "AUTHENTICATION_FAILED",
+                "authentication",
+                None,
+            ),
+            (
+                ApiError::InvalidIdentifier,
+                "INVALID_IDENTIFIER",
+                "validation",
+                None,
+            ),
+            (
+                ApiError::InvalidRequest,
+                "INVALID_REQUEST",
+                "validation",
+                None,
+            ),
+            (
+                ApiError::CursorQueryMismatch,
+                "CURSOR_QUERY_MISMATCH",
+                "cursor",
+                None,
+            ),
+            (
+                ApiError::UnsupportedAuthOption,
+                "UNSUPPORTED_AUTH_OPTION",
+                "validation",
+                None,
+            ),
+            (
+                ApiError::InvalidQuotaProject,
+                "INVALID_QUOTA_PROJECT",
+                "validation",
+                None,
+            ),
+            (
+                ApiError::UnsupportedRealtimeOffset,
+                "UNSUPPORTED_REALTIME_OFFSET",
+                "validation",
+                None,
+            ),
+            (
+                ApiError::InvalidAnnotation,
+                "INVALID_ANNOTATION",
+                "validation",
+                None,
+            ),
+            (
+                ApiError::EditScopeRequired,
+                "EDIT_SCOPE_REQUIRED",
+                "authorization",
+                None,
+            ),
+            (
+                ApiError::RequestFailed,
+                "UPSTREAM_UNAVAILABLE",
+                "transport",
+                None,
+            ),
+            (
+                ApiError::Http(400),
+                "GOOGLE_HTTP_ERROR",
+                "upstream",
+                Some(400_u16),
+            ),
+            (
+                ApiError::Http(401),
+                "GOOGLE_HTTP_ERROR",
+                "upstream",
+                Some(401),
+            ),
+            (
+                ApiError::Http(403),
+                "GOOGLE_HTTP_ERROR",
+                "upstream",
+                Some(403),
+            ),
+            (
+                ApiError::Http(429),
+                "GOOGLE_HTTP_ERROR",
+                "upstream",
+                Some(429),
+            ),
+            (
+                ApiError::Http(500),
+                "GOOGLE_HTTP_ERROR",
+                "upstream",
+                Some(500),
+            ),
+            (
+                ApiError::ResponseTooLarge,
+                "RESPONSE_TOO_LARGE",
+                "limits",
+                None,
+            ),
+            (
+                ApiError::CollectionTooLarge,
+                "COLLECTION_TOO_LARGE",
+                "limits",
+                None,
+            ),
             (ApiError::TooManyPages, "PAGINATION_LIMIT", "limits", None),
-            (ApiError::InvalidResponse, "INVALID_UPSTREAM_RESPONSE", "upstream", None),
+            (
+                ApiError::InvalidResponse,
+                "INVALID_UPSTREAM_RESPONSE",
+                "upstream",
+                None,
+            ),
         ];
         for (error, code, category, status) in cases {
             let output = result(Err(error));
@@ -7622,13 +7717,18 @@ mod tests {
             );
             assert_eq!(payload["meta"]["elapsed_ms"], 0);
             assert_eq!(payload["meta"]["elapsed_ms_measured"], false);
-            assert!(payload["error"]["message"].as_str().is_some_and(|m| !m.is_empty()));
+            assert!(payload["error"]["message"]
+                .as_str()
+                .is_some_and(|m| !m.is_empty()));
             assert_eq!(
                 payload["error"].get("status_code").and_then(Value::as_u64),
                 status.map(u64::from)
             );
             for sensitive in ["synthetic-private-token", "refresh_token", "client_secret"] {
-                assert!(!body.contains(sensitive), "Sensitive string leaked into {code}");
+                assert!(
+                    !body.contains(sensitive),
+                    "Sensitive string leaked into {code}"
+                );
             }
         }
 
