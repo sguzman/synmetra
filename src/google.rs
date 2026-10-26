@@ -2934,6 +2934,93 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn compatibility_cache_expires_and_does_not_cache_403_denials() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        use tokio::net::TcpListener;
+
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let endpoint = format!("http://{}", listener.local_addr().unwrap());
+        let responder = tokio::spawn(async move {
+            for (status, label) in [
+                ("200 OK", "initial"),
+                ("200 OK", "refreshed"),
+                ("403 Forbidden", "private-error-body"),
+                ("200 OK", "recovered"),
+            ] {
+                let (mut stream, _) = listener.accept().await.unwrap();
+                let mut buffer = [0_u8; 4096];
+                let read = stream.read(&mut buffer).await.unwrap();
+                assert!(String::from_utf8_lossy(&buffer[..read])
+                    .contains("properties/42:checkCompatibility"));
+                let body = json!({
+                    "metricCompatibilities":[{
+                        "metricMetadata":{"apiName":label},
+                        "compatibility":"COMPATIBLE"
+                    }]
+                })
+                .to_string();
+                let reply = format!(
+                    "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                    body.len(),
+                    body
+                );
+                stream.write_all(reply.as_bytes()).await.unwrap();
+            }
+        });
+        let client = GoogleClient::with_endpoints(
+            Some("private-cache-fixture-token".into()),
+            &endpoint,
+            &endpoint,
+        );
+        let request = json!({"metrics":[{"name":"activeUsers"}],"dimensions":[]});
+        let first = client
+            .data_operation("42", request.clone(), "checkCompatibility")
+            .await
+            .unwrap();
+        let cached = client
+            .data_operation("42", request.clone(), "checkCompatibility")
+            .await
+            .unwrap();
+        assert_eq!(first, cached);
+        {
+            let mut cache = client.compatibility_cache.lock().await;
+            for (created, _) in cache.values_mut() {
+                *created = Instant::now() - Duration::from_secs(31);
+            }
+        }
+        let refreshed = client
+            .data_operation("42", request.clone(), "checkCompatibility")
+            .await
+            .unwrap();
+        assert_eq!(
+            refreshed["metricCompatibilities"][0]["metricMetadata"]["apiName"],
+            "refreshed"
+        );
+        {
+            let mut cache = client.compatibility_cache.lock().await;
+            for (created, _) in cache.values_mut() {
+                *created = Instant::now() - Duration::from_secs(31);
+            }
+        }
+        assert_eq!(
+            client
+                .data_operation("42", request.clone(), "checkCompatibility")
+                .await,
+            Err(ApiError::Http(403))
+        );
+        let recovered = client
+            .data_operation("42", request, "checkCompatibility")
+            .await
+            .unwrap();
+        responder.await.unwrap();
+        assert_eq!(
+            recovered["metricCompatibilities"][0]["metricMetadata"]["apiName"],
+            "recovered"
+        );
+        assert_eq!(client.compatibility_cache.lock().await.len(), 1);
+    }
+
+    #[tokio::test]
     async fn batch_reports_reject_missing_or_extra_provider_results() {
         for payload in [
             r#"{\"reports\":[]}"#,
