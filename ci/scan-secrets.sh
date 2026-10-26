@@ -54,6 +54,17 @@ if [[ "${1:-}" == "--history" ]]; then
     status=0
     git grep "${grep_args[@]}" "$revision" -- . >/dev/null 2>&1 || status=$?
     if ((status == 0)); then
+      # Only display an aggregate category, never the matched line, token,
+      # historical commit hash or file path in a public CI log.
+      origin='scanner-fixture-path-only'
+      while IFS= read -r -d '' matched_path; do
+        matched_path="${matched_path#*:}"
+        case "$matched_path" in
+          ci/test-secret-scanner.sh|ci/scan-public-artifacts.sh|ci/scan-secrets.sh) ;;
+          *) origin='other-source-path';;
+        esac
+      done < <(git grep -I -l -z -E "${grep_args[@]:3}" "$revision" -- .)
+      echo "Historical credential-shaped material class: $origin (matched value suppressed)" >&2
       echo 'Potential historical credential/private-key material in reachable Git history; details suppressed' >&2
       exit 1
     fi
