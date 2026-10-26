@@ -3216,6 +3216,82 @@ mod tests {
     }
 
     #[test]
+    fn upstream_parameter_audit_preserves_complete_pinned_source_fields() {
+        use std::collections::BTreeSet;
+
+        let audit: Value = serde_json::from_str(include_str!(
+            "../spec/audits/upstream-parameter-union.json"
+        ))
+        .unwrap();
+        let sedna: Value = serde_json::from_str(include_str!(
+            "../spec/upstream/sednalabs-tool-schema.v1.json"
+        ))
+        .unwrap();
+        let google: Value = serde_json::from_str(include_str!(
+            "../spec/upstream/google-official-signatures.json"
+        ))
+        .unwrap();
+        let records = audit["tools"].as_array().unwrap();
+        assert_eq!(records.len(), 36);
+        let names: BTreeSet<_> = records
+            .iter()
+            .map(|record| record["name"].as_str().unwrap())
+            .collect();
+        assert_eq!(names.len(), records.len());
+
+        for tool in sedna["tools"].as_array().unwrap() {
+            let name = tool["name"].as_str().unwrap();
+            let record = records
+                .iter()
+                .find(|record| record["name"] == name)
+                .unwrap();
+            assert_eq!(
+                record["sednalabs_defs"],
+                tool["inputSchema"]["$defs"],
+                "nested schemas differ for {name}"
+            );
+            let pinned_fields = tool["inputSchema"]["properties"].as_object().unwrap();
+            let captured = record["sednalabs_parameters"].as_array().unwrap();
+            assert_eq!(captured.len(), pinned_fields.len(), "{name} field count");
+            for (field, schema) in pinned_fields {
+                let reported = captured
+                    .iter()
+                    .find(|item| item["name"] == field.as_str())
+                    .unwrap();
+                assert_eq!(reported["raw_schema"], *schema, "{name}.{field}");
+                let required = tool["inputSchema"]["required"]
+                    .as_array()
+                    .is_some_and(|set| set.contains(&json!(field)));
+                assert_eq!(reported["required"], required, "{name}.{field}");
+            }
+        }
+        for tool in google["tools"].as_array().unwrap() {
+            let name = tool["name"].as_str().unwrap();
+            let record = records
+                .iter()
+                .find(|record| record["name"] == name)
+                .unwrap();
+            let captured = record["google_signature_parameters"].as_array().unwrap();
+            let source = tool["parameters"].as_array().unwrap();
+            assert_eq!(captured.len(), source.len(), "{name} field count");
+            for field in source {
+                let field_name = field["name"].as_str().unwrap();
+                let reported = captured
+                    .iter()
+                    .find(|item| item["name"] == field_name)
+                    .unwrap();
+                assert_eq!(
+                    reported["required"],
+                    tool["required"].as_array().unwrap().contains(&json!(field_name)),
+                    "{name}.{field_name}"
+                );
+            }
+        }
+        assert_eq!(audit["summary"]["shared_tools"], 9);
+        assert_eq!(audit["summary"]["google_only_tools"], 1);
+    }
+
+    #[test]
     fn core_reporting_inputs_cover_pinned_contract_without_untracked_fields() {
         use std::collections::BTreeSet;
 
