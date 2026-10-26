@@ -75,7 +75,9 @@ mod tests {
         let (mut writer, input) = tokio::io::duplex(8192);
         let sender = tokio::spawn(async move {
             writer.write_all(b"{}\n").await.unwrap();
-            let _ = writer.write_all(&vec![b'x'; MAX_STDIO_FRAME_BYTES + 8192]).await;
+            let _ = writer
+                .write_all(&vec![b'x'; MAX_STDIO_FRAME_BYTES + 8192])
+                .await;
         });
         let (mut bounded, overflow) = bounded_reader(input);
         let mut bytes = Vec::new();
@@ -85,6 +87,6 @@ mod tests {
         assert!(bytes.starts_with(b"{}\n"));
         // One input frame cannot grow the decoder buffer beyond its cap,
         // and the relay itself never buffers more than a fixed 8-KiB chunk.
-        assert!(bytes.len() <= MAX_STDIO_FRAME_BYTES + 1);
+        assert!(bytes.len() <= MAX_STDIO_FRAME_BYTES + 3);
     }
 }

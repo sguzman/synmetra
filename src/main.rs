@@ -2,9 +2,9 @@
 mod auth;
 mod google;
 mod http;
-mod stdio_limit;
 #[cfg(feature = "scratchpad")]
 mod scratchpad;
+mod stdio_limit;
 mod tabular;
 
 use google::{annotation_payload, report_request, ApiError, GoogleClient};
@@ -13,8 +13,7 @@ use rmcp::{
     handler::server::wrapper::Parameters,
     model::{CallToolResult, ContentBlock},
     schemars::JsonSchema,
-    tool, tool_handler, tool_router,
-    ServerHandler, ServiceExt,
+    tool, tool_handler, tool_router, ServerHandler, ServiceExt,
 };
 use serde::Deserialize;
 use serde_json::{json, Value};
