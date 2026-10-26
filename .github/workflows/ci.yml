@@ -215,6 +215,21 @@ jobs:
           grep -Fq 'bounded multi-page collection' docs/CANONICAL_CONTRACT_DECISION.md
           grep -Fq 'one DuckDB transaction' docs/CANONICAL_CONTRACT_DECISION.md
 
+      - name: Validate legacy MCP compatibility policy and adapter boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f spec/compatibility/client-contract.v1.json
+          test -f docs/CLIENT_COMPATIBILITY.md
+          jq -e '.schema == "synmetra_client_compatibility_policy" and .version == 1 and .minimum_source_tool_count == 36 and ([.tool_profiles[].count] == [20,21,35,36]) and (.mcp.tool_success.required == ["ok","data","meta"]) and (.mcp.tool_success.identical_representations == true) and (.mcp.tool_error.required == ["ok","error","meta"]) and (.mcp.tool_error.error_required == ["code","reason","message","category"]) and (.mcp.latency.elapsed_ms == 0) and (.mcp.latency.elapsed_ms_measured == false) and (.data_projection.opt_in_modes == ["rows","tuples","scalar","compact"]) and (.versioning.current == "0.0.1")' spec/compatibility/client-contract.v1.json > /dev/null
+          jq -e '.tools | length == 36' spec/native/tool-schema.v1.json > /dev/null
+          jq -e '.union.tools | length == 36' docs/tool-inventory.json > /dev/null
+          grep -Fq 'protocol error' docs/CLIENT_COMPATIBILITY.md
+          grep -Fq '202 shape differences' docs/CLIENT_COMPATIBILITY.md
+          grep -Fq '0.0.1' docs/CLIENT_COMPATIBILITY.md
+          grep -Fq 'CLIENT_COMPATIBILITY.md' README.md
+          grep -Fq 'CLIENT_COMPATIBILITY.md' docs/CONTRACT.md
+
       - name: Validate 36 documented native tools and JSON examples
         shell: bash
         run: |

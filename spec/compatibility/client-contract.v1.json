@@ -1,0 +1,110 @@
+{
+  "schema": "synmetra_client_compatibility_policy",
+  "version": 1,
+  "status": "experimental; not upstream or live Google acceptance",
+  "source_fixture": "spec/native/tool-schema.v1.json",
+  "minimum_source_tool_count": 36,
+  "tool_profiles": [
+    {
+      "profile": "read_only_stdio",
+      "count": 20,
+      "flags": [],
+      "google_write": false,
+      "local_duckdb": false
+    },
+    {
+      "profile": "write_opt_in_stdio",
+      "count": 21,
+      "flags": [
+        "--allow-write"
+      ],
+      "google_write": "advertised only; scope/role/client confirmation separately required",
+      "local_duckdb": false
+    },
+    {
+      "profile": "scratchpad_stdio",
+      "count": 35,
+      "flags": [
+        "--scratchpad"
+      ],
+      "google_write": false,
+      "local_duckdb": "in-memory, single trusted stdio client only"
+    },
+    {
+      "profile": "full_test_union_stdio",
+      "count": 36,
+      "flags": [
+        "--scratchpad",
+        "--allow-write"
+      ],
+      "google_write": "opt in; permission still separate",
+      "local_duckdb": "single trusted stdio client"
+    }
+  ],
+  "mcp": {
+    "tool_success": {
+      "ok": true,
+      "required": [
+        "ok",
+        "data",
+        "meta"
+      ],
+      "representations": [
+        "structuredContent",
+        "JSON text content"
+      ],
+      "identical_representations": true
+    },
+    "tool_error": {
+      "ok": false,
+      "required": [
+        "ok",
+        "error",
+        "meta"
+      ],
+      "error_required": [
+        "code",
+        "reason",
+        "message",
+        "category"
+      ],
+      "status_code": "present for Google HTTP errors only"
+    },
+    "protocol_error": "JSON-RPC protocol errors remain separate from ok/error/meta tool errors",
+    "latency": {
+      "elapsed_ms": 0,
+      "elapsed_ms_measured": false,
+      "note": "unmeasured sentinel"
+    }
+  },
+  "data_projection": {
+    "default_google_read": "provider-shaped data nested in success envelope",
+    "opt_in_modes": [
+      "rows",
+      "tuples",
+      "scalar",
+      "compact"
+    ],
+    "options": [
+      "summary_only",
+      "max_rows",
+      "max_cell_chars"
+    ],
+    "historical_cursor": "v1 query and property hash; no snapshot guarantee",
+    "realtime_cursor": "unsupported; nonzero offset rejected",
+    "exceptions": "Not every tool accepts or implements all output controls; consult native schema and tool guide."
+  },
+  "known_mismatches": [
+    "202 raw shared field-shape differences in pinned static audit (some description-only; no nested/behavioral parity)",
+    "SednaLabs Contract V1 timing and some compact/scalar response layouts differ from default provider data",
+    "Some scratchpad ingestion controls are advertised but rejected deliberately with stable errors",
+    "Per-client HTTP scratchpad isolation and external MCP client parity are unaccepted",
+    "Authorized live Google API behavior, OAuth consent and property roles remain unverified"
+  ],
+  "versioning": {
+    "current": "0.0.1",
+    "status": "pre-1.0 experimental",
+    "breaking_changes": "require explicit migration notes and reviewed schema snapshots",
+    "production": "not approved"
+  }
+}
