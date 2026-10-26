@@ -10,19 +10,19 @@
 
 ## 📊 Evidence-backed progress
 
-**Overall:** `██████░░░░ 59.0%` · **overall delta: +59.03 percentage points** from initial 0% (**latest accepted round: +1.32 pp**). **35/35 SednaLabs tool names implemented provisionally plus 1 opt-in annotation handler; 0/36 fully accepted upstream parity.** Real Google account acceptance and full tool schemas remain pending.
+**Overall:** `██████░░░░ 60.6%` · **overall delta: +60.57 percentage points** from initial 0% (**latest accepted round: +1.54 pp**). **35/35 SednaLabs tool names implemented provisionally plus 1 opt-in annotation handler; 0/36 fully accepted upstream parity.** Real Google account acceptance and full tool schemas remain pending.
 
 | Milestone | Progress | Gate |
 | --- | --- | --- |
 | 🧭 M0 Reference baseline and project governance | `█████████░ 91.2%` | MVP |
 | 🔌 M1 MCP protocol and transport fidelity | `███████░░░ 65.2%` | MVP |
-| 🔑 M2 Google authentication and credential isolation | `███░░░░░░░ 34.6%` | MVP |
+| 🔑 M2 Google authentication and credential isolation | `████░░░░░░ 40.4%` | MVP |
 | 🏢 M3 Admin API information parity | `██████████ 100.0%` | MVP |
 | 📊 M4 Reporting, preflight and Data API parity | `██████████ 100.0%` | MVP |
 | ✍️ M5 Explicitly gated GA mutation parity | `████████░░ 84.6%` | MVP |
 | 🗃️ M6 DuckDB scratchpad and advanced analytics parity | `████████░░ 78.0%` | MVP |
 | 🧬 M7 Tool contract interoperability and parity audits | `█████░░░░░ 52.9%` | MVP |
-| 🧪 M8 Verification, resilience and security acceptance | `██░░░░░░░░ 23.2%` | MVP |
+| 🧪 M8 Verification, resilience and security acceptance | `███░░░░░░░ 30.4%` | MVP |
 | 🚀 M9 Linux release and Codex-ready inauguration | `█░░░░░░░░░ 11.4%` | MVP |
 | 🔭 M10 Post-MVP extensions and sustained stewardship | `░░░░░░░░░░ 0.0%` | POST_MVP |
 

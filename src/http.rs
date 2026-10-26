@@ -372,6 +372,104 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn local_mcp_bearer_is_not_forwarded_to_google_api() {
+        use serde_json::json;
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+
+        let google_listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let google_endpoint = format!("http://{}", google_listener.local_addr().unwrap());
+        let google_bearer = "synthetic-google-only-access-token";
+        let inbound_bearer = "synthetic-local-mcp-principal-bearer-4739";
+        let google_request = tokio::spawn(async move {
+            let (mut stream, _) = google_listener.accept().await.unwrap();
+            let mut buffer = [0u8; 8192];
+            let size = stream.read(&mut buffer).await.unwrap();
+            let request = String::from_utf8_lossy(&buffer[..size]).into_owned();
+            let body = r#"{"accountSummaries":[]}"#;
+            let response = format!(
+                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                body.len(),
+                body
+            );
+            stream.write_all(response.as_bytes()).await.unwrap();
+            request
+        });
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let server = Synmetra::new(
+            GoogleClient::with_endpoints(
+                Some(google_bearer.into()),
+                &google_endpoint,
+                &google_endpoint,
+            ),
+            false,
+        );
+        let http = tokio::spawn(async move {
+            axum::serve(listener, app(server, inbound_bearer.to_owned(), port))
+                .await
+                .unwrap();
+        });
+
+        let client = reqwest::Client::builder()
+            .timeout(Duration::from_secs(5))
+            .build()
+            .unwrap();
+        let url = format!("http://127.0.0.1:{port}/mcp");
+        let initialize = client
+            .post(&url)
+            .header(header::AUTHORIZATION, format!("Bearer {inbound_bearer}"))
+            .header(header::ACCEPT, "application/json, text/event-stream")
+            .json(&json!({
+                "jsonrpc":"2.0", "id":1, "method":"initialize",
+                "params":{
+                    "protocolVersion":"2025-11-25","capabilities":{},
+                    "clientInfo":{"name":"identity-isolation-fixture","version":"1"}
+                }
+            }))
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(initialize.status(), StatusCode::OK);
+        let session = initialize
+            .headers()
+            .get("mcp-session-id")
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_owned();
+        mcp_json_response(initialize).await;
+
+        let called = client
+            .post(&url)
+            .header(header::AUTHORIZATION, format!("Bearer {inbound_bearer}"))
+            .header(header::ACCEPT, "application/json, text/event-stream")
+            .header("mcp-session-id", &session)
+            .header("mcp-protocol-version", "2025-11-25")
+            .json(&json!({
+                "jsonrpc":"2.0","id":2,"method":"tools/call",
+                "params":{"name":"get_account_summaries","arguments":{}}
+            }))
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(called.status(), StatusCode::OK);
+        let result = mcp_json_response(called).await;
+        assert_eq!(result["result"]["structuredContent"]["ok"], true);
+        let forwarded = tokio::time::timeout(Duration::from_secs(5), google_request)
+            .await
+            .unwrap()
+            .unwrap()
+            .to_ascii_lowercase();
+        assert!(forwarded.contains(&format!(
+            "authorization: bearer {google_bearer}"
+        )));
+        assert!(!forwarded.contains(inbound_bearer));
+        assert!(!result.to_string().contains(google_bearer));
+        assert!(!result.to_string().contains(inbound_bearer));
+        http.abort();
+    }
+
+    #[tokio::test]
     async fn authenticated_http_session_lists_and_calls_tools_but_rejects_invalid_sessions() {
         use serde_json::json;
 

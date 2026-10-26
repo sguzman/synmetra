@@ -2320,6 +2320,85 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn readonly_429_exhausts_three_attempts_with_redacted_error() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        use tokio::net::TcpListener;
+
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let endpoint = format!("http://{}", listener.local_addr().unwrap());
+        let server = tokio::spawn(async move {
+            for _ in 0..3 {
+                let (mut socket, _) = listener.accept().await.unwrap();
+                let mut buffer = [0_u8; 4096];
+                let n = socket.read(&mut buffer).await.unwrap();
+                assert!(String::from_utf8_lossy(&buffer[..n])
+                    .contains("POST /v1beta/properties/42:runReport HTTP/1.1"));
+                let body = r#"{"error":{"message":"synthetic-private-upstream-canary"}}"#;
+                let response = format!(
+                    "HTTP/1.1 429 Too Many Requests\r\nRetry-After: 0\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                    body.len(),
+                    body
+                );
+                socket.write_all(response.as_bytes()).await.unwrap();
+            }
+        });
+        let client = GoogleClient::with_endpoints(
+            Some("synthetic-token".into()),
+            &endpoint,
+            &endpoint,
+        );
+        let request = report_request(
+            Some(vec![json!({"startDate":"yesterday","endDate":"today"})]),
+            vec![],
+            vec!["activeUsers".to_owned()],
+            vec![],
+        )
+        .unwrap();
+        assert_eq!(client.report("42", request, false).await, Err(ApiError::Http(429)));
+        server.await.unwrap();
+        assert!(
+            !format!("{:?}", ApiError::Http(429)).contains("synthetic-private-upstream-canary")
+        );
+    }
+
+    #[tokio::test]
+    async fn readonly_socket_drop_fails_without_unsafe_transport_retries() {
+        use tokio::io::AsyncReadExt;
+        use tokio::net::TcpListener;
+
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let endpoint = format!("http://{}", listener.local_addr().unwrap());
+        let server = tokio::spawn(async move {
+            let (mut socket, _) = listener.accept().await.unwrap();
+            let mut buffer = [0_u8; 4096];
+            let n = socket.read(&mut buffer).await.unwrap();
+            assert!(String::from_utf8_lossy(&buffer[..n])
+                .contains("POST /v1beta/properties/42:runReport HTTP/1.1"));
+            drop(socket);
+            assert!(
+                tokio::time::timeout(Duration::from_millis(750), listener.accept())
+                    .await
+                    .is_err(),
+                "A failed transport must not trigger an automatic retry"
+            );
+        });
+        let client = GoogleClient::with_endpoints(
+            Some("synthetic-token".into()),
+            &endpoint,
+            &endpoint,
+        );
+        let request = report_request(
+            Some(vec![json!({"startDate":"yesterday","endDate":"today"})]),
+            vec![],
+            vec!["activeUsers".to_owned()],
+            vec![],
+        )
+        .unwrap();
+        assert_eq!(client.report("42", request, false).await, Err(ApiError::RequestFailed));
+        server.await.unwrap();
+    }
+
+    #[tokio::test]
     async fn annotation_writes_do_not_retry_429_500_or_503_responses() {
         for (status, code) in [
             ("429 Too Many Requests", 429),

@@ -1127,16 +1127,18 @@
               "id": "T057",
               "emoji": "⏳",
               "name": "Guard clock skew and rotation races",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "Expiring secrets renew safely during concurrent calls",
               "checks": [
                 {
                   "text": "Deliver guard clock skew and rotation races as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/auth.rs access_token_at re-reads credentials within an async refresh lock, renews 120 seconds before expiry and rotates refresh tokens using private atomic persistence; the concurrent_expired_credentials_refresh_once_and_rotate_privately test passed in core CI https://github.com/sguzman/synmetra/actions/runs/40266208686."
                 },
                 {
                   "text": "Expiring secrets renew safely during concurrent calls",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/auth.rs concurrent_expired_credentials_refresh_once_and_rotate_privately verifies two concurrent callers perform exactly one local OAuth token exchange, both receive the new access token, rotated refresh token persists privately, and later calls reuse the refreshed credential; core CI https://github.com/sguzman/synmetra/actions/runs/40266208686 passed. This does not certify live Google refresh/revocation behavior."
                 }
               ]
             }
@@ -1152,12 +1154,13 @@
               "id": "T058",
               "emoji": "🚪",
               "name": "Separate inbound MCP identity from Google identity",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "No identity-conflation in HTTP transport",
               "checks": [
                 {
                   "text": "Deliver separate inbound mcp identity from google identity as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/http.rs uses SYNMETRA_MCP_BEARER_TOKEN for inbound requests while src/google.rs and src/auth.rs independently load SYNMETRA_GOOGLE_ACCESS_TOKEN or isolated private OAuth credentials for Google API calls; src/main.rs denies scratchpad HTTP. Core CI https://github.com/sguzman/synmetra/actions/runs/40266208686 passed local identity boundary tests. Separate explicit end-to-end identity-conflation regression remains open."
                 },
                 {
                   "text": "No identity-conflation in HTTP transport",
@@ -3504,12 +3507,13 @@
               "id": "T175",
               "emoji": "⏱️",
               "name": "Validate timeouts retries backoff and rate limits",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Offline deterministic clock and throttled 429 tests",
               "checks": [
                 {
                   "text": "Deliver validate timeouts retries backoff and rate limits as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs readonly_retry_delay and send_readonly_as enforce connect/request deadlines, three attempts on 429/5xx read-only requests, capped Retry-After/backoff, and no retries for annotation writes or 403s. Core CI https://github.com/sguzman/synmetra/actions/runs/40266208686 passed readonly_retry_policy_honors_backoff_limits_and_never_retries_forbidden, readonly_report_retry_is_bounded_and_never_replays_writes, and annotation_writes_do_not_retry_429_500_or_503_responses. Simulated-clock acceptance remains open."
                 },
                 {
                   "text": "Offline deterministic clock and throttled 429 tests",
@@ -3829,12 +3833,13 @@
               "id": "T193",
               "emoji": "📃",
               "name": "Redact logs telemetry and error reports by default",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "No account data or tokens in CI artifacts",
               "checks": [
                 {
                   "text": "Deliver redact logs telemetry and error reports by default as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/auth.rs keeps tokens out of public CLI doctor/status, src/google.rs excludes upstream provider body and credentials from typed errors, and src/main.rs keeps MCP stdout clean. Core CI https://github.com/sguzman/synmetra/actions/runs/40266208686 passed synthetic credential-canary checks for stdio, auth doctor, isolated installed native binary and error cases. A dedicated scan of generated CI artifacts remains open."
                 },
                 {
                   "text": "No account data or tokens in CI artifacts",
@@ -3846,16 +3851,18 @@
               "id": "T194",
               "emoji": "🛑",
               "name": "Document safe remote deployment rejection gates",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "No unauthenticated public shared-credential service",
               "checks": [
                 {
                   "text": "Deliver document safe remote deployment rejection gates as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "docs/SECURITY.md, docs/HTTP.md and docs/LOCAL_EXECUTION_THREAT_MODEL.md document non-production loopback-only deployment, identity and TLS rejection gates; src/main.rs blocks scratchpad over HTTP. Core CI https://github.com/sguzman/synmetra/actions/runs/40266208686 verified nonloopback-bind rejection and protected local transport."
                 },
                 {
                   "text": "No unauthenticated public shared-credential service",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/http.rs enforces IPv4 loopback-only binding, constant-time inbound bearer checks, Host/Origin restrictions, and bounded HTTP requests; src/main.rs denies process-shared scratchpad sessions over HTTP. Tests production_http_bind_is_always_ipv4_loopback, loopback_http_rejects_unauthenticated_wrong_host_and_wrong_origin and separate_local_bearer_principals_cannot_replay_foreign_sessions passed in core CI https://github.com/sguzman/synmetra/actions/runs/40266208686. This does not authorize public hosting."
                 }
               ]
             },
