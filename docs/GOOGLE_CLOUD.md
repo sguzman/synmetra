@@ -48,6 +48,10 @@ This opens a native browser-based Google consent interaction with a random loopb
 
 The credentials file lives under `$XDG_CONFIG_HOME/synmetra/credentials.json` (default `~/.config/synmetra/credentials.json`) with private Unix permissions. `auth logout` deletes Synmetra's local file but does not revoke Google-side authorization; revoke separately through the Google Account permissions page if desired. Avoid exporting any long-lived secrets to shell history.
 
+## Optional quota project (no gcloud runtime)
+
+To attribute Google API quota to an operator-approved project, set `SYNMETRA_GOOGLE_QUOTA_PROJECT` to its **project ID or numeric project number** before launching Synmetra. It adds Google's `x-goog-user-project` request header to outbound Admin/Data API calls, including opted-in annotation writes. Invalid project values fail locally without contacting Google; the setting never changes a Google OAuth account's permissions. The consenting principal must have `serviceusage.services.use` on that project (usually the Service Usage Consumer role). A Google HTTP 403 may reflect that quota-project permission as well as an API/scope/property-role issue. See [Google Cloud's quota project documentation](https://docs.cloud.google.com/docs/quotas/set-quota-project). No Google project or live role has been verified for this experimental server.
+
 ## 5. Diagnose without exposing secrets
 
 - **No credentials**: run `synmetra auth doctor`; ensure a downloaded Desktop OAuth client JSON exists in a private folder, not in the repository.

@@ -29,6 +29,7 @@ type CompatibilityCache = HashMap<[u8; 32], (Instant, Value)>;
 pub struct GoogleClient {
     http: reqwest::Client,
     bearer: Option<String>,
+    quota_project: Result<Option<String>, ApiError>,
     admin_base: String,
     data_base: String,
     compatibility_cache: Arc<Mutex<CompatibilityCache>>,
@@ -41,6 +42,7 @@ pub enum ApiError {
     InvalidRequest,
     CursorQueryMismatch,
     UnsupportedAuthOption,
+    InvalidQuotaProject,
     UnsupportedRealtimeOffset,
     RequestFailed,
     Http(u16),
@@ -59,7 +61,8 @@ impl fmt::Display for ApiError {
             Self::InvalidIdentifier => write!(f, "Invalid Google Analytics property identifier: expected positive decimal digits or properties/<digits>."),
             Self::InvalidRequest => write!(f, "Invalid Google Analytics request: report fields must be a JSON object."),
             Self::CursorQueryMismatch => write!(f, "Report cursor belongs to another query or Google Analytics resource; restart pagination with the current property and filters."),
-            Self::UnsupportedAuthOption => write!(f, "Requested OAuth command option is not supported: shared gcloud ADC and quota-project routing are not enabled."),
+            Self::UnsupportedAuthOption => write!(f, "Requested OAuth command option is not supported: shared gcloud ADC or per-command quota-project selection are not enabled."),
+            Self::InvalidQuotaProject => write!(f, "SYNMETRA_GOOGLE_QUOTA_PROJECT must name a valid Google Cloud project ID or number; no Google request was made."),
             Self::UnsupportedRealtimeOffset => write!(f, "Realtime report offset is unavailable in the current Google Analytics v1beta request. Use ordering and limit, or a historical report for offset pagination."),
             Self::RequestFailed => write!(f, "Google Analytics request failed (network or timeout)."),
             Self::Http(status) => match status {
@@ -189,6 +192,21 @@ fn readonly_retry_delay(
     ))
 }
 
+/// Quota attribution is explicitly configured by the local operator, not
+/// chosen from any untrusted MCP tool argument or upstream response.
+fn valid_quota_project(value: &str) -> bool {
+    if value.bytes().all(|byte| byte.is_ascii_digit()) {
+        return (6..=20).contains(&value.len());
+    }
+    let bytes = value.as_bytes();
+    (6..=30).contains(&bytes.len())
+        && bytes[0].is_ascii_lowercase()
+        && bytes[bytes.len() - 1].is_ascii_alphanumeric()
+        && bytes
+            .iter()
+            .all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit() || *byte == b'-')
+}
+
 impl GoogleClient {
     pub fn new(bearer: Option<String>) -> Self {
         Self::with_endpoints(bearer, ADMIN, DATA)
@@ -204,10 +222,31 @@ impl GoogleClient {
         Self {
             http,
             bearer: bearer.filter(|t| !t.trim().is_empty()),
+            quota_project: std::env::var_os("SYNMETRA_GOOGLE_QUOTA_PROJECT")
+                .map(|value| value.into_string().map_err(|_| ApiError::InvalidQuotaProject))
+                .transpose(),
             admin_base: admin.to_owned(),
             data_base: data.to_owned(),
             compatibility_cache: Arc::new(Mutex::new(HashMap::new())),
         }
+    }
+
+    fn with_quota_header(
+        &self,
+        request: reqwest::RequestBuilder,
+    ) -> Result<reqwest::RequestBuilder, ApiError> {
+        let quota = self
+            .quota_project
+            .as_ref()
+            .map_err(Clone::clone)?
+            .as_deref();
+        if let Some(project) = quota {
+            if !valid_quota_project(project) {
+                return Err(ApiError::InvalidQuotaProject);
+            }
+            return Ok(request.header("x-goog-user-project", project));
+        }
+        Ok(request)
     }
 
     async fn token(&self) -> Result<String, ApiError> {
@@ -224,6 +263,7 @@ impl GoogleClient {
     async fn send(&self, req: reqwest::RequestBuilder) -> Result<Value, ApiError> {
         // Single attempt only. This path is reserved for mutations; never replay a
         // Google annotation write after a timeout, 429, or ambiguous 5xx response.
+        let req = self.with_quota_header(req)?;
         let bearer = self.token().await?;
         let response = req
             .bearer_auth(&bearer)
@@ -235,6 +275,7 @@ impl GoogleClient {
     }
 
     async fn send_readonly(&self, req: reqwest::RequestBuilder) -> Result<Value, ApiError> {
+        let req = self.with_quota_header(req)?;
         let bearer = self.token().await?;
         self.send_readonly_as(req, &bearer).await
     }
@@ -244,7 +285,7 @@ impl GoogleClient {
         req: reqwest::RequestBuilder,
         bearer: &str,
     ) -> Result<Value, ApiError> {
-        let mut req = req;
+        let mut req = self.with_quota_header(req)?;
         for attempt in 0..3 {
             // A request carrying a streaming or unclonable body is not retried.
             let replay = req.try_clone();
@@ -1575,6 +1616,94 @@ mod tests {
         io::{AsyncReadExt, AsyncWriteExt},
         net::TcpListener,
     };
+
+    #[test]
+    fn quota_project_ids_and_numbers_are_strictly_validated() {
+        for valid in ["quota-project-123", "example2", "123456789012"] {
+            assert!(valid_quota_project(valid), "Valid project fixture: {valid}");
+        }
+        for invalid in [
+            "",
+            "short",
+            "-leading-hyphen",
+            "trailing-hyphen-",
+            "MixedCase",
+            "quota-project\r\nX-Extra: injected",
+            "quota project",
+            "quota/project",
+            "01234",
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        ] {
+            assert!(!valid_quota_project(invalid), "Invalid quota project passed");
+        }
+    }
+
+    #[tokio::test]
+    async fn opt_in_quota_header_is_kept_separate_from_google_bearer_on_reads_and_writes() {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let host = format!("http://{}", listener.local_addr().unwrap());
+        let capture = tokio::spawn(async move {
+            let mut observed = Vec::new();
+            for (method, path, body) in [
+                (
+                    "GET",
+                    "/v1beta/accountSummaries",
+                    r#"{"accountSummaries":[]}"#,
+                ),
+                (
+                    "POST",
+                    "/v1alpha/properties/42/reportingDataAnnotations",
+                    r#"{"name":"properties/42/reportingDataAnnotations/9"}"#,
+                ),
+            ] {
+                let (mut stream, _) = listener.accept().await.unwrap();
+                let mut buffer = [0u8; 8192];
+                let length = stream.read(&mut buffer).await.unwrap();
+                let request = String::from_utf8_lossy(&buffer[..length]).to_string();
+                let headers = request.to_ascii_lowercase();
+                assert!(request.starts_with(&format!("{method} {path} HTTP/1.1")));
+                assert!(headers.contains("x-goog-user-project: quota-project-123"));
+                assert!(headers.contains("authorization: bearer synthetic-google-token"));
+                assert!(!headers.contains("synthetic-inbound-mcp-token"));
+                let reply = format!(
+                    "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                    body.len(),
+                    body
+                );
+                stream.write_all(reply.as_bytes()).await.unwrap();
+                observed.push(request);
+            }
+            observed
+        });
+        let mut client = GoogleClient::with_endpoints(
+            Some("synthetic-google-token".into()),
+            &host,
+            &host,
+        );
+        client.quota_project = Ok(Some("quota-project-123".into()));
+        assert_eq!(
+            client.account_summaries().await.unwrap()["accountSummaries"],
+            json!([])
+        );
+        assert_eq!(
+            client.create_annotation("42", json!({"reportingDataAnnotation":{"title":"fixture"}}))
+                .await
+                .unwrap()["name"],
+            "properties/42/reportingDataAnnotations/9"
+        );
+        assert_eq!(capture.await.unwrap().len(), 2);
+
+        let mut invalid = GoogleClient::with_endpoints(
+            Some("synthetic-google-token".into()),
+            "http://127.0.0.1:9",
+            "http://127.0.0.1:9",
+        );
+        invalid.quota_project = Ok(Some("bad\nheader".into()));
+        assert_eq!(
+            invalid.account_summaries().await,
+            Err(ApiError::InvalidQuotaProject)
+        );
+    }
 
     #[test]
     fn conversion_specs_enforce_alpha_metric_dimension_and_action_limits() {

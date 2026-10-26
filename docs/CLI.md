@@ -51,6 +51,7 @@ Normal login **without** `--headless` continues to receive the loopback redirect
 | --- | --- | --- |
 | `SYNMETRA_GOOGLE_ACCESS_TOKEN` | Optional Google OAuth access-token override for a session | Overrides stored local credentials, does **not** automatically refresh; never echo or put into command history |
 | `SYNMETRA_MCP_BEARER_TOKEN` | Required for `--http-loopback`; independent local HTTP principal secret | Minimum 32 printable nonspace ASCII characters; **never** forward to Google |
+| `SYNMETRA_GOOGLE_QUOTA_PROJECT` | Optional Google Cloud project ID/number for outbound `x-goog-user-project` quota attribution | Explicit operator opt-in. Requires `serviceusage.services.use` permission on that project; malformed values are rejected **before** any Google request |
 | `SYNMETRA_MCP_PORT` | Optional positive u16 loopback HTTP port, default `44128` | Bound to `127.0.0.1` regardless of caller-specified address |
 | `XDG_CONFIG_HOME` | Optional user configuration root | Private OAuth location is `$XDG_CONFIG_HOME/synmetra/credentials.json` |
 | `HOME` | Fallback when XDG config root is unset | Fallback config is `~/.config/synmetra/credentials.json` |
@@ -88,6 +89,8 @@ read -s -P 'Local MCP bearer: ' SYNMETRA_MCP_BEARER_TOKEN
 set -gx SYNMETRA_MCP_BEARER_TOKEN $SYNMETRA_MCP_BEARER_TOKEN
 synmetra serve --http-loopback
 ```
+
+For optional Google Cloud quota attribution, an authorized operator can configure a private shell environment variable such as `set -gx SYNMETRA_GOOGLE_QUOTA_PROJECT quota-project-123` before launching the server. The server sends that value as `x-goog-user-project` on both read and explicitly enabled write requests, never as authentication. It does not discover/alter gcloud credentials or grant Google project permissions. Google's quota project can require the caller's `serviceusage.services.use` role. This override must not be sourced from MCP tool arguments.
 
 Do not substitute a Google OAuth access token as the local MCP bearer. The two authentication boundaries must stay separate, including when configuring an agent. `--http-loopback` does not provide TLS or any supported remote-hosting guarantee.
 

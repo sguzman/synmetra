@@ -1188,6 +1188,7 @@ fn api_error_code(error: &ApiError) -> (&'static str, &'static str) {
         ApiError::InvalidRequest => ("INVALID_REQUEST", "validation"),
         ApiError::CursorQueryMismatch => ("CURSOR_QUERY_MISMATCH", "cursor"),
         ApiError::UnsupportedAuthOption => ("UNSUPPORTED_AUTH_OPTION", "validation"),
+        ApiError::InvalidQuotaProject => ("INVALID_QUOTA_PROJECT", "validation"),
         ApiError::UnsupportedRealtimeOffset => ("UNSUPPORTED_REALTIME_OFFSET", "validation"),
         ApiError::InvalidAnnotation => ("INVALID_ANNOTATION", "validation"),
         ApiError::RequestFailed => ("UPSTREAM_UNAVAILABLE", "transport"),
