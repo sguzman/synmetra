@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `████████░░ 77.8%` · **+77.75 percentage points from initial empty repo; +0.44 pp from tested local OAuth-scope versus provider-403 error taxonomy and no escalation
+**Overall:** `████████░░ 78.2%` · **+78.19 percentage points from initial empty repo; +0.44 pp from verified OAuth callback security and complete native error taxonomy
 
 ### 📏 Progress conventions
 
@@ -126,11 +126,11 @@
   - ✅ **Gate:** Protocol wire fixtures pass multiple clients
 
 
-## 🔑 M2 — Google authentication and credential isolation — `██████░░░░ 61.5%`
+## 🔑 M2 — Google authentication and credential isolation — `██████░░░░ 63.5%`
 
 **Scope:** MVP. **Acceptance gate:** Secure, least-privilege, non-Python auth across interactive, local and service configurations; no secret leaks.
 
-### 🪪 P05 — Native OAuth login and operators — `███████░░░ 68.8%`
+### 🪪 P05 — Native OAuth login and operators — `████████░░ 75.0%`
 
 **Feature:** Native OAuth.
 
@@ -138,8 +138,8 @@
   - ✅ **Gate:** One-time login and status work without invoking Python or npm
 - 🧰 **T042 — Implement auth doctor and login-command helper** — `██████████ 100.0%`
   - ✅ **Gate:** Operator gets actionable non-secret diagnostics · **Evidence:** src/auth.rs public_status, doctor_guidance and command implement native auth doctor and auth command without calling Google or external tools; tests doctor_guidance_is_actionable_and_does_not_echo_private_values and auth_help_documents_complete_opt_in_scope_and_private_status exercise setup, stale/override, unreadable-credential and nonsecret guidance. CI https://github.com/sguzman/synmetra/actions/runs/40349474901 passed native doctor/command setup, canary-redaction and PATH=/nonexistent checks.; CI https://github.com/sguzman/synmetra/actions/runs/40349474901 ran target/debug/synmetra auth doctor and auth command under private temp XDG_CONFIG_HOME both normally and env -i PATH=/nonexistent, checked Admin/Data API guidance, login template, configured bearer presence without revealing synthetic token, and safe no-credentials/status behavior. src/auth.rs doctor_guidance also identifies private-file permission/symlink failures and expired refresh options; no live Google authorization is claimed.
-- 🌐 **T043 — Implement browser OAuth PKCE loopback flow** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** CSRF state, PKCE, timeout and redirect checks pass
+- 🌐 **T043 — Implement browser OAuth PKCE loopback flow** — `██████████ 100.0%`
+  - ✅ **Gate:** CSRF state, PKCE, timeout and redirect checks pass · **Evidence:** src/auth.rs native OAuth authorization URL with PKCE S256, random state and loopback listener; callback/PKCE unit tests pass Actions 40202015488; src/auth.rs browser_callback_rejects_csrf_duplicates_and_terminates_at_global_deadline and existing pkce_authorization_is_readonly_and_state_bound, headless_copy_back_verifies_exact_redirect_state_and_single_use, and state_callback_rejects_errors_and_wrong_paths verify fresh state, S256 challenge, exact callback path, rejection of duplicate state/code, wrong state, OAuth denial, validated single-use code receipt, and an absolute timeout that cannot be extended by invalid callbacks. Both default/core and feature-enabled DuckDB tests passed https://github.com/sguzman/synmetra/actions/runs/40404146934. This is a synthetic localhost test, not live Google consent.
 - 🖥️ **T044 — Support headless copy-back OAuth setup** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Headless flow completes and rejects replayed callbacks · **Evidence:** src/auth.rs implements --headless browser redirect copy-back using bounded private stdin, exact local scheme/host/port/path validation, a single code/state pair, per-login CSRF state and the existing PKCE token exchange; docs/CLI.md and docs/GOOGLE_CLOUD.md document the authorized account-owner workflow. The headless_copy_back_verifies_exact_redirect_state_and_single_use test and full core/native feature checks passed CI https://github.com/sguzman/synmetra/actions/runs/40393854117. An end-to-end authorized real Google login, callback replay across actual sessions, and property access remain unaccepted.
 - 🔐 **T045 — Store tokens in GA4-specific user config storage** — `██████████ 100.0%`
@@ -441,7 +441,7 @@
   - ✅ **Gate:** Dependency license architecture and portability reviewed · **Evidence:** src/main.rs and src/scratchpad.rs; GitHub Actions run 40206168306 successfully completed bundled-DuckDB feature tests (initial seven-route implementation); full strict-Clippy/updated-parameter parity and live GA tests remain separate acceptance gates.; docs/SCRATCHPAD.md, docs/ARCHITECTURE.md, Cargo.toml and src/scratchpad.rs reviewed: optional bundled DuckDB 1.4.2 includes native C/C++ linking with compiler/linker/runtime portability caveats; upstream Rust and native dependency licenses must remain accounted for under T013/T177/T216, and clean-install proof is T200/M9. DuckDB feature test https://github.com/sguzman/synmetra/actions/runs/40264614297 passed.
 
 
-## 🧬 M7 — Tool contract interoperability and parity audits — `███████░░░ 73.5%`
+## 🧬 M7 — Tool contract interoperability and parity audits — `████████░░ 76.5%`
 
 **Scope:** MVP. **Acceptance gate:** All 36 tool schemas and response mappings are independently snapshot-tested against both pinned upstreams.
 
@@ -456,7 +456,7 @@
 - 🗝️ **T153 — Implement ga4_auth_login_command** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Native CLI guidance and MCP schema parity for ga4_auth_login_command · **Evidence (implementation only):** src/main.rs AuthLoginCommandArgs advertises all six pinned optional inputs, compares input schema types/defaults/descriptions/formats to pinned SednaLabs, POSIX-quotes generated commands, and rejects unsupported shared ADC/quota-project options explicitly; src/auth.rs implements CLI --account OAuth login hint, --callback-port, --headless with bounds/duplication tests. GitHub Actions 40225871288 core job passed fmt, tests, strict Clippy, ledger. Runtime parity for shared ADC/quota-project and live auth still pending.
 
-### 📜 P20 — Schema and error contract — `███████░░░ 66.7%`
+### 📜 P20 — Schema and error contract — `███████░░░ 72.2%`
 
 **Feature:** Contracts and schemas.
 
@@ -466,8 +466,8 @@
   - ✅ **Gate:** Diff against both upstream pinned snapshots reviewed · **Evidence:** spec/audits/native-tool-input-schemas-40224261534.json captures 36 native router schemas from actual feature-enabled passing GitHub Actions 40224261534 (source commit 43a69ecc); spec/audits/input-schema-differences-40224261534.json records machine-readable property names, required sets, and selected raw schema attributes. docs/SCHEMA_PARITY_AUDIT.md explains scope, provenance and remediation categories.; docs/SCHEMA_PARITY_AUDIT.md and spec/audits/input-schema-differences-40224261534.json compare native schema baseline with all 35 pinned SednaLabs JSON schemas and 10 official Google extracted signatures; report preserves all detected differences and explicitly identifies conflicting defaults/feature union and snapshot age. Comparison acceptance does not mean gaps resolved or 36-tool parity complete.
 - 🧳 **T156 — Implement Contract V1 ok/data/meta responses** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** All Rust parity tools produce validated success envelope
-- ⚠️ **T157 — Implement Contract V1 ok/error/meta responses** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Errors have stable status code reason and context fields
+- ⚠️ **T157 — Implement Contract V1 ok/error/meta responses** — `██████████ 100.0%`
+  - ✅ **Gate:** Errors have stable status code reason and context fields · **Evidence:** src/main.rs stable code, category, reason, message and optional HTTP status on errors; local_result provides local category; error envelope unit tests passed feature-enabled cargo test GitHub Actions 40224261534 duckdb job. All-tool taxonomy, structured MCP fields, and true elapsed times remain incomplete.; src/main.rs every_native_api_error_has_a_stable_redacted_structured_and_text_envelope exhaustively exercises all native ApiError variants (including Google HTTP 400/401/403/429/500), verifying stable code/reason/category, context-specific HTTP status, typed message, identical structuredContent and legacy JSON text, and no embedded provider credentials. Feature-enabled local_result tests also verify SCRATCHPAD_ERROR and HTTP-status omission. Default/core and feature-enabled tests plus strict Clippy passed https://github.com/sguzman/synmetra/actions/runs/40404146934. elapsed_ms=0 explicitly remains an unmeasured sentinel.
 - ⚖️ **T158 — Preserve official response semantics where conflicting** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Document compatibility choice and adapters
 - 📏 **T159 — Enforce stable cursor and truncation metadata** — `█████░░░░░ 50.0%`

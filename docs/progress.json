@@ -884,7 +884,7 @@
               "id": "T043",
               "emoji": "🌐",
               "name": "Implement browser OAuth PKCE loopback flow",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "CSRF state, PKCE, timeout and redirect checks pass",
               "checks": [
                 {
@@ -894,7 +894,8 @@
                 },
                 {
                   "text": "CSRF state, PKCE, timeout and redirect checks pass",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/auth.rs browser_callback_rejects_csrf_duplicates_and_terminates_at_global_deadline and existing pkce_authorization_is_readonly_and_state_bound, headless_copy_back_verifies_exact_redirect_state_and_single_use, and state_callback_rejects_errors_and_wrong_paths verify fresh state, S256 challenge, exact callback path, rejection of duplicate state/code, wrong state, OAuth denial, validated single-use code receipt, and an absolute timeout that cannot be extended by invalid callbacks. Both default/core and feature-enabled DuckDB tests passed https://github.com/sguzman/synmetra/actions/runs/40404146934. This is a synthetic localhost test, not live Google consent."
                 }
               ]
             },
@@ -3185,7 +3186,7 @@
               "id": "T157",
               "emoji": "⚠️",
               "name": "Implement Contract V1 ok/error/meta responses",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Errors have stable status code reason and context fields",
               "checks": [
                 {
@@ -3195,7 +3196,8 @@
                 },
                 {
                   "text": "Errors have stable status code reason and context fields",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs every_native_api_error_has_a_stable_redacted_structured_and_text_envelope exhaustively exercises all native ApiError variants (including Google HTTP 400/401/403/429/500), verifying stable code/reason/category, context-specific HTTP status, typed message, identical structuredContent and legacy JSON text, and no embedded provider credentials. Feature-enabled local_result tests also verify SCRATCHPAD_ERROR and HTTP-status omission. Default/core and feature-enabled tests plus strict Clippy passed https://github.com/sguzman/synmetra/actions/runs/40404146934. elapsed_ms=0 explicitly remains an unmeasured sentinel."
                 }
               ]
             },
