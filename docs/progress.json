@@ -1268,16 +1268,18 @@
               "id": "T065",
               "emoji": "📦",
               "name": "Ensure no auth dependency on gcloud installation",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "Native test environment lacks gcloud Python and npm",
               "checks": [
                 {
                   "text": "Deliver ensure no auth dependency on gcloud installation as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/auth.rs implements native Rust auth doctor/status/command/login/logout with Desktop OAuth JSON, loopback PKCE, no gcloud/Python/npm process dependency; CI `.github/workflows/ci.yml` runs the installed native binary with PATH=/nonexistent, using isolated XDG_CONFIG_HOME and checks local auth commands without executable PATH. GitHub Actions 40249518327 core and scratchpad workflow completed green."
                 },
                 {
                   "text": "Native test environment lacks gcloud Python and npm",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "CI 40249398665 and 40249518327 confirmed auth doctor, status, command, missing-client login failure, and logout under `env -i PATH=/nonexistent` with no gcloud, Python or npm available as executables; `cargo tree` and `ldd` check no Python dynamic dependency. No authorized live Google authorization was attempted or claimed (separate T178/T048)."
                 }
               ]
             },

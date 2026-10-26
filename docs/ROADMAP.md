@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `█████░░░░░ 45.1%` · **+45.15 percentage points from initial empty repo; +0.44 pp from verified pinned upstream fixture hashes and parity reference tests** · 86/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `█████░░░░░ 45.6%` · **+45.59 percentage points from initial empty repo; +0.44 pp from CI-verified native auth independence** · 87/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -126,7 +126,7 @@
   - ✅ **Gate:** Protocol wire fixtures pass multiple clients
 
 
-## 🔑 M2 — Google authentication and credential isolation — `███░░░░░░░ 26.9%`
+## 🔑 M2 — Google authentication and credential isolation — `███░░░░░░░ 30.8%`
 
 **Scope:** MVP. **Acceptance gate:** Secure, least-privilege, non-Python auth across interactive, local and service configurations; no secret leaks.
 
@@ -174,7 +174,7 @@
 - ⏳ **T057 — Guard clock skew and rotation races** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Expiring secrets renew safely during concurrent calls
 
-### 🛡️ P07 — Inbound versus upstream trust — `███░░░░░░░ 33.3%`
+### 🛡️ P07 — Inbound versus upstream trust — `████░░░░░░ 44.4%`
 
 **Feature:** Identity security.
 
@@ -192,8 +192,8 @@
   - ✅ **Gate:** Only pinned Google API hosts are contacted by default · **Evidence:** src/google.rs hardcoded HTTPS Google API origins; property/account resource name sanitation; CI 40202015488 tests and fixed-host synthetic requests; src/google.rs GoogleClient::new pins analyticsadmin.googleapis.com and analyticsdata.googleapis.com via HTTPS with redirect policy none; production_google_hosts_are_pinned_and_http_redirects_never_followed verifies both hosts, rejects URL/authority/path injection in property/account identifiers, and checks an isolated 302 response is terminal rather than redirecting authorization headers. Only test-local with_endpoints can substitute loopback origins. GitHub Actions 40240180552 core Rust fmt, tests, Clippy, ledger and native DuckDB job passed; actual live Google identity/access remains a separate acceptance gate.
 - 🧪 **T064 — Exercise expired revoked and invalid credentials** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** All modes fail safely with stable errors
-- 📦 **T065 — Ensure no auth dependency on gcloud installation** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Native test environment lacks gcloud Python and npm
+- 📦 **T065 — Ensure no auth dependency on gcloud installation** — `██████████ 100.0%`
+  - ✅ **Gate:** Native test environment lacks gcloud Python and npm · **Evidence:** src/auth.rs implements native Rust auth doctor/status/command/login/logout with Desktop OAuth JSON, loopback PKCE, no gcloud/Python/npm process dependency; CI `.github/workflows/ci.yml` runs the installed native binary with PATH=/nonexistent, using isolated XDG_CONFIG_HOME and checks local auth commands without executable PATH. GitHub Actions 40249518327 core and scratchpad workflow completed green.; CI 40249398665 and 40249518327 confirmed auth doctor, status, command, missing-client login failure, and logout under `env -i PATH=/nonexistent` with no gcloud, Python or npm available as executables; `cargo tree` and `ldd` check no Python dynamic dependency. No authorized live Google authorization was attempted or claimed (separate T178/T048).
 - 🧯 **T066 — Implement safe logout and credential revocation guidance** — `██████████ 100.0%`
   - ✅ **Gate:** State cleared without touching unrelated Google apps · **Evidence:** src/auth.rs logout removes only Synmetra credential file after private-file check; Actions 40202015488 compiled; src/auth.rs clear_credentials_at deletes only private Synmetra credentials in a non-symlinked private auth directory, treats a missing file idempotently, refuses symlinked credentials/directories or world-readable credentials, and distinguishes unexpected filesystem errors. Unit test logout_removes_only_private_synmetra_credentials_without_touching_neighbors verifies removal, idempotence, no unrelated Google app data changes, and adversarial symlink/insecure-file rejection. Native CLI auth logout provides explicit Google-account revocation guidance without claiming server-side revocation. GitHub Actions 40244722883 core and DuckDB passed; no live Google session was accessed.
 
