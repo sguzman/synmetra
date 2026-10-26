@@ -261,14 +261,17 @@ fn callback_code(request: &str, expected_state: &str) -> Result<String, String> 
         .ok_or("Missing authorization code".into())
 }
 
-async fn token_exchange(fields: &[(&str, &str)]) -> Result<TokenResponse, String> {
+async fn token_exchange_at(
+    endpoint: &str,
+    fields: &[(&str, &str)],
+) -> Result<TokenResponse, String> {
     let http = reqwest::Client::builder()
         .timeout(Duration::from_secs(20))
         .redirect(reqwest::redirect::Policy::none())
         .build()
         .map_err(|_| "Failed to build token client")?;
     let response = http
-        .post(TOKEN_ENDPOINT)
+        .post(endpoint)
         .form(fields)
         .send()
         .await
@@ -285,25 +288,33 @@ async fn token_exchange(fields: &[(&str, &str)]) -> Result<TokenResponse, String
         .map_err(|_| "Malformed Google token response".into())
 }
 
-pub async fn access_token() -> Result<Option<String>, String> {
-    static REFRESH_LOCK: tokio::sync::OnceCell<tokio::sync::Mutex<()>> =
-        tokio::sync::OnceCell::const_new();
-    let lock = REFRESH_LOCK
-        .get_or_init(|| async { tokio::sync::Mutex::new(()) })
-        .await;
+async fn token_exchange(fields: &[(&str, &str)]) -> Result<TokenResponse, String> {
+    token_exchange_at(TOKEN_ENDPOINT, fields).await
+}
+
+async fn access_token_at(
+    path: &Path,
+    endpoint: &str,
+    lock: &tokio::sync::Mutex<()>,
+) -> Result<Option<String>, String> {
+    // The lock spans the disk reread, exchange and atomic credential rotation.
+    // The second concurrent caller must see the refreshed credential on disk.
     let _held = lock.lock().await;
-    let Some(mut stored) = read_credentials()? else {
+    let Some(mut stored) = read_credentials_at(path)? else {
         return Ok(None);
     };
     if stored.expires_at > epoch_seconds().saturating_add(120) && !stored.access_token.is_empty() {
         return Ok(Some(stored.access_token));
     }
-    let refresh = token_exchange(&[
-        ("client_id", &stored.client_id),
-        ("client_secret", &stored.client_secret),
-        ("refresh_token", &stored.refresh_token),
-        ("grant_type", "refresh_token"),
-    ])
+    let refresh = token_exchange_at(
+        endpoint,
+        &[
+            ("client_id", &stored.client_id),
+            ("client_secret", &stored.client_secret),
+            ("refresh_token", &stored.refresh_token),
+            ("grant_type", "refresh_token"),
+        ],
+    )
     .await?;
     if refresh.access_token.is_empty() || refresh.expires_in == 0 {
         return Err("Google returned invalid refreshed credentials".into());
@@ -313,8 +324,17 @@ pub async fn access_token() -> Result<Option<String>, String> {
     }
     stored.access_token = refresh.access_token;
     stored.expires_at = epoch_seconds().saturating_add(refresh.expires_in);
-    persist_credentials(&stored)?;
+    persist_credentials_at(path, &stored)?;
     Ok(Some(stored.access_token))
+}
+
+pub async fn access_token() -> Result<Option<String>, String> {
+    static REFRESH_LOCK: tokio::sync::OnceCell<tokio::sync::Mutex<()>> =
+        tokio::sync::OnceCell::const_new();
+    let lock = REFRESH_LOCK
+        .get_or_init(|| async { tokio::sync::Mutex::new(()) })
+        .await;
+    access_token_at(&credentials_path()?, TOKEN_ENDPOINT, lock).await
 }
 
 #[derive(Debug, Default)]
@@ -593,6 +613,86 @@ pub async fn command(args: &[String]) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[tokio::test]
+    async fn concurrent_expired_credentials_refresh_once_and_rotate_privately() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        use tokio::net::TcpListener;
+
+        let root = std::env::temp_dir().join(format!(
+            "synmetra-refresh-concurrency-{}-{}",
+            std::process::id(),
+            nonce()
+        ));
+        let path = root.join("synmetra").join("credentials.json");
+        let fresh = Stored {
+            client_id: "fixture.apps.googleusercontent.com".into(),
+            client_secret: "fixture-client-secret".into(),
+            refresh_token: "fixture-old-refresh".into(),
+            access_token: "fixture-old-access".into(),
+            expires_at: epoch_seconds().saturating_add(3600),
+            granted_scope: SCOPE.to_owned(),
+        };
+        persist_credentials_at(&path, &fresh).unwrap();
+        let lock = tokio::sync::Mutex::new(());
+        assert_eq!(
+            access_token_at(&path, "http://127.0.0.1:1/unused", &lock)
+                .await
+                .unwrap(),
+            Some("fixture-old-access".to_owned())
+        );
+
+        let mut expired = fresh;
+        expired.expires_at = epoch_seconds().saturating_add(119);
+        persist_credentials_at(&path, &expired).unwrap();
+
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let endpoint = format!("http://{}/token", listener.local_addr().unwrap());
+        let responder = tokio::spawn(async move {
+            let (mut stream, _) = listener.accept().await.unwrap();
+            let mut buffer = [0_u8; 4096];
+            let read = stream.read(&mut buffer).await.unwrap();
+            let request = String::from_utf8_lossy(&buffer[..read]);
+            assert!(request.starts_with("POST /token "));
+            let body = json!({
+                "access_token":"fixture-new-access",
+                "refresh_token":"fixture-new-refresh",
+                "expires_in":3600,
+                "scope":SCOPE
+            })
+            .to_string();
+            let response = format!(
+                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                body.len(),
+                body
+            );
+            stream.write_all(response.as_bytes()).await.unwrap();
+        });
+        let both = tokio::time::timeout(Duration::from_secs(5), async {
+            tokio::join!(
+                access_token_at(&path, &endpoint, &lock),
+                access_token_at(&path, &endpoint, &lock)
+            )
+        })
+        .await
+        .expect("refresh deadlock or stampede");
+        assert_eq!(both.0.unwrap().as_deref(), Some("fixture-new-access"));
+        assert_eq!(both.1.unwrap().as_deref(), Some("fixture-new-access"));
+        responder.await.unwrap();
+
+        let persisted = read_credentials_at(&path).unwrap().unwrap();
+        assert_eq!(persisted.refresh_token, "fixture-new-refresh");
+        assert_eq!(persisted.access_token, "fixture-new-access");
+        assert!(persisted.expires_at > epoch_seconds().saturating_add(120));
+        assert_eq!(
+            access_token_at(&path, "http://127.0.0.1:1/unused", &lock)
+                .await
+                .unwrap()
+                .as_deref(),
+            Some("fixture-new-access")
+        );
+        std::fs::remove_dir_all(&root).unwrap();
+    }
 
     #[test]
     fn login_flags_are_opt_in_and_reject_malformed_arguments() {
