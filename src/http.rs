@@ -341,6 +341,26 @@ mod tests {
         assert!(tools
             .iter()
             .all(|item| item["name"] != "create_property_annotation"));
+        // The entire small catalog fits in one MCP tools/list response. A
+        // repeated discovery request must retain identical names and order,
+        // without advertising a continuation cursor that has no next page.
+        assert!(listing["result"]["nextCursor"].is_null());
+        let discovered_again = request(
+            json!({"jsonrpc":"2.0","id":20,"method":"tools/list","params":{}}),
+            &session,
+        )
+        .send()
+        .await
+        .unwrap();
+        assert_eq!(discovered_again.status(), StatusCode::OK);
+        let repeated = mcp_json_response(discovered_again).await;
+        assert_eq!(listing["result"]["tools"], repeated["result"]["tools"]);
+        assert!(repeated["result"]["nextCursor"].is_null());
+        let distinct: std::collections::HashSet<_> = tools
+            .iter()
+            .map(|item| item["name"].as_str().unwrap())
+            .collect();
+        assert_eq!(distinct.len(), tools.len());
 
         let invoked = request(
             json!({"jsonrpc":"2.0","id":3,"method":"tools/call","params":{
