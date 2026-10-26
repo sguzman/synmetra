@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `████████░░ 75.3%` · **+75.33 percentage points from initial empty repo; +0.22 pp from verified CI-only Linux page-cache-cleared vs warm benchmark
+**Overall:** `████████░░ 75.6%` · **+75.55 percentage points from initial empty repo; +0.22 pp from verified zero-spill and crash cleanup regression
 
 ### 📏 Progress conventions
 
@@ -126,7 +126,7 @@
   - ✅ **Gate:** Protocol wire fixtures pass multiple clients
 
 
-## 🔑 M2 — Google authentication and credential isolation — `█████░░░░░ 53.9%`
+## 🔑 M2 — Google authentication and credential isolation — `█████░░░░░ 53.8%`
 
 **Scope:** MVP. **Acceptance gate:** Secure, least-privilege, non-Python auth across interactive, local and service configurations; no secret leaks.
 
@@ -366,7 +366,7 @@
   - ✅ **Gate:** Disable write capability at runtime restart · **Evidence:** Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.; Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.
 
 
-## 🗃️ M6 — DuckDB scratchpad and advanced analytics parity — `████████░░ 80.0%`
+## 🗃️ M6 — DuckDB scratchpad and advanced analytics parity — `████████░░ 82.0%`
 
 **Scope:** MVP. **Acceptance gate:** All 15 local scratchpad tools and policy limits operate without unsafe SQL or credential disclosure.
 
@@ -415,7 +415,7 @@
 - 📤 **T140 — Implement scratchpad_export_evidence_bundle** — `██████████ 100.0%`
   - ✅ **Gate:** Evidence fixture and schema/output equivalence for scratchpad_export_evidence_bundle · **Evidence src/scratchpad.rs export_evidence_bundle implements local private bounded JSON+Markdown with table samples, row counts, sample-query SHA-256 and no filesystem write/provider call; src/main.rs registers scratchpad_export_evidence_bundle MCP with opt-in capability. DuckDB-feature GitHub Actions 40261209205 native test suite passed export and schema fixtures.; src/main.rs scratchpad_evidence_export_matches_pinned_inputs_and_bounded_json_markdown tests the exact pinned field/required-set inventory and response table/sample/hash/Markdown shape, rejects duplicate table selectors, traversal names and sample limit 21; src/scratchpad.rs evidence_export_handles_quoted_columns_nulls_and_bounded_text_cells plus exports_private_bounded_json_and_markdown_evidence test SQL identifiers, NULLs, >2048-byte cells and zero-row sampling. GitHub Actions 40261209205 DuckDB job passed these named tests; format correction followed in 40261354530 passing core checks. No live Google acceptance implied.
 
-### 🔐 P18 — DuckDB security and resource controls — `██████░░░░ 60.0%`
+### 🔐 P18 — DuckDB security and resource controls — `███████░░░ 65.0%`
 
 **Feature:** Scratchpad sandbox.
 
@@ -429,8 +429,8 @@
   - ✅ **Gate:** DML DDL COPY INSTALL LOAD ATTACH and external scans rejected · **Evidence:** src/scratchpad.rs: bounded SQL-subset parser reconstructs a SELECT statement exclusively from validated table/column identifiers, rejects DML, DDL, joins, CTE, external scans, embedded statements, injection and excessive limits; src/main.rs exposes read-only MCP scratchpad_query with upstream-required session_id/sql fields. Synthetic query/security tests and strict core tests passed GitHub Actions 40219402080. Full upstream SQL dialect/output-mode parity and extensive fuzzing remain open.; src/scratchpad.rs hostile_sql_corpus_and_deterministic_mutations_never_execute and restricted_select_query_is_bounded_and_never_executes_user_sql reject DML, DDL, COPY, INSTALL, LOAD, ATTACH, external scans, query injection and 44 deterministic hostile SQL mutations without table alteration; DuckDB feature test https://github.com/sguzman/synmetra/actions/runs/40264614297 passed.
 - 🌍 **T145 — Disable remote extensions and filesystem reads** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** No network or arbitrary path escape through DuckDB
-- 🧯 **T146 — Handle unexpected termination and session cleanup** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Leftover temp files sanitized on restart
+- 🧯 **T146 — Handle unexpected termination and session cleanup** — `█████░░░░░ 50.0%`
+  - ✅ **Gate:** Leftover temp files sanitized on restart · **Evidence:** src/scratchpad.rs now locks max_temp_directory_size='0B' before opening in-memory DuckDB sessions, failing queries rather than spilling potentially private rows into the process working directory. Synthetic feature tests crash_safe_scratchpad_disables_spills_and_locks_configuration and killed_in_memory_session_leaves_no_spill_files_or_persisted_rows forcibly kill a child holding an ingested session, verify its private test directory is empty, and confirm a fresh ScratchState has no old sessions. The complete 200-test DuckDB feature suite and strict feature Clippy passed https://github.com/sguzman/synmetra/actions/runs/40387059956. Cleanup of unknown spill directories left by earlier releases, OS swap/core dumps, and arbitrary native-engine failure paths are not certified.
 - 📏 **T147 — Provide deterministic truncation and evidence limits** — `██████████ 100.0%`
   - ✅ **Gate:** Bundle size and context limits enforced · **Evidence:** src/scratchpad.rs query_bounded clamps rows/cells and reports truthful truncated counts; export_evidence_bundle enforces at most eight tables, 20 sample rows, 2048-byte sample row, and total serialized bundle cap 256 KiB. src/main.rs scratchpad_evidence_export_matches_pinned_inputs_and_bounded_json_markdown plus scratchpad.rs bounded fixture tests passed feature-enabled GitHub Actions 40261209205. The second gate remains open pending explicit oversized aggregate bundle and deterministic multi-table boundary evidence.; src/scratchpad.rs aggregate_evidence_bundle_rejects_oversized_output_without_altering_tables rejects eight-table aggregate output over 256 KiB while preserving tables; evidence_samples_are_sorted_repeatable_and_hash_the_actual_query checks stable order/hash, and evidence_export_handles_quoted_columns_nulls_and_bounded_text_cells guards encoding; DuckDB feature test https://github.com/sguzman/synmetra/actions/runs/40264614297 passed.
 - 🔏 **T148 — Guard exported evidence bundle permissions** — `█████░░░░░ 50.0%`
@@ -571,7 +571,7 @@
   - ✅ **Gate:** Signed provenance and dependency audit evidence · **Evidence:** Pinned Rust 1.99.1/Cargo.lock source builds an x86-64 release binary in two independent Cargo target directories and compares SHA-256 digests and sizes. The dedicated workflow step passed https://github.com/sguzman/synmetra/actions/runs/40358192285; separate cargo-deny Rust license/source/advisory scans also pass. Cross-runner reproducibility, bundled DuckDB and signed provenance remain distinct pending gates.; The release workflow passed two separate pinned Rust 1.99.1/Cargo.lock x86-64 binary SHA-256 comparisons, SHA-pinned actions/attest@v4 Sigstore/SLSA v1 archive attestation, and gh attestation verify -R sguzman/synmetra validating repository identity and SLSA predicate in https://github.com/sguzman/synmetra/actions/runs/40359969759. Independent cargo-deny Rust license/source checks passed https://github.com/sguzman/synmetra/actions/runs/40346651714. This accepts signed provenance and dependency-audit evidence only for an experimental default-feature Linux archive, not clean ARM64/EndeavourOS builds or native C++ compliance.
 
 
-## 🚀 M9 — Linux release and Codex-ready inauguration — `███████░░░ 70.5%`
+## 🚀 M9 — Linux release and Codex-ready inauguration — `███████░░░ 70.4%`
 
 **Scope:** MVP. **Acceptance gate:** A documented stable native binary with 36-tool verified parity and release artifacts; no Python/npm runtime.
 

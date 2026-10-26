@@ -2948,12 +2948,13 @@
               "id": "T146",
               "emoji": "🧯",
               "name": "Handle unexpected termination and session cleanup",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Leftover temp files sanitized on restart",
               "checks": [
                 {
                   "text": "Deliver handle unexpected termination and session cleanup as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/scratchpad.rs now locks max_temp_directory_size='0B' before opening in-memory DuckDB sessions, failing queries rather than spilling potentially private rows into the process working directory. Synthetic feature tests crash_safe_scratchpad_disables_spills_and_locks_configuration and killed_in_memory_session_leaves_no_spill_files_or_persisted_rows forcibly kill a child holding an ingested session, verify its private test directory is empty, and confirm a fresh ScratchState has no old sessions. The complete 200-test DuckDB feature suite and strict feature Clippy passed https://github.com/sguzman/synmetra/actions/runs/40387059956. Cleanup of unknown spill directories left by earlier releases, OS swap/core dumps, and arbitrary native-engine failure paths are not certified."
                 },
                 {
                   "text": "Leftover temp files sanitized on restart",
