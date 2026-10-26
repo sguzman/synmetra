@@ -151,6 +151,33 @@ jobs:
             "$RUNNER_TEMP/synmetra-oversize-stdio.stderr"
           test ! -s "$RUNNER_TEMP/synmetra-oversize-stdio.stdout"
 
+      - name: Verify native operator reference and redacted smoke documentation
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f docs/CLI.md
+          test -f docs/GOOGLE_CLOUD.md
+          test -f docs/SMOKE_SCENARIOS.md
+          for name in --http-loopback --allow-write --scratchpad --allow-edit --headless --callback-port --client-id-file; do
+            grep -Fq -- "$name" docs/CLI.md
+          done
+          for name in SYNMETRA_GOOGLE_ACCESS_TOKEN SYNMETRA_MCP_BEARER_TOKEN SYNMETRA_MCP_PORT XDG_CONFIG_HOME; do
+            grep -Fq -- "$name" docs/CLI.md
+          done
+          grep -Fq 'read -s -P' docs/CLI.md
+          grep -Fq 'fish_add_path' docs/INSTALL.md
+          grep -Fq 'Google Analytics Admin API' docs/GOOGLE_CLOUD.md
+          grep -Fq 'Google Analytics Data API' docs/GOOGLE_CLOUD.md
+          grep -Fq 'https://www.googleapis.com/auth/analytics.readonly' docs/GOOGLE_CLOUD.md
+          grep -Fq 'https://www.googleapis.com/auth/analytics.edit' docs/GOOGLE_CLOUD.md
+          grep -Fq 'No manual user QA' docs/SMOKE_SCENARIOS.md || grep -Fq 'No manual user QA' docs/INSTALL.md
+          grep -Fq 'live_GA=false' docs/SMOKE_SCENARIOS.md
+          grep -Fq 'credential' docs/SMOKE_SCENARIOS.md
+          grep -Fq 'docs/GOOGLE_CLOUD.md' README.md
+          grep -Fq 'docs/SMOKE_SCENARIOS.md' README.md
+          grep -Fq 'does **not** require installing or running' docs/GOOGLE_CLOUD.md
+          grep -Fq 'No Python, npm, Node, gcloud' docs/CLI.md
+
       - name: Verify offline CLI help across native invocation modes
         shell: bash
         run: |

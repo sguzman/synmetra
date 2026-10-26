@@ -33,7 +33,7 @@ Detailed milestone, phase, feature and atomic-task progress: [ROADMAP](docs/ROAD
 ## 🦀 Mission and boundaries
 
 - **Single native Rust executable** `synmetra`, built for Linux / EndeavourOS and Codex first, supporting stdio and secure Streamable HTTP MCP.
-- All **36 distinct MCP tools** remain the target: Google's **10** (nine read and one optional gated annotation write), SednaLabs' **35**, **nine shared**. Currently 20 have provisional read-only routes and 1 has a gated mutation route; 7 optional scratchpad lifecycle handlers are implemented provisionally and 8 scratchpad analysis handlers are not implemented. No route has passed full upstream parity/live GA acceptance.
+- All **36 distinct MCP tools** remain the target: Google's **10** (nine read and one optional gated annotation write), SednaLabs' **35**, **nine shared**. Currently 20 default read-only tool names, 15 opt-in scratchpad tool names and 1 explicitly gated annotation mutation tool have provisional native Rust handlers. Each remains subject to parameter/response parity and authorized live acceptance. No route has passed full upstream parity/live GA acceptance.
 - Comprehensive Google Analytics Admin + Data API read/report parity, alpha conversions and funnels, optional annotation creation.
 - Full optional DuckDB scratchpad, safe SQL sandbox, lifecycle/quotas, evidence export and release/landing comparisons.
 - Read-only by default, `analytics.readonly` scope, native Desktop OAuth and short-lived bearer-token support. ADC and service-account support remain planned. `analytics.edit` requires explicit opt-in plus externally authorized credentials; inbound HTTP identity and Google identity are kept separate.
@@ -42,7 +42,7 @@ Detailed milestone, phase, feature and atomic-task progress: [ROADMAP](docs/ROAD
 
 ## 📚 Canonical documents
 
-[🦀 Linux installation](docs/INSTALL.md) · [📦 Release evidence](docs/RELEASE_POLICY.md) · [🗺️ Roadmap](docs/ROADMAP.md) · [📌 Upstream feature audit](docs/UPSTREAM.md) · [🏗️ Architecture](docs/ARCHITECTURE.md) · [🔐 Security](docs/SECURITY.md) · [🎨 Color](docs/COLOR.md) · [⚖️ Provenance](docs/PROVENANCE.md) · [📋 Governance](docs/GOVERNANCE.md).
+[🦀 Linux installation](docs/INSTALL.md) · [⌨️ CLI and Fish](docs/CLI.md) · [🔑 Cloud setup](docs/GOOGLE_CLOUD.md) · [🧪 Smoke QA](docs/SMOKE_SCENARIOS.md) · [📦 Release evidence](docs/RELEASE_POLICY.md) · [🗺️ Roadmap](docs/ROADMAP.md) · [📌 Upstream feature audit](docs/UPSTREAM.md) · [🏗️ Architecture](docs/ARCHITECTURE.md) · [🔐 Security](docs/SECURITY.md) · [🎨 Color](docs/COLOR.md) · [⚖️ Provenance](docs/PROVENANCE.md) · [📋 Governance](docs/GOVERNANCE.md).
 
 **License:** MIT. The Google and SednaLabs reference repositories are Apache-2.0. This project independently implements their documented behavior; copying their code requires preserving their copyright/license notices and tracking provenance.
 
@@ -54,11 +54,11 @@ Build and launch the MCP stdio server with `cargo run --bin synmetra -- serve`. 
 
 **Native Linux install:** [EndeavourOS/Arch and other Linux source installation, verification, upgrade and uninstall](docs/INSTALL.md). The default binary is read-only and does not require Python, Node, npm or gcloud. Release packaging and authorized live GA testing remain separate gates.
 
-**Optional scratchpad (experimental):** `cargo build --features scratchpad` and `synmetra serve --scratchpad` expose seven provisional in-memory DuckDB lifecycle operations. They are blocked on Streamable HTTP because per-client isolation is unfinished. Feature-enabled native compilation and contract verification remain pending. [Scratchpad limitations](docs/SCRATCHPAD.md) · [Upstream schema gaps](docs/SCHEMA_GAPS.md).
+**Optional scratchpad (experimental):** `cargo build --features scratchpad` and `synmetra serve --scratchpad` expose 15 provisional in-memory DuckDB tools, including lifecycle, ingestion and analysis. They are blocked on Streamable HTTP because per-client identity isolation is unfinished. Feature-enabled native tests have run; full security, upstream parity, and live Google acceptance remain pending. [Scratchpad limitations](docs/SCRATCHPAD.md) · [Upstream schema gaps](docs/SCHEMA_GAPS.md).
 
-**Native DuckDB feature testing:** The initial seven lifecycle tool implementations passed an optional bundled-DuckDB feature test in [GitHub Actions run 40206168306](https://github.com/sguzman/synmetra/actions/runs/40206168306). Later schema refinements and full strict Clippy/Google integration are not yet accepted. The 7 lifecycle tasks remain partial (50%) rather than falsely marking full upstream parity.
+**Native DuckDB feature testing:** Feature-enabled bundled-DuckDB tests passed in [GitHub Actions run 40269115096](https://github.com/sguzman/synmetra/actions/runs/40269115096) (the full workflow's core formatting gate failed on this SHA and was repaired separately). Strict feature Clippy is configured as a release-tag gate, not a default-branch certification. A passed feature fixture test is not full upstream contract or live GA parity.
 
-**Latest native scratchpad:** Twelve provisional local DuckDB MCP tools are available only with `--features scratchpad` and `serve --scratchpad`, including historical and realtime GA4 ingestion. Sessions are memory-only and inaccessible through Synmetra's HTTP transport. See [scratchpad policy](docs/SCRATCHPAD.md). No live Google authorization has been tested.
+**Latest native scratchpad:** Fifteen provisional local DuckDB MCP tools are available only with `--features scratchpad` and `serve --scratchpad`, including historical and realtime GA4 ingestion. Sessions are memory-only and inaccessible through Synmetra's HTTP transport. See [scratchpad policy](docs/SCRATCHPAD.md). No live Google authorization has been tested.
 
 **Tool-name implementation coverage:** 35/35 of the pinned SednaLabs tools now have native Rust handlers. Fifteen DuckDB tools require the optional feature and explicit scratchpad capability. All 36 union tools still require full input/output behavioral acceptance; none is certified 100% upstream parity complete.
 
