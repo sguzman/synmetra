@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `█████░░░░░ 46.5%` · **+46.48 percentage points from initial empty repo; +0.22 pp from 36-tool pinned source/test provenance index** · 88/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `█████░░░░░ 46.9%` · **+46.92 percentage points from initial empty repo; +0.44 pp from feature-enabled 36-tool MCP dispatch evidence** · 89/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -495,18 +495,18 @@
   - ✅ **Gate:** Changes open maintenance work rather than silently inflate parity · **Evidence:** .github/workflows/upstream-drift.yml watches exact SednaLabs schema and Google coordinator Git blob SHAs weekly and on reviewed lock/workflow changes; changes trigger stable [upstream-drift] local maintenance issue, never repin automatically. ci/test-upstream-drift-watch.sh executes the actual workflow shell body with mocked curl/gh, verifying unchanged, changed and duplicate issue cases. GitHub Actions drift workflow 40249957815 succeeded.; GitHub Actions 40249957815 offline fixture checks verify an upstream blob change fails the watch and opens exactly one review issue per source; repeat unchanged pin mismatch reuses an existing open issue and a second changed source opens a separate one. Real unchanged upstream watch also passed. No real upstream drift was forced and no real maintenance issue was created; this is synthetic acceptance of the detection/mutation control, not a source parity claim.
 
 
-## 🧪 M8 — Verification, resilience and security acceptance — `██░░░░░░░░ 17.9%`
+## 🧪 M8 — Verification, resilience and security acceptance — `██░░░░░░░░ 21.4%`
 
 **Scope:** MVP. **Acceptance gate:** Full offline and authorized live verification including malformed inputs, MCP interoperability and threat model.
 
-### 🧫 P22 — Deterministic tests — `█████░░░░░ 50.0%`
+### 🧫 P22 — Deterministic tests — `██████░░░░ 60.0%`
 
 **Feature:** Offline QA.
 
 - 🧪 **T168 — Create offline GA Admin and Data endpoint mocks** — `██████████ 100.0%`
   - ✅ **Gate:** Representative success empty error and pagination fixtures · **Evidence:** src/google.rs deterministic HTTP mock harness and numerous no-secrets synthetic route/auth tests; Actions 40202015488 passed; src/google.rs in-memory Admin/Data server tests cover successful, empty, invalid response/replayed token and oversized collection cases; GitHub Actions core 40218035242 passed the mock suite.
-- 📦 **T169 — Exercise all 36 tool names through MCP dispatch** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Tool-by-tool tests verify tool catalog and call behavior
+- 📦 **T169 — Exercise all 36 tool names through MCP dispatch** — `██████████ 100.0%`
+  - ✅ **Gate:** Tool-by-tool tests verify tool catalog and call behavior · **Evidence:** src/main.rs every_pinned_tool_name_dispatches_through_real_mcp_transport constructs an in-memory real rmcp client/server with all 36 tool profiles enabled and explicit fixture input maps for every pinned tool name, using synthetic no-Google credentials. GitHub Actions 40250470244 feature-enabled DuckDB job ran Test bounded DuckDB scratchpad successfully, and core job passed formatting/tests.; The feature-enabled test enumerates exactly the 36-name docs/tool-inventory.json union through tools/list, calls each name over actual MCP tools/call with bounded per-call timeout, requires successful RPC dispatch and a structured Contract V1 ok response (including correctly reported local/auth errors), and fails for an unhandled name. CI 40250470244 green core and DuckDB test job; this is transport dispatch coverage, not live Google provider behavior or upstream full payload parity.
 - 🧿 **T170 — Test JSON schema rejection and nested depth caps** — `██████████ 100.0%`
   - ✅ **Gate:** Adversarial payload corpus is bounded and rejected · **Evidence:** src/google.rs: exhaustive bounded filter tests reject excess nesting, too many nodes, long strings, oversize JSON, and invalid filter shapes; GitHub Actions core 40218035242. Full adversarial fuzz corpus remains unaccepted.; src/google.rs adversarial_report_filter_corpus_is_bounded_before_google_network_access tests deterministic invalid JSON and filter corpus: empty/primitive roots, empty nested filters, breadth 65, 1025-byte strings, 17-kibibyte serialized inputs, 129-byte keys, over 256 nested nodes, and depth over 12. Both bounded filter validation and report_request reject the corpus with INVALID_REQUEST before Google credentials/network access. Supplements existing historic/complex filter tests; GitHub Actions 40240559437 core fmt, Rust tests, Clippy succeeded. This is deterministic corpus coverage, not a stochastic fuzzing or live Google claim.
 - 📚 **T171 — Differentially compare upstream response projections** — `░░░░░░░░░░ 0.0%`

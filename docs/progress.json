@@ -3345,16 +3345,18 @@
               "id": "T169",
               "emoji": "📦",
               "name": "Exercise all 36 tool names through MCP dispatch",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "Tool-by-tool tests verify tool catalog and call behavior",
               "checks": [
                 {
                   "text": "Deliver exercise all 36 tool names through mcp dispatch as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs every_pinned_tool_name_dispatches_through_real_mcp_transport constructs an in-memory real rmcp client/server with all 36 tool profiles enabled and explicit fixture input maps for every pinned tool name, using synthetic no-Google credentials. GitHub Actions 40250470244 feature-enabled DuckDB job ran Test bounded DuckDB scratchpad successfully, and core job passed formatting/tests."
                 },
                 {
                   "text": "Tool-by-tool tests verify tool catalog and call behavior",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "The feature-enabled test enumerates exactly the 36-name docs/tool-inventory.json union through tools/list, calls each name over actual MCP tools/call with bounded per-call timeout, requires successful RPC dispatch and a structured Contract V1 ok response (including correctly reported local/auth errors), and fails for an unhandled name. CI 40250470244 green core and DuckDB test job; this is transport dispatch coverage, not live Google provider behavior or upstream full payload parity."
                 }
               ]
             },
