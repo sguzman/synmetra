@@ -5611,6 +5611,45 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn read_only_profile_hides_annotation_write_and_blocks_direct_bypass() {
+        let read_only = Synmetra::new(GoogleClient::new(None), false);
+        let permitted = Synmetra::new(GoogleClient::new(None), true);
+        assert!(!read_only
+            .router
+            .list_all()
+            .iter()
+            .any(|tool| tool.name == "create_property_annotation"));
+        assert!(permitted
+            .router
+            .list_all()
+            .iter()
+            .any(|tool| tool.name == "create_property_annotation"));
+        let args = json!({
+            "property_id":42,
+            "title":"Fixture title",
+            "start_date":"2026-10-25",
+            "color":"BLUE"
+        });
+        // Even invoking the actual handler directly cannot bypass the profile.
+        let denied = read_only
+            .create_property_annotation(Parameters(serde_json::from_value(args.clone()).unwrap()))
+            .await;
+        assert_eq!(denied.is_error, Some(true));
+        assert_eq!(denied.structured_content.unwrap()["error"]["code"], "INVALID_REQUEST");
+
+        // Merely making the route visible still cannot make a provider mutation
+        // without a token; native OAuth scope and Google role remain separate.
+        let unauthenticated = permitted
+            .create_property_annotation(Parameters(serde_json::from_value(args).unwrap()))
+            .await;
+        assert_eq!(unauthenticated.is_error, Some(true));
+        assert_eq!(
+            unauthenticated.structured_content.unwrap()["error"]["code"],
+            "AUTH_NOT_CONFIGURED"
+        );
+    }
+
+    #[tokio::test]
     async fn auth_status_only_contacts_google_when_explicitly_requested() {
         let server = Synmetra::new(GoogleClient::new(None), false);
         let reply = server
