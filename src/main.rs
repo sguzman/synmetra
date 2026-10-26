@@ -6183,8 +6183,15 @@ mod tests {
         }
         for limit in [Some(0), Some(1001)] {
             assert!(validated_ingest_page_limit(None, limit, None, None, false, None).is_err());
+        }
+        for limit in [Some(0), Some(2049)] {
             assert!(validated_ingest_page_limit(None, None, limit, None, false, None).is_err());
         }
+        assert_eq!(
+            validated_ingest_page_limit(None, Some(1000), Some(2048), None, false, None)
+                .unwrap(),
+            1000
+        );
         let sample = json!({
             "table_name":"synthetic_very_long_name",
             "rows_ingested":8,
