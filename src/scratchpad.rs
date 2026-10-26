@@ -168,7 +168,10 @@ impl ScratchState {
             db.execute_batch(
                 "SET enable_external_access = false;
                  SET autoload_known_extensions = false;
-                 SET autoinstall_known_extensions = false;",
+                 SET autoinstall_known_extensions = false;
+                 SET memory_limit = '256MB';
+                 SET max_temp_directory_size = '64MB';
+                 SET lock_configuration = true;",
             )
             .map_err(|_| "Cannot enforce DuckDB sandbox settings")?;
             inner.sessions.insert(
@@ -1693,11 +1696,20 @@ mod tests {
             )
             .unwrap();
         assert!(!external, "DuckDB must keep external access disabled");
+        let locked: bool = db
+            .query_row("SELECT current_setting('lock_configuration')", [], |row| {
+                row.get(0)
+            })
+            .unwrap();
+        assert!(locked, "DuckDB sandbox settings must be immutable after setup");
         for hostile in [
             "SELECT * FROM read_csv_auto('/etc/passwd')",
             "SELECT * FROM read_text('/etc/hostname')",
             "COPY (SELECT 'synthetic') TO '/dev/null'",
             "SET enable_external_access=true",
+            "SET memory_limit='4GB'",
+            "SET max_temp_directory_size='4GB'",
+            "SET lock_configuration=false",
         ] {
             assert!(
                 db.execute_batch(hostile).is_err(),
