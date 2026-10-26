@@ -5,6 +5,7 @@ on:
     paths:
       - .github/workflows/upstream-drift.yml
       - spec/upstream/drift-lock.json
+      - ci/test-upstream-drift-watch.sh
   schedule:
     - cron: "17 9 * * 1"
   workflow_dispatch:
@@ -27,6 +28,9 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+      - name: Verify real drift watch logic with offline issue fixtures
+        shell: bash
+        run: bash ci/test-upstream-drift-watch.sh
       - name: Detect changes in upstream signature-bearing Git blobs
         shell: bash
         env:
