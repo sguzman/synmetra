@@ -2114,7 +2114,11 @@ mod tests {
                 "unrelated private file stays unchanged"
             );
         }
-        for session in ["../export_boundary", "/tmp/export_boundary", "http://127.0.0.1"] {
+        for session in [
+            "../export_boundary",
+            "/tmp/export_boundary",
+            "http://127.0.0.1",
+        ] {
             assert!(state
                 .export_evidence_bundle(session, Some(vec!["approved".into()]), Some(1))
                 .is_err());
