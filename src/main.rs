@@ -5537,15 +5537,32 @@ mod tests {
             "Full tool union drifted from pinned inventory"
         );
         assert_eq!(actual.len(), 36);
-        if std::env::var_os("SYNMETRA_CAPTURE_INPUT_SCHEMAS").is_some() {
-            let mut native = all_enabled.router.list_all();
-            native.sort_by(|left, right| left.name.cmp(&right.name));
-            for tool in native {
-                let snapshot = json!({
+        // This snapshot was captured from a real feature-enabled rmcp router.
+        // Compare the complete advertised input schema (not just tool names)
+        // on every DuckDB-enabled CI run. Upstream updates require reviewed
+        // native schema lock changes, never silent accidental drift.
+        let pinned: Value =
+            serde_json::from_str(include_str!("../spec/native/tool-schema.v1.json")).unwrap();
+        assert_eq!(pinned["schema"], "synmetra_native_mcp_input_schema");
+        let mut native = all_enabled.router.list_all();
+        native.sort_by(|left, right| left.name.cmp(&right.name));
+        let native_schema = native
+            .iter()
+            .map(|tool| {
+                json!({
                     "name": tool.name.to_string(),
                     "inputSchema": &*tool.input_schema,
-                });
-                println!("SYNMETRA_NATIVE_TOOL_SCHEMA {}", snapshot);
+                })
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(
+            native_schema.as_slice(),
+            pinned["tools"].as_array().unwrap().as_slice(),
+            "Advertised native schema drifted from the reviewed 36-tool snapshot"
+        );
+        if std::env::var_os("SYNMETRA_CAPTURE_INPUT_SCHEMAS").is_some() {
+            for schema in native_schema {
+                println!("SYNMETRA_NATIVE_TOOL_SCHEMA {schema}");
             }
         }
         assert!(all_enabled.router.has_route("create_property_annotation"));

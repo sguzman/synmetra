@@ -1,0 +1,2619 @@
+{
+  "schema": "synmetra_native_mcp_input_schema",
+  "version": 1,
+  "source_commit": "be2bb3c18df8e216f16f6e3ea4262f0c80440c9f",
+  "source_ci_run": "https://github.com/sguzman/synmetra/actions/runs/40269115096",
+  "profile": "--features scratchpad; --allow-write; --scratchpad",
+  "toolchain": "Rust 1.99.1",
+  "notes": "Captured from real rmcp router, not inferred from pinned SednaLabs schema. This is a native input-schema snapshot, not live Google or complete upstream parameter parity.",
+  "tools": [
+    {
+      "inputSchema": {
+        "$defs": {
+          "BatchReportItemArgs": {
+            "additionalProperties": false,
+            "properties": {
+              "currency_code": {
+                "default": null,
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "date_ranges": {
+                "items": {
+                  "$ref": "#/$defs/ReportDateRangeInput"
+                },
+                "type": "array"
+              },
+              "dimension_filter": {
+                "default": null
+              },
+              "dimensions": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "limit": {
+                "default": null,
+                "format": "uint64",
+                "minimum": 0,
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "metric_filter": {
+                "default": null
+              },
+              "metrics": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "offset": {
+                "default": null,
+                "format": "uint64",
+                "minimum": 0,
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "order_bys": {
+                "default": null,
+                "items": true,
+                "type": [
+                  "array",
+                  "null"
+                ]
+              },
+              "return_property_quota": {
+                "default": true,
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "date_ranges",
+              "dimensions",
+              "metrics"
+            ],
+            "type": "object"
+          },
+          "GaResourceIdInput": {
+            "anyOf": [
+              {
+                "format": "uint64",
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "description": "Match the pinned Google and SednaLabs contract: identifiers may arrive as\npositive decimal numbers or as canonical resource-name strings."
+          },
+          "ReportDateRangeInput": {
+            "description": "The pinned SednaLabs JSON Schema names historical dates with snake_case.\nRuntime normalization additionally accepts Google camelCase and named ranges.",
+            "properties": {
+              "end_date": {
+                "type": "string"
+              },
+              "start_date": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "start_date",
+              "end_date"
+            ],
+            "type": "object"
+          }
+        },
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "property_id": {
+            "$ref": "#/$defs/GaResourceIdInput"
+          },
+          "requests": {
+            "items": {
+              "$ref": "#/$defs/BatchReportItemArgs"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "property_id",
+          "requests"
+        ],
+        "type": "object"
+      },
+      "name": "batch_run_reports"
+    },
+    {
+      "inputSchema": {
+        "$defs": {
+          "GaResourceIdInput": {
+            "anyOf": [
+              {
+                "format": "uint64",
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "description": "Match the pinned Google and SednaLabs contract: identifiers may arrive as\npositive decimal numbers or as canonical resource-name strings."
+          }
+        },
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "dimensions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "metrics": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "property_id": {
+            "$ref": "#/$defs/GaResourceIdInput"
+          }
+        },
+        "required": [
+          "property_id",
+          "dimensions",
+          "metrics"
+        ],
+        "type": "object"
+      },
+      "name": "check_report_compatibility"
+    },
+    {
+      "inputSchema": {
+        "$defs": {
+          "AnnotationColorInput": {
+            "enum": [
+              "PURPLE",
+              "BROWN",
+              "BLUE",
+              "GREEN",
+              "RED",
+              "CYAN"
+            ],
+            "type": "string"
+          },
+          "GaResourceIdInput": {
+            "anyOf": [
+              {
+                "format": "uint64",
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "description": "Match the pinned Google and SednaLabs contract: identifiers may arrive as\npositive decimal numbers or as canonical resource-name strings."
+          }
+        },
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "color": {
+            "$ref": "#/$defs/AnnotationColorInput",
+            "default": "BLUE"
+          },
+          "description": {
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "end_date": {
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "property_id": {
+            "$ref": "#/$defs/GaResourceIdInput"
+          },
+          "start_date": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "property_id",
+          "title",
+          "start_date"
+        ],
+        "type": "object"
+      },
+      "name": "create_property_annotation"
+    },
+    {
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "account": {
+            "default": null,
+            "description": "Optional Google account hint for browser login.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "callback_port": {
+            "default": null,
+            "description": "Optional fixed loopback callback port for direct browser OAuth.",
+            "format": "uint16",
+            "maximum": 65535,
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "client_id_file": {
+            "default": null,
+            "description": "Optional Google OAuth client id file for direct browser OAuth.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "headless": {
+            "default": false,
+            "description": "Include the headless browser flag for SSH or remote environments.",
+            "type": "boolean"
+          },
+          "quota_project": {
+            "default": null,
+            "description": "Optional quota project to include as a follow-up command.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "shared_adc": {
+            "default": null,
+            "description": "Use the conventional shared gcloud ADC file instead of the server-specific file.",
+            "type": [
+              "boolean",
+              "null"
+            ]
+          }
+        },
+        "type": "object"
+      },
+      "name": "ga4_auth_login_command"
+    },
+    {
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "verify_token": {
+            "default": false,
+            "description": "When true, acquire a Google access token and call GA account summaries. The token is never returned.",
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
+      "name": "ga4_auth_status"
+    },
+    {
+      "inputSchema": {
+        "properties": {},
+        "type": "object"
+      },
+      "name": "ga4_get_started"
+    },
+    {
+      "inputSchema": {
+        "$defs": {
+          "GaResourceIdInput": {
+            "anyOf": [
+              {
+                "format": "uint64",
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "description": "Match the pinned Google and SednaLabs contract: identifiers may arrive as\npositive decimal numbers or as canonical resource-name strings."
+          }
+        },
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "account_id": {
+            "$ref": "#/$defs/GaResourceIdInput",
+            "description": "Positive GA4 account number or canonical accounts/<id>."
+          }
+        },
+        "required": [
+          "account_id"
+        ],
+        "type": "object"
+      },
+      "name": "get_account_data_sharing_settings"
+    },
+    {
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "max_pages": {
+            "default": null,
+            "format": "uint32",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "page_size": {
+            "default": null,
+            "format": "uint32",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        },
+        "type": "object"
+      },
+      "name": "get_account_summaries"
+    },
+    {
+      "inputSchema": {
+        "$defs": {
+          "GaResourceIdInput": {
+            "anyOf": [
+              {
+                "format": "uint64",
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "description": "Match the pinned Google and SednaLabs contract: identifiers may arrive as\npositive decimal numbers or as canonical resource-name strings."
+          }
+        },
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "property_id": {
+            "$ref": "#/$defs/GaResourceIdInput",
+            "description": "Positive numeric GA4 property ID or canonical properties/<id>."
+          }
+        },
+        "required": [
+          "property_id"
+        ],
+        "type": "object"
+      },
+      "name": "get_custom_dimensions_and_metrics"
+    },
+    {
+      "inputSchema": {
+        "$defs": {
+          "GaResourceIdInput": {
+            "anyOf": [
+              {
+                "format": "uint64",
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "description": "Match the pinned Google and SednaLabs contract: identifiers may arrive as\npositive decimal numbers or as canonical resource-name strings."
+          }
+        },
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "property_id": {
+            "$ref": "#/$defs/GaResourceIdInput",
+            "description": "Positive numeric GA4 property ID or canonical properties/<id>."
+          }
+        },
+        "required": [
+          "property_id"
+        ],
+        "type": "object"
+      },
+      "name": "get_property_data_retention_settings"
+    },
+    {
+      "inputSchema": {
+        "$defs": {
+          "GaResourceIdInput": {
+            "anyOf": [
+              {
+                "format": "uint64",
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "description": "Match the pinned Google and SednaLabs contract: identifiers may arrive as\npositive decimal numbers or as canonical resource-name strings."
+          }
+        },
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "property_id": {
+            "$ref": "#/$defs/GaResourceIdInput",
+            "description": "Positive numeric GA4 property ID or canonical properties/<id>."
+          }
+        },
+        "required": [
+          "property_id"
+        ],
+        "type": "object"
+      },
+      "name": "get_property_details"
+    },
+    {
+      "inputSchema": {
+        "$defs": {
+          "GaResourceIdInput": {
+            "anyOf": [
+              {
+                "format": "uint64",
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "description": "Match the pinned Google and SednaLabs contract: identifiers may arrive as\npositive decimal numbers or as canonical resource-name strings."
+          }
+        },
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "max_pages": {
+            "default": null,
+            "format": "uint32",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "page_size": {
+            "default": null,
+            "format": "uint32",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "property_id": {
+            "$ref": "#/$defs/GaResourceIdInput"
+          }
+        },
+        "required": [
+          "property_id"
+        ],
+        "type": "object"
+      },
+      "name": "list_google_ads_links"
+    },
+    {
+      "inputSchema": {
+        "$defs": {
+          "GaResourceIdInput": {
+            "anyOf": [
+              {
+                "format": "uint64",
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "description": "Match the pinned Google and SednaLabs contract: identifiers may arrive as\npositive decimal numbers or as canonical resource-name strings."
+          }
+        },
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "max_pages": {
+            "default": null,
+            "format": "uint32",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "page_size": {
+            "default": null,
+            "format": "uint32",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "property_id": {
+            "$ref": "#/$defs/GaResourceIdInput"
+          }
+        },
+        "required": [
+          "property_id"
+        ],
+        "type": "object"
+      },
+      "name": "list_property_annotations"
+    },
+    {
+      "inputSchema": {
+        "$defs": {
+          "GaResourceIdInput": {
+            "anyOf": [
+              {
+                "format": "uint64",
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "description": "Match the pinned Google and SednaLabs contract: identifiers may arrive as\npositive decimal numbers or as canonical resource-name strings."
+          },
+          "OutputMode": {
+            "enum": [
+              "rows",
+              "tuples",
+              "scalar",
+              "compact"
+            ],
+            "type": "string"
+          },
+          "ReportDateRangeInput": {
+            "description": "The pinned SednaLabs JSON Schema names historical dates with snake_case.\nRuntime normalization additionally accepts Google camelCase and named ranges.",
+            "properties": {
+              "end_date": {
+                "type": "string"
+              },
+              "start_date": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "start_date",
+              "end_date"
+            ],
+            "type": "object"
+          }
+        },
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "currency_code": {
+            "default": null,
+            "description": "ISO currency code.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "cursor": {
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "date_ranges": {
+            "description": "Historical date ranges, e.g. [{\"startDate\":\"7daysAgo\",\"endDate\":\"today\"}].",
+            "items": {
+              "$ref": "#/$defs/ReportDateRangeInput"
+            },
+            "type": "array"
+          },
+          "dimension_filter": {
+            "default": null,
+            "description": "Optional Google FilterExpression."
+          },
+          "dimensions": {
+            "description": "Names of dimensions (not Dimension objects).",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "keep_empty_rows": {
+            "default": null,
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "limit": {
+            "default": null,
+            "description": "Limit rows returned.",
+            "format": "uint64",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "max_cell_chars": {
+            "default": null,
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "max_rows": {
+            "default": null,
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "metric_filter": {
+            "default": null,
+            "description": "Optional Google FilterExpression."
+          },
+          "metrics": {
+            "description": "Names of metrics (not Metric objects).",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "offset": {
+            "default": null,
+            "description": "Pagination offset.",
+            "format": "uint64",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "order_bys": {
+            "default": null,
+            "description": "Optional Google OrderBy structures.",
+            "items": true,
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "output_mode": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/OutputMode"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "property_id": {
+            "$ref": "#/$defs/GaResourceIdInput",
+            "description": "Positive numeric GA4 property ID or canonical properties/<id>."
+          },
+          "return_property_quota": {
+            "default": true,
+            "description": "Include GA4 property quota metadata in the provider response (upstream default: true).",
+            "type": "boolean"
+          },
+          "summary_only": {
+            "default": false,
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "property_id",
+          "date_ranges",
+          "dimensions",
+          "metrics"
+        ],
+        "type": "object"
+      },
+      "name": "preview_report_request"
+    },
+    {
+      "inputSchema": {
+        "$defs": {
+          "GaResourceIdInput": {
+            "anyOf": [
+              {
+                "format": "uint64",
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "description": "Match the pinned Google and SednaLabs contract: identifiers may arrive as\npositive decimal numbers or as canonical resource-name strings."
+          },
+          "OutputMode": {
+            "enum": [
+              "rows",
+              "tuples",
+              "scalar",
+              "compact"
+            ],
+            "type": "string"
+          },
+          "ReportDateRangeInput": {
+            "description": "The pinned SednaLabs JSON Schema names historical dates with snake_case.\nRuntime normalization additionally accepts Google camelCase and named ranges.",
+            "properties": {
+              "end_date": {
+                "type": "string"
+              },
+              "start_date": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "start_date",
+              "end_date"
+            ],
+            "type": "object"
+          }
+        },
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "account_id": {
+            "$ref": "#/$defs/GaResourceIdInput"
+          },
+          "cursor": {
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "date_ranges": {
+            "items": {
+              "$ref": "#/$defs/ReportDateRangeInput"
+            },
+            "type": "array"
+          },
+          "dimension_filter": {
+            "default": null
+          },
+          "dimensions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "limit": {
+            "default": null,
+            "format": "uint64",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "max_cell_chars": {
+            "default": null,
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "max_rows": {
+            "default": null,
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "metric_filter": {
+            "default": null
+          },
+          "metrics": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "offset": {
+            "default": null,
+            "format": "uint64",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "order_bys": {
+            "default": null,
+            "items": true,
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "output_mode": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/OutputMode"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "summary_only": {
+            "default": false,
+            "type": "boolean"
+          },
+          "time_zone": {
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "account_id",
+          "date_ranges",
+          "dimensions",
+          "metrics"
+        ],
+        "type": "object"
+      },
+      "name": "run_account_access_report"
+    },
+    {
+      "inputSchema": {
+        "$defs": {
+          "ConversionAttributionModel": {
+            "enum": [
+              "DATA_DRIVEN",
+              "LAST_CLICK"
+            ],
+            "type": "string"
+          },
+          "ConversionSpecInput": {
+            "additionalProperties": false,
+            "description": "Input-schema mirror of the pinned conversion specification. The runtime\ncontinues accepting snake_case and Google camelCase through Value, while\nthe advertised public schema retains typed enum and action-list bounds.",
+            "properties": {
+              "attribution_model": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/ConversionAttributionModel"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "conversion_actions": {
+                "default": [],
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            },
+            "type": "object"
+          },
+          "GaResourceIdInput": {
+            "anyOf": [
+              {
+                "format": "uint64",
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "description": "Match the pinned Google and SednaLabs contract: identifiers may arrive as\npositive decimal numbers or as canonical resource-name strings."
+          },
+          "OutputMode": {
+            "enum": [
+              "rows",
+              "tuples",
+              "scalar",
+              "compact"
+            ],
+            "type": "string"
+          },
+          "ReportDateRangeInput": {
+            "description": "The pinned SednaLabs JSON Schema names historical dates with snake_case.\nRuntime normalization additionally accepts Google camelCase and named ranges.",
+            "properties": {
+              "end_date": {
+                "type": "string"
+              },
+              "start_date": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "start_date",
+              "end_date"
+            ],
+            "type": "object"
+          }
+        },
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "conversion_spec": {
+            "$ref": "#/$defs/ConversionSpecInput"
+          },
+          "currency_code": {
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "cursor": {
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "date_ranges": {
+            "items": {
+              "$ref": "#/$defs/ReportDateRangeInput"
+            },
+            "type": "array"
+          },
+          "dimension_filter": {
+            "default": null
+          },
+          "dimensions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "limit": {
+            "default": null,
+            "format": "uint64",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "max_cell_chars": {
+            "default": null,
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "max_rows": {
+            "default": null,
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "metric_filter": {
+            "default": null
+          },
+          "metrics": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "offset": {
+            "default": null,
+            "format": "uint64",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "order_bys": {
+            "default": null,
+            "items": true,
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "output_mode": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/OutputMode"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "property_id": {
+            "$ref": "#/$defs/GaResourceIdInput"
+          },
+          "return_property_quota": {
+            "default": false,
+            "type": "boolean"
+          },
+          "summary_only": {
+            "default": false,
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "property_id",
+          "date_ranges",
+          "dimensions",
+          "metrics",
+          "conversion_spec"
+        ],
+        "type": "object"
+      },
+      "name": "run_conversions_report"
+    },
+    {
+      "inputSchema": {
+        "$defs": {
+          "FunnelBreakdownInput": {
+            "additionalProperties": false,
+            "properties": {
+              "breakdown_dimension": {
+                "type": "string"
+              },
+              "limit": {
+                "format": "uint64",
+                "minimum": 0,
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "breakdown_dimension"
+            ],
+            "type": "object"
+          },
+          "FunnelNextActionInput": {
+            "additionalProperties": false,
+            "properties": {
+              "limit": {
+                "format": "uint64",
+                "minimum": 0,
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "next_action_dimension": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "next_action_dimension"
+            ],
+            "type": "object"
+          },
+          "FunnelStepInput": {
+            "additionalProperties": false,
+            "properties": {
+              "event": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "filter_expression": true,
+              "is_directly_followed_by": {
+                "type": [
+                  "boolean",
+                  "null"
+                ]
+              },
+              "name": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "within_duration_from_prior_step": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "type": "object"
+          },
+          "FunnelVisualizationInput": {
+            "enum": [
+              "STANDARD_FUNNEL",
+              "TRENDED_FUNNEL"
+            ],
+            "type": "string"
+          },
+          "GaResourceIdInput": {
+            "anyOf": [
+              {
+                "format": "uint64",
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "description": "Match the pinned Google and SednaLabs contract: identifiers may arrive as\npositive decimal numbers or as canonical resource-name strings."
+          },
+          "OutputMode": {
+            "enum": [
+              "rows",
+              "tuples",
+              "scalar",
+              "compact"
+            ],
+            "type": "string"
+          },
+          "ReportDateRangeInput": {
+            "description": "The pinned SednaLabs JSON Schema names historical dates with snake_case.\nRuntime normalization additionally accepts Google camelCase and named ranges.",
+            "properties": {
+              "end_date": {
+                "type": "string"
+              },
+              "start_date": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "start_date",
+              "end_date"
+            ],
+            "type": "object"
+          }
+        },
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "date_ranges": {
+            "default": null,
+            "items": {
+              "$ref": "#/$defs/ReportDateRangeInput"
+            },
+            "type": "array"
+          },
+          "dimension_filter": {
+            "default": null
+          },
+          "funnel_breakdown": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/FunnelBreakdownInput"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "funnel_next_action": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/FunnelNextActionInput"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "funnel_steps": {
+            "items": {
+              "$ref": "#/$defs/FunnelStepInput"
+            },
+            "type": "array"
+          },
+          "funnel_visualization_type": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/FunnelVisualizationInput"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "is_open_funnel": {
+            "default": false,
+            "type": "boolean"
+          },
+          "limit": {
+            "default": null,
+            "format": "uint64",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "max_cell_chars": {
+            "default": null,
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "max_rows": {
+            "default": null,
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "output_mode": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/OutputMode"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "property_id": {
+            "$ref": "#/$defs/GaResourceIdInput"
+          },
+          "return_property_quota": {
+            "default": false,
+            "type": "boolean"
+          },
+          "segments": {
+            "default": null,
+            "items": true,
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "summary_only": {
+            "default": false,
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "property_id",
+          "funnel_steps"
+        ],
+        "type": "object"
+      },
+      "name": "run_funnel_report"
+    },
+    {
+      "inputSchema": {
+        "$defs": {
+          "GaResourceIdInput": {
+            "anyOf": [
+              {
+                "format": "uint64",
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "description": "Match the pinned Google and SednaLabs contract: identifiers may arrive as\npositive decimal numbers or as canonical resource-name strings."
+          },
+          "OutputMode": {
+            "enum": [
+              "rows",
+              "tuples",
+              "scalar",
+              "compact"
+            ],
+            "type": "string"
+          },
+          "ReportDateRangeInput": {
+            "description": "The pinned SednaLabs JSON Schema names historical dates with snake_case.\nRuntime normalization additionally accepts Google camelCase and named ranges.",
+            "properties": {
+              "end_date": {
+                "type": "string"
+              },
+              "start_date": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "start_date",
+              "end_date"
+            ],
+            "type": "object"
+          }
+        },
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "currency_code": {
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "cursor": {
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "date_ranges": {
+            "items": {
+              "$ref": "#/$defs/ReportDateRangeInput"
+            },
+            "type": "array"
+          },
+          "dimension_filter": {
+            "default": null
+          },
+          "dimensions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "keep_empty_rows": {
+            "default": null,
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "max_cell_chars": {
+            "default": null,
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "max_rows": {
+            "default": null,
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "metric_filter": {
+            "default": null
+          },
+          "metrics": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "order_bys": {
+            "default": null,
+            "items": true,
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "output_mode": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/OutputMode"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "pivots": {
+            "items": true,
+            "type": "array"
+          },
+          "property_id": {
+            "$ref": "#/$defs/GaResourceIdInput"
+          },
+          "return_property_quota": {
+            "default": true,
+            "type": "boolean"
+          },
+          "summary_only": {
+            "default": false,
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "property_id",
+          "date_ranges",
+          "dimensions",
+          "metrics",
+          "pivots"
+        ],
+        "type": "object"
+      },
+      "name": "run_pivot_report"
+    },
+    {
+      "inputSchema": {
+        "$defs": {
+          "GaResourceIdInput": {
+            "anyOf": [
+              {
+                "format": "uint64",
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "description": "Match the pinned Google and SednaLabs contract: identifiers may arrive as\npositive decimal numbers or as canonical resource-name strings."
+          },
+          "OutputMode": {
+            "enum": [
+              "rows",
+              "tuples",
+              "scalar",
+              "compact"
+            ],
+            "type": "string"
+          },
+          "ReportDateRangeInput": {
+            "description": "The pinned SednaLabs JSON Schema names historical dates with snake_case.\nRuntime normalization additionally accepts Google camelCase and named ranges.",
+            "properties": {
+              "end_date": {
+                "type": "string"
+              },
+              "start_date": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "start_date",
+              "end_date"
+            ],
+            "type": "object"
+          }
+        },
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "cursor": {
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "date_ranges": {
+            "items": {
+              "$ref": "#/$defs/ReportDateRangeInput"
+            },
+            "type": "array"
+          },
+          "dimension_filter": {
+            "default": null
+          },
+          "dimensions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "limit": {
+            "default": null,
+            "format": "uint64",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "max_cell_chars": {
+            "default": null,
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "max_rows": {
+            "default": null,
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "metric_filter": {
+            "default": null
+          },
+          "metrics": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "offset": {
+            "default": null,
+            "format": "uint64",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "order_bys": {
+            "default": null,
+            "items": true,
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "output_mode": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/OutputMode"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "property_id": {
+            "$ref": "#/$defs/GaResourceIdInput"
+          },
+          "summary_only": {
+            "default": false,
+            "type": "boolean"
+          },
+          "time_zone": {
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "property_id",
+          "date_ranges",
+          "dimensions",
+          "metrics"
+        ],
+        "type": "object"
+      },
+      "name": "run_property_access_report"
+    },
+    {
+      "inputSchema": {
+        "$defs": {
+          "GaResourceIdInput": {
+            "anyOf": [
+              {
+                "format": "uint64",
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "description": "Match the pinned Google and SednaLabs contract: identifiers may arrive as\npositive decimal numbers or as canonical resource-name strings."
+          },
+          "OutputMode": {
+            "enum": [
+              "rows",
+              "tuples",
+              "scalar",
+              "compact"
+            ],
+            "type": "string"
+          }
+        },
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "cursor": {
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "dimension_filter": {
+            "default": null
+          },
+          "dimensions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "limit": {
+            "default": null,
+            "format": "uint64",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "max_cell_chars": {
+            "default": null,
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "max_rows": {
+            "default": null,
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "metric_filter": {
+            "default": null
+          },
+          "metrics": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "offset": {
+            "default": null,
+            "description": "Present for official Python signature compatibility. A nonzero value is\nrejected: Google's current v1beta realtime request has no offset field.",
+            "format": "uint64",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "order_bys": {
+            "default": null,
+            "description": "Google realtime supports OrderBy arrays in the v1beta request body.",
+            "items": true,
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "output_mode": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/OutputMode"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "property_id": {
+            "$ref": "#/$defs/GaResourceIdInput"
+          },
+          "return_property_quota": {
+            "default": true,
+            "type": "boolean"
+          },
+          "summary_only": {
+            "default": false,
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "property_id",
+          "dimensions",
+          "metrics"
+        ],
+        "type": "object"
+      },
+      "name": "run_realtime_report"
+    },
+    {
+      "inputSchema": {
+        "$defs": {
+          "GaResourceIdInput": {
+            "anyOf": [
+              {
+                "format": "uint64",
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "description": "Match the pinned Google and SednaLabs contract: identifiers may arrive as\npositive decimal numbers or as canonical resource-name strings."
+          },
+          "OutputMode": {
+            "enum": [
+              "rows",
+              "tuples",
+              "scalar",
+              "compact"
+            ],
+            "type": "string"
+          },
+          "ReportDateRangeInput": {
+            "description": "The pinned SednaLabs JSON Schema names historical dates with snake_case.\nRuntime normalization additionally accepts Google camelCase and named ranges.",
+            "properties": {
+              "end_date": {
+                "type": "string"
+              },
+              "start_date": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "start_date",
+              "end_date"
+            ],
+            "type": "object"
+          }
+        },
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "currency_code": {
+            "default": null,
+            "description": "ISO currency code.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "cursor": {
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "date_ranges": {
+            "description": "Historical date ranges, e.g. [{\"startDate\":\"7daysAgo\",\"endDate\":\"today\"}].",
+            "items": {
+              "$ref": "#/$defs/ReportDateRangeInput"
+            },
+            "type": "array"
+          },
+          "dimension_filter": {
+            "default": null,
+            "description": "Optional Google FilterExpression."
+          },
+          "dimensions": {
+            "description": "Names of dimensions (not Dimension objects).",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "keep_empty_rows": {
+            "default": null,
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "limit": {
+            "default": null,
+            "description": "Limit rows returned.",
+            "format": "uint64",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "max_cell_chars": {
+            "default": null,
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "max_rows": {
+            "default": null,
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "metric_filter": {
+            "default": null,
+            "description": "Optional Google FilterExpression."
+          },
+          "metrics": {
+            "description": "Names of metrics (not Metric objects).",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "offset": {
+            "default": null,
+            "description": "Pagination offset.",
+            "format": "uint64",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "order_bys": {
+            "default": null,
+            "description": "Optional Google OrderBy structures.",
+            "items": true,
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "output_mode": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/OutputMode"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "property_id": {
+            "$ref": "#/$defs/GaResourceIdInput",
+            "description": "Positive numeric GA4 property ID or canonical properties/<id>."
+          },
+          "return_property_quota": {
+            "default": true,
+            "description": "Include GA4 property quota metadata in the provider response (upstream default: true).",
+            "type": "boolean"
+          },
+          "summary_only": {
+            "default": false,
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "property_id",
+          "date_ranges",
+          "dimensions",
+          "metrics"
+        ],
+        "type": "object"
+      },
+      "name": "run_report"
+    },
+    {
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "session_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id"
+        ],
+        "type": "object"
+      },
+      "name": "scratchpad_close_session"
+    },
+    {
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "session_id": {
+            "type": "string"
+          },
+          "table_name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "table_name"
+        ],
+        "type": "object"
+      },
+      "name": "scratchpad_describe_table"
+    },
+    {
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "if_exists": {
+            "default": false,
+            "type": "boolean"
+          },
+          "session_id": {
+            "type": "string"
+          },
+          "table_name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "table_name"
+        ],
+        "type": "object"
+      },
+      "name": "scratchpad_drop_table"
+    },
+    {
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "sample_rows_per_table": {
+            "default": null,
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "session_id": {
+            "type": "string"
+          },
+          "table_names": {
+            "default": null,
+            "items": {
+              "type": "string"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "session_id"
+        ],
+        "type": "object"
+      },
+      "name": "scratchpad_export_evidence_bundle"
+    },
+    {
+      "inputSchema": {
+        "properties": {},
+        "type": "object"
+      },
+      "name": "scratchpad_get_runtime_limits"
+    },
+    {
+      "inputSchema": {
+        "$defs": {
+          "GaResourceIdInput": {
+            "anyOf": [
+              {
+                "format": "uint64",
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "description": "Match the pinned Google and SednaLabs contract: identifiers may arrive as\npositive decimal numbers or as canonical resource-name strings."
+          }
+        },
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "append": {
+            "default": false,
+            "type": "boolean"
+          },
+          "dimension_filter": {
+            "default": null
+          },
+          "dimensions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "limit": {
+            "default": null,
+            "format": "uint32",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "metric_filter": {
+            "default": null
+          },
+          "metrics": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "offset": {
+            "default": null,
+            "format": "uint64",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "order_bys": {
+            "default": null,
+            "items": true,
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "property_id": {
+            "$ref": "#/$defs/GaResourceIdInput"
+          },
+          "return_property_quota": {
+            "default": true,
+            "type": "boolean"
+          },
+          "session_id": {
+            "type": "string"
+          },
+          "table_name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "table_name",
+          "property_id",
+          "dimensions",
+          "metrics"
+        ],
+        "type": "object"
+      },
+      "name": "scratchpad_ingest_realtime_report"
+    },
+    {
+      "inputSchema": {
+        "$defs": {
+          "GaResourceIdInput": {
+            "anyOf": [
+              {
+                "format": "uint64",
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "description": "Match the pinned Google and SednaLabs contract: identifiers may arrive as\npositive decimal numbers or as canonical resource-name strings."
+          },
+          "ReportDateRangeInput": {
+            "description": "The pinned SednaLabs JSON Schema names historical dates with snake_case.\nRuntime normalization additionally accepts Google camelCase and named ranges.",
+            "properties": {
+              "end_date": {
+                "type": "string"
+              },
+              "start_date": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "start_date",
+              "end_date"
+            ],
+            "type": "object"
+          }
+        },
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "append": {
+            "default": false,
+            "type": "boolean"
+          },
+          "currency_code": {
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "date_ranges": {
+            "items": {
+              "$ref": "#/$defs/ReportDateRangeInput"
+            },
+            "type": "array"
+          },
+          "dimension_filter": {
+            "default": null
+          },
+          "dimensions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "limit": {
+            "default": null,
+            "format": "uint32",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "metric_filter": {
+            "default": null
+          },
+          "metrics": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "offset": {
+            "default": null,
+            "format": "uint64",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "order_bys": {
+            "default": null,
+            "items": true,
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "property_id": {
+            "$ref": "#/$defs/GaResourceIdInput"
+          },
+          "return_property_quota": {
+            "default": true,
+            "type": "boolean"
+          },
+          "session_id": {
+            "type": "string"
+          },
+          "table_name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "table_name",
+          "property_id",
+          "dimensions",
+          "metrics",
+          "date_ranges"
+        ],
+        "type": "object"
+      },
+      "name": "scratchpad_ingest_report"
+    },
+    {
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "channel_column": {
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "cursor": {
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "date_column": {
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "landing_url_column": {
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "output_mode": {
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "post_days": {
+            "default": null,
+            "format": "uint32",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "pre_days": {
+            "default": null,
+            "format": "uint32",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "release_date": {
+            "type": "string"
+          },
+          "session_id": {
+            "type": "string"
+          },
+          "source_medium_column": {
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "summary_only": {
+            "default": false,
+            "type": "boolean"
+          },
+          "table_name": {
+            "type": "string"
+          },
+          "top_n": {
+            "default": null,
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "transition_days": {
+            "default": null,
+            "format": "uint32",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "session_id",
+          "table_name",
+          "release_date"
+        ],
+        "type": "object"
+      },
+      "name": "scratchpad_landing_param_shift_report"
+    },
+    {
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "limit": {
+            "default": null,
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        },
+        "type": "object"
+      },
+      "name": "scratchpad_list_sessions"
+    },
+    {
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "limit": {
+            "default": null,
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "session_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id"
+        ],
+        "type": "object"
+      },
+      "name": "scratchpad_list_tables"
+    },
+    {
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "session_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id"
+        ],
+        "type": "object"
+      },
+      "name": "scratchpad_open_session"
+    },
+    {
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "cursor": {
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "max_cell_chars": {
+            "default": null,
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "max_rows": {
+            "default": null,
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "output_mode": {
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "session_id": {
+            "type": "string"
+          },
+          "sql": {
+            "type": "string"
+          },
+          "summary_only": {
+            "default": false,
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "session_id",
+          "sql"
+        ],
+        "type": "object"
+      },
+      "name": "scratchpad_query"
+    },
+    {
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "anchor_event": {
+            "type": "string"
+          },
+          "comparison_event": {
+            "type": "string"
+          },
+          "cursor": {
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "date_column": {
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "event_column": {
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "metric_column": {
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "output_mode": {
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "post_days": {
+            "default": null,
+            "format": "uint32",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "pre_days": {
+            "default": null,
+            "format": "uint32",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "release_date": {
+            "type": "string"
+          },
+          "session_id": {
+            "type": "string"
+          },
+          "summary_only": {
+            "default": false,
+            "type": "boolean"
+          },
+          "table_name": {
+            "type": "string"
+          },
+          "transition_days": {
+            "default": null,
+            "format": "uint32",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "session_id",
+          "table_name",
+          "release_date",
+          "anchor_event",
+          "comparison_event"
+        ],
+        "type": "object"
+      },
+      "name": "scratchpad_release_regression_report"
+    },
+    {
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "max_sessions": {
+            "default": null,
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "max_tables_per_session": {
+            "default": null,
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        },
+        "type": "object"
+      },
+      "name": "scratchpad_set_runtime_limits"
+    },
+    {
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "session_id": {
+            "type": "string"
+          },
+          "table_name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "table_name"
+        ],
+        "type": "object"
+      },
+      "name": "scratchpad_summarize_table"
+    }
+  ]
+}

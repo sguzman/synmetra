@@ -162,6 +162,21 @@ jobs:
           grep -Fq 'has not been independently verified' SECURITY.md
           grep -Fq 'docs/LOCAL_EXECUTION_THREAT_MODEL.md' SECURITY.md
 
+      - name: Validate 36 documented native tools and JSON examples
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f docs/NATIVE_TOOL_GUIDE.md
+          test -f spec/native/tool-schema.v1.json
+          jq -e '.schema == "synmetra_native_mcp_input_schema" and (.tools | length) == 36' spec/native/tool-schema.v1.json > /dev/null
+          jq -r '.tools[].name' spec/native/tool-schema.v1.json | LC_ALL=C sort > "$RUNNER_TEMP/native-schema-names"
+          jq -r '.union.tools[].name' docs/tool-inventory.json | LC_ALL=C sort > "$RUNNER_TEMP/inventory-names"
+          sed -n 's/^### .\(.*\).$/\1/p' docs/NATIVE_TOOL_GUIDE.md | LC_ALL=C sort > "$RUNNER_TEMP/native-guide-names"
+          diff -u "$RUNNER_TEMP/inventory-names" "$RUNNER_TEMP/native-schema-names"
+          diff -u "$RUNNER_TEMP/inventory-names" "$RUNNER_TEMP/native-guide-names"
+          test "$(grep -c '^```json$' docs/NATIVE_TOOL_GUIDE.md)" -eq 36
+          awk '/^```json$/ {block=1; next} block && /^```$/ {block=0; print ""; next} block {print}' docs/NATIVE_TOOL_GUIDE.md | jq -s -e 'length == 36' > /dev/null
+
       - name: Verify native operator reference and redacted smoke documentation
         shell: bash
         run: |
