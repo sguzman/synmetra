@@ -7693,7 +7693,6 @@ mod tests {
         assert_eq!(batch_data["data"]["reports"][0]["rowCount"], 5);
         assert!(batch_data["data"]["reports"][1].get("rowCount").is_none());
         assert!(batch_data["meta"].get("row_count_total").is_none());
-
     }
 
     #[test]
