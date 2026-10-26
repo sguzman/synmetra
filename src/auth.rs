@@ -821,6 +821,120 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn rejected_and_malformed_oauth_refreshes_preserve_private_credentials() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        use tokio::net::TcpListener;
+
+        // Every case uses a separate synthetic private XDG directory. The
+        // upstream error body deliberately contains a credential-like canary
+        // that must never be reflected in a public auth error.
+        for (status, body, expected) in [
+            (
+                400,
+                r#"{"error":"invalid_grant","detail":"synthetic-revoked-canary"}"#,
+                "Google token endpoint returned HTTP 400",
+            ),
+            (
+                401,
+                r#"{"error":"invalid_client","detail":"synthetic-revoked-canary"}"#,
+                "Google token endpoint returned HTTP 401",
+            ),
+            (200, "not-json synthetic-revoked-canary", "Malformed Google token response"),
+            (
+                200,
+                r#"{"access_token":"","expires_in":3600}"#,
+                "Google returned invalid refreshed credentials",
+            ),
+            (
+                200,
+                r#"{"access_token":"synthetic-new","expires_in":0}"#,
+                "Google returned invalid refreshed credentials",
+            ),
+        ] {
+            let root = std::env::temp_dir().join(format!(
+                "synmetra-rejected-refresh-{}-{}",
+                std::process::id(),
+                nonce()
+            ));
+            let path = root.join("synmetra").join("credentials.json");
+            let old = Stored {
+                client_id: "fixture.apps.googleusercontent.com".into(),
+                client_secret: "synthetic-private-client".into(),
+                refresh_token: "synthetic-private-refresh".into(),
+                access_token: "synthetic-old-access".into(),
+                expires_at: epoch_seconds().saturating_add(10),
+                granted_scope: SCOPE.into(),
+            };
+            persist_credentials_at(&path, &old).unwrap();
+            let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+            let endpoint = format!("http://{}/token", listener.local_addr().unwrap());
+            let reply = body.to_owned();
+            let responder = tokio::spawn(async move {
+                let (mut socket, _) = listener.accept().await.unwrap();
+                let mut buf = [0u8; 4096];
+                let read = socket.read(&mut buf).await.unwrap();
+                assert!(String::from_utf8_lossy(&buf[..read]).starts_with("POST /token "));
+                let response = format!(
+                    "HTTP/1.1 {status} Mock\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                    reply.len(),
+                    reply
+                );
+                socket.write_all(response.as_bytes()).await.unwrap();
+            });
+            let lock = tokio::sync::Mutex::new(());
+            let err = tokio::time::timeout(
+                Duration::from_secs(5),
+                access_token_at(&path, &endpoint, &lock),
+            )
+            .await
+            .unwrap()
+            .unwrap_err();
+            responder.await.unwrap();
+            assert_eq!(err, expected);
+            for secret in [
+                "synthetic-revoked-canary",
+                "synthetic-private-client",
+                "synthetic-private-refresh",
+                "synthetic-old-access",
+            ] {
+                assert!(!err.contains(secret));
+            }
+            let current = read_credentials_at(&path).unwrap().unwrap();
+            assert_eq!(current.access_token, old.access_token);
+            assert_eq!(current.refresh_token, old.refresh_token);
+            assert_eq!(current.expires_at, old.expires_at);
+            std::fs::remove_dir_all(root).unwrap();
+        }
+    }
+
+    #[tokio::test]
+    async fn missing_or_corrupt_local_credentials_do_not_trigger_network_refresh() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let root = std::env::temp_dir().join(format!(
+            "synmetra-malformed-credentials-{}-{}",
+            std::process::id(),
+            nonce()
+        ));
+        let path = root.join("synmetra").join("credentials.json");
+        let lock = tokio::sync::Mutex::new(());
+        let unused_endpoint = "http://127.0.0.1:1/token";
+        assert_eq!(
+            access_token_at(&path, unused_endpoint, &lock).await.unwrap(),
+            None
+        );
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        std::fs::write(&path, r#"{"refresh_token":"synthetic-private-refresh"}"#).unwrap();
+        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600)).unwrap();
+        let error = access_token_at(&path, unused_endpoint, &lock)
+            .await
+            .unwrap_err();
+        assert_eq!(error, "Credentials file has invalid format");
+        assert!(!error.contains("synthetic-private-refresh"));
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[tokio::test]
     async fn aborted_oauth_refresh_releases_lock_without_partial_token_rotation() {
         use tokio::io::{AsyncReadExt, AsyncWriteExt};
         use tokio::net::TcpListener;
