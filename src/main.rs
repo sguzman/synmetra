@@ -3192,10 +3192,8 @@ mod tests {
 
     #[test]
     fn mutation_approval_policy_has_one_tool_and_never_claims_server_enforcement() {
-        let policy: serde_json::Value = serde_json::from_str(include_str!(
-            "../spec/security/client-approval.v1.json"
-        ))
-        .unwrap();
+        let policy: serde_json::Value =
+            serde_json::from_str(include_str!("../spec/security/client-approval.v1.json")).unwrap();
         assert_eq!(policy["schema"], "synmetra_client_write_approval_policy");
         assert_eq!(policy["version"], 1);
         let writes = policy["write_tools"].as_array().unwrap();
@@ -3203,14 +3201,23 @@ mod tests {
         assert_eq!(writes[0]["name"], "create_property_annotation");
         assert_eq!(writes[0]["requires_host_per_call_approval"], true);
         assert_eq!(writes[0]["deny_when_client_cannot_confirm"], true);
-        assert_eq!(policy["synmetra_server_can_attest_to_host_confirmation"], false);
+        assert_eq!(
+            policy["synmetra_server_can_attest_to_host_confirmation"],
+            false
+        );
         let info = Synmetra::tool_router().list_all();
         let mutation = info
             .iter()
             .find(|tool| tool.name == "create_property_annotation")
             .unwrap();
-        assert_eq!(mutation.annotations.as_ref().unwrap().read_only_hint, Some(false));
-        assert_eq!(mutation.annotations.as_ref().unwrap().idempotent_hint, Some(false));
+        assert_eq!(
+            mutation.annotations.as_ref().unwrap().read_only_hint,
+            Some(false)
+        );
+        assert_eq!(
+            mutation.annotations.as_ref().unwrap().idempotent_hint,
+            Some(false)
+        );
         assert!(mutation
             .description
             .as_deref()
