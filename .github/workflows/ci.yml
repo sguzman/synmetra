@@ -286,6 +286,41 @@ jobs:
             > "$RUNNER_TEMP/synmetra-offline-version.txt"
           grep -Fq 'synmetra 0.0.1' "$RUNNER_TEMP/synmetra-offline-version.txt"
 
+      - name: Check CLI failure output excludes synthetic credential canaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          temporary="$(mktemp -d "$RUNNER_TEMP/synmetra-redaction.XXXXXX")"
+          trap 'rm -rf -- "$temporary"' EXIT
+          secret="synthetic-access-canary-$(printf '%032d' 0)"
+          bearer="synthetic-local-bearer-$(printf '%032d' 0)"
+          export SYNMETRA_GOOGLE_ACCESS_TOKEN="$secret"
+          export SYNMETRA_MCP_BEARER_TOKEN="$bearer"
+          export XDG_CONFIG_HOME="$temporary"
+          target/debug/synmetra auth doctor > "$temporary/doctor.txt" 2>&1
+          target/debug/synmetra auth status > "$temporary/status.txt" 2>&1
+          for flags in 'serve --invalid-flag' 'serve --scratchpad --http-loopback'; do
+            read -r -a args <<< "$flags"
+            if target/debug/synmetra "${args[@]}" > "$temporary/failure.txt" 2>&1; then
+              echo 'Unsafe synthetic CLI invocation unexpectedly succeeded' >&2
+              exit 1
+            fi
+            if grep -Fq -- "$secret" "$temporary/failure.txt" ||
+               grep -Fq -- "$bearer" "$temporary/failure.txt"; then
+              echo 'CLI failure output disclosed a credential canary' >&2
+              exit 1
+            fi
+          done
+          if grep -Fq -- "$secret" "$temporary/doctor.txt" ||
+             grep -Fq -- "$secret" "$temporary/status.txt" ||
+             grep -Fq -- "$bearer" "$temporary/doctor.txt" ||
+             grep -Fq -- "$bearer" "$temporary/status.txt"; then
+            echo 'CLI diagnostics disclosed a credential canary' >&2
+            exit 1
+          fi
+          grep -Fq '"override_token_present": true' "$temporary/doctor.txt"
+          echo 'Synthetic CLI diagnostics and failure output: credential canaries suppressed'
+
       - name: Verify native auth doctor and credential-safe CLI failures
         shell: bash
         run: |
