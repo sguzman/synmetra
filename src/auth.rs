@@ -811,26 +811,26 @@ mod tests {
         // response can rotate the file after cancellation.
         let mut closed = false;
         for _ in 0..8 {
-            let read = tokio::time::timeout(
-                Duration::from_secs(5),
-                stalled_socket.read(&mut buffer),
-            )
-            .await
-            .unwrap()
-            .unwrap();
+            let read =
+                tokio::time::timeout(Duration::from_secs(5), stalled_socket.read(&mut buffer))
+                    .await
+                    .unwrap()
+                    .unwrap();
             if read == 0 {
                 closed = true;
                 break;
             }
         }
-        assert!(closed, "Canceled OAuth refresh left an open upstream request");
+        assert!(
+            closed,
+            "Canceled OAuth refresh left an open upstream request"
+        );
         drop(stalled_socket);
 
-        let (mut retry_socket, _) =
-            tokio::time::timeout(Duration::from_secs(5), listener.accept())
-                .await
-                .unwrap()
-                .unwrap();
+        let (mut retry_socket, _) = tokio::time::timeout(Duration::from_secs(5), listener.accept())
+            .await
+            .unwrap()
+            .unwrap();
         let read = retry_socket.read(&mut buffer).await.unwrap();
         let request = String::from_utf8_lossy(&buffer[..read]);
         assert!(request.starts_with("POST /token "));
