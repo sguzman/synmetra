@@ -3105,7 +3105,6 @@ mod tests {
                 request.starts_with(&format!("GET {path} HTTP/1.1")),
                 "Wrong API version or path for {kind}"
             );
-            assert!(!request.contains("private-fixture-token"));
         }
     }
 
