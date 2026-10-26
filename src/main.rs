@@ -7678,6 +7678,22 @@ mod tests {
             data["meta"]["ga4"]["propertyQuota"]["tokensPerDay"]["remaining"],
             90
         );
+        // Batch reports intentionally remain provider-shaped rather than
+        // using a synthetic shared total. Preserve each nested report's
+        // original known count or omitted count without inventing metadata.
+        let batch = json!({
+            "reports":[
+                {"rowCount":5,"rows":[{"metricValues":[{"value":"3"}]}]},
+                {"rows":[{"metricValues":[{"value":"1"}]}]}
+            ]
+        });
+        let batch_reply = result(Ok(batch.clone()));
+        let batch_data = batch_reply.structured_content.as_ref().unwrap();
+        assert_eq!(batch_data["data"], batch);
+        assert_eq!(batch_data["data"]["reports"][0]["rowCount"], 5);
+        assert!(batch_data["data"]["reports"][1].get("rowCount").is_none());
+        assert!(batch_data["meta"].get("row_count_total").is_none());
+
     }
 
     #[test]

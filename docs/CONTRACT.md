@@ -8,6 +8,21 @@ The native Rust server emits both a JSON text content block and MCP `structuredC
 
 The `meta.elapsed_ms` value is currently a **zero sentinel, explicitly accompanied by `elapsed_ms_measured: false`**. It does not claim zero latency or compliance with upstream timing accuracy. Future per-tool instrumentation must replace it before complete Contract V1 acceptance. `structuredContent` provides basic interop, with bounded opt-in projection and UTF-8/Unicode-safe clipping in the six reporting handlers. **Historical cursor compatibility is implemented for opt-in `run_report` projection**: when Google returns a known total exceeding the page boundary, `meta.next_cursor` is a `v1:<sha256-query-hash>:<offset>` token. The digest binds the canonical Google request (except paging fields) to the normalized property ID. Follow-up calls provide that cursor and the same query fields, omitting explicit `offset`. Mutated queries, malformed tokens, excessive offsets and mixed cursor/offset requests are rejected before network access. The maximum offset is 10 million and requested projected page size is bounded to 1–1000; the token does not freeze the underlying Google property data, so pagination is not snapshot isolation. Raw provider-shaped responses still accept explicit `offset`/`limit`; realtime rejects both cursor and nonzero offsets. Other tools' cursor projections remain open. The remaining upstream projections and metadata fields are not fully implemented.
 
+## Known and unknown row totals across tool families (T159)
+
+A row total is **known** only when the provider actually supplies a `rowCount` (integer or decimal string), or when a local DuckDB query computes its own table count. In opt-in tabular projections, `row_count_total_known:false` means `row_count_total` is only the number of received provider rows; it is **not** a claim of an authoritative upstream total. For known totals, `row_count_total_known:true` and the provider total remain intact. `row_count_returned` always counts locally returned projected rows.
+
+| Family | Known/unknown count and truncation | Cursor policy |
+| --- | --- | --- |
+| Historical report, conversions, account/property access | Preserve provider-supplied `rowCount` when present; otherwise explicitly mark the total unknown and report only observed rows | `v1` next cursor may be emitted only for a known total and a query/resource-bound historical page |
+| Pivot | Preserve the provider `rowCount` or mark it unknown; retain `pivotHeaders` under GA metadata | Never invent a flat pivot cursor |
+| Realtime | Preserve provider `rowCount` or mark it unknown; if more rows exist than the local output cap, `truncated:true` remains truthful | Realtime offsets and cursors are not implemented; no fake next cursor |
+| Funnel | Project `funnelTable` and `funnelVisualization` independently, retaining separate known/unknown totals | No synthetic cross-subreport cursor |
+| Batch historical reports | Remain **provider-shaped** by default: preserve each nested `rowCount` or its absence | No synthesized aggregate batch total or new cursor in outer `meta` |
+| Local scratchpad | `summarize_table` counts local rows using DuckDB; table column catalog flags `columns_truncated` at the metadata cap | Local metadata cursors bind session/table/schema; they are not Google report cursors |
+
+The native `all_opt_in_report_projection_families_disclose_known_and_unknown_totals` regression exercises the six single-report projections, two funnel subreports, and provider-shaped batch behavior with synthetic known/unknown totals; existing local DuckDB summary and catalog tests cover the local counted versus bounded-schema distinction. These tests do **not** establish the accuracy of any live GA provider count, Google snapshot isolation, or full upstream output parity.
+
 ## Capability boundaries
 
 The Google annotation mutation is disabled unless `--allow-write` is explicit and Google separately grants an edit-scoped identity. Scratchpad tools are disabled unless built with the optional DuckDB feature and started with `--scratchpad`. Scratchpad is stdio-only until cross-client session isolation has been implemented. The full 36-tool registry is therefore only visible in the fully opt-in test profile, and normal read-only clients see a subset by design.
