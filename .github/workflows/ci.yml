@@ -224,6 +224,26 @@ jobs:
           grep -Fq 'does **not** require installing or running' docs/GOOGLE_CLOUD.md
           grep -Fq 'No Python, npm, Node, gcloud' docs/CLI.md
 
+      - name: Parse Fish examples using native Fish shell
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y -qq fish
+          snippets="$RUNNER_TEMP/synmetra-fish-snippets"
+          mkdir -p "$snippets"
+          awk -v dir="$snippets" '
+            /^```fish$/ {inside=1; n++; file=sprintf("%s/example-%02d.fish", dir, n); next}
+            inside && /^```$/ {inside=0; close(file); next}
+            inside {print > file}
+          ' docs/INSTALL.md docs/CLI.md
+          test "$(find "$snippets" -name "*.fish" -type f | wc -l)" -eq 5
+          while IFS= read -r script; do
+            fish -n "$script"
+          done < <(find "$snippets" -name "*.fish" -type f | LC_ALL=C sort)
+          fish -c 'set -gx SYNMETRA_TEST_FISH_CANARY local-only; test "$SYNMETRA_TEST_FISH_CANARY" = local-only'
+          grep -Fq 'read -s -P' "$snippets/example-05.fish"
+
       - name: Verify offline CLI help across native invocation modes
         shell: bash
         run: |
