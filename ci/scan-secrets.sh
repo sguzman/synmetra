@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
-# Redacted public-tree heuristic scan. No matched credential strings are printed.
+# Redacted public-tree and optional Git history credential scan.
+# Matches, blob hashes and historical paths are never printed.
 set -euo pipefail
+
+if (( $# > 1 )) || { (( $# == 1 )) && [[ "$1" != "--history" ]]; }; then
+  echo 'Usage: ci/scan-secrets.sh [--history]' >&2
+  exit 2
+fi
 
 if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   echo 'Tracked source secret scan requires a Git repository' >&2
@@ -28,7 +34,38 @@ if ((failed)); then
   exit 1
 fi
 
-# The scanner does not attempt to parse proprietary Google OAuth JSON,
-# infer unrecognized account secrets, or inspect Git history. A passing
-# heuristic scan is not an independent secret-audit certificate.
+# --history requires complete reachable history (not GitHub's shallow
+# checkout). Never let a shallow success masquerade as a history audit.
+if [[ "${1:-}" == "--history" ]]; then
+  if [[ "$(git rev-parse --is-shallow-repository)" != "false" ]]; then
+    echo 'History secret scan requires an unshallowed Git checkout' >&2
+    exit 2
+  fi
+  revisions="$(git rev-list --all)" || {
+    echo 'Unable to enumerate reachable Git history' >&2
+    exit 2
+  }
+  while IFS= read -r revision; do
+    [[ -n "$revision" ]] || continue
+    grep_args=(-I -q -E)
+    for expression in "${patterns[@]}"; do
+      grep_args+=(-e "$expression")
+    done
+    status=0
+    git grep "${grep_args[@]}" "$revision" -- . >/dev/null 2>&1 || status=$?
+    if ((status == 0)); then
+      echo 'Potential historical credential/private-key material in reachable Git history; details suppressed' >&2
+      exit 1
+    fi
+    if ((status != 1)); then
+      echo 'Historical credential scan could not read a reachable revision' >&2
+      exit 2
+    fi
+  done <<< "$revisions"
+  echo 'Reachable Git history high-confidence credential signatures: none detected'
+fi
+
+# The scanner does not parse proprietary Google OAuth JSON, infer unrecognized
+# secrets, or inspect unreachable/pruned Git objects. A passing heuristic
+# source/history scan is not an independent secret-audit certificate.
 echo 'Tracked-source high-confidence credential signatures: none detected'
