@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `████████░░ 76.4%` · **+76.43 percentage points from initial empty repo; +0.22 pp from CI-verified headless OAuth callback copy-back implementation
+**Overall:** `████████░░ 76.7%` · **+76.65 percentage points from initial empty repo; +0.22 pp from CI-verified native quota-project header routing
 
 ### 📏 Progress conventions
 
@@ -126,7 +126,7 @@
   - ✅ **Gate:** Protocol wire fixtures pass multiple clients
 
 
-## 🔑 M2 — Google authentication and credential isolation — `██████░░░░ 55.8%`
+## 🔑 M2 — Google authentication and credential isolation — `██████░░░░ 57.7%`
 
 **Scope:** MVP. **Acceptance gate:** Secure, least-privilege, non-Python auth across interactive, local and service configurations; no secret leaks.
 
@@ -151,7 +151,7 @@
 - 🔎 **T048 — Validate live token and quota-project configuration** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** API-enabled project and quota errors are distinguishable
 
-### 📂 P06 — ADC, service account and token policy — `██░░░░░░░░ 22.2%`
+### 📂 P06 — ADC, service account and token policy — `███░░░░░░░ 27.8%`
 
 **Feature:** Google identities.
 
@@ -169,8 +169,8 @@
   - ✅ **Gate:** Hosted fallback to server-held identity fails closed
 - 🧮 **T055 — Support configured refresh-token credentials** — `██████████ 100.0%`
   - ✅ **Gate:** Explicit credentials refresh without CLI gcloud dependency · **Evidence:** src/auth.rs configured refresh token persisted without Python/gcloud dependency; Actions 40202015488 compiled; live token renewal pending; src/auth.rs access_token_at refreshes a privately persisted explicit OAuth refresh token through native reqwest, without invoking Python or gcloud. concurrent_expired_credentials_refresh_once_and_rotate_privately uses temporary 0600 fixture credentials and a localhost mock token endpoint, verifies rotated refresh-token persistence and two concurrent callers, and cleans fixture files. GitHub Actions 40261800504 full core CI passed. This is native configured-credentials acceptance, not a live Google account claim.
-- 🏷️ **T056 — Support quota project and billing headers** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Expected Google quota routing preserved
+- 🏷️ **T056 — Support quota project and billing headers** — `█████░░░░░ 50.0%`
+  - ✅ **Gate:** Expected Google quota routing preserved · **Evidence:** src/google.rs implements opt-in SYNMETRA_GOOGLE_QUOTA_PROJECT, validates Google Cloud project ID/number syntax, rejects header injection and non-UTF-8 input, fails closed before OAuth refresh, and adds exactly one x-goog-user-project header to read-only, retry and explicit mutation requests without mixing inbound MCP bearer identity. Synthetic opt_in_quota_header_is_kept_separate_from_google_bearer_on_reads_and_writes and quota_project_ids_and_numbers_are_strictly_validated passed pinned CI https://github.com/sguzman/synmetra/actions/runs/40395621521; docs/CLI.md, docs/GOOGLE_CLOUD.md and docs/MIGRATION.md document IAM serviceusage.services.use requirements. Actual live Google quota/permission routing remains unverified.
 - ⏳ **T057 — Guard clock skew and rotation races** — `██████████ 100.0%`
   - ✅ **Gate:** Expiring secrets renew safely during concurrent calls · **Evidence:** src/auth.rs access_token_at re-reads credentials within an async refresh lock, renews 120 seconds before expiry and rotates refresh tokens using private atomic persistence; the concurrent_expired_credentials_refresh_once_and_rotate_privately test passed in core CI https://github.com/sguzman/synmetra/actions/runs/40266208686.; src/auth.rs concurrent_expired_credentials_refresh_once_and_rotate_privately verifies two concurrent callers perform exactly one local OAuth token exchange, both receive the new access token, rotated refresh token persists privately, and later calls reuse the refreshed credential; core CI https://github.com/sguzman/synmetra/actions/runs/40266208686 passed. This does not certify live Google refresh/revocation behavior.
 
@@ -571,7 +571,7 @@
   - ✅ **Gate:** Signed provenance and dependency audit evidence · **Evidence:** Pinned Rust 1.99.1/Cargo.lock source builds an x86-64 release binary in two independent Cargo target directories and compares SHA-256 digests and sizes. The dedicated workflow step passed https://github.com/sguzman/synmetra/actions/runs/40358192285; separate cargo-deny Rust license/source/advisory scans also pass. Cross-runner reproducibility, bundled DuckDB and signed provenance remain distinct pending gates.; The release workflow passed two separate pinned Rust 1.99.1/Cargo.lock x86-64 binary SHA-256 comparisons, SHA-pinned actions/attest@v4 Sigstore/SLSA v1 archive attestation, and gh attestation verify -R sguzman/synmetra validating repository identity and SLSA predicate in https://github.com/sguzman/synmetra/actions/runs/40359969759. Independent cargo-deny Rust license/source checks passed https://github.com/sguzman/synmetra/actions/runs/40346651714. This accepts signed provenance and dependency-audit evidence only for an experimental default-feature Linux archive, not clean ARM64/EndeavourOS builds or native C++ compliance.
 
 
-## 🚀 M9 — Linux release and Codex-ready inauguration — `███████░░░ 70.4%`
+## 🚀 M9 — Linux release and Codex-ready inauguration — `███████░░░ 70.5%`
 
 **Scope:** MVP. **Acceptance gate:** A documented stable native binary with 36-tool verified parity and release artifacts; no Python/npm runtime.
 

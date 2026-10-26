@@ -1123,12 +1123,13 @@
               "id": "T056",
               "emoji": "🏷️",
               "name": "Support quota project and billing headers",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Expected Google quota routing preserved",
               "checks": [
                 {
                   "text": "Deliver support quota project and billing headers as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs implements opt-in SYNMETRA_GOOGLE_QUOTA_PROJECT, validates Google Cloud project ID/number syntax, rejects header injection and non-UTF-8 input, fails closed before OAuth refresh, and adds exactly one x-goog-user-project header to read-only, retry and explicit mutation requests without mixing inbound MCP bearer identity. Synthetic opt_in_quota_header_is_kept_separate_from_google_bearer_on_reads_and_writes and quota_project_ids_and_numbers_are_strictly_validated passed pinned CI https://github.com/sguzman/synmetra/actions/runs/40395621521; docs/CLI.md, docs/GOOGLE_CLOUD.md and docs/MIGRATION.md document IAM serviceusage.services.use requirements. Actual live Google quota/permission routing remains unverified."
                 },
                 {
                   "text": "Expected Google quota routing preserved",
