@@ -1274,6 +1274,58 @@ mod tests {
     use super::*;
 
     #[test]
+    fn aggregate_evidence_bundle_rejects_oversized_output_without_altering_tables() {
+        let state = ScratchState::new();
+        state.open("bounded_bundle").unwrap();
+        {
+            let mut inner = state.guard().unwrap();
+            let db = &inner.sessions.get_mut("bounded_bundle").unwrap().db;
+            for index in 0..8 {
+                db.execute_batch(&format!(
+                    "CREATE TABLE sample_{index} (value VARCHAR);
+                     INSERT INTO sample_{index}
+                     SELECT repeat('x', 1900) FROM range(20);"
+                ))
+                .unwrap();
+            }
+        }
+        assert_eq!(state.tables("bounded_bundle", None).unwrap()["total_tables"], 8);
+        let too_large = state
+            .export_evidence_bundle("bounded_bundle", None, Some(20))
+            .unwrap_err();
+        assert!(too_large.contains("256 KiB"), "{too_large}");
+        let minimal = state
+            .export_evidence_bundle("bounded_bundle", None, Some(0))
+            .unwrap();
+        assert_eq!(minimal["tables"].as_array().unwrap().len(), 8);
+        assert!(minimal["tables"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|table| table["sample_rows"].as_array().unwrap().is_empty()));
+        let bounded = state
+            .export_evidence_bundle(
+                "bounded_bundle",
+                Some(vec!["sample_0".into()]),
+                Some(1),
+            )
+            .unwrap();
+        assert_eq!(bounded["tables"][0]["row_count"], 20);
+        assert_eq!(
+            bounded["tables"][0]["sample_rows"]
+                .as_array()
+                .unwrap()
+                .len(),
+            1
+        );
+        assert!(serde_json::to_vec(&bounded).unwrap().len() <= 256 * 1024);
+        assert_eq!(
+            state.summarize_table("bounded_bundle", "sample_0").unwrap()["row_count"],
+            20
+        );
+    }
+
+    #[test]
     fn evidence_export_handles_quoted_columns_nulls_and_bounded_text_cells() {
         let state = ScratchState::new();
         state.open("private_test").unwrap();
