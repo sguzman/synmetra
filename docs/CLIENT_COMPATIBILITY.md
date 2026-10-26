@@ -35,7 +35,7 @@ Source tests exercise all native `ApiError` variants, structured/text envelope e
 
 ## Legacy client and version migration
 
-Keep existing Google/SednaLabs MCP registrations in place while introducing Synmetra under a **distinct** tool-server name. Compare the actual `tools/list` schema with [NATIVE_TOOL_GUIDE.md](NATIVE_TOOL_GUIDE.md) and [the recorded native schema](../spec/native/tool-schema.v1.json). In particular, exact upstream input **names** are covered, but the raw pinned audit still records 202 shape differences across shared fields, and some scratchpad ingest output controls are deliberately rejected rather than silently dropped.
+Keep existing Google/SednaLabs MCP registrations in place while introducing Synmetra under a **distinct** tool-server name. Compare the actual `tools/list` schema with [NATIVE_TOOL_GUIDE.md](NATIVE_TOOL_GUIDE.md) and [the recorded native schema](../spec/native/tool-schema.v1.json). In particular, exact upstream input **names** are covered, but the raw pinned audit still records 201 shape differences across shared fields, and some scratchpad ingest output controls are deliberately rejected rather than silently dropped.
 
 Preserve previously cached client output parsers until a synthetic side-by-side test validates the expected envelope, nested data, status, row metadata, and selected output mode. Do not reinterpret a provider-shaped report as automatically equivalent to SednaLabs compact Contract V1. The [migration guide](MIGRATION.md) and [canonical union decision](CANONICAL_CONTRACT_DECISION.md) enumerate remaining incompatibilities.
 

@@ -225,7 +225,7 @@ jobs:
           jq -e '.tools | length == 36' spec/native/tool-schema.v1.json > /dev/null
           jq -e '.union.tools | length == 36' docs/tool-inventory.json > /dev/null
           grep -Fq 'protocol error' docs/CLIENT_COMPATIBILITY.md
-          grep -Fq '202 shape differences' docs/CLIENT_COMPATIBILITY.md
+          grep -Fq '201 shape differences' docs/CLIENT_COMPATIBILITY.md
           grep -Fq '0.0.1' docs/CLIENT_COMPATIBILITY.md
           grep -Fq 'CLIENT_COMPATIBILITY.md' README.md
           grep -Fq 'CLIENT_COMPATIBILITY.md' docs/CONTRACT.md

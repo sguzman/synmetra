@@ -5,7 +5,7 @@
   "source_ci_run": "https://github.com/sguzman/synmetra/actions/runs/40269115096",
   "profile": "--features scratchpad; --allow-write; --scratchpad",
   "toolchain": "Rust 1.99.1",
-  "notes": "Captured from real rmcp router, not inferred from pinned SednaLabs schema. This is a native input-schema snapshot, not live Google or complete upstream parameter parity. Extended table describe/summarize controls are source-reviewed and require feature-CI schema equality; source_commit is the original capture provenance, not an assertion that all later fields came from that historical SHA. The local diagnostic release/landing tools additionally advertise bounded max_rows/max_cell_chars; the historical source commit in this file refers to the original capture only, not later CI-updated additions. Ingestion input controls are now explicitly accepted, validated and, when unsupported or incomplete, rejected or marked partial before upstream operations. Full SednaLabs multi-page and output behavior are not yet achieved and live testing is open. Historical/realtime optional ingest limit input now uses the pinned u64 width; bounded actual ingest still rejects values exceeding 1,000 before any outbound request.",
+  "notes": "Captured from real rmcp router, not inferred from pinned SednaLabs schema. This is a native input-schema snapshot, not live Google or complete upstream parameter parity. Extended table describe/summarize controls are source-reviewed and require feature-CI schema equality; source_commit is the original capture provenance, not an assertion that all later fields came from that historical SHA. The local diagnostic release/landing tools additionally advertise bounded max_rows/max_cell_chars; the historical source commit in this file refers to the original capture only, not later CI-updated additions. Ingestion input controls are now explicitly accepted, validated and, when unsupported or incomplete, rejected or marked partial before upstream operations. Full SednaLabs multi-page and output behavior are not yet achieved and live testing is open. Historical/realtime optional ingest limit input now uses the pinned u64 width; bounded actual ingest still rejects values exceeding 1,000 before any outbound request. Pivot keep_empty_rows now uses a nonnullable bool with default false, matching the pinned upstream tool schema; the original source_commit remains original historical capture provenance.",
   "tools": [
     {
       "inputSchema": {
@@ -1405,11 +1405,8 @@
             "type": "array"
           },
           "keep_empty_rows": {
-            "default": null,
-            "type": [
-              "boolean",
-              "null"
-            ]
+            "default": false,
+            "type": "boolean"
           },
           "max_cell_chars": {
             "default": null,

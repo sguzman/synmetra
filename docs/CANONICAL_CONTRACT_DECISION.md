@@ -17,9 +17,9 @@ The native schema source of truth is [spec/native/tool-schema.v1.json](../spec/n
 | Missing official Google signature parameter names | **0** |
 | Required-field set mismatches against SednaLabs | **0** |
 | Native-only extra input names | 2 (`keep_empty_rows` on `run_report` and `preview_report_request`) |
-| Raw field-shape differences across shared fields | **202** |
+| Raw field-shape differences across shared fields | **201** |
 
-The raw differences include **182 description differences**, 19 differently named `$ref` fields, 18 `anyOf` differences, 10 `items` differences, 9 default differences, 8 type differences. The two previously differing `uint32` versus `uint64` ingest-limit formats now match upstream. These categories overlap, so totals must not be summed as distinct fields. Raw JSON Schema comparison does **not dereference or normalize** nested definitions. An input `$ref` rename can be semantically equivalent; a default/type change can also be meaningful. Neither case can be called accepted without its own tests and decision.
+The raw differences include **182 description differences**, 19 differently named `$ref` fields, 18 `anyOf` differences, 10 `items` differences, 8 default differences, 7 type differences. The two previously differing `uint32` versus `uint64` ingest-limit formats now match upstream. These categories overlap, so totals must not be summed as distinct fields. Raw JSON Schema comparison does **not dereference or normalize** nested definitions. An input `$ref` rename can be semantically equivalent; a default/type change can also be meaningful. Neither case can be called accepted without its own tests and decision.
 
 ## Behavioral precedence and known incompatibilities
 

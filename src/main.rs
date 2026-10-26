@@ -924,7 +924,7 @@ struct PivotArgs {
     #[serde(default)]
     currency_code: Option<String>,
     #[serde(default)]
-    keep_empty_rows: Option<bool>,
+    keep_empty_rows: bool,
     #[serde(default = "default_return_property_quota")]
     return_property_quota: bool,
     #[serde(default)]
@@ -1853,7 +1853,7 @@ impl Synmetra {
                         ("metricFilter", args.metric_filter),
                         ("orderBys", args.order_bys.map(|x| json!(x))),
                         ("currencyCode", args.currency_code.map(|x| json!(x))),
-                        ("keepEmptyRows", args.keep_empty_rows.map(|x| json!(x))),
+                        ("keepEmptyRows", Some(json!(args.keep_empty_rows))),
                         (
                             "returnPropertyQuota",
                             Some(json!(args.return_property_quota)),
@@ -3462,6 +3462,41 @@ mod tests {
         assert_eq!(structured["error"]["category"], "validation");
     }
 
+    #[test]
+    fn pivot_keep_empty_rows_is_nonnullable_and_defaults_false() {
+        let upstream: serde_json::Value = serde_json::from_str(include_str!(
+            "../spec/upstream/sednalabs-tool-schema.v1.json"
+        ))
+        .unwrap();
+        let source = upstream["tools"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|t| t["name"] == "run_pivot_report")
+            .unwrap();
+        let schema = source["inputSchema"]["properties"]["keep_empty_rows"].clone();
+        assert_eq!(schema["type"], "boolean");
+        assert_eq!(schema["default"], false);
+
+        let mut minimal = json!({
+            "property_id":42,
+            "date_ranges":[{"startDate":"yesterday","endDate":"today"}],
+            "dimensions":["country"],
+            "metrics":["activeUsers"],
+            "pivots":[{"fieldNames":["country"],"limit":"10"}]
+        });
+        let parsed: PivotArgs = serde_json::from_value(minimal.clone()).unwrap();
+        assert!(!parsed.keep_empty_rows);
+        minimal["keep_empty_rows"] = json!(true);
+        let enabled: PivotArgs = serde_json::from_value(minimal.clone()).unwrap();
+        assert!(enabled.keep_empty_rows);
+        minimal["keep_empty_rows"] = json!(false);
+        let disabled: PivotArgs = serde_json::from_value(minimal.clone()).unwrap();
+        assert!(!disabled.keep_empty_rows);
+        minimal["keep_empty_rows"] = serde_json::Value::Null;
+        assert!(serde_json::from_value::<PivotArgs>(minimal).is_err());
+    }
+
     #[tokio::test]
     async fn core_preflight_and_batch_reject_invalid_input_before_google_calls() {
         let server = Synmetra::new(GoogleClient::new(None), false);
@@ -3483,7 +3518,7 @@ mod tests {
                 metric_filter: None,
                 order_bys: None,
                 currency_code: None,
-                keep_empty_rows: None,
+                keep_empty_rows: false,
                 return_property_quota: false,
                 max_rows: None,
                 max_cell_chars: None,
