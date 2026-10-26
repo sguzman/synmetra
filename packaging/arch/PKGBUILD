@@ -6,6 +6,9 @@ pkgdesc='Experimental native Rust Google Analytics 4 MCP server'
 arch=('x86_64')
 url='https://github.com/sguzman/synmetra'
 license=('MIT')
+# Makepkg's GCC -flto objects from ring's native C/assembly do not link with Rust's LLD.
+# Disable package-manager C/C++ LTO; retain the pinned Rust release profile.
+options=('!lto')
 depends=('glibc' 'gcc-libs')
 makedepends=('git' 'rustup' 'base-devel')
 _commit='d6ce2322d6f073d59844ea3d07e4d1a0c0886b54'
