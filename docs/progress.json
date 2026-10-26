@@ -2431,7 +2431,7 @@
               "id": "T122",
               "emoji": "🛡️",
               "name": "Keep write tool hidden under read-only profiles",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Bypass attempts fail regardless of tool visibility",
               "checks": [
                 {
@@ -2441,7 +2441,8 @@
                 },
                 {
                   "text": "Bypass attempts fail regardless of tool visibility",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs read_only_profile_hides_annotation_write_and_blocks_direct_bypass checks that the default tool router excludes create_property_annotation while opt-in router lists it; a direct handler call on a read-only server fails locally with INVALID_REQUEST even if bypassing route dispatch; enabled writes with no token fail AUTH_NOT_CONFIGURED before an HTTP request. GitHub Actions 40257381971 passed core and DuckDB synthetic CI. No unauthorized live mutation was attempted."
                 }
               ]
             },
@@ -2449,16 +2450,18 @@
               "id": "T123",
               "emoji": "🧾",
               "name": "Produce redacted audit events for writes",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "Timestamp and action identifiable but no secrets",
               "checks": [
                 {
                   "text": "Deliver produce redacted audit events for writes as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs write_audit_event returns fixed, timestamped JSON with action=create_property_annotation, fixed outcome, details_redacted=true; emit_write_audit writes one event per successful/failed/invalid/read-only attempt to stderr while excluding titles, resource IDs, dates, credentials and HTTP bodies. docs/ANNOTATIONS.md specifies the stderr-only boundary. Full GitHub Actions 40257381971 passed."
                 },
                 {
                   "text": "Timestamp and action identifiable but no secrets",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs write_audit_events_include_timestamp_and_action_but_no_sensitive_fields validates parseable RFC3339 UTC timestamp, action/outcome field values, details_redacted flag, exactly four whitelisted keys, and absence of property_id, title, description, client_secret, access_token, refresh_token, payload or response; synthetic read-only handler test also emits only a fixed denied outcome. GitHub Actions 40257381971 core and DuckDB passed; actual operator log retention is environment-owned."
                 }
               ]
             },
