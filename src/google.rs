@@ -3384,7 +3384,10 @@ mod tests {
             &admin_host,
             "http://127.0.0.1:9",
         );
-        let summaries = client.account_summaries_with_options(None, None).await.unwrap();
+        let summaries = client
+            .account_summaries_with_options(None, None)
+            .await
+            .unwrap();
         let properties = &summaries["accountSummaries"][0]["propertySummaries"];
         assert_eq!(properties[0]["property"], "properties/42");
         assert_eq!(properties[1]["property"], "properties/43");
@@ -3437,9 +3440,18 @@ mod tests {
             &admin_host,
             "http://127.0.0.1:9",
         );
-        let a1 = first.account_summaries_with_options(None, None).await.unwrap();
-        let a2 = first.account_summaries_with_options(None, None).await.unwrap();
-        let b1 = second.account_summaries_with_options(None, None).await.unwrap();
+        let a1 = first
+            .account_summaries_with_options(None, None)
+            .await
+            .unwrap();
+        let a2 = first
+            .account_summaries_with_options(None, None)
+            .await
+            .unwrap();
+        let b1 = second
+            .account_summaries_with_options(None, None)
+            .await
+            .unwrap();
         responder.await.unwrap();
         assert_eq!(a1["accountSummaries"][0]["name"], "accounts/10");
         assert_eq!(a2["accountSummaries"][0]["name"], "accounts/11");
