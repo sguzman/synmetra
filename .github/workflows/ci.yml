@@ -151,6 +151,28 @@ jobs:
             "$RUNNER_TEMP/synmetra-oversize-stdio.stderr"
           test ! -s "$RUNNER_TEMP/synmetra-oversize-stdio.stdout"
 
+      - name: Verify offline CLI help across native invocation modes
+        shell: bash
+        run: |
+          env -i PATH=/nonexistent target/debug/synmetra --help \
+            > "$RUNNER_TEMP/synmetra-help.txt"
+          env -i PATH=/nonexistent target/debug/synmetra serve --help \
+            > "$RUNNER_TEMP/synmetra-serve-help.txt"
+          env -i PATH=/nonexistent target/debug/synmetra auth --help \
+            > "$RUNNER_TEMP/synmetra-auth-help.txt"
+          env -i PATH=/nonexistent target/debug/synmetra auth login --help \
+            > "$RUNNER_TEMP/synmetra-auth-login-help.txt"
+          cmp "$RUNNER_TEMP/synmetra-help.txt" "$RUNNER_TEMP/synmetra-serve-help.txt"
+          cmp "$RUNNER_TEMP/synmetra-auth-help.txt" "$RUNNER_TEMP/synmetra-auth-login-help.txt"
+          grep -Fq 'read-only stdio' "$RUNNER_TEMP/synmetra-help.txt"
+          grep -Fq -- '--scratchpad' "$RUNNER_TEMP/synmetra-help.txt"
+          grep -Fq 'SYNMETRA_MCP_BEARER_TOKEN' "$RUNNER_TEMP/synmetra-help.txt"
+          grep -Fq -- '--allow-edit' "$RUNNER_TEMP/synmetra-auth-help.txt"
+          grep -Fq 'Google Cloud Desktop OAuth client JSON' "$RUNNER_TEMP/synmetra-auth-help.txt"
+          env -i PATH=/nonexistent target/debug/synmetra --version \
+            > "$RUNNER_TEMP/synmetra-offline-version.txt"
+          grep -Fq 'synmetra 0.0.1' "$RUNNER_TEMP/synmetra-offline-version.txt"
+
       - name: Verify native auth doctor and credential-safe CLI failures
         shell: bash
         run: |

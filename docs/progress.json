@@ -3752,12 +3752,13 @@
               "id": "T188",
               "emoji": "🧪",
               "name": "Fuzz resource names filters cursors and JSON parsing",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Fuzz corpus with reproducible seeds and crash guard",
               "checks": [
                 {
                   "text": "Deliver fuzz resource names filters cursors and json parsing as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/tabular.rs deterministic_resource_and_cursor_mutation_corpus_fails_closed supplies a fixed reproducible corpus of 20 invalid Google resource IDs, 12 malformed/cross-boundary pagination cursors and three changed-query cursor attempts, rejecting unsafe values before network access. src/google.rs adversarial_report_filter_corpus_is_bounded_before_google_network_access supplies oversized/nested/invalid JSON filter fixtures; src/http.rs json_rpc_protocol_errors_remain_separate_from_ga_validation_results covers malformed JSON MCP request bodies. The native core suite and canonical formatting passed in https://github.com/sguzman/synmetra/actions/runs/40268415511. This is deterministic mutation/corpus coverage, not a complete coverage-guided fuzz campaign or memory-safety certification."
                 },
                 {
                   "text": "Fuzz corpus with reproducible seeds and crash guard",

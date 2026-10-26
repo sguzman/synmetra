@@ -554,8 +554,39 @@ pub fn public_status() -> serde_json::Value {
     }
 }
 
+const AUTH_HELP: &str = r#"Synmetra native Google OAuth
+
+Usage:
+  synmetra auth login --client-id-file PATH [--account EMAIL] [--callback-port PORT] [--headless] [--allow-edit]
+  synmetra auth status
+  synmetra auth doctor
+  synmetra auth command
+  synmetra auth logout
+  synmetra auth --help
+
+Login options:
+  --client-id-file PATH  Google Cloud Desktop OAuth client JSON (required)
+  --account EMAIL        Optional Google login hint; not an authorization boundary
+  --callback-port PORT   Optional loopback port; default ephemeral
+  --headless             Print the consent URL without launching a browser
+  --allow-edit           Request analytics.edit in addition to analytics.readonly
+
+Credentials: private XDG Synmetra config, 0700 directory and 0600 file.
+status and doctor never print tokens. logout clears only local Synmetra
+credentials; revoke Google-side access separately if needed.
+A real consent flow requires the Google account owner in a browser.
+"#;
+
 pub async fn command(args: &[String]) -> Result<(), String> {
     match args {
+        [mode] if mode == "--help" || mode == "-h" => {
+            println!("{AUTH_HELP}");
+            Ok(())
+        }
+        [mode, help] if mode == "login" && (help == "--help" || help == "-h") => {
+            println!("{AUTH_HELP}");
+            Ok(())
+        }
         [mode, rest @ ..] if mode == "login" => {
             let options = parse_login_options(rest)?;
             login(&options).await
@@ -613,6 +644,28 @@ pub async fn command(args: &[String]) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn auth_help_documents_complete_opt_in_scope_and_private_status() {
+        for option in [
+            "login",
+            "--client-id-file",
+            "--account",
+            "--callback-port",
+            "--headless",
+            "--allow-edit",
+            "status",
+            "doctor",
+            "command",
+            "logout",
+            "analytics.readonly",
+            "analytics.edit",
+            "0700",
+            "0600",
+        ] {
+            assert!(AUTH_HELP.contains(option), "Missing auth help option: {option}");
+        }
+    }
+
 
     #[tokio::test]
     async fn concurrent_expired_credentials_refresh_once_and_rotate_privately() {

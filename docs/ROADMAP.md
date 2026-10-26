@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `██████░░░░ 61.9%` · **+61.89 percentage points from initial empty repo; +0.22 pp from verified 36-tool live eligibility documentation** · 127/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `██████░░░░ 62.1%` · **+62.11 percentage points from initial empty repo; +0.22 pp from verified adversarial identifier/filter/cursor corpus** · 127/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -495,7 +495,7 @@
   - ✅ **Gate:** Changes open maintenance work rather than silently inflate parity · **Evidence:** .github/workflows/upstream-drift.yml watches exact SednaLabs schema and Google coordinator Git blob SHAs weekly and on reviewed lock/workflow changes; changes trigger stable [upstream-drift] local maintenance issue, never repin automatically. ci/test-upstream-drift-watch.sh executes the actual workflow shell body with mocked curl/gh, verifying unchanged, changed and duplicate issue cases. GitHub Actions drift workflow 40249957815 succeeded.; GitHub Actions 40249957815 offline fixture checks verify an upstream blob change fails the watch and opens exactly one review issue per source; repeat unchanged pin mismatch reuses an existing open issue and a second changed source opens a separate one. Real unchanged upstream watch also passed. No real upstream drift was forced and no real maintenance issue was created; this is synthetic acceptance of the detection/mutation control, not a source parity claim.
 
 
-## 🧪 M8 — Verification, resilience and security acceptance — `███░░░░░░░ 33.9%`
+## 🧪 M8 — Verification, resilience and security acceptance — `████░░░░░░ 35.7%`
 
 **Scope:** MVP. **Acceptance gate:** Full offline and authorized live verification including malformed inputs, MCP interoperability and threat model.
 
@@ -547,14 +547,14 @@
 - 🗄️ **T186 — Record redacted reproducible live test ledger** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** All outcomes scoped with date and source SHA
 
-### 🛡️ P24 — Robustness and operational performance — `███░░░░░░░ 33.3%`
+### 🛡️ P24 — Robustness and operational performance — `████░░░░░░ 38.9%`
 
 **Feature:** Reliability and security.
 
 - 🔒 **T187 — Threat-model inbound Google and DuckDB trust boundaries** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Documented review of MCP prompt injection and auth vectors · **Evidence:** docs/LOCAL_EXECUTION_THREAT_MODEL.md and revised docs/SECURITY.md review MCP arguments, prompt-injected data, inbound bearer/Google OAuth separation, fixed provider hosts, optional DuckDB SQL and shared stdio session boundaries against src/main.rs, src/http.rs, src/google.rs and src/scratchpad.rs; independent pre-live signoff remains open.
-- 🧪 **T188 — Fuzz resource names filters cursors and JSON parsing** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Fuzz corpus with reproducible seeds and crash guard
+- 🧪 **T188 — Fuzz resource names filters cursors and JSON parsing** — `█████░░░░░ 50.0%`
+  - ✅ **Gate:** Fuzz corpus with reproducible seeds and crash guard · **Evidence:** src/tabular.rs deterministic_resource_and_cursor_mutation_corpus_fails_closed supplies a fixed reproducible corpus of 20 invalid Google resource IDs, 12 malformed/cross-boundary pagination cursors and three changed-query cursor attempts, rejecting unsafe values before network access. src/google.rs adversarial_report_filter_corpus_is_bounded_before_google_network_access supplies oversized/nested/invalid JSON filter fixtures; src/http.rs json_rpc_protocol_errors_remain_separate_from_ga_validation_results covers malformed JSON MCP request bodies. The native core suite and canonical formatting passed in https://github.com/sguzman/synmetra/actions/runs/40268415511. This is deterministic mutation/corpus coverage, not a complete coverage-guided fuzz campaign or memory-safety certification.
 - ⏱️ **T189 — Benchmark startup latency peak RSS and tool calls** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Repeatable Linux measurements under no-cache and warm-cache
 - 🧰 **T190 — Handle network outage and Google API failure modes** — `█████░░░░░ 50.0%`

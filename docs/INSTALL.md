@@ -1,6 +1,6 @@
 # 🦀 Native Linux source installation
 
-Synmetra is an **experimental GA4 MCP server**, not yet a parity-certified release. These instructions install the default, read-only Rust CLI and stdio transport. They do **not** install Python, Node, npm, gcloud, or a background daemon. The optional DuckDB scratchpad has a separate native C++ build boundary.
+Synmetra is an **experimental GA4 MCP server**, not yet a parity-certified release. These instructions install the default, read-only Rust CLI and stdio transport. They do **not** install Python, Node, npm, gcloud, or a background daemon. The optional DuckDB scratchpad has a separate native C++ build boundary. For commands, flags, environment variables, permissions and Fish examples, see [CLI.md](CLI.md).
 
 ## EndeavourOS / Arch Linux
 

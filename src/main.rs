@@ -2329,9 +2329,43 @@ impl Synmetra {
 )]
 impl ServerHandler for Synmetra {}
 
+const CLI_HELP: &str = r#"Synmetra — experimental local Google Analytics MCP server
+
+Usage:
+  synmetra [serve] [--http-loopback] [--allow-write] [--scratchpad]
+  synmetra auth --help
+  synmetra auth login --client-id-file PATH [--account EMAIL] [--callback-port PORT] [--headless] [--allow-edit]
+  synmetra auth status | doctor | command | logout
+  synmetra --help | -h | --version | -V
+
+Server flags (all opt-in):
+  --http-loopback   Authenticate local 127.0.0.1 HTTP MCP using SYNMETRA_MCP_BEARER_TOKEN
+  --allow-write     Advertise annotation mutation tools; Google analytics.edit is separate
+  --scratchpad      Enable process-local DuckDB only if built with the scratchpad feature
+
+Environment:
+  SYNMETRA_GOOGLE_ACCESS_TOKEN  Optional short-lived Google bearer override (no refresh)
+  SYNMETRA_MCP_BEARER_TOKEN     Required for loopback HTTP (32+ printable nonspace ASCII)
+  SYNMETRA_MCP_PORT             Optional loopback port (default 44128, nonzero)
+  XDG_CONFIG_HOME               Optional private Synmetra OAuth config root
+
+Defaults: read-only stdio, no HTTP listener, no scratchpad. --scratchpad and
+--http-loopback cannot be combined; public network binding is unsupported.
+No Python, npm, Node, gcloud or credential file is needed for offline help.
+See docs/CLI.md and docs/SECURITY.md for accepted boundaries.
+"#;
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = std::env::args().collect();
+    if (args.len() == 2 && matches!(args[1].as_str(), "--help" | "-h"))
+        || (args.len() == 3
+            && args[1] == "serve"
+            && matches!(args[2].as_str(), "--help" | "-h"))
+    {
+        println!("{CLI_HELP}");
+        return Ok(());
+    }
     if args.len() >= 3 && args[1] == "auth" {
         return auth::command(&args[2..]).await.map_err(|e| e.into());
     }
@@ -2406,6 +2440,26 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn built_in_help_mentions_all_local_permissions_and_transport_gates() {
+        for command in [
+            "synmetra [serve]",
+            "synmetra auth",
+            "--http-loopback",
+            "--allow-write",
+            "--scratchpad",
+            "SYNMETRA_GOOGLE_ACCESS_TOKEN",
+            "SYNMETRA_MCP_BEARER_TOKEN",
+            "SYNMETRA_MCP_PORT",
+            "XDG_CONFIG_HOME",
+            "read-only stdio",
+        ] {
+            assert!(super::CLI_HELP.contains(command), "Missing help topic: {command}");
+        }
+        assert!(!super::CLI_HELP.contains("client_secret"));
+        assert!(!super::CLI_HELP.contains("refresh_token"));
+    }
+
     use super::*;
 
     #[test]
