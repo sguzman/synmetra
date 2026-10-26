@@ -304,12 +304,14 @@ jobs:
             inside && /^```$/ {inside=0; close(file); next}
             inside {print > file}
           ' docs/INSTALL.md docs/CLI.md
-          test "$(find "$snippets" -name "*.fish" -type f | wc -l)" -eq 5
+          expected="$(awk '/^```fish$/ {n++} END {print n+0}' docs/INSTALL.md docs/CLI.md)"
+          test "$expected" -ge 5
+          test "$(find "$snippets" -name "*.fish" -type f | wc -l)" -eq "$expected"
           while IFS= read -r script; do
             fish -n "$script"
           done < <(find "$snippets" -name "*.fish" -type f | LC_ALL=C sort)
           fish -c 'set -gx SYNMETRA_TEST_FISH_CANARY local-only; test "$SYNMETRA_TEST_FISH_CANARY" = local-only'
-          grep -Fq 'read -s -P' "$snippets/example-05.fish"
+          grep -Fq 'read -s -P' "$snippets"/example-*.fish
 
       - name: Verify offline CLI help across native invocation modes
         shell: bash
