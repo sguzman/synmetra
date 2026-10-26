@@ -195,6 +195,16 @@ struct ScratchIngestReportArgs {
     order_bys: Option<Vec<Value>>,
     #[serde(default = "default_return_property_quota")]
     return_property_quota: bool,
+    #[serde(default)]
+    cursor: Option<String>,
+    #[serde(default)]
+    max_rows: Option<usize>,
+    #[serde(default)]
+    max_cell_chars: Option<usize>,
+    #[serde(default)]
+    output_mode: Option<String>,
+    #[serde(default)]
+    summary_only: bool,
     #[schemars(with = "Vec<ReportDateRangeInput>")]
     date_ranges: Vec<Value>,
     #[serde(default)]
@@ -225,6 +235,16 @@ struct ScratchIngestRealtimeArgs {
     order_bys: Option<Vec<Value>>,
     #[serde(default = "default_return_property_quota")]
     return_property_quota: bool,
+    #[serde(default)]
+    cursor: Option<String>,
+    #[serde(default)]
+    max_rows: Option<usize>,
+    #[serde(default)]
+    max_cell_chars: Option<usize>,
+    #[serde(default)]
+    output_mode: Option<String>,
+    #[serde(default)]
+    summary_only: bool,
 }
 
 #[cfg(feature = "scratchpad")]
@@ -440,6 +460,80 @@ fn project_scratchpad_table_catalog(
         "truncated":original_truncated || end < columns.len()
     });
     Ok(data)
+}
+
+#[cfg(feature = "scratchpad")]
+fn validated_ingest_page_limit(
+    limit: Option<u32>,
+    max_rows: Option<usize>,
+    max_cell_chars: Option<usize>,
+    cursor: Option<&str>,
+    summary_only: bool,
+    output_mode: Option<&str>,
+) -> Result<u32, String> {
+    if cursor.is_some() {
+        return Err("Scratchpad ingestion does not support a cursor; use offset/limit".into());
+    }
+    if summary_only {
+        return Err("summary_only=true is not supported for scratchpad ingestion".into());
+    }
+    if output_mode.is_some_and(|mode| mode != "rows") {
+        return Err("Scratchpad ingestion supports only rows output mode".into());
+    }
+    let rows = max_rows.unwrap_or(1000);
+    let cells = max_cell_chars.unwrap_or(2048);
+    if rows == 0 || rows > 1000 || cells == 0 || cells > 2048 {
+        return Err("Ingestion bounds must be 1-1000 rows and 1-2048 characters".into());
+    }
+    if limit.is_some_and(|limit| limit == 0 || limit > 1000) {
+        return Err("GA4 ingest limit must be 1-1000".into());
+    }
+    Ok(limit.unwrap_or(1000).min(rows as u32))
+}
+
+#[cfg(feature = "scratchpad")]
+fn redact_ingest_receipt(
+    result: Result<Value, String>,
+    max_cell_chars: Option<usize>,
+    requested_limit: u32,
+    page_limit: u32,
+) -> Result<Value, String> {
+    let mut result = result?;
+    if let Some(cap) = max_cell_chars {
+        fn clip(value: &mut Value, cap: usize) {
+            match value {
+                Value::String(text) => {
+                    if text.chars().count() > cap {
+                        *text = text.chars().take(cap).collect();
+                    }
+                }
+                Value::Array(items) => {
+                    for item in items {
+                        clip(item, cap);
+                    }
+                }
+                Value::Object(items) => {
+                    for cell in items.values_mut() {
+                        clip(cell, cap);
+                    }
+                }
+                _ => {}
+            }
+        }
+        clip(&mut result, cap);
+    }
+    if page_limit < requested_limit {
+        // Unlike pinned upstream's bounded multi-page ingest, the current
+        // native path reads only one page. Declare incomplete ingestion rather
+        // than quietly implying all requested rows were transferred.
+        result["pagination"] = json!({
+            "requested_limit":requested_limit,
+            "one_page_limit":page_limit,
+            "complete":false,
+            "warning":"Native scratchpad ingest is currently one page; multi-page parity is pending."
+        });
+    }
+    Ok(result)
 }
 
 #[cfg(feature = "scratchpad")]
@@ -2334,9 +2428,17 @@ impl Synmetra {
         if let Err(reason) = scratch.require_session(&args.session_id) {
             return local_result(Err(reason));
         }
-        if args.limit.is_some_and(|v| v == 0 || v > 1000) {
-            return local_result(Err("GA4 ingest limit must be 1-1000".into()));
-        }
+        let page_limit = match validated_ingest_page_limit(
+            args.limit,
+            args.max_rows,
+            args.max_cell_chars,
+            args.cursor.as_deref(),
+            args.summary_only,
+            args.output_mode.as_deref(),
+        ) {
+            Ok(value) => value,
+            Err(reason) => return local_result(Err(reason)),
+        };
         let body = report_request(
             Some(args.date_ranges),
             args.dimensions,
@@ -2345,7 +2447,7 @@ impl Synmetra {
                 ("dimensionFilter", args.dimension_filter),
                 ("metricFilter", args.metric_filter),
                 ("orderBys", args.order_bys.map(|v| json!(v))),
-                ("limit", Some(json!(args.limit.unwrap_or(1000).to_string()))),
+                ("limit", Some(json!(page_limit.to_string()))),
                 ("offset", args.offset.map(|v| json!(v.to_string()))),
                 ("currencyCode", args.currency_code.map(|v| json!(v))),
                 (
@@ -2359,11 +2461,16 @@ impl Synmetra {
             Err(error) => return result(Err(error)),
         };
         match self.api.report(&args.property_id, body, false).await {
-            Ok(data) => local_result(scratch.ingest_ga_response(
-                &args.session_id,
-                &args.table_name,
-                &data,
-                args.append,
+            Ok(data) => local_result(redact_ingest_receipt(
+                scratch.ingest_ga_response(
+                    &args.session_id,
+                    &args.table_name,
+                    &data,
+                    args.append,
+                ),
+                args.max_cell_chars,
+                args.limit.unwrap_or(1000),
+                page_limit,
             )),
             Err(error) => result(Err(error)),
         }
@@ -2389,9 +2496,17 @@ impl Synmetra {
         if let Err(reason) = scratch.require_session(&args.session_id) {
             return local_result(Err(reason));
         }
-        if args.limit.is_some_and(|v| v == 0 || v > 1000) {
-            return local_result(Err("GA4 ingest limit must be 1-1000".into()));
-        }
+        let page_limit = match validated_ingest_page_limit(
+            args.limit,
+            args.max_rows,
+            args.max_cell_chars,
+            args.cursor.as_deref(),
+            args.summary_only,
+            args.output_mode.as_deref(),
+        ) {
+            Ok(value) => value,
+            Err(reason) => return local_result(Err(reason)),
+        };
         if args.offset.is_some_and(|offset| offset > 0) {
             return result(Err(ApiError::UnsupportedRealtimeOffset));
         }
@@ -2403,7 +2518,7 @@ impl Synmetra {
                 ("dimensionFilter", args.dimension_filter),
                 ("metricFilter", args.metric_filter),
                 ("orderBys", args.order_bys.map(|v| json!(v))),
-                ("limit", Some(json!(args.limit.unwrap_or(1000).to_string()))),
+                ("limit", Some(json!(page_limit.to_string()))),
                 (
                     "returnPropertyQuota",
                     Some(json!(args.return_property_quota)),
@@ -2415,11 +2530,16 @@ impl Synmetra {
             Err(error) => return result(Err(error)),
         };
         match self.api.report(&args.property_id, body, true).await {
-            Ok(data) => local_result(scratch.ingest_ga_response(
-                &args.session_id,
-                &args.table_name,
-                &data,
-                args.append,
+            Ok(data) => local_result(redact_ingest_receipt(
+                scratch.ingest_ga_response(
+                    &args.session_id,
+                    &args.table_name,
+                    &data,
+                    args.append,
+                ),
+                args.max_cell_chars,
+                args.limit.unwrap_or(1000),
+                page_limit,
             )),
             Err(error) => result(Err(error)),
         }
@@ -5301,7 +5421,7 @@ mod tests {
         .unwrap();
         let server = Synmetra::new(GoogleClient::new(None), false).enable_scratchpad();
         let advertised = server.router.list_all();
-        for name in SCRATCHPAD_TOOL_NAMES.iter().take(7).copied() {
+        for name in SCRATCHPAD_TOOL_NAMES.iter().copied() {
             let reference = fixture["tools"]
                 .as_array()
                 .unwrap()
@@ -6049,6 +6169,66 @@ mod tests {
 
     #[cfg(feature = "scratchpad")]
     #[test]
+    fn ingest_output_controls_fail_closed_before_google_and_mark_one_page_limit() {
+        assert_eq!(
+            validated_ingest_page_limit(Some(100), Some(10), Some(64), None, false, None).unwrap(),
+            10
+        );
+        assert_eq!(
+            validated_ingest_page_limit(Some(4), Some(10), None, None, false, Some("rows"))
+                .unwrap(),
+            4
+        );
+        for (cursor, summary, mode) in [
+            (Some("v1:opaque"), false, None),
+            (None, true, None),
+            (None, false, Some("tuples")),
+        ] {
+            assert!(
+                validated_ingest_page_limit(
+                    Some(100),
+                    None,
+                    None,
+                    cursor,
+                    summary,
+                    mode,
+                )
+                .is_err()
+            );
+        }
+        for limit in [Some(0), Some(1001)] {
+            assert!(
+                validated_ingest_page_limit(limit, None, None, None, false, None).is_err()
+            );
+        }
+        for limit in [Some(0), Some(1001)] {
+            assert!(
+                validated_ingest_page_limit(None, limit, None, None, false, None).is_err()
+            );
+            assert!(
+                validated_ingest_page_limit(None, None, limit, None, false, None).is_err()
+            );
+        }
+        let sample = json!({
+            "table_name":"synthetic_very_long_name",
+            "rows_ingested":8,
+            "columns":["synthetic_campaign"],
+        });
+        let cropped = redact_ingest_receipt(Ok(sample.clone()), Some(4), 100, 10).unwrap();
+        assert_eq!(cropped["table_name"], "synt");
+        assert_eq!(cropped["columns"][0], "synt");
+        assert_eq!(cropped["rows_ingested"], 8);
+        assert_eq!(cropped["pagination"]["complete"], false);
+        assert_eq!(cropped["pagination"]["requested_limit"], 100);
+        assert_eq!(cropped["pagination"]["one_page_limit"], 10);
+        assert_eq!(
+            redact_ingest_receipt(Ok(sample.clone()), None, 10, 10).unwrap(),
+            sample
+        );
+    }
+
+    #[cfg(feature = "scratchpad")]
+    #[test]
     fn diagnostic_optional_row_and_cell_limits_are_enforced() {
         let original = json!({
             "session_id":"local",
@@ -6379,6 +6559,11 @@ mod tests {
                 metric_filter: None,
                 order_bys: None,
                 return_property_quota: false,
+                cursor: None,
+                max_rows: None,
+                max_cell_chars: None,
+                output_mode: None,
+                summary_only: false,
             }))
             .await;
         assert_eq!(result.is_error, Some(true));

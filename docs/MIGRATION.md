@@ -11,16 +11,15 @@
 
 ## Current input-field differences to account for
 
-A direct **property-name-only** comparison of the 35 pinned SednaLabs schemas to the reviewed native schema lock (with table metadata projection now added; native feature CI required) has **4 tools with differing property sets**, **10 SednaLabs inputs not advertised natively**, and **2 native-only properties**. This is a narrower and newer assessment than the historical [SCHEMA_PARITY_AUDIT.md](SCHEMA_PARITY_AUDIT.md), which measured 75 missing fields before subsequent implementation. It does **not** compare nested types/defaults or prove behavioral equivalence.
+A direct **property-name-only** comparison of the 35 pinned SednaLabs schemas to the reviewed native schema lock (with table metadata projection now added; native feature CI required) has **2 tools with differing property sets**, **0 SednaLabs inputs missing from the reviewed native schema**, and **2 native-only properties**. This is a narrower and newer assessment than the historical [SCHEMA_PARITY_AUDIT.md](SCHEMA_PARITY_AUDIT.md), which measured 75 missing fields before subsequent implementation. It does **not** compare nested types/defaults or prove behavioral equivalence.
 
-| Tool(s) | SednaLabs inputs currently absent from native schema |
+| Difference | Remaining fields |
 | --- | --- |
-| `scratchpad_ingest_realtime_report` | `cursor`, `max_cell_chars`, `max_rows`, `output_mode`, `summary_only` |
-| `scratchpad_ingest_report` | `cursor`, `max_cell_chars`, `max_rows`, `output_mode`, `summary_only` |
+| Upstream input names missing | **None in the reviewed native schema lock**. Native ingestion explicitly rejects cursors and summary_only, and currently supports only rows mode and one-page reads. |
 
 `preview_report_request` and `run_report` additionally advertise a native `keep_empty_rows` option. The **10 official extracted Google function signature parameter names have no missing native names** in this capture, but Google's fixture does not include full dynamic MCP type/default/output schemas. In particular, the official Python realtime tool declares `offset`, while Google's v1beta realtime API does not; Synmetra rejects nonzero realtime offsets rather than silently pretending to page.
 
-**Do not silently forward removed/unsupported controls.** Update caller expectations explicitly and keep existing servers available during parallel non-production checks. Table description and summary now have bounded column metadata projections with cursor/session/schema fingerprints. The local release and landing diagnostics now accept bounded max_rows/max_cell_chars projections. Historical and realtime ingest tools retain the final ten missing top-level upstream output/paging controls, tracked under T164–T165. This does not imply all upstream output semantics match.
+**Do not silently forward removed/unsupported controls.** Update caller expectations explicitly and keep existing servers available during parallel non-production checks. Table description and summary now have bounded column metadata projections with cursor/session/schema fingerprints. The local release and landing diagnostics now accept bounded max_rows/max_cell_chars projections. Historical and realtime ingest tools now advertise the final ten input names with explicit validation, but still lack pinned upstream multi-page collection and non-rows output compatibility. All 36 **input names** are expressible in the schema; T164–T165 and live acceptance remain open for full semantic parity. This does not imply all upstream output semantics match.
 
 ## Tool output and error behavior
 
@@ -44,3 +43,7 @@ Historical cursors are query-bound, offset-bounded and not a snapshot; some prov
 6. Do not deactivate upstream servers or tag Synmetra `v1.0.0` until native schema/output, client interoperability, security and live Google acceptance gates are independently passed.
 
 This guide is specifically for the two **pinned** source revisions, not an audit of all future upstream releases. Revisit schema and Google API changes before relying on the guide for a later revision.
+
+## Input-name closure is not semantic closure
+
+Source-reviewed native ingestion now advertises each pinned upstream optional input field. The upstream explicitly rejects non-null ingest cursors and `summary_only=true`; native does likewise. Native `max_rows` currently caps a **single** requested Google API page, while pinned SednaLabs uses bounded multi-page collection when the requested `limit` exceeds page size. Native receipts explicitly disclose this partial read. `max_cell_chars` is applied only to the receipt, not DuckDB's persisted values. Alternate `output_mode` variants are rejected before Google network requests rather than silently ignored. Full input type/default compatibility, paging, projection and output semantics remain open; passing a tool-name or property-set comparison alone must **never** certify parity.

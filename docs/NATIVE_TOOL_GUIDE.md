@@ -538,11 +538,11 @@ The same native contract may be carried as JSON-RPC structured content and legac
 
 ### `scratchpad_ingest_realtime_report`
 
-**Required inputs:** `session_id`, `table_name`, `property_id`, `dimensions`, `metrics`. **Optional inputs:** `append`, `dimension_filter`, `limit`, `metric_filter`, `offset`, `order_bys`, `return_property_quota`.
+**Required inputs:** `session_id`, `table_name`, `property_id`, `dimensions`, `metrics`. **Optional inputs:** `append`, `cursor`, `dimension_filter`, `limit`, `max_cell_chars`, `max_rows`, `metric_filter`, `offset`, `order_bys`, `output_mode`, `return_property_quota`, `summary_only`.
 
 **Output:** Authorized Google Data API request followed by an opt-in local DuckDB write; output includes local ingestion status, not raw live data in this guide.
 
-**Limits / permissions:** Only with --features scratchpad and serve --scratchpad on trusted stdio; in-memory session max 20000 rows; feature security gates still open.
+**Limits / permissions:** Only with --features scratchpad and serve --scratchpad on trusted stdio; in-memory session max 20000 rows; feature security gates still open. Realtime cursors, nonzero offsets and `summary_only=true` are explicitly rejected. `max_rows` (1–1000) caps the current one-page Google request; larger `limit` yields an explicitly incomplete receipt. `max_cell_chars` (1–2048) clips receipt strings, not stored cells. Only `output_mode=rows` is supported; other modes fail before network. Full upstream output parity is open.
 
 **Synthetic example arguments:**
 
@@ -556,17 +556,20 @@ The same native contract may be carried as JSON-RPC structured content and legac
   ],
   "metrics": [
     "activeUsers"
-  ]
+  ],
+  "max_rows": 50,
+  "max_cell_chars": 128,
+  "output_mode": "rows"
 }
 ```
 
 ### `scratchpad_ingest_report`
 
-**Required inputs:** `session_id`, `table_name`, `property_id`, `dimensions`, `metrics`, `date_ranges`. **Optional inputs:** `append`, `currency_code`, `dimension_filter`, `limit`, `metric_filter`, `offset`, `order_bys`, `return_property_quota`.
+**Required inputs:** `session_id`, `table_name`, `property_id`, `dimensions`, `metrics`, `date_ranges`. **Optional inputs:** `append`, `currency_code`, `cursor`, `dimension_filter`, `limit`, `max_cell_chars`, `max_rows`, `metric_filter`, `offset`, `order_bys`, `output_mode`, `return_property_quota`, `summary_only`.
 
 **Output:** Authorized Google Data API request followed by an opt-in local DuckDB write; output includes local ingestion status, not raw live data in this guide.
 
-**Limits / permissions:** Only with --features scratchpad and serve --scratchpad on trusted stdio; in-memory session max 20000 rows; feature security gates still open.
+**Limits / permissions:** Only with --features scratchpad and serve --scratchpad on trusted stdio; in-memory session max 20000 rows; feature security gates still open. Input `cursor` and `summary_only=true` are explicitly rejected as in the pinned upstream implementation. `max_rows` (1–1000) caps the current native one-page API request; larger requested `limit` yields an explicit incomplete-ingestion receipt rather than silent completion. `max_cell_chars` (1–2048) clips receipt string cells, not persisted DuckDB rows. Only `output_mode=rows` is currently supported; alternate modes error before Google network access. Full bounded multi-page parity is open.
 
 **Synthetic example arguments:**
 
@@ -586,7 +589,10 @@ The same native contract may be carried as JSON-RPC structured content and legac
       "start_date": "7daysAgo",
       "end_date": "today"
     }
-  ]
+  ],
+  "max_rows": 50,
+  "max_cell_chars": 128,
+  "output_mode": "rows"
 }
 ```
 
