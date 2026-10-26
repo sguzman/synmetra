@@ -170,7 +170,7 @@ impl ScratchState {
                  SET autoload_known_extensions = false;
                  SET autoinstall_known_extensions = false;
                  SET memory_limit = '256MB';
-                 SET max_temp_directory_size = '64MB';
+                 SET max_temp_directory_size = '0B';
                  SET lock_configuration = true;",
             )
             .map_err(|_| "Cannot enforce DuckDB sandbox settings")?;
@@ -1368,6 +1368,130 @@ impl ScratchState {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn crash_cleanup_child_fixture() {
+        if std::env::var_os("SYNMETRA_CRASH_CLEANUP_CHILD").is_none() {
+            return;
+        }
+        use std::io::Write;
+        let scratch = ScratchState::new();
+        scratch.open("crash_fixture").unwrap();
+        scratch
+            .ingest_ga_response(
+                "crash_fixture",
+                "events",
+                &json!({
+                    "dimensionHeaders":[{"name":"country"}],
+                    "metricHeaders":[{"name":"activeUsers","type":"TYPE_INTEGER"}],
+                    "rows":[
+                        {"dimensionValues":[{"value":"US"}],"metricValues":[{"value":"7"}]},
+                        {"dimensionValues":[{"value":"MX"}],"metricValues":[{"value":"5"}]}
+                    ]
+                }),
+                false,
+            )
+            .unwrap();
+        assert_eq!(
+            scratch.summarize_table("crash_fixture", "events").unwrap()["row_count"],
+            2
+        );
+        println!("SYNMETRA_CRASH_FIXTURE_READY");
+        std::io::stdout().flush().unwrap();
+        loop {
+            std::thread::park();
+        }
+    }
+
+    #[test]
+    fn killed_in_memory_session_leaves_no_spill_files_or_persisted_rows() {
+        use std::io::{BufRead, BufReader};
+        use std::os::unix::fs::DirBuilderExt;
+        use std::process::{Command, Stdio};
+        use std::time::{SystemTime, UNIX_EPOCH};
+
+        let entropy = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!(
+            "synmetra-crash-test-{}-{entropy}",
+            std::process::id()
+        ));
+        std::fs::DirBuilder::new()
+            .mode(0o700)
+            .create(&root)
+            .unwrap();
+        let mut child = Command::new(std::env::current_exe().unwrap())
+            .args([
+                "--exact",
+                "scratchpad::tests::crash_cleanup_child_fixture",
+                "--nocapture",
+            ])
+            .env("SYNMETRA_CRASH_CLEANUP_CHILD", "1")
+            .current_dir(&root)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::null())
+            .spawn()
+            .unwrap();
+
+        let mut output = BufReader::new(child.stdout.take().unwrap());
+        let mut ready = false;
+        for _ in 0..8 {
+            let mut line = String::new();
+            if output.read_line(&mut line).unwrap() == 0 {
+                break;
+            }
+            if line.contains("SYNMETRA_CRASH_FIXTURE_READY") {
+                ready = true;
+                break;
+            }
+        }
+        if !ready {
+            let _ = child.kill();
+            let _ = child.wait();
+            std::fs::remove_dir_all(&root).unwrap();
+            panic!("Synthetic child never opened and populated its in-memory session");
+        }
+        child.kill().unwrap();
+        assert!(!child.wait().unwrap().success());
+        let left_behind: Vec<_> = std::fs::read_dir(&root)
+            .unwrap()
+            .map(|entry| entry.unwrap().file_name())
+            .collect();
+        std::fs::remove_dir_all(&root).unwrap();
+        assert!(
+            left_behind.is_empty(),
+            "Unexpected DuckDB disk files after abrupt process termination"
+        );
+
+        let restarted = ScratchState::new();
+        assert_eq!(restarted.sessions(None).unwrap()["total_sessions"], 0);
+        assert!(restarted.tables("crash_fixture", None).is_err());
+    }
+
+    #[test]
+    fn crash_safe_scratchpad_disables_spills_and_locks_configuration() {
+        let state = ScratchState::new();
+        state.open("no_spill").unwrap();
+        let mut guard = state.guard().unwrap();
+        let db = &mut guard.sessions.get_mut("no_spill").unwrap().db;
+        let limit: String = db
+            .query_row(
+                "SELECT current_setting('max_temp_directory_size')",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert!(
+            limit.trim().starts_with('0'),
+            "Scratchpad temp directory quota must be zero: {limit}"
+        );
+        assert!(db
+            .execute_batch("SET max_temp_directory_size='64MB'")
+            .is_err());
+        assert!(db.execute_batch("SET enable_external_access=true").is_err());
+    }
 
     #[test]
     fn session_row_cap_rejects_overflow_transactionally_and_preserves_tables() {
