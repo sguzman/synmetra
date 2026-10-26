@@ -411,9 +411,9 @@ impl ScratchState {
                 && domain.len() <= 255
                 && domain.contains('.')
                 && !domain.contains('@')
-                && domain.bytes().all(|ch| {
-                    ch.is_ascii_alphanumeric() || matches!(ch, b'.' | b'-' | b'_')
-                })
+                && domain
+                    .bytes()
+                    .all(|ch| ch.is_ascii_alphanumeric() || matches!(ch, b'.' | b'-' | b'_'))
         })
     }
 
@@ -1524,9 +1524,15 @@ mod tests {
         assert!(!serialized.contains("synthetic_private_authorization_987"));
         assert!(!serialized.contains("alice@example.test"));
         assert!(!serialized.contains("synthetic_private_override"));
-        assert_eq!(result["tables"][0]["sample_rows"][0]["access_token"], "[REDACTED]");
+        assert_eq!(
+            result["tables"][0]["sample_rows"][0]["access_token"],
+            "[REDACTED]"
+        );
         assert_eq!(result["tables"][0]["sample_rows"][0]["note"], "[REDACTED]");
-        assert_eq!(result["tables"][0]["sample_rows"][0]["contact"], "[REDACTED]");
+        assert_eq!(
+            result["tables"][0]["sample_rows"][0]["contact"],
+            "[REDACTED]"
+        );
         assert_eq!(result["tables"][0]["sample_rows"][0]["safe_count"], "7");
         assert_eq!(result["tables"][1]["sample_rows"][0]["value"], "[REDACTED]");
         assert_eq!(
@@ -1538,7 +1544,9 @@ mod tests {
         let inner = state.guard().unwrap();
         let db = &inner.sessions.get("redaction_fixture").unwrap().db;
         let stored: String = db
-            .query_row("SELECT access_token FROM safe_example", [], |row| row.get(0))
+            .query_row("SELECT access_token FROM safe_example", [], |row| {
+                row.get(0)
+            })
             .unwrap();
         assert_eq!(stored, "synthetic_private_token_123");
     }
