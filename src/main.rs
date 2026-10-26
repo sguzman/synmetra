@@ -7580,6 +7580,105 @@ mod tests {
     }
 
     #[test]
+    fn all_opt_in_report_projection_families_disclose_known_and_unknown_totals() {
+        let known = json!({
+            "dimensionHeaders":[{"name":"country"}],
+            "metricHeaders":[{"name":"activeUsers","type":"TYPE_INTEGER"}],
+            "rows":[
+                {"dimensionValues":[{"value":"US"}],"metricValues":[{"value":"3"}]},
+                {"dimensionValues":[{"value":"CA"}],"metricValues":[{"value":"1"}]}
+            ],
+            "rowCount":5,
+            "propertyQuota":{"tokensPerHour":{"remaining":100}}
+        });
+        let mut unknown = known.clone();
+        unknown.as_object_mut().unwrap().remove("rowCount");
+        let controls = tabular::Controls {
+            output_mode: Some(tabular::OutputMode::Rows),
+            summary_only: false,
+            max_rows: Some(1),
+            max_cell_chars: None,
+            cursor_supplied: false,
+        };
+
+        // Each opt-in report route below delegates to this exact projection
+        // helper. Only historical/resource-bound reports have v1 cursors.
+        for (family, realtime, cursor_allowed) in [
+            ("run_report", false, true),
+            ("run_conversions_report", false, true),
+            ("run_pivot_report", false, false),
+            ("run_property_access_report", false, true),
+            ("run_account_access_report", false, true),
+            ("run_realtime_report", true, false),
+        ] {
+            let pagination = tabular::Pagination {
+                query_hash: "fixture-query".into(),
+                offset: 0,
+            };
+            let page = cursor_allowed.then_some(&pagination);
+            let known_result = result_with_tabular_projection(
+                Ok(known.clone()),
+                controls,
+                realtime,
+                page,
+            );
+            assert_eq!(known_result.is_error, Some(false), "{family}");
+            let known_value = known_result.structured_content.as_ref().unwrap();
+            assert_eq!(known_value["meta"]["row_count_total"], 5, "{family}");
+            assert_eq!(known_value["meta"]["row_count_total_known"], true, "{family}");
+            assert_eq!(known_value["meta"]["row_count_returned"], 1, "{family}");
+            assert_eq!(known_value["meta"]["truncated"], true, "{family}");
+            assert_eq!(known_value["meta"]["ga4"]["propertyQuota"], known["propertyQuota"]);
+            assert_eq!(
+                known_value["meta"]["next_cursor"].is_string(),
+                cursor_allowed,
+                "{family}"
+            );
+            let legacy: Value = serde_json::from_str(
+                &known_result.content[0].as_text().unwrap().text,
+            )
+            .unwrap();
+            assert_eq!(&legacy, known_value, "{family}");
+
+            let unknown_result = result_with_tabular_projection(
+                Ok(unknown.clone()),
+                controls,
+                realtime,
+                page,
+            );
+            let unknown_value = unknown_result.structured_content.as_ref().unwrap();
+            assert_eq!(unknown_value["meta"]["row_count_total"], 2, "{family}");
+            assert_eq!(unknown_value["meta"]["row_count_total_known"], false, "{family}");
+            assert_eq!(unknown_value["meta"]["row_count_returned"], 1, "{family}");
+            assert_eq!(unknown_value["meta"]["truncated"], true, "{family}");
+            assert!(unknown_value["meta"]["next_cursor"].is_null(), "{family}");
+        }
+
+        // The funnel tool has *two independent provider subreports*; neither
+        // is permitted to invent another subreport's total or a cursor.
+        let funnel = result_with_funnel_projection(
+            Ok(json!({
+                "funnelTable":known,
+                "funnelVisualization":unknown,
+                "propertyQuota":{"tokensPerDay":{"remaining":90}}
+            })),
+            controls,
+        );
+        assert_eq!(funnel.is_error, Some(false));
+        let data = funnel.structured_content.as_ref().unwrap();
+        assert_eq!(data["meta"]["funnel_table"]["row_count_total"], 5);
+        assert_eq!(data["meta"]["funnel_table"]["row_count_total_known"], true);
+        assert_eq!(data["meta"]["funnel_visualization"]["row_count_total"], 2);
+        assert_eq!(
+            data["meta"]["funnel_visualization"]["row_count_total_known"],
+            false
+        );
+        assert!(data["meta"]["funnel_table"]["next_cursor"].is_null());
+        assert!(data["meta"]["funnel_visualization"]["next_cursor"].is_null());
+        assert_eq!(data["meta"]["ga4"]["propertyQuota"]["tokensPerDay"]["remaining"], 90);
+    }
+
+    #[test]
     fn every_native_api_error_has_a_stable_redacted_structured_and_text_envelope() {
         let cases = [
             (
