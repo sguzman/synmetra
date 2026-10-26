@@ -244,14 +244,19 @@ fn callback_code(request: &str, expected_state: &str) -> Result<String, String> 
     let mut state = None;
     let mut code = None;
     for (key, value) in parsed.query_pairs() {
-        if key == "state" {
-            state = Some(value.to_string());
-        }
-        if key == "code" {
-            code = Some(value.to_string());
-        }
-        if key == "error" {
-            return Err("Google rejected the OAuth login".into());
+        match key.as_ref() {
+            "state" => {
+                if state.replace(value.to_string()).is_some() {
+                    return Err("Duplicate OAuth state parameter".into());
+                }
+            }
+            "code" => {
+                if code.replace(value.to_string()).is_some() {
+                    return Err("Duplicate OAuth code parameter".into());
+                }
+            }
+            "error" => return Err("Google rejected the OAuth login".into()),
+            _ => {}
         }
     }
     if state.as_deref() != Some(expected_state) {
@@ -324,6 +329,50 @@ async fn read_headless_callback(redirect: &str, state: &str) -> Result<String, S
         .await
         .map_err(|_| "Headless OAuth callback timed out")?
         .map_err(|_| "Headless OAuth callback reader failed")?
+}
+
+async fn read_browser_callback(
+    listener: &TcpListener,
+    expected_state: &str,
+    deadline: Duration,
+) -> Result<String, String> {
+    // Bound the entire authorization window. A stream of malformed callbacks
+    // must never extend the login indefinitely by resetting the accept timeout.
+    timeout(deadline, async {
+        loop {
+            let (mut socket, _) = listener
+                .accept()
+                .await
+                .map_err(|_| "OAuth callback listener failed")?;
+            let mut req = vec![0u8; 8192];
+            let n = match timeout(Duration::from_secs(10), socket.read(&mut req)).await {
+                Ok(Ok(size)) => size,
+                Ok(Err(_)) => return Err("Cannot read callback".into()),
+                Err(_) => return Err("OAuth callback timed out".into()),
+            };
+            let input = std::str::from_utf8(&req[..n])
+                .map_err(|_| "Callback encoding invalid")?;
+            let code = callback_code(input, expected_state);
+            let (status, body) = if code.is_ok() {
+                (
+                    "200 OK",
+                    "Synmetra authorization received. You may close this page.",
+                )
+            } else {
+                ("400 Bad Request", "Invalid authorization callback.")
+            };
+            let reply = format!(
+                "HTTP/1.1 {status}\r\nContent-Type: text/plain; charset=utf-8\r\nCache-Control: no-store\r\nConnection: close\r\nContent-Length: {}\r\n\r\n{body}",
+                body.len()
+            );
+            let _ = socket.write_all(reply.as_bytes()).await;
+            if let Ok(code) = code {
+                return Ok(code);
+            }
+        }
+    })
+    .await
+    .map_err(|_| "Google login timed out".into())?
 }
 
 async fn token_exchange_at(
@@ -531,32 +580,7 @@ async fn login(options: &LoginOptions) -> Result<(), String> {
     let code = if options.headless {
         read_headless_callback(&redirect, &state).await?
     } else {
-        loop {
-            let (mut socket, _) = timeout(Duration::from_secs(300), listener.accept())
-                .await
-                .map_err(|_| "Google login timed out")?
-                .map_err(|_| "OAuth callback listener failed")?;
-            let mut req = vec![0u8; 8192];
-            let n = timeout(Duration::from_secs(10), socket.read(&mut req))
-                .await
-                .map_err(|_| "OAuth callback timed out")?
-                .map_err(|_| "Cannot read callback")?;
-            let input = std::str::from_utf8(&req[..n]).map_err(|_| "Callback encoding invalid")?;
-            let code = callback_code(input, &state);
-            let (status, body) = if code.is_ok() {
-                (
-                    "200 OK",
-                    "Synmetra authorization received. You may close this page.",
-                )
-            } else {
-                ("400 Bad Request", "Invalid authorization callback.")
-            };
-            let reply = format!("HTTP/1.1 {status}\r\nContent-Type: text/plain; charset=utf-8\r\nCache-Control: no-store\r\nConnection: close\r\nContent-Length: {}\r\n\r\n{body}", body.len());
-            let _ = socket.write_all(reply.as_bytes()).await;
-            if let Ok(code) = code {
-                break code;
-            }
-        }
+        read_browser_callback(&listener, &state, Duration::from_secs(300)).await?
     };
     let token = token_exchange(&[
         ("client_id", &client.installed.client_id),
@@ -1222,6 +1246,59 @@ mod tests {
         assert!(!object.contains_key("refresh_token"));
         assert!(!object.contains_key("client_secret"));
         assert!(!object.contains_key("client_id"));
+    }
+
+    #[tokio::test]
+    async fn browser_callback_rejects_csrf_duplicates_and_terminates_at_global_deadline() {
+        use tokio::net::TcpStream;
+
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let state = "synthetic-only-state";
+        let callback = tokio::spawn(async move {
+            read_browser_callback(&listener, state, Duration::from_secs(3)).await
+        });
+
+        for bad_query in [
+            "state=wrong&code=a",
+            "state=synthetic-only-state&code=a&code=b",
+            "state=synthetic-only-state&state=synthetic-only-state&code=a",
+            "error=access_denied&state=synthetic-only-state",
+        ] {
+            let mut socket = TcpStream::connect(("127.0.0.1", port)).await.unwrap();
+            let request = format!(
+                "GET /callback?{bad_query} HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\n\r\n"
+            );
+            socket.write_all(request.as_bytes()).await.unwrap();
+            let mut bytes = vec![0u8; 1024];
+            let n = timeout(Duration::from_secs(1), socket.read(&mut bytes))
+                .await
+                .unwrap()
+                .unwrap();
+            assert!(String::from_utf8_lossy(&bytes[..n]).contains("400 Bad Request"));
+        }
+
+        let mut socket = TcpStream::connect(("127.0.0.1", port)).await.unwrap();
+        let request = format!(
+            "GET /callback?state=synthetic-only-state&code=accepted-code HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\n\r\n"
+        );
+        socket.write_all(request.as_bytes()).await.unwrap();
+        let mut reply = vec![0u8; 1024];
+        let n = timeout(Duration::from_secs(1), socket.read(&mut reply))
+            .await
+            .unwrap()
+            .unwrap();
+        assert!(String::from_utf8_lossy(&reply[..n]).contains("200 OK"));
+        assert_eq!(callback.await.unwrap().unwrap(), "accepted-code");
+
+        let empty = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let timed_out = read_browser_callback(
+            &empty,
+            "synthetic-state",
+            Duration::from_millis(20),
+        )
+        .await;
+        assert_eq!(timed_out.unwrap_err(), "Google login timed out");
     }
 
     #[test]
