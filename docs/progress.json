@@ -1503,16 +1503,18 @@
               "id": "T076",
               "emoji": "🧱",
               "name": "Handle GA4 property account hierarchy and time zones",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "Correct property selection and permissions",
               "checks": [
                 {
                   "text": "Deliver handle ga4 property account hierarchy and time zones as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs account_summaries_with_options and property use scoped, independently authorized v1beta GET paths. account_hierarchy_preserves_property_parent_timezone_and_permission_scope tests nested propertySummaries, selected properties/42 parent accounts/77, IANA America/Mexico_City time zone and MXN currency without normalization or sibling fallback. Full GitHub Actions 40256293695 passed."
                 },
                 {
                   "text": "Correct property selection and permissions",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs account_hierarchy_preserves_property_parent_timezone_and_permission_scope mocks account 77 containing properties 42/43; checks explicit fetch properties/42 returns matching parent/timeZone and properties/99 HTTP 403 stays a scoped denial, not a fallback to an accessible sibling. Full core and DuckDB CI 40256293695 passed; live property-role acceptance remains a separate gate."
                 }
               ]
             },
@@ -1596,16 +1598,18 @@
               "id": "T081",
               "emoji": "🚷",
               "name": "Represent missing account permissions without data leaks",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "Partial access errors are explicit and scoped",
               "checks": [
                 {
                   "text": "Deliver represent missing account permissions without data leaks as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs custom_definitions combines customDimensions and customMetrics only after both separately authorized collections succeed, propagating HTTP errors instead of returning the first partial catalog. src/main.rs partial_admin_catalog_permission_failure_does_not_leak_accessible_data exercises customDimensions success followed by customMetrics 403. GitHub Actions 40256293695 passed."
                 },
                 {
                   "text": "Partial access errors are explicit and scoped",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs partial_admin_catalog_permission_failure_does_not_leak_accessible_data asserts a single scoped GOOGLE_HTTP_ERROR with status_code 403, upstream category and null data; excludes partially accessible metric names, denied provider message and bearer token from MCP structured output. Full CI 40256293695 passed. This is mock denial acceptance, not authorized live-account review."
                 }
               ]
             },
@@ -1613,16 +1617,18 @@
               "id": "T082",
               "emoji": "🔄",
               "name": "Refresh account metadata safely on repeated calls",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "No stale cross-principal cache confusion",
               "checks": [
                 {
                   "text": "Deliver refresh account metadata safely on repeated calls as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs account_summaries_with_options issues a fresh bounded Admin GET on each call, without using the credential-bound checkCompatibility cache for metadata. account_metadata_is_refetched_and_never_shared_across_principals verifies repeat requests from one bearer and a separate bearer against a changing mock Admin provider. GitHub Actions 40256293695 passed."
                 },
                 {
                   "text": "No stale cross-principal cache confusion",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs account_metadata_is_refetched_and_never_shared_across_principals checks three distinct requests: principal-a observes accounts/10 then updated accounts/11, principal-b observes accounts/99; local responder validates Authorization identity for each response and no credential string is in returned metadata. Full core/DuckDB CI 40256293695 passed; long-lived real account refresh remains a release gate."
                 }
               ]
             }
