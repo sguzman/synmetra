@@ -2983,12 +2983,13 @@
               "id": "T148",
               "emoji": "🔏",
               "name": "Guard exported evidence bundle permissions",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "Exports do not overwrite arbitrary paths or expose secrets",
               "checks": [
                 {
                   "text": "Deliver guard exported evidence bundle permissions as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/scratchpad.rs export_evidence_bundle returns at most eight locally selected tables, twenty deterministic sample rows each, and a 256 KiB bounded in-memory JSON/Markdown response with no output-path parameter. evidence_export_rejects_path_inputs_without_touching_neighbor_files uses a neighboring sentinel file to confirm traversal/URL/SQL-like identifiers cannot write or replace it; src/main.rs scratchpad_evidence_export_matches_pinned_inputs_and_bounded_json_markdown tests the MCP wrapper. docs/EVIDENCE_EXPORT_POLICY.md explicitly separates absence of server-side file writes from client-side forwarding/credential redaction risks. Both core and native DuckDB CI passed on https://github.com/sguzman/synmetra/actions/runs/40374986333. Caller-added secret values, authorization and client-side disclosure remain unaccepted."
                 },
                 {
                   "text": "Exports do not overwrite arbitrary paths or expose secrets",

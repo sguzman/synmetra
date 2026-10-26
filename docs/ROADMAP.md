@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `███████░░░ 73.8%` · **+73.79 percentage points from initial empty repo; +0.22 pp from pinned upstream response differential fixtures with explicit mismatches
+**Overall:** `███████░░░ 74.0%` · **+74.01 percentage points from initial empty repo; +0.22 pp from reviewed DuckDB evidence-export path and permission boundary
 
 ### 📏 Progress conventions
 
@@ -126,7 +126,7 @@
   - ✅ **Gate:** Protocol wire fixtures pass multiple clients
 
 
-## 🔑 M2 — Google authentication and credential isolation — `█████░░░░░ 53.9%`
+## 🔑 M2 — Google authentication and credential isolation — `█████░░░░░ 53.8%`
 
 **Scope:** MVP. **Acceptance gate:** Secure, least-privilege, non-Python auth across interactive, local and service configurations; no secret leaks.
 
@@ -366,7 +366,7 @@
   - ✅ **Gate:** Disable write capability at runtime restart · **Evidence:** Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.; Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.
 
 
-## 🗃️ M6 — DuckDB scratchpad and advanced analytics parity — `████████░░ 78.0%`
+## 🗃️ M6 — DuckDB scratchpad and advanced analytics parity — `████████░░ 80.0%`
 
 **Scope:** MVP. **Acceptance gate:** All 15 local scratchpad tools and policy limits operate without unsafe SQL or credential disclosure.
 
@@ -415,7 +415,7 @@
 - 📤 **T140 — Implement scratchpad_export_evidence_bundle** — `██████████ 100.0%`
   - ✅ **Gate:** Evidence fixture and schema/output equivalence for scratchpad_export_evidence_bundle · **Evidence src/scratchpad.rs export_evidence_bundle implements local private bounded JSON+Markdown with table samples, row counts, sample-query SHA-256 and no filesystem write/provider call; src/main.rs registers scratchpad_export_evidence_bundle MCP with opt-in capability. DuckDB-feature GitHub Actions 40261209205 native test suite passed export and schema fixtures.; src/main.rs scratchpad_evidence_export_matches_pinned_inputs_and_bounded_json_markdown tests the exact pinned field/required-set inventory and response table/sample/hash/Markdown shape, rejects duplicate table selectors, traversal names and sample limit 21; src/scratchpad.rs evidence_export_handles_quoted_columns_nulls_and_bounded_text_cells plus exports_private_bounded_json_and_markdown_evidence test SQL identifiers, NULLs, >2048-byte cells and zero-row sampling. GitHub Actions 40261209205 DuckDB job passed these named tests; format correction followed in 40261354530 passing core checks. No live Google acceptance implied.
 
-### 🔐 P18 — DuckDB security and resource controls — `██████░░░░ 55.0%`
+### 🔐 P18 — DuckDB security and resource controls — `██████░░░░ 60.0%`
 
 **Feature:** Scratchpad sandbox.
 
@@ -433,8 +433,8 @@
   - ✅ **Gate:** Leftover temp files sanitized on restart
 - 📏 **T147 — Provide deterministic truncation and evidence limits** — `██████████ 100.0%`
   - ✅ **Gate:** Bundle size and context limits enforced · **Evidence:** src/scratchpad.rs query_bounded clamps rows/cells and reports truthful truncated counts; export_evidence_bundle enforces at most eight tables, 20 sample rows, 2048-byte sample row, and total serialized bundle cap 256 KiB. src/main.rs scratchpad_evidence_export_matches_pinned_inputs_and_bounded_json_markdown plus scratchpad.rs bounded fixture tests passed feature-enabled GitHub Actions 40261209205. The second gate remains open pending explicit oversized aggregate bundle and deterministic multi-table boundary evidence.; src/scratchpad.rs aggregate_evidence_bundle_rejects_oversized_output_without_altering_tables rejects eight-table aggregate output over 256 KiB while preserving tables; evidence_samples_are_sorted_repeatable_and_hash_the_actual_query checks stable order/hash, and evidence_export_handles_quoted_columns_nulls_and_bounded_text_cells guards encoding; DuckDB feature test https://github.com/sguzman/synmetra/actions/runs/40264614297 passed.
-- 🔏 **T148 — Guard exported evidence bundle permissions** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Exports do not overwrite arbitrary paths or expose secrets
+- 🔏 **T148 — Guard exported evidence bundle permissions** — `█████░░░░░ 50.0%`
+  - ✅ **Gate:** Exports do not overwrite arbitrary paths or expose secrets · **Evidence:** src/scratchpad.rs export_evidence_bundle returns at most eight locally selected tables, twenty deterministic sample rows each, and a 256 KiB bounded in-memory JSON/Markdown response with no output-path parameter. evidence_export_rejects_path_inputs_without_touching_neighbor_files uses a neighboring sentinel file to confirm traversal/URL/SQL-like identifiers cannot write or replace it; src/main.rs scratchpad_evidence_export_matches_pinned_inputs_and_bounded_json_markdown tests the MCP wrapper. docs/EVIDENCE_EXPORT_POLICY.md explicitly separates absence of server-side file writes from client-side forwarding/credential redaction risks. Both core and native DuckDB CI passed on https://github.com/sguzman/synmetra/actions/runs/40374986333. Caller-added secret values, authorization and client-side disclosure remain unaccepted.
 - 🧪 **T149 — Run embedded DuckDB fuzz and hostile SQL fixtures** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Policy bypass corpus fails safely · **Evidence:** src/scratchpad.rs hostile_sql_corpus_and_deterministic_mutations_never_execute exercises 35 hostile SQL fixtures and 44 deterministic prefix/suffix mutations, checking denial and preserved table rows; DuckDB feature test https://github.com/sguzman/synmetra/actions/runs/40264614297 passed. Coverage-guided fuzzing and an independently reviewed policy bypass corpus remain unaccepted.
 - 🦀 **T150 — Document native DuckDB library boundary honestly** — `██████████ 100.0%`
