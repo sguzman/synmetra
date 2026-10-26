@@ -3077,6 +3077,141 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn cancelled_stdio_report_drops_upstream_request_and_keeps_peer_responsive() {
+        use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader};
+        use tokio::net::TcpListener;
+
+        let upstream = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let google_origin = format!("http://{}", upstream.local_addr().unwrap());
+        let server = Synmetra::new(
+            GoogleClient::with_endpoints(
+                Some("synthetic-upstream-only-token".into()),
+                &google_origin,
+                &google_origin,
+            ),
+            false,
+        );
+        let (server_stream, client_stream) = tokio::io::duplex(64 * 1024);
+        let task = tokio::spawn(async move {
+            server
+                .serve(server_stream)
+                .await
+                .unwrap()
+                .waiting()
+                .await
+                .unwrap();
+        });
+        let (read, mut write) = tokio::io::split(client_stream);
+        let mut reader = BufReader::new(read);
+
+        async fn send_json<W: tokio::io::AsyncWrite + Unpin>(
+            writer: &mut W,
+            value: &serde_json::Value,
+        ) {
+            writer.write_all(value.to_string().as_bytes()).await.unwrap();
+            writer.write_all(b"\n").await.unwrap();
+            writer.flush().await.unwrap();
+        }
+
+        send_json(
+            &mut write,
+            &json!({
+                "jsonrpc":"2.0","id":1,"method":"initialize",
+                "params":{
+                    "protocolVersion":"2025-11-25",
+                    "capabilities":{},
+                    "clientInfo":{"name":"cancelled-stdio-synthetic","version":"1"}
+                }
+            }),
+        )
+        .await;
+        let mut frame = String::new();
+        tokio::time::timeout(Duration::from_secs(5), reader.read_line(&mut frame))
+            .await
+            .unwrap()
+            .unwrap();
+        let init: Value = serde_json::from_str(frame.trim()).unwrap();
+        assert_eq!(init["id"], 1);
+        assert_eq!(init["result"]["serverInfo"]["name"], "synmetra");
+        send_json(
+            &mut write,
+            &json!({"jsonrpc":"2.0","method":"notifications/initialized"}),
+        )
+        .await;
+
+        send_json(
+            &mut write,
+            &json!({
+                "jsonrpc":"2.0","id":2,"method":"tools/call",
+                "params":{"name":"run_report","arguments":{
+                    "property_id":"42",
+                    "date_ranges":[{"start_date":"yesterday","end_date":"today"}],
+                    "dimensions":["country"],
+                    "metrics":["activeUsers"]
+                }}
+            }),
+        )
+        .await;
+        let (mut upstream_socket, _) =
+            tokio::time::timeout(Duration::from_secs(5), upstream.accept())
+                .await
+                .expect("The report did not reach the local upstream fixture")
+                .unwrap();
+        let mut bytes = [0u8; 8192];
+        let received = upstream_socket.read(&mut bytes).await.unwrap();
+        assert!(String::from_utf8_lossy(&bytes[..received])
+            .contains("POST /v1beta/properties/42:runReport HTTP/1.1"));
+
+        send_json(
+            &mut write,
+            &json!({
+                "jsonrpc":"2.0","method":"notifications/cancelled",
+                "params":{"requestId":2,"reason":"synthetic operator cancelled"}
+            }),
+        )
+        .await;
+        send_json(
+            &mut write,
+            &json!({
+                "jsonrpc":"2.0","id":3,"method":"tools/call",
+                "params":{"name":"ga4_get_started","arguments":{}}
+            }),
+        )
+        .await;
+        frame.clear();
+        tokio::time::timeout(Duration::from_secs(5), reader.read_line(&mut frame))
+            .await
+            .expect("Cancellation blocked later requests")
+            .unwrap();
+        let next: Value = serde_json::from_str(frame.trim()).unwrap();
+        assert_eq!(next["id"], 3, "A canceled report returned a stale reply");
+        assert_eq!(next["result"]["structuredContent"]["ok"], true);
+
+        tokio::time::timeout(Duration::from_secs(5), async {
+            loop {
+                if upstream_socket.read(&mut bytes).await.unwrap() == 0 {
+                    break;
+                }
+            }
+        })
+        .await
+        .expect("Canceled Google request left its HTTP socket open");
+        frame.clear();
+        assert!(
+            tokio::time::timeout(Duration::from_millis(150), reader.read_line(&mut frame))
+                .await
+                .is_err(),
+            "Canceled report emitted an unexpected subsequent response"
+        );
+        drop(write);
+        drop(reader);
+        tokio::time::timeout(Duration::from_secs(5), task)
+            .await
+            .unwrap()
+            .unwrap();
+    }
+
+    #[tokio::test]
     async fn write_capability_is_hidden_by_default_and_requires_scope() {
         use rmcp::model::CallToolRequestParams;
         let (server_stream, client_stream) = tokio::io::duplex(65536);

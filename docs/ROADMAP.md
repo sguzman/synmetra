@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `███████░░░ 69.8%` · **+69.82 percentage points from initial empty repo; +0.88 pp from verified capability filtering, native auth guidance and Fish QA
+**Overall:** `███████░░░ 70.3%` · **+70.26 percentage points from initial empty repo; +0.44 pp from stable MCP input validation and safe Google error handling
 
 ### 📏 Progress conventions
 
@@ -60,7 +60,7 @@
   - ✅ **Gate:** Document semver and provenance gates · **Evidence:** CHANGELOG.md defines an Unreleased section and the experimental 0.0.1 baseline; docs/RELEASE_POLICY.md defines SemVer, immutable source and lockfile pinning, secure provenance requirements, live Google gating and non-production CI artifacts; README links both. GitHub Actions 40259902417 core checked manifest/changelog version and required policy gates.; docs/RELEASE_POLICY.md explains independent reproducibility, checksums, source SHA and release promotion requirements and distinguishes a successful CI build from a signed/stable release. CI 40259902417 changelog/version policy validation passed; actual reproducible binary acceptance remains an independent M9 task.
 
 
-## 🔌 M1 — MCP protocol and transport fidelity — `███████░░░ 67.4%`
+## 🔌 M1 — MCP protocol and transport fidelity — `███████░░░ 69.6%`
 
 **Scope:** MVP. **Acceptance gate:** Spec-conforming native MCP discovery and calls over stdio plus bounded Streamable HTTP; all transport safety tests pass.
 
@@ -106,12 +106,12 @@
 - 🧫 **T033 — Test MCP HTTP inspector interoperability** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** End-to-end tool invocation under loopback and protected remote modes
 
-### 🧾 P04 — MCP schema semantics — `██████░░░░ 64.3%`
+### 🧾 P04 — MCP schema semantics — `███████░░░ 71.4%`
 
 **Feature:** MCP contract.
 
-- 📐 **T034 — Validate structured input against exported schemas** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Tool arguments validated with stable user-facing errors
+- 📐 **T034 — Validate structured input against exported schemas** — `██████████ 100.0%`
+  - ✅ **Gate:** Tool arguments validated with stable user-facing errors · **Evidence:** src/main.rs typed Deserialize/JsonSchema request parameters with per-handler MCP validation; Actions 40202015488 passed; src/main.rs ReportArgs and RealtimeArgs are exported through #[derive(Deserialize, JsonSchema)] and reject missing required fields plus malformed property ID, date-ranges, dimensions, metrics, offset and output-mode types; report_tool_schema_and_typed_errors_fail_before_google_network_access asserts schema required keys, readable typed errors and stable structured INVALID_REQUEST/UNSUPPORTED_REALTIME_OFFSET validation categories without Google access. src/http.rs json_rpc_protocol_errors_remain_separate_from_ga_validation_results differentiates JSON-RPC errors from provider request validation. Core CI https://github.com/sguzman/synmetra/actions/runs/40351671270 passed the synthetic tests.
 - 🧩 **T035 — Declare read-only versus mutating tool annotations** — `██████████ 100.0%`
   - ✅ **Gate:** Annotation write differs accurately from read tools · **Evidence:** src/main.rs: 21 #[tool] annotations including additive non-idempotent GA write; explicit in-memory metadata assertions. GitHub Actions run 40205211110 passed tests, strict rustfmt and Clippy.; src/main.rs: 21 #[tool] annotations including additive non-idempotent GA write; explicit in-memory metadata assertions. GitHub Actions run 40205211110 passed tests, strict rustfmt and Clippy.
 - 🎛️ **T036 — Expose capability-profile filtered tool lists** — `██████████ 100.0%`
@@ -495,7 +495,7 @@
   - ✅ **Gate:** Changes open maintenance work rather than silently inflate parity · **Evidence:** .github/workflows/upstream-drift.yml watches exact SednaLabs schema and Google coordinator Git blob SHAs weekly and on reviewed lock/workflow changes; changes trigger stable [upstream-drift] local maintenance issue, never repin automatically. ci/test-upstream-drift-watch.sh executes the actual workflow shell body with mocked curl/gh, verifying unchanged, changed and duplicate issue cases. GitHub Actions drift workflow 40249957815 succeeded.; GitHub Actions 40249957815 offline fixture checks verify an upstream blob change fails the watch and opens exactly one review issue per source; repeat unchanged pin mismatch reuses an existing open issue and a second changed source opens a separate one. Real unchanged upstream watch also passed. No real upstream drift was forced and no real maintenance issue was created; this is synthetic acceptance of the detection/mutation control, not a source parity claim.
 
 
-## 🧪 M8 — Verification, resilience and security acceptance — `████░░░░░░ 42.9%`
+## 🧪 M8 — Verification, resilience and security acceptance — `████░░░░░░ 44.6%`
 
 **Scope:** MVP. **Acceptance gate:** Full offline and authorized live verification including malformed inputs, MCP interoperability and threat model.
 
@@ -547,7 +547,7 @@
 - 🗄️ **T186 — Record redacted reproducible live test ledger** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** All outcomes scoped with date and source SHA
 
-### 🛡️ P24 — Robustness and operational performance — `██████░░░░ 55.6%`
+### 🛡️ P24 — Robustness and operational performance — `██████░░░░ 61.1%`
 
 **Feature:** Reliability and security.
 
@@ -557,8 +557,8 @@
   - ✅ **Gate:** Fuzz corpus with reproducible seeds and crash guard · **Evidence:** src/tabular.rs deterministic_resource_and_cursor_mutation_corpus_fails_closed supplies a fixed reproducible corpus of 20 invalid Google resource IDs, 12 malformed/cross-boundary pagination cursors and three changed-query cursor attempts, rejecting unsafe values before network access. src/google.rs adversarial_report_filter_corpus_is_bounded_before_google_network_access supplies oversized/nested/invalid JSON filter fixtures; src/http.rs json_rpc_protocol_errors_remain_separate_from_ga_validation_results covers malformed JSON MCP request bodies. The native core suite and canonical formatting passed in https://github.com/sguzman/synmetra/actions/runs/40268415511. This is deterministic mutation/corpus coverage, not a complete coverage-guided fuzz campaign or memory-safety certification.
 - ⏱️ **T189 — Benchmark startup latency peak RSS and tool calls** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** Repeatable Linux measurements under no-cache and warm-cache · **Evidence:** ci/benchmark-native.sh measures 5 fresh native --help launches, 5 fresh native MCP initialize/list/call round trips and one five-call same-process fixture, with GNU time peak RSS and Linux nanosecond date full-command wall_ms. docs/BENCHMARK.md defines profiles/limitations, and spec/benchmarks/offline-40336644502.json stores all 11 measurements with source SHA. Core CI https://github.com/sguzman/synmetra/actions/runs/40336644502 passed the synthetic benchmark and JSON/RSS/time assertions. No real Google, no machine cache flush or production latency certification.
-- 🧰 **T190 — Handle network outage and Google API failure modes** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Actionable status without unsafe retries · **Evidence:** src/google.rs send_readonly_as and decode_response return typed redacted HTTP/transport errors, bound read-only retries to 3 attempts on 429/5xx, refuse unsafe transport replay and honor request/connect timeouts without retrying mutations. Tests readonly_429_exhausts_three_attempts_with_redacted_error and readonly_socket_drop_fails_without_unsafe_transport_retries passed core CI https://github.com/sguzman/synmetra/actions/runs/40267346239. User-actionable per-error diagnostics and live outage handling remain unaccepted.
+- 🧰 **T190 — Handle network outage and Google API failure modes** — `██████████ 100.0%`
+  - ✅ **Gate:** Actionable status without unsafe retries · **Evidence:** src/google.rs send_readonly_as and decode_response return typed redacted HTTP/transport errors, bound read-only retries to 3 attempts on 429/5xx, refuse unsafe transport replay and honor request/connect timeouts without retrying mutations. Tests readonly_429_exhausts_three_attempts_with_redacted_error and readonly_socket_drop_fails_without_unsafe_transport_retries passed core CI https://github.com/sguzman/synmetra/actions/runs/40267346239. User-actionable per-error diagnostics and live outage handling remain unaccepted.; src/google.rs now renders distinct redacted, actionable guidance for 401 credentials, 403 property/role/scope/API enablement, 429 quota/rate limits and 5xx upstream failures without unauthorized scope escalation. google_http_errors_have_actionable_redacted_status_specific_guidance, readonly_429_exhausts_three_attempts_with_redacted_error, readonly_socket_drop_fails_without_unsafe_transport_retries and annotation_writes_do_not_retry_429_500_or_503_responses passed core CI https://github.com/sguzman/synmetra/actions/runs/40351671270. Synthetic retry budgets and non-replayed writes are verified; live Google outage acceptance is not implied.
 - ♻️ **T191 — Test OAuth refresh and cancellation under concurrency** — `██████████ 100.0%`
   - ✅ **Gate:** No token duplication or orphan request leaks · **Evidence:** src/auth.rs concurrent_expired_credentials_refresh_once_and_rotate_privately and aborted_oauth_refresh_releases_lock_without_partial_token_rotation test private token persistence, serialized refresh locking, concurrent expired callers, aborting a stalled upstream OAuth refresh and recovery of a queued caller with synthetic loopback token endpoints. Both passed pinned Rust core CI https://github.com/sguzman/synmetra/actions/runs/40330002338; live Google OAuth is not claimed.; Synthetic loopback tests verify one token exchange for two concurrent refresh callers, single private refresh-token rotation, no partial credentials after cancellation, eventual upstream socket closure, and a waiting task's successful fresh token persistence. Passed core CI https://github.com/sguzman/synmetra/actions/runs/40330002338. This does not certify all real-provider revocation/network races.
 - 🚧 **T192 — Test untrusted MCP arguments for injection and SSRF** — `█████░░░░░ 50.0%`

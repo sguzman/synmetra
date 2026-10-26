@@ -695,7 +695,7 @@
               "id": "T034",
               "emoji": "📐",
               "name": "Validate structured input against exported schemas",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Tool arguments validated with stable user-facing errors",
               "checks": [
                 {
@@ -705,7 +705,8 @@
                 },
                 {
                   "text": "Tool arguments validated with stable user-facing errors",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs ReportArgs and RealtimeArgs are exported through #[derive(Deserialize, JsonSchema)] and reject missing required fields plus malformed property ID, date-ranges, dimensions, metrics, offset and output-mode types; report_tool_schema_and_typed_errors_fail_before_google_network_access asserts schema required keys, readable typed errors and stable structured INVALID_REQUEST/UNSUPPORTED_REALTIME_OFFSET validation categories without Google access. src/http.rs json_rpc_protocol_errors_remain_separate_from_ga_validation_results differentiates JSON-RPC errors from provider request validation. Core CI https://github.com/sguzman/synmetra/actions/runs/40351671270 passed the synthetic tests."
                 }
               ]
             },
@@ -3800,7 +3801,7 @@
               "id": "T190",
               "emoji": "🧰",
               "name": "Handle network outage and Google API failure modes",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Actionable status without unsafe retries",
               "checks": [
                 {
@@ -3810,7 +3811,8 @@
                 },
                 {
                   "text": "Actionable status without unsafe retries",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/google.rs now renders distinct redacted, actionable guidance for 401 credentials, 403 property/role/scope/API enablement, 429 quota/rate limits and 5xx upstream failures without unauthorized scope escalation. google_http_errors_have_actionable_redacted_status_specific_guidance, readonly_429_exhausts_three_attempts_with_redacted_error, readonly_socket_drop_fails_without_unsafe_transport_retries and annotation_writes_do_not_retry_429_500_or_503_responses passed core CI https://github.com/sguzman/synmetra/actions/runs/40351671270. Synthetic retry budgets and non-replayed writes are verified; live Google outage acceptance is not implied."
                 }
               ]
             },
