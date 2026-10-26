@@ -2485,7 +2485,7 @@ mod tests {
                 vec!["activeUsers".to_string()],
             ),
             (vec!["country".into()], vec!["activeUsers".to_string(); 2]),
-            (vec!["country".into()], vec!["bad\\nmetric".into()]),
+            (vec!["country".into()], vec!["bad\nmetric".into()]),
             (vec!["country".into()], vec![" activeUsers".into()]),
             (vec!["country".into()], vec!["x".repeat(129)]),
         ] {
