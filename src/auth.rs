@@ -372,7 +372,7 @@ async fn read_browser_callback(
         }
     })
     .await
-    .map_err(|_| "Google login timed out".into())?
+    .map_err(|_| "Google login timed out".to_owned())?
 }
 
 async fn token_exchange_at(
@@ -1266,9 +1266,8 @@ mod tests {
             "error=access_denied&state=synthetic-only-state",
         ] {
             let mut socket = TcpStream::connect(("127.0.0.1", port)).await.unwrap();
-            let request = format!(
-                "GET /callback?{bad_query} HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\n\r\n"
-            );
+            let request =
+                format!("GET /callback?{bad_query} HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\n\r\n");
             socket.write_all(request.as_bytes()).await.unwrap();
             let mut bytes = vec![0u8; 1024];
             let n = timeout(Duration::from_secs(1), socket.read(&mut bytes))
@@ -1292,12 +1291,8 @@ mod tests {
         assert_eq!(callback.await.unwrap().unwrap(), "accepted-code");
 
         let empty = TcpListener::bind("127.0.0.1:0").await.unwrap();
-        let timed_out = read_browser_callback(
-            &empty,
-            "synthetic-state",
-            Duration::from_millis(20),
-        )
-        .await;
+        let timed_out =
+            read_browser_callback(&empty, "synthetic-state", Duration::from_millis(20)).await;
         assert_eq!(timed_out.unwrap_err(), "Google login timed out");
     }
 
