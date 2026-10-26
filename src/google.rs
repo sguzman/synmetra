@@ -2342,11 +2342,8 @@ mod tests {
                 socket.write_all(response.as_bytes()).await.unwrap();
             }
         });
-        let client = GoogleClient::with_endpoints(
-            Some("synthetic-token".into()),
-            &endpoint,
-            &endpoint,
-        );
+        let client =
+            GoogleClient::with_endpoints(Some("synthetic-token".into()), &endpoint, &endpoint);
         let request = report_request(
             Some(vec![json!({"startDate":"yesterday","endDate":"today"})]),
             vec![],
@@ -2354,11 +2351,12 @@ mod tests {
             vec![],
         )
         .unwrap();
-        assert_eq!(client.report("42", request, false).await, Err(ApiError::Http(429)));
-        server.await.unwrap();
-        assert!(
-            !format!("{:?}", ApiError::Http(429)).contains("synthetic-private-upstream-canary")
+        assert_eq!(
+            client.report("42", request, false).await,
+            Err(ApiError::Http(429))
         );
+        server.await.unwrap();
+        assert!(!format!("{:?}", ApiError::Http(429)).contains("synthetic-private-upstream-canary"));
     }
 
     #[tokio::test]
@@ -2382,11 +2380,8 @@ mod tests {
                 "A failed transport must not trigger an automatic retry"
             );
         });
-        let client = GoogleClient::with_endpoints(
-            Some("synthetic-token".into()),
-            &endpoint,
-            &endpoint,
-        );
+        let client =
+            GoogleClient::with_endpoints(Some("synthetic-token".into()), &endpoint, &endpoint);
         let request = report_request(
             Some(vec![json!({"startDate":"yesterday","endDate":"today"})]),
             vec![],
@@ -2394,7 +2389,10 @@ mod tests {
             vec![],
         )
         .unwrap();
-        assert_eq!(client.report("42", request, false).await, Err(ApiError::RequestFailed));
+        assert_eq!(
+            client.report("42", request, false).await,
+            Err(ApiError::RequestFailed)
+        );
         server.await.unwrap();
     }
 

@@ -439,6 +439,18 @@ mod tests {
             .to_owned();
         mcp_json_response(initialize).await;
 
+        let initialized = client
+            .post(&url)
+            .header(header::AUTHORIZATION, format!("Bearer {inbound_bearer}"))
+            .header(header::ACCEPT, "application/json, text/event-stream")
+            .header("mcp-session-id", &session)
+            .header("mcp-protocol-version", "2025-11-25")
+            .json(&json!({"jsonrpc":"2.0","method":"notifications/initialized"}))
+            .send()
+            .await
+            .unwrap();
+        assert!(initialized.status().is_success());
+
         let called = client
             .post(&url)
             .header(header::AUTHORIZATION, format!("Bearer {inbound_bearer}"))
@@ -460,9 +472,7 @@ mod tests {
             .unwrap()
             .unwrap()
             .to_ascii_lowercase();
-        assert!(forwarded.contains(&format!(
-            "authorization: bearer {google_bearer}"
-        )));
+        assert!(forwarded.contains(&format!("authorization: bearer {google_bearer}")));
         assert!(!forwarded.contains(inbound_bearer));
         assert!(!result.to_string().contains(google_bearer));
         assert!(!result.to_string().contains(inbound_bearer));
