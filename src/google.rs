@@ -1321,8 +1321,7 @@ pub fn compatibility_verdict(
             let status = entry["compatibility"]
                 .as_str()
                 .ok_or(ApiError::InvalidResponse)?;
-            if !["COMPATIBLE", "INCOMPATIBLE", "COMPATIBILITY_UNSPECIFIED"]
-                .contains(&status)
+            if !["COMPATIBLE", "INCOMPATIBLE", "COMPATIBILITY_UNSPECIFIED"].contains(&status)
                 || statuses.insert(name, status).is_some()
             {
                 return Err(ApiError::InvalidResponse);
@@ -2621,7 +2620,7 @@ mod tests {
             Err(ApiError::InvalidResponse)
         );
         assert_eq!(
-            compatibility_request(vec!["country".into(),"country".into()], vec![]),
+            compatibility_request(vec!["country".into(), "country".into()], vec![]),
             Err(ApiError::InvalidRequest)
         );
     }
