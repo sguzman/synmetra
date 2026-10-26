@@ -1,0 +1,22 @@
+{
+  "schema": "synmetra_pinned_sednalabs_tabular_expected_fields",
+  "version": 1,
+  "baseline_repo": "sednalabs/ga4-mcp",
+  "baseline_commit": "039fd4620064fc4b76dc6bca641945aba52c14bc",
+  "baseline_file": "tests/contract_safety_conformance.rs",
+  "baseline_test": "contract_success_tabular_emits_required_v1_fields",
+  "expected_shared_meta": {
+    "output_mode": "compact",
+    "summary_only": false,
+    "row_count_total": 100,
+    "row_count_returned": 25,
+    "truncated": true,
+    "next_cursor": "v1:abcd:25",
+    "query_hash": "abcd"
+  },
+  "baseline_uncompared": {
+    "elapsed_ms": 8,
+    "synthetic_data_rows": 1
+  },
+  "notes": "Derived from pinned upstream source assertions, not executed upstream binary output or live Google data. Native fixture uses 25 rows to keep projected return count consistent."
+}

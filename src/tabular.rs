@@ -429,6 +429,56 @@ mod tests {
     }
 
     #[test]
+    fn pinned_sednalabs_contract_fields_match_native_bounded_projection() {
+        // This is an upstream-source assertion fixture, not a live Google
+        // response or an execution of the upstream binary.
+        let expected: Value = serde_json::from_str(include_str!(
+            "../spec/fixtures/sednalabs-tabular-contract-expected.v1.json"
+        ))
+        .unwrap();
+        assert_eq!(
+            expected["baseline_commit"],
+            "039fd4620064fc4b76dc6bca641945aba52c14bc"
+        );
+        let rows = (0..25)
+            .map(|_| json!({"dimensionValues":[{"value":"page_view"}]}))
+            .collect::<Vec<_>>();
+        let provider = json!({
+            "dimensionHeaders":[{"name":"event_name"}],
+            "rows":rows,
+            "rowCount":100
+        });
+        let native = project(
+            &provider,
+            Controls {
+                output_mode: Some(OutputMode::Compact),
+                summary_only: false,
+                max_rows: Some(25),
+                max_cell_chars: None,
+                cursor_supplied: false,
+            },
+            false,
+            Some(&Pagination {
+                query_hash: "abcd".into(),
+                offset: 0,
+            }),
+        )
+        .unwrap();
+        for (key, value) in expected["expected_shared_meta"].as_object().unwrap() {
+            assert_eq!(
+                native.meta.get(key),
+                Some(value),
+                "Pinned Contract V1 metadata field mismatch: {key}"
+            );
+        }
+        // Upstream fixture asserts elapsed_ms=8. Synmetra does not measure
+        // it and must not silently make that different guarantee.
+        assert_eq!(native.meta["elapsed_ms"], 0);
+        assert_eq!(native.meta["elapsed_ms_measured"], false);
+        assert_eq!(native.data["row_count"], 25);
+    }
+
+    #[test]
     fn projections_keep_true_counts_and_upstream_quota() {
         let rows = project(&fixture(), controls(), false, None).unwrap();
         assert_eq!(rows.data[0]["country"], "México");
