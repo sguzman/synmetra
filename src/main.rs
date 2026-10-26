@@ -5072,6 +5072,145 @@ mod tests {
     }
 
     #[cfg(feature = "scratchpad")]
+    #[tokio::test]
+    async fn scratchpad_ga_ingest_round_trips_historical_realtime_and_private_evidence() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        use tokio::net::TcpListener;
+
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let endpoint = format!("http://{}", listener.local_addr().unwrap());
+        let responder = tokio::spawn(async move {
+            for (method, country, count) in [
+                ("runReport", "Mexico", "7"),
+                ("runRealtimeReport", "Canada", "3"),
+            ] {
+                let (mut stream, _) = listener.accept().await.unwrap();
+                let mut bytes = [0_u8; 8192];
+                let size = stream.read(&mut bytes).await.unwrap();
+                let request = String::from_utf8_lossy(&bytes[..size]);
+                assert!(
+                    request.contains(&format!("properties/42:{method}")),
+                    "Unexpected route for {method}"
+                );
+                assert!(request.contains(r#""limit":"1000""#));
+                let body = json!({
+                    "dimensionHeaders":[{"name":"country"}],
+                    "metricHeaders":[{"name":"activeUsers","type":"TYPE_INTEGER"}],
+                    "rows":[{"dimensionValues":[{"value":country}],
+                             "metricValues":[{"value":count}]}],
+                    "rowCount":1
+                })
+                .to_string();
+                let response = format!(
+                    "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                    body.len(),
+                    body
+                );
+                stream.write_all(response.as_bytes()).await.unwrap();
+            }
+        });
+        let server = Synmetra::new(
+            GoogleClient::with_endpoints(
+                Some("synthetic-scratchpad-bearer".into()),
+                &endpoint,
+                &endpoint,
+            ),
+            false,
+        )
+        .enable_scratchpad();
+        let opened = server.scratchpad_open_session(Parameters(ScratchOpenArgs {
+            session_id: "session_fixture".into(),
+        }));
+        assert_eq!(opened.is_error, Some(false));
+
+        let historical: ScratchIngestReportArgs = serde_json::from_value(json!({
+            "session_id":"session_fixture",
+            "table_name":"historical",
+            "property_id":42,
+            "date_ranges":[{"start_date":"yesterday","end_date":"today"}],
+            "dimensions":["country"],
+            "metrics":["activeUsers"]
+        }))
+        .unwrap();
+        let result = server
+            .scratchpad_ingest_report(Parameters(historical))
+            .await;
+        assert_eq!(result.is_error, Some(false));
+        assert_eq!(result.structured_content.unwrap()["data"]["rows_ingested"], 1);
+
+        let realtime: ScratchIngestRealtimeArgs = serde_json::from_value(json!({
+            "session_id":"session_fixture",
+            "table_name":"realtime",
+            "property_id":"42",
+            "dimensions":["country"],
+            "metrics":["activeUsers"]
+        }))
+        .unwrap();
+        let result = server
+            .scratchpad_ingest_realtime_report(Parameters(realtime))
+            .await;
+        responder.await.unwrap();
+        assert_eq!(result.is_error, Some(false));
+        assert_eq!(result.structured_content.unwrap()["data"]["rows_ingested"], 1);
+
+        let table = server.scratchpad_summarize_table(Parameters(ScratchReadTableArgs {
+            session_id: "session_fixture".into(),
+            table_name: "realtime".into(),
+        }));
+        assert_eq!(table.structured_content.unwrap()["data"]["row_count"], 1);
+        let query = server.scratchpad_query(Parameters(ScratchQueryArgs {
+            session_id: "session_fixture".into(),
+            sql: "SELECT country FROM historical".into(),
+            max_rows: Some(10),
+            max_cell_chars: Some(50),
+            summary_only: false,
+            output_mode: Some("rows".into()),
+            cursor: None,
+        }));
+        assert_eq!(query.is_error, Some(false));
+        assert_eq!(query.structured_content.unwrap()["data"]["rows"][0]["country"], "Mexico");
+
+        let export = server.scratchpad_export_evidence_bundle(Parameters(ScratchEvidenceArgs {
+            session_id: "session_fixture".into(),
+            table_names: Some(vec!["historical".into(), "realtime".into()]),
+            sample_rows_per_table: Some(1),
+        }));
+        assert_eq!(export.is_error, Some(false));
+        let bundle = export.structured_content.unwrap();
+        assert_eq!(bundle["ok"], true);
+        assert!(!bundle.to_string().contains("synthetic-scratchpad-bearer"));
+
+        let too_large: ScratchIngestRealtimeArgs = serde_json::from_value(json!({
+            "session_id":"session_fixture",
+            "table_name":"never_created",
+            "property_id":42,
+            "dimensions":["country"],
+            "metrics":["activeUsers"],
+            "limit":1001
+        }))
+        .unwrap();
+        let rejected = server
+            .scratchpad_ingest_realtime_report(Parameters(too_large))
+            .await;
+        assert_eq!(rejected.is_error, Some(true));
+        assert_eq!(
+            rejected.structured_content.unwrap()["error"]["code"],
+            "SCRATCHPAD_ERROR"
+        );
+        assert_eq!(
+            server.scratchpad.as_ref().unwrap()
+                .tables("session_fixture", None).unwrap()["total_tables"],
+            2
+        );
+        assert_eq!(
+            server.scratchpad_close_session(Parameters(ScratchSessionArgs {
+                session_id:"session_fixture".into(),
+            })).is_error,
+            Some(false)
+        );
+    }
+
+    #[cfg(feature = "scratchpad")]
     #[test]
     fn scratchpad_mcp_lifecycle_limits_and_private_tables_have_stable_envelopes() {
         let server = Synmetra::new(GoogleClient::new(None), false).enable_scratchpad();
