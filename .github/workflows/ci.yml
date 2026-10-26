@@ -84,6 +84,23 @@ jobs:
           grep -Fq 'independent' docs/RELEASE_POLICY.md
           grep -Fq '36-tool' docs/RELEASE_POLICY.md
 
+      - name: Verify experimental notes include license and alpha limitations
+        shell: bash
+        run: |
+          set -euo pipefail
+          notes=docs/EXPERIMENTAL_RELEASE_NOTES.md
+          test -s "$notes"
+          grep -Fq 'EXPERIMENTAL_RELEASE_NOTES.md' CHANGELOG.md
+          grep -Fq 'not a published or production-supported GitHub Release' "$notes"
+          grep -Fq 'ce84226bf4cedea7f2910f5afb07a6b9138f6553' "$notes"
+          grep -Fq '039fd4620064fc4b76dc6bca641945aba52c14bc' "$notes"
+          grep -Fq 'Apache-2.0' "$notes"
+          grep -Fq 'CycloneDX' "$notes"
+          grep -Fq 'native C/C++ engine' "$notes"
+          grep -Fq 'v1alpha' "$notes"
+          grep -Fq 'No authorized live test property or account is currently accepted' "$notes"
+          grep -Fq 'Do not promote this untagged preview' "$notes"
+
       - name: Check pinned local Arch packaging recipe
         shell: bash
         run: |

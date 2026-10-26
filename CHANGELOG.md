@@ -17,6 +17,8 @@
 ### Outstanding
 - Complete 36-tool upstream parity, authorized live Google tests, cross-client conformance, full DuckDB security gates and reproducible/signed distribution.
 
+Additional implementation status, source attribution, alpha eligibility and distribution limits are in the [experimental preview notes](docs/EXPERIMENTAL_RELEASE_NOTES.md). These are not published release notes for a tagged binary.
+
 ## [0.0.1] - Development baseline (not a published stable release)
 
 - Initial Rust crate and project identity; no stability guarantees attach to this version string.
