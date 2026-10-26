@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `█████░░░░░ 54.4%` · **+54.41 percentage points from initial empty repo; +0.45 pp from CI-verified concurrent native OAuth refresh and rotation** · 107/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `██████░░░░ 57.0%` · **+57.05 percentage points from initial empty repo; +2.64 pp from verified DuckDB lifecycle and synthetic GA ingest/query conformance** · 119/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -366,43 +366,43 @@
   - ✅ **Gate:** Disable write capability at runtime restart · **Evidence:** Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.; Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.
 
 
-## 🗃️ M6 — DuckDB scratchpad and advanced analytics parity — `████░░░░░░ 40.0%`
+## 🗃️ M6 — DuckDB scratchpad and advanced analytics parity — `██████░░░░ 64.0%`
 
 **Scope:** MVP. **Acceptance gate:** All 15 local scratchpad tools and policy limits operate without unsafe SQL or credential disclosure.
 
-### 🗄️ P15 — Scratchpad lifecycle MCP tools — `█████░░░░░ 50.0%`
+### 🗄️ P15 — Scratchpad lifecycle MCP tools — `██████████ 100.0%`
 
 **Feature:** Seven session tools.
 
-- 🧱 **T126 — Implement scratchpad_open_session** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Isolated session lifecycle plus quota failure fixtures for scratchpad_open_session
-- 🔒 **T127 — Implement scratchpad_close_session** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Isolated session lifecycle plus quota failure fixtures for scratchpad_close_session
-- 📋 **T128 — Implement scratchpad_list_sessions** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Isolated session lifecycle plus quota failure fixtures for scratchpad_list_sessions
-- 📏 **T129 — Implement scratchpad_get_runtime_limits** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Isolated session lifecycle plus quota failure fixtures for scratchpad_get_runtime_limits
-- 🎛️ **T130 — Implement scratchpad_set_runtime_limits** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Isolated session lifecycle plus quota failure fixtures for scratchpad_set_runtime_limits
-- 🗂️ **T131 — Implement scratchpad_list_tables** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Isolated session lifecycle plus quota failure fixtures for scratchpad_list_tables
-- 🧹 **T132 — Implement scratchpad_drop_table** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Isolated session lifecycle plus quota failure fixtures for scratchpad_drop_table
+- 🧱 **T126 — Implement scratchpad_open_session** — `██████████ 100.0%`
+  - ✅ **Gate:** Isolated session lifecycle plus quota failure fixtures for scratchpad_open_session · **Evidence:** src/main.rs and src/scratchpad.rs; GitHub Actions run 40206168306 successfully completed bundled-DuckDB feature tests (initial seven-route implementation); full strict-Clippy/updated-parameter parity and live GA tests remain separate acceptance gates.; src/scratchpad.rs session_quota_expiry_and_limit_reconfiguration_are_isolated verifies creation, refresh, expiration/reopening and session quota denial; src/main.rs scratchpad_mcp_lifecycle_limits_and_private_tables_have_stable_envelopes checks structured MCP open response. DuckDB-enabled Actions 40261109602 passed both tests. Full live Google and feature-wide upstream parity remain independent acceptance gates.
+- 🔒 **T127 — Implement scratchpad_close_session** — `██████████ 100.0%`
+  - ✅ **Gate:** Isolated session lifecycle plus quota failure fixtures for scratchpad_close_session · **Evidence:** src/main.rs and src/scratchpad.rs; GitHub Actions run 40206168306 successfully completed bundled-DuckDB feature tests (initial seven-route implementation); full strict-Clippy/updated-parameter parity and live GA tests remain separate acceptance gates.; src/scratchpad.rs session_quota_expiry_and_limit_reconfiguration_are_isolated verifies close destroys session and repeated close fails; src/main.rs scratchpad_mcp_lifecycle_limits_and_private_tables_have_stable_envelopes checks MCP close and post-close local error. DuckDB-enabled Actions 40261109602 passed. Full live Google and feature-wide upstream parity remain independent acceptance gates.
+- 📋 **T128 — Implement scratchpad_list_sessions** — `██████████ 100.0%`
+  - ✅ **Gate:** Isolated session lifecycle plus quota failure fixtures for scratchpad_list_sessions · **Evidence:** src/main.rs and src/scratchpad.rs; GitHub Actions run 40206168306 successfully completed bundled-DuckDB feature tests (initial seven-route implementation); full strict-Clippy/updated-parameter parity and live GA tests remain separate acceptance gates.; src/scratchpad.rs session_quota_expiry_and_limit_reconfiguration_are_isolated verifies deterministic sorted session listing, paginated count/truncation and invalid-list limits; src/main.rs scratchpad_mcp_lifecycle_limits_and_private_tables_have_stable_envelopes confirms structured MCP list output. DuckDB-enabled Actions 40261109602 passed. Full live Google and feature-wide upstream parity remain independent acceptance gates.
+- 📏 **T129 — Implement scratchpad_get_runtime_limits** — `██████████ 100.0%`
+  - ✅ **Gate:** Isolated session lifecycle plus quota failure fixtures for scratchpad_get_runtime_limits · **Evidence:** src/main.rs and src/scratchpad.rs; GitHub Actions run 40206168306 successfully completed bundled-DuckDB feature tests (initial seven-route implementation); full strict-Clippy/updated-parameter parity and live GA tests remain separate acceptance gates.; src/scratchpad.rs session_quota_expiry_and_limit_reconfiguration_are_isolated verifies default/max bounded runtime limits; src/main.rs scratchpad_mcp_lifecycle_limits_and_private_tables_have_stable_envelopes verifies MCP get_runtime_limits returns max_sessions and other limits. DuckDB-enabled Actions 40261109602 passed. Full live Google and feature-wide upstream parity remain independent acceptance gates.
+- 🎛️ **T130 — Implement scratchpad_set_runtime_limits** — `██████████ 100.0%`
+  - ✅ **Gate:** Isolated session lifecycle plus quota failure fixtures for scratchpad_set_runtime_limits · **Evidence:** src/main.rs and src/scratchpad.rs; GitHub Actions run 40206168306 successfully completed bundled-DuckDB feature tests (initial seven-route implementation); full strict-Clippy/updated-parameter parity and live GA tests remain separate acceptance gates.; src/scratchpad.rs session_quota_expiry_and_limit_reconfiguration_are_isolated tests reducing and raising quotas, rejects configurations below current session usage and above hard caps, with session quota failure; src/main.rs scratchpad_mcp_lifecycle_limits_and_private_tables_have_stable_envelopes verifies MCP setter. DuckDB-enabled Actions 40261109602 passed. Full live Google and feature-wide upstream parity remain independent acceptance gates.
+- 🗂️ **T131 — Implement scratchpad_list_tables** — `██████████ 100.0%`
+  - ✅ **Gate:** Isolated session lifecycle plus quota failure fixtures for scratchpad_list_tables · **Evidence:** src/main.rs and src/scratchpad.rs; GitHub Actions run 40206168306 successfully completed bundled-DuckDB feature tests (initial seven-route implementation); full strict-Clippy/updated-parameter parity and live GA tests remain separate acceptance gates.; src/scratchpad.rs table_quota_and_private_catalog_survive_rejected_operations validates table inventory, per-session visibility and catalog after denied writes/removal; src/main.rs scratchpad_mcp_lifecycle_limits_and_private_tables_have_stable_envelopes tests the MCP table list. DuckDB-enabled Actions 40261109602 passed. Full live Google and feature-wide upstream parity remain independent acceptance gates.
+- 🧹 **T132 — Implement scratchpad_drop_table** — `██████████ 100.0%`
+  - ✅ **Gate:** Isolated session lifecycle plus quota failure fixtures for scratchpad_drop_table · **Evidence:** src/main.rs and src/scratchpad.rs; GitHub Actions run 40206168306 successfully completed bundled-DuckDB feature tests (initial seven-route implementation); full strict-Clippy/updated-parameter parity and live GA tests remain separate acceptance gates.; src/scratchpad.rs table_quota_and_private_catalog_survive_rejected_operations verifies drop success, missing-if-exists false, missing-if-exists true and malicious identifier rejection without altering private tables; src/main.rs scratchpad_mcp_lifecycle_limits_and_private_tables_have_stable_envelopes covers MCP deletion. DuckDB-enabled Actions 40261109602 passed. Full live Google and feature-wide upstream parity remain independent acceptance gates.
 
-### 📥 P16 — Scratchpad ingest and query MCP tools — `█████░░░░░ 50.0%`
+### 📥 P16 — Scratchpad ingest and query MCP tools — `██████████ 100.0%`
 
 **Feature:** Five ingest/query tools.
 
-- 📊 **T133 — Implement scratchpad_ingest_report** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Synthetic GA payload and DuckDB query conformance for scratchpad_ingest_report
-- ⚡ **T134 — Implement scratchpad_ingest_realtime_report** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Synthetic GA payload and DuckDB query conformance for scratchpad_ingest_realtime_report
-- 🔎 **T135 — Implement scratchpad_query** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Synthetic GA payload and DuckDB query conformance for scratchpad_query
-- 🧬 **T136 — Implement scratchpad_describe_table** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Synthetic GA payload and DuckDB query conformance for scratchpad_describe_table
-- 🧮 **T137 — Implement scratchpad_summarize_table** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Synthetic GA payload and DuckDB query conformance for scratchpad_summarize_table
+- 📊 **T133 — Implement scratchpad_ingest_report** — `██████████ 100.0%`
+  - ✅ **Gate:** Synthetic GA payload and DuckDB query conformance for scratchpad_ingest_report · **Evidence:** src/main.rs and src/scratchpad.rs: opt-in historical and realtime ingestion tool handlers, checked pinned required MCP parameters, parameter-bound transactional DuckDB response ingestion with append/schema/row quotas; GitHub Actions run 40218852253 passed core Rust and bundled-DuckDB tests. Full official GA live report acceptance, cursor/page contracts and exact output parity remain unverified.; src/main.rs scratchpad_ga_ingest_round_trips_historical_realtime_and_private_evidence uses local synthetic Google v1beta historical runReport JSON, authenticates only with fixture bearer, ingests a normalized country/activeUsers row into private in-memory DuckDB, then queries data. src/scratchpad.rs ingest_ga4_response_is_transactional_bounded_and_sql_safe covers append/rollback. DuckDB-enabled Actions 40261109602 passed. Full live Google and feature-wide upstream parity remain independent acceptance gates.
+- ⚡ **T134 — Implement scratchpad_ingest_realtime_report** — `██████████ 100.0%`
+  - ✅ **Gate:** Synthetic GA payload and DuckDB query conformance for scratchpad_ingest_realtime_report · **Evidence:** src/main.rs and src/scratchpad.rs: opt-in historical and realtime ingestion tool handlers, checked pinned required MCP parameters, parameter-bound transactional DuckDB response ingestion with append/schema/row quotas; GitHub Actions run 40218852253 passed core Rust and bundled-DuckDB tests. Full official GA live report acceptance, cursor/page contracts and exact output parity remain unverified.; src/main.rs scratchpad_ga_ingest_round_trips_historical_realtime_and_private_evidence exercises local v1beta runRealtimeReport mock, proves distinct realtime row persisted to session table and private summary, then rejects ingest limit 1001 before network call. DuckDB-enabled Actions 40261109602 passed. Full live Google and feature-wide upstream parity remain independent acceptance gates.
+- 🔎 **T135 — Implement scratchpad_query** — `██████████ 100.0%`
+  - ✅ **Gate:** Synthetic GA payload and DuckDB query conformance for scratchpad_query · **Evidence:** src/scratchpad.rs: bounded SQL-subset parser reconstructs a SELECT statement exclusively from validated table/column identifiers, rejects DML, DDL, joins, CTE, external scans, embedded statements, injection and excessive limits; src/main.rs exposes read-only MCP scratchpad_query with upstream-required session_id/sql fields. Synthetic query/security tests and strict core tests passed GitHub Actions 40219402080. Full upstream SQL dialect/output-mode parity and extensive fuzzing remain open.; src/main.rs scratchpad_ga_ingest_round_trips_historical_realtime_and_private_evidence queries historical synthetic GA data using restricted SELECT and validates returned country; scratchpad_mcp_lifecycle_limits_and_private_tables_have_stable_envelopes asserts unauthorized DROP SQL returns structured SCRATCHPAD_ERROR. src/scratchpad.rs restricted_select_query_is_bounded_and_never_executes_user_sql validates query grammar and limits. DuckDB-enabled Actions 40261109602 passed. Full live Google and feature-wide upstream parity remain independent acceptance gates.
+- 🧬 **T136 — Implement scratchpad_describe_table** — `██████████ 100.0%`
+  - ✅ **Gate:** Synthetic GA payload and DuckDB query conformance for scratchpad_describe_table · **Evidence:** src/scratchpad.rs and src/main.rs: in-memory DuckDB schema inspection and bounded row-count summary; tests describes_and_summarizes_bounded_local_tables plus native DuckDB cargo test --features scratchpad passed in GitHub Actions run 40208111289. Upstream optional output controls and live GA parity remain unaccepted.; src/main.rs scratchpad_mcp_lifecycle_limits_and_private_tables_have_stable_envelopes inspects columns from a synthetic GA-ingested private DuckDB table through the MCP describe handler; src/scratchpad.rs describes_and_summarizes_bounded_local_tables validates bounded schema. DuckDB-enabled Actions 40261109602 passed. Full live Google and feature-wide upstream parity remain independent acceptance gates.
+- 🧮 **T137 — Implement scratchpad_summarize_table** — `██████████ 100.0%`
+  - ✅ **Gate:** Synthetic GA payload and DuckDB query conformance for scratchpad_summarize_table · **Evidence:** src/scratchpad.rs and src/main.rs: in-memory DuckDB schema inspection and bounded row-count summary; tests describes_and_summarizes_bounded_local_tables plus native DuckDB cargo test --features scratchpad passed in GitHub Actions run 40208111289. Upstream optional output controls and live GA parity remain unaccepted.; src/main.rs scratchpad_ga_ingest_round_trips_historical_realtime_and_private_evidence and scratchpad_mcp_lifecycle_limits_and_private_tables_have_stable_envelopes verify row counts from MCP summarize_table on separate synthetic tables; src/scratchpad.rs describes_and_summarizes_bounded_local_tables covers metadata. DuckDB-enabled Actions 40261109602 passed. Full live Google and feature-wide upstream parity remain independent acceptance gates.
 
 ### 📉 P17 — Scratchpad analysis MCP tools — `███░░░░░░░ 33.3%`
 

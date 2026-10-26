@@ -10,7 +10,7 @@
 
 ## 📊 Evidence-backed progress
 
-**Overall:** `█████░░░░░ 54.4%` · **overall delta: +54.41 percentage points** from initial 0% (**latest accepted round: +0.45 pp**). **35/35 SednaLabs tool names implemented provisionally plus 1 opt-in annotation handler; 0/36 fully accepted upstream parity.** Real Google account acceptance and full tool schemas remain pending.
+**Overall:** `██████░░░░ 57.0%` · **overall delta: +57.05 percentage points** from initial 0% (**latest accepted round: +2.64 pp**). **35/35 SednaLabs tool names implemented provisionally plus 1 opt-in annotation handler; 0/36 fully accepted upstream parity.** Real Google account acceptance and full tool schemas remain pending.
 
 | Milestone | Progress | Gate |
 | --- | --- | --- |
@@ -20,7 +20,7 @@
 | 🏢 M3 Admin API information parity | `██████████ 100.0%` | MVP |
 | 📊 M4 Reporting, preflight and Data API parity | `██████████ 100.0%` | MVP |
 | ✍️ M5 Explicitly gated GA mutation parity | `████████░░ 84.6%` | MVP |
-| 🗃️ M6 DuckDB scratchpad and advanced analytics parity | `████░░░░░░ 40.0%` | MVP |
+| 🗃️ M6 DuckDB scratchpad and advanced analytics parity | `██████░░░░ 64.0%` | MVP |
 | 🧬 M7 Tool contract interoperability and parity audits | `█████░░░░░ 52.9%` | MVP |
 | 🧪 M8 Verification, resilience and security acceptance | `██░░░░░░░░ 21.4%` | MVP |
 | 🚀 M9 Linux release and Codex-ready inauguration | `█░░░░░░░░░ 9.1%` | MVP |

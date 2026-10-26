@@ -2530,7 +2530,7 @@
               "id": "T126",
               "emoji": "🧱",
               "name": "Implement scratchpad_open_session",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Isolated session lifecycle plus quota failure fixtures for scratchpad_open_session",
               "checks": [
                 {
@@ -2540,7 +2540,8 @@
                 },
                 {
                   "text": "Isolated session lifecycle plus quota failure fixtures for scratchpad_open_session",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/scratchpad.rs session_quota_expiry_and_limit_reconfiguration_are_isolated verifies creation, refresh, expiration/reopening and session quota denial; src/main.rs scratchpad_mcp_lifecycle_limits_and_private_tables_have_stable_envelopes checks structured MCP open response. DuckDB-enabled Actions 40261109602 passed both tests. Full live Google and feature-wide upstream parity remain independent acceptance gates."
                 }
               ]
             },
@@ -2548,7 +2549,7 @@
               "id": "T127",
               "emoji": "🔒",
               "name": "Implement scratchpad_close_session",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Isolated session lifecycle plus quota failure fixtures for scratchpad_close_session",
               "checks": [
                 {
@@ -2558,7 +2559,8 @@
                 },
                 {
                   "text": "Isolated session lifecycle plus quota failure fixtures for scratchpad_close_session",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/scratchpad.rs session_quota_expiry_and_limit_reconfiguration_are_isolated verifies close destroys session and repeated close fails; src/main.rs scratchpad_mcp_lifecycle_limits_and_private_tables_have_stable_envelopes checks MCP close and post-close local error. DuckDB-enabled Actions 40261109602 passed. Full live Google and feature-wide upstream parity remain independent acceptance gates."
                 }
               ]
             },
@@ -2566,7 +2568,7 @@
               "id": "T128",
               "emoji": "📋",
               "name": "Implement scratchpad_list_sessions",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Isolated session lifecycle plus quota failure fixtures for scratchpad_list_sessions",
               "checks": [
                 {
@@ -2576,7 +2578,8 @@
                 },
                 {
                   "text": "Isolated session lifecycle plus quota failure fixtures for scratchpad_list_sessions",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/scratchpad.rs session_quota_expiry_and_limit_reconfiguration_are_isolated verifies deterministic sorted session listing, paginated count/truncation and invalid-list limits; src/main.rs scratchpad_mcp_lifecycle_limits_and_private_tables_have_stable_envelopes confirms structured MCP list output. DuckDB-enabled Actions 40261109602 passed. Full live Google and feature-wide upstream parity remain independent acceptance gates."
                 }
               ]
             },
@@ -2584,7 +2587,7 @@
               "id": "T129",
               "emoji": "📏",
               "name": "Implement scratchpad_get_runtime_limits",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Isolated session lifecycle plus quota failure fixtures for scratchpad_get_runtime_limits",
               "checks": [
                 {
@@ -2594,7 +2597,8 @@
                 },
                 {
                   "text": "Isolated session lifecycle plus quota failure fixtures for scratchpad_get_runtime_limits",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/scratchpad.rs session_quota_expiry_and_limit_reconfiguration_are_isolated verifies default/max bounded runtime limits; src/main.rs scratchpad_mcp_lifecycle_limits_and_private_tables_have_stable_envelopes verifies MCP get_runtime_limits returns max_sessions and other limits. DuckDB-enabled Actions 40261109602 passed. Full live Google and feature-wide upstream parity remain independent acceptance gates."
                 }
               ]
             },
@@ -2602,7 +2606,7 @@
               "id": "T130",
               "emoji": "🎛️",
               "name": "Implement scratchpad_set_runtime_limits",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Isolated session lifecycle plus quota failure fixtures for scratchpad_set_runtime_limits",
               "checks": [
                 {
@@ -2612,7 +2616,8 @@
                 },
                 {
                   "text": "Isolated session lifecycle plus quota failure fixtures for scratchpad_set_runtime_limits",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/scratchpad.rs session_quota_expiry_and_limit_reconfiguration_are_isolated tests reducing and raising quotas, rejects configurations below current session usage and above hard caps, with session quota failure; src/main.rs scratchpad_mcp_lifecycle_limits_and_private_tables_have_stable_envelopes verifies MCP setter. DuckDB-enabled Actions 40261109602 passed. Full live Google and feature-wide upstream parity remain independent acceptance gates."
                 }
               ]
             },
@@ -2620,7 +2625,7 @@
               "id": "T131",
               "emoji": "🗂️",
               "name": "Implement scratchpad_list_tables",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Isolated session lifecycle plus quota failure fixtures for scratchpad_list_tables",
               "checks": [
                 {
@@ -2630,7 +2635,8 @@
                 },
                 {
                   "text": "Isolated session lifecycle plus quota failure fixtures for scratchpad_list_tables",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/scratchpad.rs table_quota_and_private_catalog_survive_rejected_operations validates table inventory, per-session visibility and catalog after denied writes/removal; src/main.rs scratchpad_mcp_lifecycle_limits_and_private_tables_have_stable_envelopes tests the MCP table list. DuckDB-enabled Actions 40261109602 passed. Full live Google and feature-wide upstream parity remain independent acceptance gates."
                 }
               ]
             },
@@ -2638,7 +2644,7 @@
               "id": "T132",
               "emoji": "🧹",
               "name": "Implement scratchpad_drop_table",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Isolated session lifecycle plus quota failure fixtures for scratchpad_drop_table",
               "checks": [
                 {
@@ -2648,7 +2654,8 @@
                 },
                 {
                   "text": "Isolated session lifecycle plus quota failure fixtures for scratchpad_drop_table",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/scratchpad.rs table_quota_and_private_catalog_survive_rejected_operations verifies drop success, missing-if-exists false, missing-if-exists true and malicious identifier rejection without altering private tables; src/main.rs scratchpad_mcp_lifecycle_limits_and_private_tables_have_stable_envelopes covers MCP deletion. DuckDB-enabled Actions 40261109602 passed. Full live Google and feature-wide upstream parity remain independent acceptance gates."
                 }
               ]
             }
@@ -2664,7 +2671,7 @@
               "id": "T133",
               "emoji": "📊",
               "name": "Implement scratchpad_ingest_report",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Synthetic GA payload and DuckDB query conformance for scratchpad_ingest_report",
               "checks": [
                 {
@@ -2674,7 +2681,8 @@
                 },
                 {
                   "text": "Synthetic GA payload and DuckDB query conformance for scratchpad_ingest_report",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs scratchpad_ga_ingest_round_trips_historical_realtime_and_private_evidence uses local synthetic Google v1beta historical runReport JSON, authenticates only with fixture bearer, ingests a normalized country/activeUsers row into private in-memory DuckDB, then queries data. src/scratchpad.rs ingest_ga4_response_is_transactional_bounded_and_sql_safe covers append/rollback. DuckDB-enabled Actions 40261109602 passed. Full live Google and feature-wide upstream parity remain independent acceptance gates."
                 }
               ]
             },
@@ -2682,7 +2690,7 @@
               "id": "T134",
               "emoji": "⚡",
               "name": "Implement scratchpad_ingest_realtime_report",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Synthetic GA payload and DuckDB query conformance for scratchpad_ingest_realtime_report",
               "checks": [
                 {
@@ -2692,7 +2700,8 @@
                 },
                 {
                   "text": "Synthetic GA payload and DuckDB query conformance for scratchpad_ingest_realtime_report",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs scratchpad_ga_ingest_round_trips_historical_realtime_and_private_evidence exercises local v1beta runRealtimeReport mock, proves distinct realtime row persisted to session table and private summary, then rejects ingest limit 1001 before network call. DuckDB-enabled Actions 40261109602 passed. Full live Google and feature-wide upstream parity remain independent acceptance gates."
                 }
               ]
             },
@@ -2700,7 +2709,7 @@
               "id": "T135",
               "emoji": "🔎",
               "name": "Implement scratchpad_query",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Synthetic GA payload and DuckDB query conformance for scratchpad_query",
               "checks": [
                 {
@@ -2710,7 +2719,8 @@
                 },
                 {
                   "text": "Synthetic GA payload and DuckDB query conformance for scratchpad_query",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs scratchpad_ga_ingest_round_trips_historical_realtime_and_private_evidence queries historical synthetic GA data using restricted SELECT and validates returned country; scratchpad_mcp_lifecycle_limits_and_private_tables_have_stable_envelopes asserts unauthorized DROP SQL returns structured SCRATCHPAD_ERROR. src/scratchpad.rs restricted_select_query_is_bounded_and_never_executes_user_sql validates query grammar and limits. DuckDB-enabled Actions 40261109602 passed. Full live Google and feature-wide upstream parity remain independent acceptance gates."
                 }
               ]
             },
@@ -2718,7 +2728,7 @@
               "id": "T136",
               "emoji": "🧬",
               "name": "Implement scratchpad_describe_table",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Synthetic GA payload and DuckDB query conformance for scratchpad_describe_table",
               "checks": [
                 {
@@ -2728,7 +2738,8 @@
                 },
                 {
                   "text": "Synthetic GA payload and DuckDB query conformance for scratchpad_describe_table",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs scratchpad_mcp_lifecycle_limits_and_private_tables_have_stable_envelopes inspects columns from a synthetic GA-ingested private DuckDB table through the MCP describe handler; src/scratchpad.rs describes_and_summarizes_bounded_local_tables validates bounded schema. DuckDB-enabled Actions 40261109602 passed. Full live Google and feature-wide upstream parity remain independent acceptance gates."
                 }
               ]
             },
@@ -2736,7 +2747,7 @@
               "id": "T137",
               "emoji": "🧮",
               "name": "Implement scratchpad_summarize_table",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Synthetic GA payload and DuckDB query conformance for scratchpad_summarize_table",
               "checks": [
                 {
@@ -2746,7 +2757,8 @@
                 },
                 {
                   "text": "Synthetic GA payload and DuckDB query conformance for scratchpad_summarize_table",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/main.rs scratchpad_ga_ingest_round_trips_historical_realtime_and_private_evidence and scratchpad_mcp_lifecycle_limits_and_private_tables_have_stable_envelopes verify row counts from MCP summarize_table on separate synthetic tables; src/scratchpad.rs describes_and_summarizes_bounded_local_tables covers metadata. DuckDB-enabled Actions 40261109602 passed. Full live Google and feature-wide upstream parity remain independent acceptance gates."
                 }
               ]
             }
