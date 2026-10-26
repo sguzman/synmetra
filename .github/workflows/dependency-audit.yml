@@ -1,0 +1,46 @@
+name: Rust dependency, license and source audit
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "deny.toml"
+      - ".github/workflows/dependency-audit.yml"
+  pull_request:
+    paths:
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "deny.toml"
+      - ".github/workflows/dependency-audit.yml"
+  schedule:
+    - cron: "23 10 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cargo-deny:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        check: ["bans licenses sources", "advisories"]
+    # Newly published RustSec advisories remain visible but do not
+    # retroactively prevent unrelated mainline commits from building.
+    # A failing advisory check is not a clean bill of security.
+    continue-on-error: ${{ matrix.check == 'advisories' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check pinned Rust dependency graph and policy
+        # EmbarkStudios/cargo-deny-action v2.1.1, pinned to a commit
+        # (not a mutable tag).
+        uses: EmbarkStudios/cargo-deny-action@3c6349835b2b7b196a839186cb8b78e02f7b5f25
+        with:
+          rust-version: "1.99.1"
+          command: check
+          arguments: --all-features
+          command-arguments: ${{ matrix.check }}
