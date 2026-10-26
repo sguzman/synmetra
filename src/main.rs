@@ -565,8 +565,7 @@ fn accumulate_historical_ingest_page(
             return Err("Combined Google report exceeds scratchpad 20000-row quota".into());
         }
         prior_rows.extend(rows.iter().cloned());
-        if serde_json::to_vec(existing).map_or(true, |encoded| encoded.len() > 2 * 1024 * 1024)
-        {
+        if serde_json::to_vec(existing).map_or(true, |encoded| encoded.len() > 2 * 1024 * 1024) {
             return Err("Combined Google report exceeds 2 MiB ingest budget".into());
         }
     } else {
@@ -2479,9 +2478,7 @@ impl Synmetra {
         }
         let desired = args.limit.unwrap_or(1000);
         if desired == 0 || desired > 20_000 {
-            return local_result(Err(
-                "Historical ingest limit must be 1-20000 rows".into(),
-            ));
+            return local_result(Err("Historical ingest limit must be 1-20000 rows".into()));
         }
         let page_limit = match validated_ingest_page_limit(
             Some(desired.min(1000)),
@@ -2545,19 +2542,15 @@ impl Synmetra {
                     .as_u64()
                     .or_else(|| response["rowCount"].as_str()?.parse::<u64>().ok());
             }
-            let returned = match accumulate_historical_ingest_page(
-                &mut combined,
-                response,
-                this_limit,
-            ) {
-                Ok(value) => value as u64,
-                Err(reason) => return local_result(Err(reason)),
-            };
+            let returned =
+                match accumulate_historical_ingest_page(&mut combined, response, this_limit) {
+                    Ok(value) => value as u64,
+                    Err(reason) => return local_result(Err(reason)),
+                };
             received += returned;
             pages_fetched += 1;
-            let provider_done = row_count_total.is_some_and(|total| {
-                initial_offset.saturating_add(received) >= total
-            });
+            let provider_done = row_count_total
+                .is_some_and(|total| initial_offset.saturating_add(received) >= total);
             if returned < this_limit || provider_done {
                 break;
             }
@@ -2568,26 +2561,17 @@ impl Synmetra {
         // Accumulation is read-only. The entire collected batch is inserted in
         // a single local transaction *after* every successful Google request.
         // A later provider failure cannot leave a partially populated table.
-        let commit = scratch.ingest_ga_response(
-            &args.session_id,
-            &args.table_name,
-            &payload,
-            args.append,
-        );
-        let mut receipt = match redact_ingest_receipt(
-            commit,
-            args.max_cell_chars,
-            desired,
-            page_limit,
-        ) {
-            Ok(value) => value,
-            Err(reason) => return local_result(Err(reason)),
-        };
+        let commit =
+            scratch.ingest_ga_response(&args.session_id, &args.table_name, &payload, args.append);
+        let mut receipt =
+            match redact_ingest_receipt(commit, args.max_cell_chars, desired, page_limit) {
+                Ok(value) => value,
+                Err(reason) => return local_result(Err(reason)),
+            };
         if desired > u64::from(page_limit) {
             let complete = received == desired
-                || row_count_total.is_some_and(|total| {
-                    initial_offset.saturating_add(received) >= total
-                });
+                || row_count_total
+                    .is_some_and(|total| initial_offset.saturating_add(received) >= total);
             receipt["pagination"] = json!({
                 "requested_limit":desired,
                 "page_size":page_limit,
@@ -6068,10 +6052,9 @@ mod tests {
             false,
         )
         .enable_scratchpad();
-        server
-            .scratchpad_open_session(Parameters(ScratchOpenArgs {
-                session_id: "multi_page_fixture".into(),
-            }));
+        server.scratchpad_open_session(Parameters(ScratchOpenArgs {
+            session_id: "multi_page_fixture".into(),
+        }));
         let original = json!({
             "session_id":"multi_page_fixture",
             "table_name":"complete",
@@ -6089,7 +6072,9 @@ mod tests {
         assert_eq!(receipt["data"]["pagination"]["pages_fetched"], 2);
         assert_eq!(receipt["data"]["pagination"]["row_count_returned"], 1500);
         assert_eq!(receipt["data"]["pagination"]["complete"], true);
-        assert!(!receipt.to_string().contains("synthetic-historical-ingest-only-token"));
+        assert!(!receipt
+            .to_string()
+            .contains("synthetic-historical-ingest-only-token"));
         assert_eq!(
             server
                 .scratchpad
@@ -6604,36 +6589,44 @@ mod tests {
         }
         let mut aggregate = None;
         assert_eq!(
-            accumulate_historical_ingest_page(&mut aggregate, page(600, "country"), 600)
-                .unwrap(),
+            accumulate_historical_ingest_page(&mut aggregate, page(600, "country"), 600).unwrap(),
             600
         );
         assert_eq!(
-            accumulate_historical_ingest_page(&mut aggregate, page(500, "country"), 600)
-                .unwrap(),
+            accumulate_historical_ingest_page(&mut aggregate, page(500, "country"), 600).unwrap(),
             500
         );
-        assert_eq!(aggregate.as_ref().unwrap()["rows"].as_array().unwrap().len(), 1100);
-        assert!(accumulate_historical_ingest_page(
-            &mut aggregate,
-            page(1, "city"),
-            600,
-        )
-        .is_err());
-        assert_eq!(aggregate.as_ref().unwrap()["rows"].as_array().unwrap().len(), 1100);
-        assert!(accumulate_historical_ingest_page(
-            &mut aggregate,
-            page(601, "country"),
-            600,
-        )
-        .is_err());
+        assert_eq!(
+            aggregate.as_ref().unwrap()["rows"]
+                .as_array()
+                .unwrap()
+                .len(),
+            1100
+        );
+        let bad_schema = accumulate_historical_ingest_page(&mut aggregate, page(1, "city"), 600);
+        assert!(bad_schema.is_err());
+        assert_eq!(
+            aggregate.as_ref().unwrap()["rows"]
+                .as_array()
+                .unwrap()
+                .len(),
+            1100
+        );
+        let oversized = accumulate_historical_ingest_page(&mut aggregate, page(601, "country"), 600);
+        assert!(oversized.is_err());
         assert!(accumulate_historical_ingest_page(
             &mut aggregate,
             json!({"dimensionHeaders":[],"metricHeaders":[]}),
             600,
         )
         .is_err());
-        assert_eq!(aggregate.as_ref().unwrap()["rows"].as_array().unwrap().len(), 1100);
+        assert_eq!(
+            aggregate.as_ref().unwrap()["rows"]
+                .as_array()
+                .unwrap()
+                .len(),
+            1100
+        );
     }
 
     #[cfg(feature = "scratchpad")]

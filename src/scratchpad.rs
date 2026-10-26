@@ -2435,9 +2435,7 @@ mod tests {
             1500
         );
         assert_eq!(
-            state
-                .summarize_table("historical_batch", "events")
-                .unwrap()["row_count"],
+            state.summarize_table("historical_batch", "events").unwrap()["row_count"],
             1500
         );
         let bad = json!({
@@ -2449,9 +2447,7 @@ mod tests {
             .ingest_ga_response("historical_batch", "events", &bad, true)
             .is_err());
         assert_eq!(
-            state
-                .summarize_table("historical_batch", "events")
-                .unwrap()["row_count"],
+            state.summarize_table("historical_batch", "events").unwrap()["row_count"],
             1500
         );
     }
