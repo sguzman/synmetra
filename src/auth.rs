@@ -749,6 +749,118 @@ mod tests {
         std::fs::remove_dir_all(&root).unwrap();
     }
 
+    #[tokio::test]
+    async fn aborted_oauth_refresh_releases_lock_without_partial_token_rotation() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        use tokio::net::TcpListener;
+
+        let root = std::env::temp_dir().join(format!(
+            "synmetra-aborted-refresh-{}-{}",
+            std::process::id(),
+            nonce()
+        ));
+        let path = root.join("synmetra").join("credentials.json");
+        let original = Stored {
+            client_id: "fixture.apps.googleusercontent.com".into(),
+            client_secret: "synthetic-client-secret".into(),
+            refresh_token: "synthetic-old-refresh".into(),
+            access_token: "synthetic-expired-access".into(),
+            expires_at: epoch_seconds().saturating_add(10),
+            granted_scope: SCOPE.to_owned(),
+        };
+        persist_credentials_at(&path, &original).unwrap();
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let endpoint = format!("http://{}/token", listener.local_addr().unwrap());
+        let lock = std::sync::Arc::new(tokio::sync::Mutex::new(()));
+
+        let first_path = path.clone();
+        let first_endpoint = endpoint.clone();
+        let first_lock = lock.clone();
+        let interrupted = tokio::spawn(async move {
+            access_token_at(&first_path, &first_endpoint, &first_lock).await
+        });
+        let (mut stalled_socket, _) =
+            tokio::time::timeout(Duration::from_secs(5), listener.accept())
+                .await
+                .unwrap()
+                .unwrap();
+        let mut buffer = [0u8; 4096];
+        let read = stalled_socket.read(&mut buffer).await.unwrap();
+        assert!(String::from_utf8_lossy(&buffer[..read]).starts_with("POST /token "));
+
+        let retry_path = path.clone();
+        let retry_endpoint = endpoint.clone();
+        let retry_lock = lock.clone();
+        let waiting = tokio::spawn(async move {
+            access_token_at(&retry_path, &retry_endpoint, &retry_lock).await
+        });
+        // The waiting refresh must not stampede while the original owns the
+        // lock, even if its upstream request has not returned.
+        assert!(
+            tokio::time::timeout(Duration::from_millis(100), listener.accept())
+                .await
+                .is_err()
+        );
+        interrupted.abort();
+        assert!(interrupted.await.unwrap_err().is_cancelled());
+        let still_original = read_credentials_at(&path).unwrap().unwrap();
+        assert_eq!(still_original.refresh_token, original.refresh_token);
+        assert_eq!(still_original.access_token, original.access_token);
+
+        // Canceling the refresh drops its outbound request; no stale token
+        // response can rotate the file after cancellation.
+        let mut closed = false;
+        for _ in 0..8 {
+            let read = tokio::time::timeout(
+                Duration::from_secs(5),
+                stalled_socket.read(&mut buffer),
+            )
+            .await
+            .unwrap()
+            .unwrap();
+            if read == 0 {
+                closed = true;
+                break;
+            }
+        }
+        assert!(closed, "Canceled OAuth refresh left an open upstream request");
+        drop(stalled_socket);
+
+        let (mut retry_socket, _) =
+            tokio::time::timeout(Duration::from_secs(5), listener.accept())
+                .await
+                .unwrap()
+                .unwrap();
+        let read = retry_socket.read(&mut buffer).await.unwrap();
+        let request = String::from_utf8_lossy(&buffer[..read]);
+        assert!(request.starts_with("POST /token "));
+        assert!(request.contains("POST /token "));
+        let body = serde_json::json!({
+            "access_token":"synthetic-recovered-access",
+            "refresh_token":"synthetic-recovered-refresh",
+            "expires_in":3600,
+            "scope":SCOPE
+        })
+        .to_string();
+        let reply = format!(
+            "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+            body.len(),
+            body
+        );
+        retry_socket.write_all(reply.as_bytes()).await.unwrap();
+        drop(retry_socket);
+        let recovered = tokio::time::timeout(Duration::from_secs(5), waiting)
+            .await
+            .expect("Waiting refresh deadlocked after cancellation")
+            .unwrap()
+            .unwrap();
+        assert_eq!(recovered.as_deref(), Some("synthetic-recovered-access"));
+        let final_state = read_credentials_at(&path).unwrap().unwrap();
+        assert_eq!(final_state.refresh_token, "synthetic-recovered-refresh");
+        assert_eq!(final_state.access_token, "synthetic-recovered-access");
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
     #[test]
     fn login_flags_are_opt_in_and_reject_malformed_arguments() {
         let parse = |input: &[&str]| {

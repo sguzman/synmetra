@@ -594,7 +594,7 @@
 - 🐚 **T202 — Provide Fish-friendly CLI configuration examples** — `█████░░░░░ 50.0%`
   - ✅ **Gate:** No npm Python or bash-only assumptions · **Evidence:** docs/CLI.md contains Fish-native read-only OAuth, diagnostics, native cargo/DuckDB build, private inbound bearer read -s -P and set -gx examples; docs/INSTALL.md uses fish_add_path. Syntax and semantics checked against fish-shell 4.0 read/set documentation and native PATH-isolation core CI https://github.com/sguzman/synmetra/actions/runs/40324582737. Formal Fish shell execution QA remains separate.
 
-### 📖 P26 — Documentation and agent onboarding — `████████░░ 81.3%`
+### 📖 P26 — Documentation and agent onboarding — `████████░░ 81.2%`
 
 **Feature:** Operator docs.
 
