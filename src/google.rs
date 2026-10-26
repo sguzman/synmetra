@@ -2554,6 +2554,57 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn google_forbidden_read_is_not_retried_or_silently_scope_escalated() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        use tokio::net::TcpListener;
+
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let endpoint = format!("http://{}", listener.local_addr().unwrap());
+        let server = tokio::spawn(async move {
+            let (mut socket, _) = listener.accept().await.unwrap();
+            let mut buffer = [0_u8; 4096];
+            let n = socket.read(&mut buffer).await.unwrap();
+            let request = String::from_utf8_lossy(&buffer[..n]).to_ascii_lowercase();
+            assert!(request.contains("post /v1beta/properties/42:runreport http/1.1"));
+            assert!(request.contains("authorization: bearer synthetic-readonly-scope"));
+            let body = r#"{"error":{"status":"PERMISSION_DENIED","message":"private-property-fixture"}}"#;
+            let response = format!(
+                "HTTP/1.1 403 Forbidden\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                body.len(),
+                body
+            );
+            socket.write_all(response.as_bytes()).await.unwrap();
+            drop(socket);
+            assert!(
+                tokio::time::timeout(Duration::from_millis(300), listener.accept())
+                    .await
+                    .is_err(),
+                "403 should not trigger an automatic retry or broader OAuth flow"
+            );
+        });
+        let client = GoogleClient::with_endpoints(
+            Some("synthetic-readonly-scope".into()),
+            &endpoint,
+            &endpoint,
+        );
+        let input = report_request(
+            Some(vec![json!({"startDate":"yesterday","endDate":"today"})]),
+            vec![],
+            vec!["activeUsers".to_owned()],
+            vec![],
+        )
+        .unwrap();
+        assert_eq!(
+            client.report("42", input, false).await,
+            Err(ApiError::Http(403))
+        );
+        server.await.unwrap();
+        assert!(!ApiError::Http(403)
+            .to_string()
+            .contains("private-property-fixture"));
+    }
+
+    #[tokio::test]
     async fn readonly_429_exhausts_three_attempts_with_redacted_error() {
         use tokio::io::{AsyncReadExt, AsyncWriteExt};
         use tokio::net::TcpListener;

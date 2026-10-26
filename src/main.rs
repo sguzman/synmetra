@@ -7432,6 +7432,21 @@ mod tests {
         );
     }
 
+    #[test]
+    fn local_edit_scope_denial_is_distinct_from_google_property_forbidden() {
+        let scope = result(Err(ApiError::EditScopeRequired)).structured_content.unwrap();
+        let provider = result(Err(ApiError::Http(403))).structured_content.unwrap();
+        assert_eq!(scope["error"]["code"], "EDIT_SCOPE_REQUIRED");
+        assert_eq!(scope["error"]["category"], "authorization");
+        assert_eq!(provider["error"]["code"], "GOOGLE_HTTP_ERROR");
+        assert_eq!(provider["error"]["category"], "upstream");
+        assert_eq!(provider["error"]["status_code"], 403);
+        assert_eq!(scope["ok"], false);
+        assert_eq!(provider["ok"], false);
+        assert!(!scope.to_string().contains("access_token"));
+        assert!(!provider.to_string().contains("refresh_token"));
+    }
+
     #[tokio::test]
     async fn write_profile_rejects_unverified_external_bearer_before_google_network() {
         let server = Synmetra::new(
