@@ -473,16 +473,18 @@
               "id": "T023",
               "emoji": "📏",
               "name": "Bound request sizes concurrency and timeouts",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "Malformed and oversize frames rejected deterministically",
               "checks": [
                 {
                   "text": "Deliver bound request sizes concurrency and timeouts as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/http.rs bounds authenticated loopback HTTP to 1 MiB (including chunked unknown-length bodies), 16 concurrent requests, 10-second body and 30-second handler deadlines; src/stdio_limit.rs forwards stdio frames through a 64 KiB backpressured pipe with 8192-byte chunks, terminating a frame above 1 MiB before rmcp's otherwise unbounded read_until buffer; src/main.rs rejects oversized stdio input as a nonzero CLI error. Both transports retain normal MCP JSON-RPC. Code and tests passed GitHub Actions 40259215479 core Rust CI."
                 },
                 {
                   "text": "Malformed and oversize frames rejected deterministically",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "GitHub Actions 40259215479 passed Rust tests, Clippy, and an actual subprocess smoke feeding >1 MiB of unterminated stdio input: the server logged only a generic size error, exited unsuccessfully, and emitted no protocol stdout. src/stdio_limit.rs unit tests verify multiple normal lines and bounded rejection. src/http.rs authenticated_http_rejects_oversize_slow_and_overloaded_requests verifies Content-Length and chunked oversize 413, overload 503 and slow body 408; json_rpc_protocol_errors_remain_separate_from_ga_validation_results verifies malformed JSON produces a client/protocol error rather than an accepted tool result. HTTP and SDK read handling are bounded; cancellation of arbitrary long-running Google calls remains separate T039."
                 }
               ]
             },

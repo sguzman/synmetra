@@ -12,7 +12,7 @@ The process cannot isolate secrets from an adversary already executing as the sa
 
 | Boundary | Existing controls | Residual / unaccepted |
 | --- | --- | --- |
-| MCP stdio to Rust tools | Typed registrations and separate default read-only, opt-in mutation and DuckDB profiles (src/main.rs); stdio protocol and credential redaction checks in CI | Inherited OS identity and environment; tool arguments remain untrusted |
+| MCP stdio to Rust tools | Typed registrations and separate default read-only, opt-in mutation and DuckDB profiles (src/main.rs); src/stdio_limit.rs bounds each line-delimited frame to 1 MiB before rmcp's line buffer via a 64 KiB backpressured pipe; CI tests oversized unterminated frames and clean stdout | Inherited OS identity and environment; tool arguments remain untrusted; cancellation of outbound calls tracked separately |
 | Optional loopback HTTP | src/http.rs binds 127.0.0.1; bearer comparison is constant time; Host and Origin validated; request size 1 MiB, in-flight 16, body 10 s and handler 30 s caps; independent principal/session replay tests | No TLS, public binding or multi-tenant identity accepted; never port-forward or reverse-proxy |
 | Browser OAuth callback | src/auth.rs uses localhost, random state and PKCE S256; read-only analytics scope by default; headless/port options do not need gcloud, Python or npm | Live user consent, expired/revoked credentials, clock skew and rotation races not accepted |
 | Local credentials | XDG-scoped Synmetra file with private-file/unsafe symlink protections and scoped logout; diagnostic output excludes tokens | Disk credentials are not encrypted against the same Unix account; backups and compromised processes remain risks |

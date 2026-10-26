@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `█████░░░░░ 52.6%` · **+52.64 percentage points from initial empty repo; +0.44 pp from CI-verified isolated native Linux installation** · 103/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
+**Overall:** `█████░░░░░ 53.1%` · **+53.08 percentage points from initial empty repo; +0.44 pp from bounded MCP stdio/HTTP transport and malformed input rejection** · 104/227 accepted atomic tasks. **Production parity gate:** 36/36 documented tools, exact inputs, secure deployment, permitted live property tests and a native install.
 
 ### 📏 Progress conventions
 
@@ -60,11 +60,11 @@
   - ✅ **Gate:** Document semver and provenance gates
 
 
-## 🔌 M1 — MCP protocol and transport fidelity — `██████░░░░ 60.9%`
+## 🔌 M1 — MCP protocol and transport fidelity — `███████░░░ 65.2%`
 
 **Scope:** MVP. **Acceptance gate:** Spec-conforming native MCP discovery and calls over stdio plus bounded Streamable HTTP; all transport safety tests pass.
 
-### 📨 P02 — Stdio protocol — `█████░░░░░ 50.0%`
+### 📨 P02 — Stdio protocol — `██████░░░░ 64.3%`
 
 **Feature:** MCP stdio.
 
@@ -78,8 +78,8 @@
   - ✅ **Gate:** Cancelled requests do not spawn orphan Google calls
 - 🚧 **T022 — Separate stdout protocol from stderr diagnostics** — `██████████ 100.0%`
   - ✅ **Gate:** No banners or logging contaminate JSON-RPC stdout · **Evidence:** src/main.rs stdio transport only on serve path; application diagnostic output uses stderr; Actions 40202015488 passed; Real native synmetra serve process captured stdout and stderr separately, enforced exactly three well-formed JSON-RPC result lines for initialize/list/call with no banner, and confirmed a synthetic SYNMETRA_GOOGLE_ACCESS_TOKEN canary never entered stdout. .github/workflows/ci.yml CI run 40243631855 core and DuckDB passed. Provider logs/stderr remain intentionally separate.
-- 📏 **T023 — Bound request sizes concurrency and timeouts** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Malformed and oversize frames rejected deterministically
+- 📏 **T023 — Bound request sizes concurrency and timeouts** — `██████████ 100.0%`
+  - ✅ **Gate:** Malformed and oversize frames rejected deterministically · **Evidence:** src/http.rs bounds authenticated loopback HTTP to 1 MiB (including chunked unknown-length bodies), 16 concurrent requests, 10-second body and 30-second handler deadlines; src/stdio_limit.rs forwards stdio frames through a 64 KiB backpressured pipe with 8192-byte chunks, terminating a frame above 1 MiB before rmcp's otherwise unbounded read_until buffer; src/main.rs rejects oversized stdio input as a nonzero CLI error. Both transports retain normal MCP JSON-RPC. Code and tests passed GitHub Actions 40259215479 core Rust CI.; GitHub Actions 40259215479 passed Rust tests, Clippy, and an actual subprocess smoke feeding >1 MiB of unterminated stdio input: the server logged only a generic size error, exited unsuccessfully, and emitted no protocol stdout. src/stdio_limit.rs unit tests verify multiple normal lines and bounded rejection. src/http.rs authenticated_http_rejects_oversize_slow_and_overloaded_requests verifies Content-Length and chunked oversize 413, overload 503 and slow body 408; json_rpc_protocol_errors_remain_separate_from_ga_validation_results verifies malformed JSON produces a client/protocol error rather than an accepted tool result. HTTP and SDK read handling are bounded; cancellation of arbitrary long-running Google calls remains separate T039.
 - ⌨️ **T024 — Integrate Codex stdio configuration smoke** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Codex recognizes locally built synmetra binary
 
