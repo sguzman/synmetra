@@ -2071,6 +2071,68 @@ mod tests {
     }
 
     #[test]
+    fn evidence_export_rejects_path_inputs_without_touching_neighbor_files() {
+        let base = std::env::temp_dir().join(format!(
+            "synmetra-export-path-{}-{}",
+            std::process::id(),
+            rand::random::<u64>()
+        ));
+        std::fs::create_dir_all(&base).unwrap();
+        let neighboring_file = base.join("neighbor.txt");
+        std::fs::write(&neighboring_file, "unrelated private file stays unchanged").unwrap();
+
+        let state = ScratchState::new();
+        state.open("export_boundary").unwrap();
+        {
+            let mut inner = state.guard().unwrap();
+            let db = &inner.sessions.get_mut("export_boundary").unwrap().db;
+            db.execute_batch(
+                "CREATE TABLE approved (country VARCHAR, visits INTEGER);
+                 INSERT INTO approved VALUES ('Mexico', 3);",
+            )
+            .unwrap();
+        }
+        let rejected = [
+            "../neighbor.txt",
+            "/tmp/neighbor.txt",
+            "file:///etc/passwd",
+            "http://127.0.0.1/secret",
+            "approved;COPY",
+            "approved\" OR 1=1",
+            "approved/../../neighbor.txt",
+            "approved\nunsafe",
+            "approved\\neighbor",
+        ];
+        for name in rejected {
+            let error = state
+                .export_evidence_bundle("export_boundary", Some(vec![name.to_owned()]), Some(1))
+                .unwrap_err();
+            assert_eq!(error, "Invalid scratchpad table_name");
+            assert!(!error.contains(name));
+            assert_eq!(
+                std::fs::read_to_string(&neighboring_file).unwrap(),
+                "unrelated private file stays unchanged"
+            );
+        }
+        for session in ["../export_boundary", "/tmp/export_boundary", "http://127.0.0.1"] {
+            assert!(state
+                .export_evidence_bundle(session, Some(vec!["approved".into()]), Some(1))
+                .is_err());
+        }
+        let valid = state
+            .export_evidence_bundle("export_boundary", Some(vec!["approved".into()]), Some(1))
+            .unwrap();
+        assert!(valid.get("output_path").is_none());
+        assert_eq!(valid["provider_called"], false);
+        assert_eq!(valid["tables"][0]["row_count"], 1);
+        assert_eq!(
+            std::fs::read_to_string(&neighboring_file).unwrap(),
+            "unrelated private file stays unchanged"
+        );
+        std::fs::remove_dir_all(base).unwrap();
+    }
+
+    #[test]
     fn exports_private_bounded_json_and_markdown_evidence() {
         let state = ScratchState::new();
         state.open("analysis_1").unwrap();
