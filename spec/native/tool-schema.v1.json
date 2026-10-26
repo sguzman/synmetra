@@ -2009,7 +2009,18 @@
           "session_id",
           "table_name"
         ],
-        "type": "object"
+        "type": "object",
+        "$defs": {
+          "OutputMode": {
+            "enum": [
+              "rows",
+              "tuples",
+              "scalar",
+              "compact"
+            ],
+            "type": "string"
+          }
+        }
       },
       "name": "scratchpad_describe_table"
     },
@@ -2092,6 +2103,15 @@
               }
             ],
             "description": "Match the pinned Google and SednaLabs contract: identifiers may arrive as\npositive decimal numbers or as canonical resource-name strings."
+          },
+          "OutputMode": {
+            "enum": [
+              "rows",
+              "tuples",
+              "scalar",
+              "compact"
+            ],
+            "type": "string"
           }
         },
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -2223,6 +2243,15 @@
               }
             ],
             "description": "Match the pinned Google and SednaLabs contract: identifiers may arrive as\npositive decimal numbers or as canonical resource-name strings."
+          },
+          "OutputMode": {
+            "enum": [
+              "rows",
+              "tuples",
+              "scalar",
+              "compact"
+            ],
+            "type": "string"
           },
           "ReportDateRangeInput": {
             "description": "The pinned SednaLabs JSON Schema names historical dates with snake_case.\nRuntime normalization additionally accepts Google camelCase and named ranges.",
@@ -2491,7 +2520,18 @@
           "table_name",
           "release_date"
         ],
-        "type": "object"
+        "type": "object",
+        "$defs": {
+          "OutputMode": {
+            "enum": [
+              "rows",
+              "tuples",
+              "scalar",
+              "compact"
+            ],
+            "type": "string"
+          }
+        }
       },
       "name": "scratchpad_landing_param_shift_report"
     },
@@ -2606,7 +2646,18 @@
           "session_id",
           "sql"
         ],
-        "type": "object"
+        "type": "object",
+        "$defs": {
+          "OutputMode": {
+            "enum": [
+              "rows",
+              "tuples",
+              "scalar",
+              "compact"
+            ],
+            "type": "string"
+          }
+        }
       },
       "name": "scratchpad_query"
     },
@@ -2724,7 +2775,18 @@
           "anchor_event",
           "comparison_event"
         ],
-        "type": "object"
+        "type": "object",
+        "$defs": {
+          "OutputMode": {
+            "enum": [
+              "rows",
+              "tuples",
+              "scalar",
+              "compact"
+            ],
+            "type": "string"
+          }
+        }
       },
       "name": "scratchpad_release_regression_report"
     },

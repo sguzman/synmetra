@@ -6524,8 +6524,7 @@ mod tests {
         ] {
             let tool = tools.iter().find(|tool| tool.name == name).unwrap();
             assert_eq!(
-                tool.input_schema["properties"]["output_mode"],
-                expected,
+                tool.input_schema["properties"]["output_mode"], expected,
                 "{name} must advertise a typed nullable four-value enum"
             );
         }
