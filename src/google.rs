@@ -1272,6 +1272,93 @@ pub fn validate_bounded_filter(filter: &Value) -> Result<(), ApiError> {
     Ok(())
 }
 
+/// Derive a conservative historical/Core report preflight verdict from the
+/// provider's exact compatibility metadata without replacing that metadata.
+/// Compatibility is unknown if the provider omits a requested field or returns
+/// COMPATIBILITY_UNSPECIFIED. Realtime has independent compatibility rules.
+pub fn compatibility_verdict(
+    requested_dimensions: &[String],
+    requested_metrics: &[String],
+    provider: &Value,
+) -> Result<Value, ApiError> {
+    let object = provider.as_object().ok_or(ApiError::InvalidResponse)?;
+    if !object.contains_key("dimensionCompatibilities")
+        && !object.contains_key("metricCompatibilities")
+    {
+        return Err(ApiError::InvalidResponse);
+    }
+    let mut incompatible = Vec::new();
+    let mut unchecked = Vec::new();
+    for (kind, requested, key, metadata_key) in [
+        (
+            "dimension",
+            requested_dimensions,
+            "dimensionCompatibilities",
+            "dimensionMetadata",
+        ),
+        (
+            "metric",
+            requested_metrics,
+            "metricCompatibilities",
+            "metricMetadata",
+        ),
+    ] {
+        let entries = match object.get(key) {
+            Some(value) => value.as_array().ok_or(ApiError::InvalidResponse)?,
+            None => {
+                for name in requested {
+                    unchecked.push(json!({"kind":kind,"name":name}));
+                }
+                continue;
+            }
+        };
+        let mut statuses = HashMap::new();
+        for entry in entries {
+            let name = entry[metadata_key]["apiName"]
+                .as_str()
+                .filter(|name| !name.is_empty())
+                .ok_or(ApiError::InvalidResponse)?;
+            let status = entry["compatibility"]
+                .as_str()
+                .ok_or(ApiError::InvalidResponse)?;
+            if !["COMPATIBLE", "INCOMPATIBLE", "COMPATIBILITY_UNSPECIFIED"]
+                .contains(&status)
+                || statuses.insert(name, status).is_some()
+            {
+                return Err(ApiError::InvalidResponse);
+            }
+        }
+        for name in requested {
+            match statuses.get(name.as_str()).copied() {
+                Some("COMPATIBLE") => {}
+                Some("INCOMPATIBLE") => {
+                    incompatible.push(json!({"kind":kind,"name":name}));
+                }
+                _ => unchecked.push(json!({"kind":kind,"name":name})),
+            }
+        }
+    }
+    let inventory = requested_dimensions.is_empty() && requested_metrics.is_empty();
+    let safe_to_run = !inventory && incompatible.is_empty() && unchecked.is_empty();
+    Ok(json!({
+        "scope": "historical_core_reports",
+        "inventory_only": inventory,
+        "complete": !inventory && unchecked.is_empty(),
+        "safe_to_run": safe_to_run,
+        "status": if inventory {
+            "inventory"
+        } else if !incompatible.is_empty() {
+            "incompatible"
+        } else if !unchecked.is_empty() {
+            "incomplete"
+        } else {
+            "compatible"
+        },
+        "incompatible_fields": incompatible,
+        "unchecked_fields": unchecked
+    }))
+}
+
 /// Prepare a compatibility-only probe without inventing a report request. Google
 /// accepts property 0 to check universally available dimensions and metrics.
 pub fn compatibility_request(
@@ -1280,6 +1367,8 @@ pub fn compatibility_request(
 ) -> Result<Value, ApiError> {
     if dimensions.len() > 9
         || metrics.len() > 10
+        || dimensions.iter().collect::<HashSet<_>>().len() != dimensions.len()
+        || metrics.iter().collect::<HashSet<_>>().len() != metrics.len()
         || dimensions
             .iter()
             .chain(metrics.iter())
@@ -2471,6 +2560,68 @@ mod tests {
         }
         assert_eq!(
             funnel_request_options(base, false, Some("UNKNOWN"), None, None),
+            Err(ApiError::InvalidRequest)
+        );
+    }
+
+    #[test]
+    fn compatibility_verdict_fails_closed_without_losing_provider_field_names() {
+        let dimensions = vec!["country".to_owned()];
+        let metrics = vec!["activeUsers".to_owned()];
+        let incompatible = json!({
+            "dimensionCompatibilities":[{
+                "dimensionMetadata":{"apiName":"country"},
+                "compatibility":"COMPATIBLE"
+            }],
+            "metricCompatibilities":[{
+                "metricMetadata":{"apiName":"activeUsers"},
+                "compatibility":"INCOMPATIBLE"
+            }]
+        });
+        let verdict = compatibility_verdict(&dimensions, &metrics, &incompatible).unwrap();
+        assert_eq!(verdict["status"], "incompatible");
+        assert_eq!(verdict["safe_to_run"], false);
+        assert_eq!(verdict["incompatible_fields"][0]["name"], "activeUsers");
+        assert_eq!(verdict["incompatible_fields"][0]["kind"], "metric");
+
+        let mut compatible = incompatible.clone();
+        compatible["metricCompatibilities"][0]["compatibility"] = json!("COMPATIBLE");
+        let verdict = compatibility_verdict(&dimensions, &metrics, &compatible).unwrap();
+        assert_eq!(verdict["status"], "compatible");
+        assert_eq!(verdict["safe_to_run"], true);
+        assert_eq!(verdict["complete"], true);
+
+        compatible["metricCompatibilities"] = json!([]);
+        let verdict = compatibility_verdict(&dimensions, &metrics, &compatible).unwrap();
+        assert_eq!(verdict["status"], "incomplete");
+        assert_eq!(verdict["safe_to_run"], false);
+        assert_eq!(verdict["unchecked_fields"][0]["name"], "activeUsers");
+
+        let inventory = compatibility_verdict(
+            &[],
+            &[],
+            &json!({"dimensionCompatibilities":[],"metricCompatibilities":[]}),
+        )
+        .unwrap();
+        assert_eq!(inventory["status"], "inventory");
+        assert_eq!(inventory["safe_to_run"], false);
+
+        let duplicated = json!({
+            "dimensionCompatibilities":[
+                {"dimensionMetadata":{"apiName":"country"},"compatibility":"COMPATIBLE"},
+                {"dimensionMetadata":{"apiName":"country"},"compatibility":"INCOMPATIBLE"}
+            ]
+        });
+        assert_eq!(
+            compatibility_verdict(&dimensions, &[], &duplicated),
+            Err(ApiError::InvalidResponse)
+        );
+        assert_eq!(
+            compatibility_verdict(&dimensions, &metrics, &json!({})),
+            Err(ApiError::InvalidResponse)
+        );
+        assert_eq!(
+            compatibility_request(vec!["country".into(),"country".into()], vec![]),
             Err(ApiError::InvalidRequest)
         );
     }

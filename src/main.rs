@@ -850,6 +850,34 @@ fn api_error_code(error: &ApiError) -> (&'static str, &'static str) {
     }
 }
 
+fn result_with_compatibility_verdict(
+    response: Result<Value, ApiError>,
+    dimensions: &[String],
+    metrics: &[String],
+) -> CallToolResult {
+    let response = response.and_then(|provider| {
+        let verdict = google::compatibility_verdict(dimensions, metrics, &provider)?;
+        Ok((provider, verdict))
+    });
+    match response {
+        Ok((provider, verdict)) => {
+            let payload = json!({
+                "ok":true,
+                "data":provider,
+                "meta":{
+                    "elapsed_ms":0,
+                    "elapsed_ms_measured":false,
+                    "compatibility":verdict
+                }
+            });
+            let mut result = CallToolResult::success(vec![ContentBlock::text(payload.to_string())]);
+            result.structured_content = Some(payload);
+            result
+        }
+        Err(error) => result(Err(error)),
+    }
+}
+
 fn result_with_funnel_projection(
     response: Result<Value, ApiError>,
     controls: tabular::Controls,
@@ -1502,15 +1530,18 @@ impl Synmetra {
         &self,
         Parameters(args): Parameters<CompatibilityArgs>,
     ) -> CallToolResult {
-        let request = google::compatibility_request(args.dimensions, args.metrics);
-        result(match request {
+        let dimensions = args.dimensions;
+        let metrics = args.metrics;
+        let request = google::compatibility_request(dimensions.clone(), metrics.clone());
+        let response = match request {
             Ok(body) => {
                 self.api
                     .data_operation(&args.property_id, body, "checkCompatibility")
                     .await
             }
             Err(error) => Err(error),
-        })
+        };
+        result_with_compatibility_verdict(response, &dimensions, &metrics)
     }
 
     #[tool(
@@ -2826,6 +2857,12 @@ mod tests {
         assert_eq!(
             content["data"]["metricCompatibilities"][0]["compatibility"],
             "INCOMPATIBLE"
+        );
+        assert_eq!(content["meta"]["compatibility"]["status"], "incompatible");
+        assert_eq!(content["meta"]["compatibility"]["safe_to_run"], false);
+        assert_eq!(
+            content["meta"]["compatibility"]["incompatible_fields"][0]["name"],
+            "unsupportedCustomMetric"
         );
         assert!(!content
             .to_string()
