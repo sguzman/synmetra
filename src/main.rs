@@ -5136,7 +5136,10 @@ mod tests {
             .scratchpad_ingest_report(Parameters(historical))
             .await;
         assert_eq!(result.is_error, Some(false));
-        assert_eq!(result.structured_content.unwrap()["data"]["rows_ingested"], 1);
+        assert_eq!(
+            result.structured_content.unwrap()["data"]["rows_ingested"],
+            1
+        );
 
         let realtime: ScratchIngestRealtimeArgs = serde_json::from_value(json!({
             "session_id":"session_fixture",
@@ -5151,7 +5154,10 @@ mod tests {
             .await;
         responder.await.unwrap();
         assert_eq!(result.is_error, Some(false));
-        assert_eq!(result.structured_content.unwrap()["data"]["rows_ingested"], 1);
+        assert_eq!(
+            result.structured_content.unwrap()["data"]["rows_ingested"],
+            1
+        );
 
         let table = server.scratchpad_summarize_table(Parameters(ScratchReadTableArgs {
             session_id: "session_fixture".into(),
@@ -5168,7 +5174,10 @@ mod tests {
             cursor: None,
         }));
         assert_eq!(query.is_error, Some(false));
-        assert_eq!(query.structured_content.unwrap()["data"]["rows"][0]["country"], "Mexico");
+        assert_eq!(
+            query.structured_content.unwrap()["data"]["rows"][0]["country"],
+            "Mexico"
+        );
 
         let export = server.scratchpad_export_evidence_bundle(Parameters(ScratchEvidenceArgs {
             session_id: "session_fixture".into(),
@@ -5198,14 +5207,20 @@ mod tests {
             "SCRATCHPAD_ERROR"
         );
         assert_eq!(
-            server.scratchpad.as_ref().unwrap()
-                .tables("session_fixture", None).unwrap()["total_tables"],
+            server
+                .scratchpad
+                .as_ref()
+                .unwrap()
+                .tables("session_fixture", None)
+                .unwrap()["total_tables"],
             2
         );
         assert_eq!(
-            server.scratchpad_close_session(Parameters(ScratchSessionArgs {
-                session_id:"session_fixture".into(),
-            })).is_error,
+            server
+                .scratchpad_close_session(Parameters(ScratchSessionArgs {
+                    session_id: "session_fixture".into(),
+                }))
+                .is_error,
             Some(false)
         );
     }
