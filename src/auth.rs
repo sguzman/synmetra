@@ -610,9 +610,13 @@ fn granted_scope_contains_edit(scope: &str) -> bool {
         .any(|part| part == SCOPE_EDIT)
 }
 
-pub(crate) fn native_edit_scope_granted() -> Result<Option<bool>, String> {
-    read_credentials()
+fn native_edit_scope_granted_at(path: &Path) -> Result<Option<bool>, String> {
+    read_credentials_at(path)
         .map(|stored| stored.map(|config| granted_scope_contains_edit(&config.granted_scope)))
+}
+
+pub(crate) fn native_edit_scope_granted() -> Result<Option<bool>, String> {
+    native_edit_scope_granted_at(&credentials_path()?)
 }
 
 pub fn public_status() -> serde_json::Value {
@@ -1337,6 +1341,40 @@ mod tests {
         assert!(clear_credentials_at(&alias_dir.join("credentials.json")).is_err());
         assert!(neighbor.exists());
         fs::remove_dir_all(base).unwrap();
+    }
+
+    #[test]
+    fn native_mutation_scope_is_verified_against_private_persisted_oauth_grants() {
+        let root = std::env::temp_dir().join(format!(
+            "synmetra-edit-scope-{}-{}",
+            std::process::id(),
+            nonce()
+        ));
+        let path = root.join("synmetra").join("credentials.json");
+        assert_eq!(native_edit_scope_granted_at(&path).unwrap(), None);
+
+        let mut credentials = Stored {
+            client_id: "synthetic.apps.googleusercontent.com".into(),
+            client_secret: "synthetic-private-client-secret".into(),
+            refresh_token: "synthetic-refresh".into(),
+            access_token: "synthetic-access".into(),
+            expires_at: epoch_seconds().saturating_add(3600),
+            granted_scope: SCOPE.into(),
+        };
+        persist_credentials_at(&path, &credentials).unwrap();
+        assert_eq!(native_edit_scope_granted_at(&path), Ok(Some(false)));
+
+        credentials.granted_scope = format!("{SCOPE} {SCOPE_EDIT}.extra");
+        persist_credentials_at(&path, &credentials).unwrap();
+        assert_eq!(native_edit_scope_granted_at(&path), Ok(Some(false)));
+
+        credentials.granted_scope = format!("{SCOPE} {SCOPE_EDIT}");
+        persist_credentials_at(&path, &credentials).unwrap();
+        assert_eq!(native_edit_scope_granted_at(&path), Ok(Some(true)));
+        let status = native_edit_scope_granted_at(&path);
+        assert_eq!(status, Ok(Some(true)));
+        assert!(!format!("{status:?}").contains(&credentials.access_token));
+        std::fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
