@@ -401,13 +401,7 @@ fn project_scratchpad_table_catalog(
     } else {
         let tuples = rows
             .iter()
-            .map(|col| {
-                json!([
-                    col["name"],
-                    col["data_type"],
-                    col["nullable"]
-                ])
-            })
+            .map(|col| json!([col["name"], col["data_type"], col["nullable"]]))
             .collect::<Vec<_>>();
         match mode {
             "rows" => Value::Array(rows),
@@ -5983,7 +5977,10 @@ mod tests {
             "table_name":"synthetic"
         }))
         .unwrap();
-        assert_eq!(project_scratchpad_table_catalog(schema.clone(), &legacy).unwrap(), schema);
+        assert_eq!(
+            project_scratchpad_table_catalog(schema.clone(), &legacy).unwrap(),
+            schema
+        );
     }
 
     #[cfg(feature = "scratchpad")]
