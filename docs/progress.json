@@ -794,7 +794,7 @@
               "id": "T039",
               "emoji": "🧵",
               "name": "Propagate request cancellation across auth and HTTP",
-              "progress": 50,
+              "progress": 100,
               "acceptance": "Interrupted calls free resources",
               "checks": [
                 {
@@ -804,7 +804,8 @@
                 },
                 {
                   "text": "Interrupted calls free resources",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "src/http.rs cancelled_loopback_http_report_releases_upstream_and_preserves_session runs a real authenticated localhost MCP Streamable HTTP initialize, starts a stalled synthetic Google report, sends notifications/cancelled for that request ID, verifies the upstream Google socket closes, and successfully invokes another MCP tool in the same session. src/auth.rs aborted_oauth_refresh_releases_lock_without_partial_token_rotation covers independent OAuth cancellation and preserved credentials. The same src/http.rs revision passed default Rust tests in core CI https://github.com/sguzman/synmetra/actions/runs/40378389320. This is explicit bounded synthetic release evidence, not a live Google service or mutation-disposition guarantee."
                 }
               ]
             },

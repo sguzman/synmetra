@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `███████░░░ 74.0%` · **+74.01 percentage points from initial empty repo; +0.22 pp from reviewed DuckDB evidence-export path and permission boundary
+**Overall:** `███████░░░ 74.2%` · **+74.23 percentage points from initial empty repo; +0.22 pp from CI-verified Streamable HTTP cancellation resource cleanup
 
 ### 📏 Progress conventions
 
@@ -60,7 +60,7 @@
   - ✅ **Gate:** Document semver and provenance gates · **Evidence:** CHANGELOG.md defines an Unreleased section and the experimental 0.0.1 baseline; docs/RELEASE_POLICY.md defines SemVer, immutable source and lockfile pinning, secure provenance requirements, live Google gating and non-production CI artifacts; README links both. GitHub Actions 40259902417 core checked manifest/changelog version and required policy gates.; docs/RELEASE_POLICY.md explains independent reproducibility, checksums, source SHA and release promotion requirements and distinguishes a successful CI build from a signed/stable release. CI 40259902417 changelog/version policy validation passed; actual reproducible binary acceptance remains an independent M9 task.
 
 
-## 🔌 M1 — MCP protocol and transport fidelity — `████████░░ 80.4%`
+## 🔌 M1 — MCP protocol and transport fidelity — `████████░░ 82.6%`
 
 **Scope:** MVP. **Acceptance gate:** Spec-conforming native MCP discovery and calls over stdio plus bounded Streamable HTTP; all transport safety tests pass.
 
@@ -106,7 +106,7 @@
 - 🧫 **T033 — Test MCP HTTP inspector interoperability** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** End-to-end tool invocation under loopback and protected remote modes
 
-### 🧾 P04 — MCP schema semantics — `████████░░ 78.6%`
+### 🧾 P04 — MCP schema semantics — `█████████░ 85.7%`
 
 **Feature:** MCP contract.
 
@@ -120,8 +120,8 @@
   - ✅ **Gate:** Discovery pagination and list change tests pass · **Evidence:** src/http.rs authenticated_http_session_lists_and_calls_tools_but_rejects_invalid_sessions now repeats real MCP tools/list after initialization and asserts identical catalog ordering, no duplicates and no nextCursor when the complete 20-tool read-only catalog fits in a single response. No hidden multi-page cursor state is introduced.; src/http.rs performs two authenticated tools/list requests within one MCP session and verifies identical results/no spurious pagination. src/main.rs full_capability_profile_matches_exact_pinned_36_tool_union and scratchpad_tools_are_hidden_without_explicit_capability prove opt-in write/scratchpad profile differences and bounded complete inventories (20/35/36 tool names). GitHub Actions 40247290466 passed core and DuckDB. This accepts deterministic single-page discovery, not a fictitious paginated listing.
 - ⚠️ **T038 — Normalize MCP protocol errors separately from GA failures** — `██████████ 100.0%`
   - ✅ **Gate:** Invalid tools are distinct from Google API errors · **Evidence:** src/http.rs json_rpc_protocol_errors_remain_separate_from_ga_validation_results runs a real authenticated MCP initialize, notifications/initialized, unknown JSON-RPC method and valid tools/call with invalid Google property. rmcp returns protocol method-not-found as JSON-RPC error -32601 while Synmetra returns a structured MCP tool result for GA argument validation. No provider call or Google credentials are required.; Synthetic loopback MCP HTTP test verifies unknown method returns top-level error.code=-32601 without result, but invalid run_report returns HTTP 200 JSON-RPC result with isError=true and structuredContent.error.category=validation and no top-level protocol error. Tests also enforce bearer token omission. GitHub Actions 40247087766 passed core tests, rustfmt, strict Clippy and native DuckDB.
-- 🧵 **T039 — Propagate request cancellation across auth and HTTP** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** Interrupted calls free resources · **Evidence:** src/main.rs ServerHandler::call_tool now passes the rmcp request-specific cancellation token through a central tokio::select! over every registered local/Google tool, dropping pending futures and transport work on notification. src/auth.rs aborted_oauth_refresh_releases_lock_without_partial_token_rotation verifies canceled OAuth refresh releases the lock and closes the token-exchange socket; src/main.rs cancelled_stdio_report_drops_upstream_request_and_keeps_peer_responsive verifies a stalled Google report socket closes. Both passed core CI https://github.com/sguzman/synmetra/actions/runs/40354026086. Independent cancellation propagation under a live Streamable HTTP caller and mutation uncertainty is still open.
+- 🧵 **T039 — Propagate request cancellation across auth and HTTP** — `██████████ 100.0%`
+  - ✅ **Gate:** Interrupted calls free resources · **Evidence:** src/main.rs ServerHandler::call_tool now passes the rmcp request-specific cancellation token through a central tokio::select! over every registered local/Google tool, dropping pending futures and transport work on notification. src/auth.rs aborted_oauth_refresh_releases_lock_without_partial_token_rotation verifies canceled OAuth refresh releases the lock and closes the token-exchange socket; src/main.rs cancelled_stdio_report_drops_upstream_request_and_keeps_peer_responsive verifies a stalled Google report socket closes. Both passed core CI https://github.com/sguzman/synmetra/actions/runs/40354026086. Independent cancellation propagation under a live Streamable HTTP caller and mutation uncertainty is still open.; src/http.rs cancelled_loopback_http_report_releases_upstream_and_preserves_session runs a real authenticated localhost MCP Streamable HTTP initialize, starts a stalled synthetic Google report, sends notifications/cancelled for that request ID, verifies the upstream Google socket closes, and successfully invokes another MCP tool in the same session. src/auth.rs aborted_oauth_refresh_releases_lock_without_partial_token_rotation covers independent OAuth cancellation and preserved credentials. The same src/http.rs revision passed default Rust tests in core CI https://github.com/sguzman/synmetra/actions/runs/40378389320. This is explicit bounded synthetic release evidence, not a live Google service or mutation-disposition guarantee.
 - 🧪 **T040 — Run cross-client MCP conformance suite** — `░░░░░░░░░░ 0.0%`
   - ✅ **Gate:** Protocol wire fixtures pass multiple clients
 
