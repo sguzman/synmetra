@@ -1680,6 +1680,116 @@ mod tests {
     }
 
     #[test]
+    fn hostile_sql_corpus_and_deterministic_mutations_never_execute() {
+        let state = ScratchState::new();
+        state.open("hostile_sql").unwrap();
+        let payload = json!({
+            "dimensionHeaders":[{"name":"country"}],
+            "metricHeaders":[{"name":"users"}],
+            "rows":[
+                {"dimensionValues":[{"value":"Mexico"}],"metricValues":[{"value":"7"}]},
+                {"dimensionValues":[{"value":"Canada"}],"metricValues":[{"value":"3"}]}
+            ]
+        });
+        state
+            .ingest_ga_response("hostile_sql", "events", &payload, false)
+            .unwrap();
+
+        let attempts = [
+            "ATTACH '/tmp/evil.db' AS secret",
+            "INSTALL httpfs",
+            "LOAD httpfs",
+            "COPY events TO '/tmp/private.csv'",
+            "EXPORT DATABASE '/tmp/private'",
+            "PRAGMA enable_external_access=true",
+            "SET enable_external_access=true",
+            "DELETE FROM events",
+            "UPDATE events SET users=999",
+            "INSERT INTO events VALUES ('Fake',999)",
+            "CREATE TABLE destroyed AS SELECT * FROM events",
+            "DROP TABLE events",
+            "ALTER TABLE events RENAME TO destroyed",
+            "TRUNCATE events",
+            "SELECT * FROM read_csv_auto('/etc/passwd')",
+            "SELECT * FROM read_parquet('/tmp/file.parquet')",
+            "SELECT * FROM httpfs_read('https://invalid.example')",
+            "SELECT * FROM events; DROP TABLE events;",
+            "SELECT * FROM events /* sneaky */",
+            "SELECT * FROM events -- suspicious",
+            "SELECT * FROM events UNION ALL SELECT * FROM events",
+            "SELECT * FROM events JOIN events e2 ON true",
+            "SELECT * FROM events WHERE 1=1",
+            "SELECT * FROM events ORDER BY country; DELETE FROM events",
+            "SELECT * FROM events LIMIT 1 OFFSET 999999",
+            "SELECT * FROM events LIMIT 0",
+            "SELECT * FROM events LIMIT 1001",
+            "SELECT * FROM events OFFSET 20001",
+            "SELECT * FROM events ORDER BY random()",
+            "SELECT * FROM events ORDER BY country DESC DESC",
+            "SELECT * FROM events OFFSET -1",
+            "SELECT * FROM events LIMIT 18446744073709551616",
+            "SELECT * FROM events\x00DROP",
+            "SELECT * FROM events\u{202e}DROP",
+        ];
+        for (index, sql) in attempts.into_iter().enumerate() {
+            assert!(
+                state
+                    .query_bounded("hostile_sql", sql, None, None, false)
+                    .is_err(),
+                "Hostile SQL fixture {index} unexpectedly accepted"
+            );
+        }
+
+        // Deterministic mutation corpus (no random seed, clocks, or environmental input).
+        // Each variant tries to append a forbidden SQL expression or source escape
+        // after syntactically valid SELECT, ORDER BY, or LIMIT clauses.
+        let prefixes = [
+            "SELECT * FROM events",
+            "SELECT country, users FROM events ORDER BY country ASC",
+            "SELECT COUNT(*) FROM events",
+            "SELECT users FROM events LIMIT 1",
+        ];
+        let payloads = [
+            ";DROP TABLE events",
+            "' OR '1'='1",
+            "\";COPY events TO '/tmp/leak.csv'",
+            " /*LOAD httpfs*/",
+            " -- bypass",
+            " UNION SELECT * FROM events",
+            " WHERE country=Mexico",
+            " JOIN events USING(country)",
+            " ATTACH '/tmp/x.db'",
+            " \u{202e}INSERT",
+            "\x00 DELETE FROM events",
+        ];
+        let mut cases = 0;
+        for prefix in prefixes {
+            for suffix in payloads {
+                let mutated = format!("{prefix}{suffix}");
+                assert!(
+                    state
+                        .query_bounded("hostile_sql", &mutated, Some(10), Some(32), false)
+                        .is_err(),
+                    "Mutated SQL unexpectedly accepted at case {cases}"
+                );
+                cases += 1;
+            }
+        }
+        assert_eq!(cases, 44);
+        assert_eq!(
+            state.summarize_table("hostile_sql", "events").unwrap()["row_count"],
+            2
+        );
+        assert_eq!(
+            state
+                .query_bounded("hostile_sql", "SELECT COUNT(*) FROM events", None, None, false)
+                .unwrap()["rows"][0]["row_count"],
+            "2"
+        );
+        assert_eq!(state.tables("hostile_sql", None).unwrap()["total_tables"], 1);
+    }
+
+    #[test]
     fn ingest_ga4_response_is_transactional_bounded_and_sql_safe() {
         let state = ScratchState::new();
         state.open("ga4_ingest").unwrap();
