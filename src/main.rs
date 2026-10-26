@@ -2776,6 +2776,80 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn compatibility_preflight_surfaces_incompatible_metric_without_run_report() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        use tokio::net::TcpListener;
+
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let endpoint = format!("http://{}", listener.local_addr().unwrap());
+        let responder = tokio::spawn(async move {
+            let (mut stream, _) = listener.accept().await.unwrap();
+            let mut buffer = [0_u8; 4096];
+            let read = stream.read(&mut buffer).await.unwrap();
+            let request = String::from_utf8_lossy(&buffer[..read]);
+            assert!(request.contains("properties/42:checkCompatibility"));
+            assert!(!request.contains(":runReport"));
+            let body = json!({
+                "metricCompatibilities":[{
+                    "metricMetadata":{"apiName":"unsupportedCustomMetric"},
+                    "compatibility":"INCOMPATIBLE"
+                }],
+                "dimensionCompatibilities":[{
+                    "dimensionMetadata":{"apiName":"country"},
+                    "compatibility":"COMPATIBLE"
+                }]
+            })
+            .to_string();
+            let reply = format!(
+                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                body.len(),
+                body
+            );
+            stream.write_all(reply.as_bytes()).await.unwrap();
+        });
+        let client = GoogleClient::with_endpoints(
+            Some("private-metadata-fixture-token".into()),
+            &endpoint,
+            &endpoint,
+        );
+        let server = Synmetra::new(client, false);
+        let checked: CompatibilityArgs = serde_json::from_value(json!({
+            "property_id":42,
+            "dimensions":["country"],
+            "metrics":["unsupportedCustomMetric"]
+        }))
+        .unwrap();
+        let compatibility = server
+            .check_report_compatibility(Parameters(checked))
+            .await;
+        responder.await.unwrap();
+        assert_eq!(compatibility.is_error, Some(false));
+        let content = compatibility.structured_content.unwrap();
+        assert_eq!(
+            content["data"]["metricCompatibilities"][0]["compatibility"],
+            "INCOMPATIBLE"
+        );
+        assert!(!content.to_string().contains("private-metadata-fixture-token"));
+
+        let preview: ReportArgs = serde_json::from_value(json!({
+            "property_id":42,
+            "date_ranges":[{"start_date":"yesterday","end_date":"today"}],
+            "dimensions":["country"],
+            "metrics":["unsupportedCustomMetric"]
+        }))
+        .unwrap();
+        let offline = server.preview_report_request(Parameters(preview)).await;
+        assert_eq!(offline.is_error, Some(false));
+        let preview_payload = offline.structured_content.unwrap();
+        assert_eq!(preview_payload["data"]["provider_called"], false);
+        assert_eq!(
+            preview_payload["data"]["preview"]["compatibility_checked"],
+            false
+        );
+        assert_eq!(preview_payload["data"]["request"]["metrics"][0]["name"], "unsupportedCustomMetric");
+    }
+
+    #[tokio::test]
     async fn offline_preview_rejects_oversized_report_options_with_a_typed_error() {
         let server = Synmetra::new(GoogleClient::new(None), false);
         let oversized = (0..5000)
