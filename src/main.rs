@@ -4694,12 +4694,18 @@ mod tests {
             let account = json!({"account_id":42});
             let scratch = json!({"session_id":"dispatch-missing-session"});
             let raw = match name {
-                "ga4_get_started" | "ga4_auth_status" | "ga4_auth_login_command"
-                | "get_account_summaries" | "scratchpad_get_runtime_limits"
-                | "scratchpad_list_sessions" | "scratchpad_set_runtime_limits" => json!({}),
+                "ga4_get_started"
+                | "ga4_auth_status"
+                | "ga4_auth_login_command"
+                | "get_account_summaries"
+                | "scratchpad_get_runtime_limits"
+                | "scratchpad_list_sessions"
+                | "scratchpad_set_runtime_limits" => json!({}),
                 "get_account_data_sharing_settings" => account,
-                "get_property_data_retention_settings" | "get_property_details"
-                | "get_custom_dimensions_and_metrics" | "list_google_ads_links"
+                "get_property_data_retention_settings"
+                | "get_property_details"
+                | "get_custom_dimensions_and_metrics"
+                | "list_google_ads_links"
                 | "list_property_annotations" => property,
                 "create_property_annotation" => json!({
                     "property_id":42,
@@ -4734,7 +4740,8 @@ mod tests {
                     "dimensions":["userEmail"],"metrics":["accessCount"]
                 }),
                 "scratchpad_open_session" => json!({"session_id":"dispatch-new-session"}),
-                "scratchpad_close_session" | "scratchpad_list_tables"
+                "scratchpad_close_session"
+                | "scratchpad_list_tables"
                 | "scratchpad_export_evidence_bundle" => scratch,
                 "scratchpad_describe_table" | "scratchpad_summarize_table" => json!({
                     "session_id":"dispatch-missing-session","table_name":"events"
@@ -4796,13 +4803,13 @@ mod tests {
         assert_eq!(actual.len(), 36);
         for name in actual {
             let request = CallToolRequestParams::new(name.clone()).with_arguments(fixture(&name));
-            let call = tokio::time::timeout(
-                std::time::Duration::from_secs(8),
-                client.call_tool(request),
-            )
-            .await
-            .unwrap_or_else(|_| panic!("MCP tool dispatch timed out: {name}"))
-            .unwrap_or_else(|error| panic!("MCP transport/argument dispatch failed for {name}: {error}"));
+            let call =
+                tokio::time::timeout(std::time::Duration::from_secs(8), client.call_tool(request))
+                    .await
+                    .unwrap_or_else(|_| panic!("MCP tool dispatch timed out: {name}"))
+                    .unwrap_or_else(|error| {
+                        panic!("MCP transport/argument dispatch failed for {name}: {error}")
+                    });
             let structured = call
                 .structured_content
                 .unwrap_or_else(|| panic!("MCP tool {name} returned no structured envelope"));
