@@ -34,6 +34,27 @@ jobs:
             echo 'Forbidden runtime shared library in release build' >&2
             exit 1
           fi
+      - name: Compare independent locked release builds byte-for-byte
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Distinct Cargo target graphs, same pinned toolchain and source.
+          # This tests one-runner reproducibility; it does not claim other
+          # distributions, native DuckDB variants, or cross-runner identity.
+          second="$(mktemp -d "$RUNNER_TEMP/synmetra-repeat-build.XXXXXX")"
+          trap 'rm -rf "$second"' EXIT
+          CARGO_INCREMENTAL=0 cargo +1.99.1 build --release --locked --bin synmetra --target-dir "$second"
+          test -x "$second/release/synmetra"
+          original_sha="$(sha256sum target/release/synmetra | cut -d ' ' -f1)"
+          repeated_sha="$(sha256sum "$second/release/synmetra" | cut -d ' ' -f1)"
+          if [ "$original_sha" != "$repeated_sha" ]; then
+            echo 'Separate locked release build hashes differ' >&2
+            exit 1
+          fi
+          printf '%s  %s\n' "$original_sha" "synmetra-x86_64-locked-release" \
+            > "$RUNNER_TEMP/synmetra-reproducibility.sha256"
+          test "$(wc -c < target/release/synmetra)" -eq "$(wc -c < "$second/release/synmetra")"
+
       - name: Package provenance, checksums and extracted-binary smoke
         shell: bash
         run: |
