@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `███████░░░ 67.8%` · **+67.84 percentage points from initial empty repo; +0.88 pp from verified canonical contract policy, compatibility projections and machine-readable progress integrity
+**Overall:** `███████░░░ 68.5%` · **+68.50 percentage points from initial empty repo; +0.66 pp from verified dependency, license, advisory and redacted source credential checks
 
 ### 📏 Progress conventions
 
@@ -11,7 +11,7 @@
 - On each stewardship round, report total and actively worked milestone/phase/task bars plus the **signed delta in percentage points** against the previous verified committed ledger; completed 100% tasks can be omitted in ongoing status updates.
 - **No progress padding.** Upstream feature inventory, planning and brand assets count only for their specific documentation tasks; GA4 functionality starts at 0% until tests establish otherwise. Real Google access, credentials and live tests are separate explicit gates.
 
-## 🧭 M0 — Reference baseline and project governance — `█████████░ 91.2%`
+## 🧭 M0 — Reference baseline and project governance — `██████████ 97.1%`
 
 **Scope:** MVP. **Acceptance gate:** Audited pinned feature-union inventory, color identity, public-safe policies and reproducible plan. Foundation is not runtime parity.
 
@@ -36,7 +36,7 @@
 - 🔁 **T008 — Set up upstream drift tracking and version pin policy** — `██████████ 100.0%`
   - ✅ **Gate:** CI alerts on name/signature deltas without silent breaking changes · **Evidence:** docs/UPSTREAM.md, docs/PROVENANCE.md, docs/tool-inventory.json and src/bin/synmetra-progress.rs: pinned source revisions and CI-checked 36-name union; GitHub Actions 40211821382 passed; upstream signature drift alert automation remains open.; .github/workflows/upstream-drift.yml now checks pinned upstream signature-bearing source blobs on weekly schedule, manual dispatch and changes to the watch/lock; spec/upstream/drift-lock.json pins SednaLabs schema snapshot blob 646c0baa and Google coordinator blob a1e7936a at separately documented source commits; drift produces a failed GitHub Actions job and review guidance without silently updating the baseline. docs/UPSTREAM.md documents the conservative source-change policy and its limitations. GitHub Actions 40241902469 verified both public current blobs against the pins; 40241902503 core and DuckDB passed. The watch detects file changes for review, not automatic parsing of Google's entire dynamic runtime schema.
 
-### 🦀 P01 — Native scaffold and quality gates — `████████░░ 83.3%`
+### 🦀 P01 — Native scaffold and quality gates — `█████████░ 94.4%`
 
 **Feature:** Rust foundation.
 
@@ -48,8 +48,8 @@
   - ✅ **Gate:** No OpenSSL or Python runtime dependency · **Evidence:** src/google.rs reqwest/rustls fixed-host Admin/Data HTTP transport; Actions 40202015488 passed; Cargo.toml uses reqwest default-features=false with rustls-tls, no Python/OpenSSL requirement. .github/workflows/ci.yml native runtime step runs locked cargo tree and fails on openssl/openssl-sys/native-tls/pyo3 dependencies, builds the synmetra executable, then fails if ldd shows libssl/libcrypto/libpython. GitHub Actions 40241002371 both core and DuckDB jobs passed, including this native dependency/linkage check. Acceptance covers the default native Linux API server binary and dependency graph, not a claim about every user-installed system library.
 - 🧪 **T012 — Add fmt clippy unit tests and CI jobs** — `██████████ 100.0%`
   - ✅ **Gate:** Green push checks with pinned toolchain and dependency cache · **Evidence:** Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.; rust-toolchain.toml pins Rust 1.99.1 (rustfmt, Clippy); both core and DuckDB CI jobs explicitly install and assert rustc 1.99.1, reuse Swatinem/rust-cache@v2, use Cargo.lock via --locked and enforce formatting/tests/strict Clippy/progress integrity. GitHub Actions run 40243957373 completed successfully for core and DuckDB. Synthetic and release-tag DuckDB strict Clippy remain separate verification goals.
-- 🧷 **T013 — Add lockfile dependency audits and license checks** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** Dependencies auditable with deny or equivalent process
+- 🧷 **T013 — Add lockfile dependency audits and license checks** — `██████████ 100.0%`
+  - ✅ **Gate:** Dependencies auditable with deny or equivalent process · **Evidence:** Root deny.toml, pinned cargo-deny 0.20.2 GitHub action, all-features x86-64/ARM64 Rust license/advisory/bans/source checks and docs/DEPENDENCY_AUDIT.md provide a reviewable lockfile audit workflow. Both jobs passed https://github.com/sguzman/synmetra/actions/runs/40346651714. Native C++ licensing remains a separate gate.; Cargo dependency bans/licenses/sources and RustSec advisory checks both passed https://github.com/sguzman/synmetra/actions/runs/40346651714. A tightly scoped webpki-roots 1.0.11 CDLA-Permissive-2.0 trust-root data license exception was verified rather than broadly allowing that license. The locked Rust dependency graph is independently auditable; bundled native libraries and redistribution notices remain T150/T216.
 - 🧰 **T014 — Create deterministic offline fixtures and mock server** — `██████████ 100.0%`
   - ✅ **Gate:** No secrets or real analytics identifiers in fixtures · **Evidence:** src/google.rs synthetic tokio TcpListener Google API mock tests; Actions 40202015488 passed without real credentials; src/google.rs synthetic tokio TcpListener Google API mock tests; Actions 40202015488 passed without real credentials
 - 🧭 **T015 — Implement CLI config parsing and doctor subcommands** — `██████████ 100.0%`
@@ -495,11 +495,11 @@
   - ✅ **Gate:** Changes open maintenance work rather than silently inflate parity · **Evidence:** .github/workflows/upstream-drift.yml watches exact SednaLabs schema and Google coordinator Git blob SHAs weekly and on reviewed lock/workflow changes; changes trigger stable [upstream-drift] local maintenance issue, never repin automatically. ci/test-upstream-drift-watch.sh executes the actual workflow shell body with mocked curl/gh, verifying unchanged, changed and duplicate issue cases. GitHub Actions drift workflow 40249957815 succeeded.; GitHub Actions 40249957815 offline fixture checks verify an upstream blob change fails the watch and opens exactly one review issue per source; repeat unchanged pin mismatch reuses an existing open issue and a second changed source opens a separate one. Real unchanged upstream watch also passed. No real upstream drift was forced and no real maintenance issue was created; this is synthetic acceptance of the detection/mutation control, not a source parity claim.
 
 
-## 🧪 M8 — Verification, resilience and security acceptance — `████░░░░░░ 41.1%`
+## 🧪 M8 — Verification, resilience and security acceptance — `████░░░░░░ 42.9%`
 
 **Scope:** MVP. **Acceptance gate:** Full offline and authorized live verification including malformed inputs, MCP interoperability and threat model.
 
-### 🧫 P22 — Deterministic tests — `███████░░░ 65.0%`
+### 🧫 P22 — Deterministic tests — `███████░░░ 70.0%`
 
 **Feature:** Offline QA.
 
@@ -521,8 +521,8 @@
   - ✅ **Gate:** Offline deterministic clock and throttled 429 tests · **Evidence:** src/google.rs readonly_retry_delay and send_readonly_as enforce connect/request deadlines, three attempts on 429/5xx read-only requests, capped Retry-After/backoff, and no retries for annotation writes or 403s. Core CI https://github.com/sguzman/synmetra/actions/runs/40266208686 passed readonly_retry_policy_honors_backoff_limits_and_never_retries_forbidden, readonly_report_retry_is_bounded_and_never_replays_writes, and annotation_writes_do_not_retry_429_500_or_503_responses. Simulated-clock acceptance remains open.
 - 🦀 **T176 — Pass rustfmt clippy and tests on clean environment** — `██████████ 100.0%`
   - ✅ **Gate:** All-target strict checks green in CI · **Evidence:** Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.; Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.
-- 🔐 **T177 — Run dependency secret and license scanners** — `░░░░░░░░░░ 0.0%`
-  - ✅ **Gate:** No accidental credentials or prohibited licenses in repository
+- 🔐 **T177 — Run dependency secret and license scanners** — `█████░░░░░ 50.0%`
+  - ✅ **Gate:** No accidental credentials or prohibited licenses in repository · **Evidence:** The independent ci/scan-secrets.sh high-confidence, non-printing tracked-source heuristic scanner passed https://github.com/sguzman/synmetra/actions/runs/40346651673. SHA-pinned cargo-deny license/advisory/bans/source checks passed https://github.com/sguzman/synmetra/actions/runs/40346651714, with policy and limitations documented. Comprehensive historical, native C++ and credential-disclosure coverage remain unaccepted.
 
 ### 🔬 P23 — Authorized live Google acceptance — `░░░░░░░░░░ 0.0%`
 

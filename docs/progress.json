@@ -274,16 +274,18 @@
               "id": "T013",
               "emoji": "🧷",
               "name": "Add lockfile dependency audits and license checks",
-              "progress": 0,
+              "progress": 100,
               "acceptance": "Dependencies auditable with deny or equivalent process",
               "checks": [
                 {
                   "text": "Deliver add lockfile dependency audits and license checks as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "Root deny.toml, pinned cargo-deny 0.20.2 GitHub action, all-features x86-64/ARM64 Rust license/advisory/bans/source checks and docs/DEPENDENCY_AUDIT.md provide a reviewable lockfile audit workflow. Both jobs passed https://github.com/sguzman/synmetra/actions/runs/40346651714. Native C++ licensing remains a separate gate."
                 },
                 {
                   "text": "Dependencies auditable with deny or equivalent process",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "Cargo dependency bans/licenses/sources and RustSec advisory checks both passed https://github.com/sguzman/synmetra/actions/runs/40346651714. A tightly scoped webpki-roots 1.0.11 CDLA-Permissive-2.0 trust-root data license exception was verified rather than broadly allowing that license. The locked Rust dependency graph is independently auditable; bundled native libraries and redistribution notices remain T150/T216."
                 }
               ]
             },
@@ -3552,12 +3554,13 @@
               "id": "T177",
               "emoji": "🔐",
               "name": "Run dependency secret and license scanners",
-              "progress": 0,
+              "progress": 50,
               "acceptance": "No accidental credentials or prohibited licenses in repository",
               "checks": [
                 {
                   "text": "Deliver run dependency secret and license scanners as reviewable repository evidence",
-                  "passed": false
+                  "passed": true,
+                  "evidence": "The independent ci/scan-secrets.sh high-confidence, non-printing tracked-source heuristic scanner passed https://github.com/sguzman/synmetra/actions/runs/40346651673. SHA-pinned cargo-deny license/advisory/bans/source checks passed https://github.com/sguzman/synmetra/actions/runs/40346651714, with policy and limitations documented. Comprehensive historical, native C++ and credential-disclosure coverage remain unaccepted."
                 },
                 {
                   "text": "No accidental credentials or prohibited licenses in repository",
