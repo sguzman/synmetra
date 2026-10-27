@@ -62,14 +62,44 @@ scan_package() (
   for name in README.md INSTALL.md LICENSE SOURCE_COMMIT; do
     scan_text "$root/unpacked/$name" || return 1
   done
-  for name in \
-    synmetra-experimental-linux-x86_64.tar.gz.sha256 \
-    synmetra-rust-sbom.cdx.json \
-    synmetra-native-runtime.json; do
+  local -a extra_text=()
+  case "$(basename -- "$archive")" in
+    synmetra-experimental-linux-x86_64.tar.gz)
+      extra_text=(
+        synmetra-experimental-linux-x86_64.tar.gz.sha256
+        synmetra-rust-sbom.cdx.json
+        synmetra-native-runtime.json
+      )
+      ;;
+    synmetra-experimental-linux-aarch64.tar.gz)
+      extra_text=(
+        synmetra-experimental-linux-aarch64.tar.gz.sha256
+        synmetra-aarch64-native-linkage.txt
+      )
+      ;;
+    *)
+      echo 'Unrecognized release archive name (refusing permissive asset scan)' >&2
+      return 1
+      ;;
+  esac
+  for name in "${extra_text[@]}"; do
     scan_text "$dist/$name" || return 1
   done
   test -x "$root/unpacked/synmetra" || { echo 'Expected executable missing from release archive' >&2; return 1; }
-  echo 'Experimental release text/manifest guard passed (high-confidence signatures only)'
+
+  # Scan printable embedded executable strings for provider token patterns.
+  # The generic PEM boundary text is intentionally omitted: TLS/PEM parser
+  # dependencies can contain that marker without an embedded private key.
+  command -v strings >/dev/null || { echo 'GNU strings required for release binary scan' >&2; return 1; }
+  strings -a -n 8 "$root/unpacked/synmetra" > "$root/binary-strings"
+  local pattern
+  for pattern in "${patterns[@]:0:4}"; do
+    if grep -I -q -E -e "$pattern" "$root/binary-strings"; then
+      echo 'High-confidence credential signature in release executable (value suppressed)' >&2
+      return 1
+    fi
+  done
+  echo 'Experimental release archive, text metadata and executable guard passed (scoped signatures only)'
 )
 
 self_test() (
@@ -124,14 +154,59 @@ self_test() (
     echo 'Artifact scanner accepted an unlisted release archive member' >&2
     exit 1
   fi
+  rm "$root/stage/unexpected-file"
+  printf '%s\n' 'synthetic ARM64 checksum' > "$root/dist/synmetra-experimental-linux-aarch64.tar.gz.sha256"
+  printf '%s\n' 'synthetic AArch64 native linkage' > "$root/dist/synmetra-aarch64-native-linkage.txt"
+  local arm_archive="$root/dist/synmetra-experimental-linux-aarch64.tar.gz"
+  tar -C "$root/stage" -czf "$arm_archive" .
+  scan_package "$arm_archive" "$root/dist" > "$root/success.log"
+  printf '%s\n' "$canary" > "$root/dist/synmetra-aarch64-native-linkage.txt"
+  if scan_package "$arm_archive" "$root/dist" > "$root/rejected.log" 2>&1; then
+    echo 'ARM64 artifact scanner accepted a deliberately fake linkage credential marker' >&2
+    exit 1
+  fi
+  if grep -Fq "$canary" "$root/rejected.log"; then
+    echo 'ARM64 artifact scanner disclosed its fake linkage canary' >&2
+    exit 1
+  fi
+  printf '%s\n' 'synthetic AArch64 native linkage' > "$root/dist/synmetra-aarch64-native-linkage.txt"
+
+  # The executable-body guard excludes harmless PEM parser signatures but
+  # still rejects embedded high-confidence bearer-like markers.
+  printf '#!/bin/sh\n# %s\nexit 0\n' "$canary" > "$root/stage/synmetra"
+  chmod 755 "$root/stage/synmetra"
+  tar -C "$root/stage" -czf "$arm_archive" .
+  if scan_package "$arm_archive" "$root/dist" > "$root/rejected.log" 2>&1; then
+    echo 'ARM64 binary guard accepted a deliberately fake embedded credential' >&2
+    exit 1
+  fi
+  if grep -Fq "$canary" "$root/rejected.log"; then
+    echo 'ARM64 binary guard exposed an embedded fake credential' >&2
+    exit 1
+  fi
+
+  printf '%s\n' '{"ok":"synthetic golden"}' > "$root/safe-golden.json"
+  scan_text "$root/safe-golden.json"
+  printf '{"access":"%s"}\n' "$canary" > "$root/safe-golden.json"
+  if scan_text "$root/safe-golden.json" > "$root/rejected.log" 2>&1; then
+    echo 'Synthetic JSON artifact guard accepted a fake credential' >&2
+    exit 1
+  fi
+  if grep -Fq "$canary" "$root/rejected.log"; then
+    echo 'Synthetic JSON artifact guard disclosed fake credential' >&2
+    exit 1
+  fi
   echo 'Synthetic artifact scanner self-test passed: safe package accepted; archive, SBOM and unexpected path rejected without disclosure'
 )
 
 if [[ "${1:-}" == "--self-test" && "$#" -eq 1 ]]; then
   self_test
+elif [[ "${1:-}" == "--text-file" && "$#" -eq 2 ]]; then
+  scan_text "$2"
+  echo 'Synthetic/generated CI JSON text asset guard passed (high-confidence signatures only)'
 elif [[ "$#" -eq 2 ]]; then
   scan_package "$1" "$2"
 else
-  echo 'Usage: ci/scan-public-artifacts.sh --self-test | ARCHIVE DIST_DIRECTORY' >&2
+  echo 'Usage: ci/scan-public-artifacts.sh --self-test | --text-file FILE | ARCHIVE DIST_DIRECTORY' >&2
   exit 2
 fi

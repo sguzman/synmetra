@@ -6,6 +6,7 @@ on:
     paths:
       - .github/workflows/pinned-upstream-golden.yml
       - ci/upstream-contract-golden.rs
+      - ci/scan-public-artifacts.sh
   workflow_dispatch:
 
 permissions:
@@ -54,6 +55,12 @@ jobs:
             and any(.goldens[]; .name == "summary_only_source_assertions" and .structured_content.data == null)
           ' generated/contract-v1-goldens.json > /dev/null
           cat generated/contract-v1-goldens.json
+      - name: Reject credential-shaped material before publishing synthetic golden JSON
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash -n ci/scan-public-artifacts.sh
+          bash ci/scan-public-artifacts.sh --text-file upstream/generated/contract-v1-goldens.json
       - name: Publish synthetic pinned baseline golden JSON
         uses: actions/upload-artifact@v4
         with:

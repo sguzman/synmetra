@@ -101,6 +101,13 @@ jobs:
             echo 'Synthetic ARM64 doctor output contains a credential field' >&2
             exit 1
           fi
+      - name: Refuse unsafe ARM64 archive and native linkage evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash -n ci/scan-public-artifacts.sh
+          bash ci/scan-public-artifacts.sh \
+            dist/synmetra-experimental-linux-aarch64.tar.gz dist
       - name: Attest experimental ARM64 source provenance
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
         with:
