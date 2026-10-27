@@ -12,7 +12,7 @@ The same native contract may be carried as JSON-RPC structured content and legac
 
 **Output:** Google Analytics provider-shaped data under the MCP ok/data/meta envelope. A tool error uses ok/error/meta. Some report tools support opt-in bounded projections; no real Google success has been verified.
 
-**Limits / permissions:** 1-5 report requests; outbound Google response <=4 MiB and read-only retries limited to three total attempts. Nested request fields mirror upstream `cursor`, `max_rows`, `max_cell_chars`, `output_mode`, and `summary_only` inputs. **Only `max_rows` (1–1000) is currently honored**, as a ceiling on outbound rows. A nested cursor, response renderer, cell-clipping request, or `summary_only=true` is rejected before calling Google rather than silently ignored. These nested features remain behavioral-compatibility gaps.
+**Limits / permissions:** 1-5 report requests; outbound Google response <=4 MiB and read-only retries limited to three total attempts. Nested request fields mirror upstream `cursor`, `max_rows`, `max_cell_chars`, `output_mode`, and `summary_only` inputs. Each nested `max_rows` (1–1000) caps outbound rows; `output_mode`, `max_cell_chars`, `summary_only` and hash-bound `cursor` now project **only that subreport**, returning its Contract V1 metadata under the outer `meta.reports[index]`. Unprojected subreports remain provider-shaped, preserving default compatibility. Invalid or cross-query cursors and response-count mismatches are rejected, not ignored. Full SednaLabs nested output-shape parity still requires a source-executed differential.
 
 **Synthetic example arguments:**
 

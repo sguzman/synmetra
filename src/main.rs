@@ -976,29 +976,24 @@ struct BatchReportItemArgs {
 }
 
 impl BatchReportItemArgs {
-    fn to_google_request(&self) -> Result<Value, ApiError> {
-        // The pinned upstream exposes per-item tabular response controls.
-        // Never ignore unsupported controls and unexpectedly return unbounded
-        // provider data. max_rows is safe to honor as an outbound row cap;
-        // cursor, cell clipping, summary and rendering need batch-aware
-        // response projection before they can be accepted.
-        if self.cursor.is_some()
-            || self.max_cell_chars.is_some()
-            || self.output_mode.is_some()
-            || self.summary_only
-            || self.max_rows.is_some_and(|n| n == 0 || n > 1000)
-        {
-            return Err(ApiError::InvalidRequest);
+    fn controls(&self) -> tabular::Controls {
+        tabular::Controls {
+            output_mode: self.output_mode,
+            summary_only: self.summary_only,
+            max_rows: self.max_rows,
+            max_cell_chars: self.max_cell_chars,
+            cursor_supplied: self.cursor.is_some(),
         }
-        let limit = match (self.limit, self.max_rows) {
-            (Some(requested), Some(maximum)) => Some(requested.min(maximum as u64)),
-            (None, Some(maximum)) => Some(maximum as u64),
-            (requested, None) => requested,
-        };
-        if limit.is_some_and(|limit| limit == 0 || limit > 250_000) {
-            return Err(ApiError::InvalidRequest);
-        }
-        report_request(
+    }
+
+    fn to_google_request(
+        &self,
+        property_id: &str,
+    ) -> Result<(Value, tabular::Pagination), ApiError> {
+        // Bound each individual Google subreport. Never forward our synthetic
+        // MCP projection controls as unknown upstream Google JSON fields.
+        let limit = self.controls().request_limit(self.limit)?;
+        let mut request = report_request(
             Some(self.date_ranges.clone()),
             self.dimensions.clone(),
             self.metrics.clone(),
@@ -1014,7 +1009,67 @@ impl BatchReportItemArgs {
                     Some(json!(self.return_property_quota)),
                 ),
             ],
-        )
+        )?;
+        let pagination = tabular::prepare_historical(
+            &mut request,
+            property_id,
+            self.cursor.as_deref(),
+            self.offset,
+        )?;
+        Ok((request, pagination))
+    }
+}
+
+/// A batch has independent report projections: a raw provider response is
+/// preserved for legacy callers, while opt-in per-item controls transform
+/// only the selected report and publish its own pagination metadata.
+fn result_with_batch_projections(
+    response: Result<Value, ApiError>,
+    requests: &[BatchReportItemArgs],
+    paginations: &[tabular::Pagination],
+) -> CallToolResult {
+    if !requests.iter().any(|request| request.controls().active()) {
+        return result(response);
+    }
+    let projected = response.and_then(|mut provider| {
+        let reports = provider
+            .get_mut("reports")
+            .and_then(Value::as_array_mut)
+            .ok_or(ApiError::InvalidResponse)?;
+        if reports.len() != requests.len() || paginations.len() != requests.len() {
+            return Err(ApiError::InvalidResponse);
+        }
+        let mut metadata = Vec::with_capacity(reports.len());
+        for (index, request) in requests.iter().enumerate() {
+            let controls = request.controls();
+            if controls.active() {
+                let projection =
+                    tabular::project(&reports[index], controls, false, Some(&paginations[index]))?;
+                reports[index] = projection.data;
+                let mut report_meta = projection.meta;
+                report_meta["projected"] = json!(true);
+                metadata.push(report_meta);
+            } else {
+                metadata.push(json!({"projected":false}));
+            }
+        }
+        Ok(json!({
+            "ok":true,
+            "data":provider,
+            "meta":{
+                "reports":metadata,
+                "elapsed_ms":0,
+                "elapsed_ms_measured":false
+            }
+        }))
+    });
+    match projected {
+        Ok(payload) => {
+            let mut reply = CallToolResult::success(vec![ContentBlock::text(payload.to_string())]);
+            reply.structured_content = Some(payload);
+            reply
+        }
+        Err(error) => result(Err(error)),
     }
 }
 
@@ -1921,20 +1976,22 @@ impl Synmetra {
         let requests = args
             .requests
             .iter()
-            .map(BatchReportItemArgs::to_google_request)
+            .map(|item| item.to_google_request(&args.property_id))
             .collect::<Result<Vec<_>, _>>();
-        result(match requests {
-            Ok(requests) => {
-                self.api
-                    .data_operation(
-                        &args.property_id,
-                        json!({"requests": requests}),
-                        "batchRunReports",
-                    )
-                    .await
-            }
-            Err(error) => Err(error),
-        })
+        let requests = match requests {
+            Ok(requests) => requests,
+            Err(error) => return result(Err(error)),
+        };
+        let (bodies, paginations): (Vec<_>, Vec<_>) = requests.into_iter().unzip();
+        let response = self
+            .api
+            .data_operation(
+                &args.property_id,
+                json!({"requests": bodies}),
+                "batchRunReports",
+            )
+            .await;
+        result_with_batch_projections(response, &args.requests, &paginations)
     }
 
     #[tool(
@@ -3266,44 +3323,129 @@ mod tests {
     }
 
     #[test]
-    fn batch_subreport_output_controls_are_explicit_and_never_silently_discarded() {
-        let base = json!({
+    fn batch_subreports_project_only_opted_in_results_with_query_bound_cursors() {
+        let baseline = json!({
             "date_ranges":[{"start_date":"7daysAgo","end_date":"today"}],
             "dimensions":["country"],
             "metrics":["activeUsers"],
             "limit":20
         });
-        let mut bounded = base.clone();
-        bounded["max_rows"] = json!(5);
-        let request: BatchReportItemArgs = serde_json::from_value(bounded).unwrap();
-        let body = request.to_google_request().unwrap();
-        assert_eq!(body["limit"], "5");
+        let mut bounded = baseline.clone();
+        bounded["max_rows"] = json!(1);
+        bounded["output_mode"] = json!("compact");
+        bounded["max_cell_chars"] = json!(3);
+        let first: BatchReportItemArgs = serde_json::from_value(bounded).unwrap();
+        let second: BatchReportItemArgs = serde_json::from_value(baseline.clone()).unwrap();
+        let (outbound, first_page) = first.to_google_request("42").unwrap();
+        assert_eq!(outbound["limit"], "1");
+        let (_, second_page) = second.to_google_request("42").unwrap();
 
-        let mut default_bounded = base.clone();
-        default_bounded.as_object_mut().unwrap().remove("limit");
-        default_bounded["max_rows"] = json!(7);
-        let request: BatchReportItemArgs = serde_json::from_value(default_bounded).unwrap();
-        assert_eq!(request.to_google_request().unwrap()["limit"], "7");
+        let report = json!({
+            "dimensionHeaders":[{"name":"country"}],
+            "metricHeaders":[{"name":"activeUsers","type":"TYPE_INTEGER"}],
+            "rows":[{"dimensionValues":[{"value":"Mexico"}],"metricValues":[{"value":"9"}]}],
+            "rowCount":10
+        });
+        let original = json!({
+            "reports":[report.clone(),report.clone()],
+            "propertyQuota":{"tokensPerDay":{"remaining":90}}
+        });
+        let result = result_with_batch_projections(
+            Ok(original.clone()),
+            &[first, second],
+            &[first_page, second_page],
+        );
+        assert_eq!(result.is_error, Some(false));
+        let payload = result.structured_content.as_ref().unwrap();
+        assert_eq!(payload["ok"], true);
+        assert_eq!(payload["data"]["reports"][0]["tuples"][0][0], "Mex");
+        assert_eq!(payload["data"]["reports"][0]["tuples"][0][1], "9");
+        assert_eq!(payload["meta"]["reports"][0]["projected"], true);
+        assert_eq!(payload["meta"]["reports"][0]["row_count_total"], 10);
+        assert_eq!(payload["meta"]["reports"][0]["row_count_total_known"], true);
+        assert_eq!(payload["meta"]["reports"][0]["truncated"], true);
+        let cursor = payload["meta"]["reports"][0]["next_cursor"]
+            .as_str()
+            .unwrap()
+            .to_owned();
+        assert!(cursor.starts_with("v1:"));
+        assert_eq!(payload["data"]["reports"][1], report);
+        assert_eq!(payload["meta"]["reports"][1]["projected"], false);
+        assert_eq!(
+            payload["data"]["propertyQuota"]["tokensPerDay"]["remaining"],
+            90
+        );
+        let text: Value =
+            serde_json::from_str(&result.content[0].as_text().unwrap().text).unwrap();
+        assert_eq!(&text, payload);
 
-        // Until batch-aware projection is implemented, do not advertise a
-        // working summary, clipping, renderer or cursor and silently omit it.
+        // Continuation tokens are scoped to the exact property and query.
+        let mut continuation = baseline.clone();
+        continuation["cursor"] = json!(cursor);
+        continuation["max_rows"] = json!(1);
+        let continued: BatchReportItemArgs = serde_json::from_value(continuation).unwrap();
+        let (continued_body, continued_page) = continued.to_google_request("42").unwrap();
+        assert_eq!(continued_body["offset"], "1");
+        assert_eq!(continued_page.offset, 1);
+        assert!(matches!(
+            continued.to_google_request("43"),
+            Err(ApiError::CursorQueryMismatch)
+        ));
+
+        let mut summary = baseline.clone();
+        summary["summary_only"] = json!(true);
+        let item: BatchReportItemArgs = serde_json::from_value(summary).unwrap();
+        let (_, pagination) = item.to_google_request("42").unwrap();
+        let result = result_with_batch_projections(
+            Ok(json!({"reports":[report.clone()]})),
+            &[item],
+            &[pagination],
+        );
+        assert_eq!(result.structured_content.unwrap()["data"]["reports"][0], Value::Null);
+
+        // The old untouched batch result remains provider-shaped.
+        let item: BatchReportItemArgs = serde_json::from_value(baseline.clone()).unwrap();
+        let (_, pagination) = item.to_google_request("42").unwrap();
+        let legacy = result_with_batch_projections(
+            Ok(original.clone()),
+            &[item],
+            &[pagination],
+        );
+        assert_eq!(legacy.structured_content.unwrap()["data"], original);
+
         for (name, control) in [
-            ("cursor", json!("v1:synthetic:5")),
-            ("max_cell_chars", json!(128)),
-            ("output_mode", json!("compact")),
-            ("summary_only", json!(true)),
+            ("cursor", json!("v1:invalid:5")),
             ("max_rows", json!(0)),
             ("max_rows", json!(1001)),
+            ("max_cell_chars", json!(0)),
+            ("max_cell_chars", json!(2049)),
         ] {
-            let mut unsupported = base.clone();
-            unsupported[name] = control;
-            let request: BatchReportItemArgs = serde_json::from_value(unsupported).unwrap();
+            let mut invalid = baseline.clone();
+            invalid[name] = control;
+            let item: BatchReportItemArgs = serde_json::from_value(invalid).unwrap();
             assert!(
-                matches!(request.to_google_request(), Err(ApiError::InvalidRequest)),
-                "Batch subreport control {name} was silently discarded"
+                matches!(item.to_google_request("42"), Err(ApiError::InvalidRequest)),
+                "{name} was not rejected before Google networking"
             );
         }
+        let mut needs_projection = baseline;
+        needs_projection["max_rows"] = json!(1);
+        let item: BatchReportItemArgs = serde_json::from_value(needs_projection).unwrap();
+        let (_, pagination) = item.to_google_request("42").unwrap();
+        let invalid = result_with_batch_projections(
+            Ok(json!({"reports":[]})),
+            &[item],
+            &[pagination],
+        );
+        // A projected batch cannot silently pair missing results with
+        // unrelated report controls.
+        assert_eq!(invalid.is_error, Some(true));
+        assert_eq!(
+            invalid.structured_content.unwrap()["error"]["code"],
+            "INVALID_RESPONSE"
+        );
     }
+
 
     #[test]
     fn funnel_omitted_date_ranges_default_to_empty_upstream_array() {
@@ -5694,7 +5836,10 @@ mod tests {
         ] {
             let item = serde_json::from_value::<BatchReportItemArgs>(invalid);
             if let Ok(parsed) = item {
-                assert_eq!(parsed.to_google_request(), Err(ApiError::InvalidRequest));
+                assert!(matches!(
+                    parsed.to_google_request("42"),
+                    Err(ApiError::InvalidRequest)
+                ));
             }
         }
     }
