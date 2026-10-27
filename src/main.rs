@@ -788,7 +788,7 @@ struct FunnelStepInput {
 }
 
 #[allow(dead_code)]
-#[derive(JsonSchema)]
+#[derive(Debug, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 struct FunnelBreakdownInput {
     breakdown_dimension: String,
@@ -796,7 +796,7 @@ struct FunnelBreakdownInput {
 }
 
 #[allow(dead_code)]
-#[derive(JsonSchema)]
+#[derive(Debug, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 struct FunnelNextActionInput {
     next_action_dimension: String,
@@ -854,7 +854,7 @@ struct FunnelArgs {
 /// continues accepting snake_case and Google camelCase through Value, while
 /// the advertised public schema retains typed enum and action-list bounds.
 #[allow(dead_code)]
-#[derive(JsonSchema)]
+#[derive(Debug, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 struct ConversionSpecInput {
     #[schemars(default)]
@@ -864,7 +864,7 @@ struct ConversionSpecInput {
 }
 
 #[allow(dead_code)]
-#[derive(JsonSchema)]
+#[derive(Debug, Deserialize, JsonSchema)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 enum ConversionAttributionModel {
     DataDriven,
@@ -3457,6 +3457,184 @@ mod tests {
                 "Batch subreport omitted {nested}"
             );
         }
+    }
+
+    #[test]
+    fn pinned_nested_input_types_enums_and_defaults_have_reviewed_semantics() {
+        use std::collections::{BTreeMap, BTreeSet};
+
+        fn resolved<'a>(value: &'a Value, root: &'a Value, depth: usize) -> &'a Value {
+            assert!(depth < 24, "Schema reference cycle");
+            if let Some(reference) = value.get("$ref").and_then(Value::as_str) {
+                let key = reference
+                    .strip_prefix("#/$defs/")
+                    .expect("Only local pinned schema definitions are supported");
+                return resolved(&root["$defs"][key], root, depth + 1);
+            }
+            value
+        }
+
+        fn shape(value: &Value, root: &Value, depth: usize) -> Vec<String> {
+            let value = resolved(value, root, depth);
+            let mut result = Vec::new();
+            for attribute in ["type", "enum", "format", "const"] {
+                if let Some(variant) = value.get(attribute) {
+                    result.push(format!("{attribute}={variant}"));
+                }
+            }
+            for attribute in ["anyOf", "oneOf"] {
+                if let Some(variants) = value.get(attribute).and_then(Value::as_array) {
+                    let mut alternatives = variants
+                        .iter()
+                        .map(|variant| shape(variant, root, depth + 1).join(";"))
+                        .collect::<Vec<_>>();
+                    alternatives.sort();
+                    result.push(format!("{attribute}={alternatives:?}"));
+                }
+            }
+            result.sort();
+            result
+        }
+
+        fn collect(
+            node: &Value,
+            root: &Value,
+            path: &str,
+            depth: usize,
+            shapes: &mut BTreeMap<String, Vec<String>>,
+            defaults: &mut BTreeMap<String, Value>,
+        ) {
+            assert!(depth < 24, "Unexpected recursive schema depth");
+            let node = resolved(node, root, depth);
+            if let Some(props) = node.get("properties").and_then(Value::as_object) {
+                for (name, field) in props {
+                    let next = if path.is_empty() {
+                        name.clone()
+                    } else {
+                        format!("{path}.{name}")
+                    };
+                    shapes.insert(next.clone(), shape(field, root, depth + 1));
+                    if let Some(value) = field.get("default") {
+                        defaults.insert(next.clone(), value.clone());
+                    }
+                    collect(field, root, &next, depth + 1, shapes, defaults);
+                }
+            }
+            if let Some(items) = node.get("items") {
+                collect(items, root, &format!("{path}[]"), depth + 1, shapes, defaults);
+            }
+            for attribute in ["anyOf", "oneOf"] {
+                if let Some(variants) = node.get(attribute).and_then(Value::as_array) {
+                    for variant in variants {
+                        collect(variant, root, path, depth + 1, shapes, defaults);
+                    }
+                }
+            }
+        }
+
+        let source: Value = serde_json::from_str(include_str!(
+            "../spec/upstream/sednalabs-tool-schema.v1.json"
+        ))
+        .unwrap();
+        let native: Value =
+            serde_json::from_str(include_str!("../spec/native/tool-schema.v1.json")).unwrap();
+        let native_map = native["tools"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|tool| (tool["name"].as_str().unwrap(), &tool["inputSchema"]))
+            .collect::<BTreeMap<_, _>>();
+
+        let mut total_paths = 0;
+        let mut nullable_default_differences = BTreeSet::new();
+        for upstream in source["tools"].as_array().unwrap() {
+            let name = upstream["name"].as_str().unwrap();
+            let upstream_schema = &upstream["inputSchema"];
+            let native_schema = native_map
+                .get(name)
+                .unwrap_or_else(|| panic!("Missing native schema for {name}"));
+            let (mut a, mut b) = (BTreeMap::new(), BTreeMap::new());
+            let (mut a_defaults, mut b_defaults) = (BTreeMap::new(), BTreeMap::new());
+            collect(
+                upstream_schema,
+                upstream_schema,
+                "",
+                0,
+                &mut a,
+                &mut a_defaults,
+            );
+            collect(
+                native_schema,
+                native_schema,
+                "",
+                0,
+                &mut b,
+                &mut b_defaults,
+            );
+            total_paths += a.len();
+            for (path, shape) in &a {
+                assert_eq!(
+                    b.get(path),
+                    Some(shape),
+                    "Changed nested input type/enum at {name}.{path}"
+                );
+                if a_defaults.get(path) != b_defaults.get(path) {
+                    assert_eq!(
+                        a_defaults.get(path),
+                        Some(&Value::Null),
+                        "Unexpected upstream default mismatch at {name}.{path}"
+                    );
+                    assert!(
+                        !b_defaults.contains_key(path),
+                        "Unexpected native default mismatch at {name}.{path}"
+                    );
+                    nullable_default_differences.insert(format!("{name}.{path}"));
+                }
+            }
+        }
+        assert_eq!(total_paths, 294);
+        assert_eq!(
+            nullable_default_differences,
+            BTreeSet::from([
+                "run_conversions_report.conversion_spec.attribution_model".to_owned(),
+                "run_funnel_report.funnel_breakdown.limit".to_owned(),
+                "run_funnel_report.funnel_next_action.limit".to_owned()
+            ])
+        );
+        // The three remaining schema-format differences concern optional
+        // nested fields; an omitted option and an explicit null both map to
+        // None in Rust. They do not prove provider behavioral parity.
+        let breakdown_missing: FunnelBreakdownInput = serde_json::from_value(json!({
+            "breakdown_dimension":"country"
+        }))
+        .unwrap();
+        let breakdown_null: FunnelBreakdownInput = serde_json::from_value(json!({
+            "breakdown_dimension":"country",
+            "limit":null
+        }))
+        .unwrap();
+        assert_eq!(breakdown_missing.limit, breakdown_null.limit);
+        let next_missing: FunnelNextActionInput = serde_json::from_value(json!({
+            "next_action_dimension":"eventName"
+        }))
+        .unwrap();
+        let next_null: FunnelNextActionInput = serde_json::from_value(json!({
+            "next_action_dimension":"eventName",
+            "limit":null
+        }))
+        .unwrap();
+        assert_eq!(next_missing.limit, next_null.limit);
+        let conversion_missing: ConversionSpecInput = serde_json::from_value(json!({
+            "conversion_actions":[]
+        }))
+        .unwrap();
+        let conversion_null: ConversionSpecInput = serde_json::from_value(json!({
+            "conversion_actions":[],
+            "attribution_model":null
+        }))
+        .unwrap();
+        assert!(conversion_missing.attribution_model.is_none());
+        assert!(conversion_null.attribution_model.is_none());
     }
 
     #[test]

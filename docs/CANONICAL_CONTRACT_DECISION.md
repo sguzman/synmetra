@@ -45,3 +45,15 @@ An omitted funnel `date_ranges` field now defaults to `[]`, matching the pinned 
 ## Exhaustive nested input-path coverage
 
 The native source-lock test now recursively resolves `$defs` references, nested objects, arrays and `anyOf`/`oneOf` branches for all **35 pinned SednaLabs tool schemas**. It checks **294 distinct source input paths**, including every `batch_run_reports.requests[]` control, against the full native 36-tool router snapshot. It separately checks that no native nested object introduces a required field absent from the corresponding upstream object. The comparison currently finds **zero missing documented input paths and zero additional required nested fields**, recorded in [the native/upstream audit](../spec/audits/native-upstream-diff.v1.json). This measures syntactic input expressibility, **not** identical coercion, semantic acceptance, Google authorization, provider data or SednaLabs result shape. Those are separate active gates (T138–T139, T156–T161 and live T178–T186).
+
+## Nested type/enum and optional default compatibility
+
+A source-normalized regression now compares the **294 documented nested field paths** across the 35 pinned SednaLabs schemas to the full native feature-enabled MCP schema. It recursively resolves local `$defs` references, distinguishes arrays and unions, and checks type, enum, constant and format representations per field. The static comparison found **no differing field shapes**. Three nullable nested defaults have a representation difference: the upstream schema explicitly writes `default: null`, while the native optional field has no advertised explicit default.
+
+| Tool | Nested nullable field |
+| --- | --- |
+| `run_conversions_report` | `conversion_spec.attribution_model` |
+| `run_funnel_report` | `funnel_breakdown.limit` |
+| `run_funnel_report` | `funnel_next_action.limit` |
+
+The native Rust regression also checks that omitted versus explicit `null` for these optional structures both deserialize to `None`; it fails on a new path, enum/type mismatch or unreviewed default change. **This is an input-shape and deserialization check, not a full behavioral differential**: provider-side report results, authorization, host client validation, and intentionally unsupported controls require separate acceptance. The new regression remains uncredited until CI passes on the incorporating commit.
