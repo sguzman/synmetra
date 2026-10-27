@@ -2775,13 +2775,15 @@ mod tests {
         assert_eq!(summary["row_count_total_known"], true);
         assert_eq!(summary["column_count_total"], 2);
         assert_eq!(summary["column_count_total_known"], true);
-        let page = state.query_bounded(
-            "total_fixture",
-            "SELECT event_name FROM events ORDER BY event_name ASC LIMIT 1",
-            Some(1),
-            None,
-            false,
-        ).unwrap();
+        let page = state
+            .query_bounded(
+                "total_fixture",
+                "SELECT event_name FROM events ORDER BY event_name ASC LIMIT 1",
+                Some(1),
+                None,
+                false,
+            )
+            .unwrap();
         assert_eq!(page["truncated"], true);
         assert_eq!(page["row_count_total_known"], false);
         assert!(page["row_count_total"].is_null());
