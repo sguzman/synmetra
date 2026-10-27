@@ -3358,7 +3358,14 @@ mod tests {
                 }
             }
             if let Some(items) = node.get("items") {
-                fields(items, root, &format!("{path}[]"), depth + 1, result, required_fields);
+                fields(
+                    items,
+                    root,
+                    &format!("{path}[]"),
+                    depth + 1,
+                    result,
+                    required_fields,
+                );
             }
             for key in ["anyOf", "oneOf"] {
                 if let Some(alternatives) = node.get(key).and_then(Value::as_array) {
@@ -3369,9 +3376,10 @@ mod tests {
             }
         }
 
-        let upstream: Value =
-            serde_json::from_str(include_str!("../spec/upstream/sednalabs-tool-schema.v1.json"))
-                .unwrap();
+        let upstream: Value = serde_json::from_str(include_str!(
+            "../spec/upstream/sednalabs-tool-schema.v1.json"
+        ))
+        .unwrap();
         let native: Value =
             serde_json::from_str(include_str!("../spec/native/tool-schema.v1.json")).unwrap();
         let native_tools = native["tools"]
@@ -3393,8 +3401,22 @@ mod tests {
             let mut native_fields = BTreeSet::new();
             let mut source_required = BTreeMap::new();
             let mut native_required = BTreeMap::new();
-            fields(source, source, "", 0, &mut source_fields, &mut source_required);
-            fields(target, target, "", 0, &mut native_fields, &mut native_required);
+            fields(
+                source,
+                source,
+                "",
+                0,
+                &mut source_fields,
+                &mut source_required,
+            );
+            fields(
+                target,
+                target,
+                "",
+                0,
+                &mut native_fields,
+                &mut native_required,
+            );
             let missing = source_fields
                 .difference(&native_fields)
                 .cloned()
@@ -3555,7 +3577,6 @@ mod tests {
             "INVALID_RESPONSE"
         );
     }
-
 
     #[test]
     fn funnel_omitted_date_ranges_default_to_empty_upstream_array() {
