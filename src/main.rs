@@ -7260,8 +7260,7 @@ mod tests {
         assert!(payload["data"]["row_count_total"].is_null());
         assert_eq!(payload["data"]["row_count_lower_bound"], 2);
         assert_eq!(payload["data"]["truncated"], true);
-        let text: Value =
-            serde_json::from_str(&first.content[0].as_text().unwrap().text).unwrap();
+        let text: Value = serde_json::from_str(&first.content[0].as_text().unwrap().text).unwrap();
         assert_eq!(&text, payload);
 
         let complete: ScratchQueryArgs = serde_json::from_value(json!({
