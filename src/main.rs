@@ -3297,8 +3297,7 @@ mod tests {
         ] {
             let mut unsupported = base.clone();
             unsupported[name] = control;
-            let request: BatchReportItemArgs =
-                serde_json::from_value(unsupported).unwrap();
+            let request: BatchReportItemArgs = serde_json::from_value(unsupported).unwrap();
             assert!(
                 matches!(request.to_google_request(), Err(ApiError::InvalidRequest)),
                 "Batch subreport control {name} was silently discarded"
@@ -3341,7 +3340,10 @@ mod tests {
             "funnel_steps":[{"event":"page_view"}],
             "date_ranges":null
         }));
-        assert!(nullable.is_err(), "Pinned funnel schema accepts an array, not null");
+        assert!(
+            nullable.is_err(),
+            "Pinned funnel schema accepts an array, not null"
+        );
     }
 
     #[cfg(feature = "scratchpad")]
