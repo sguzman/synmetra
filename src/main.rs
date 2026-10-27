@@ -3322,20 +3322,57 @@ mod tests {
                 structured["ok"].is_boolean(),
                 "{name} returned no typed Contract V1 outcome"
             );
+            assert_eq!(
+                reply.is_error,
+                Some(structured["ok"] == false),
+                "{name} has inconsistent MCP isError and Contract V1 ok"
+            );
+            assert_eq!(
+                reply.content.len(),
+                1,
+                "{name} must return exactly one legacy JSON text envelope"
+            );
+            let legacy_text = &reply.content[0]
+                .as_text()
+                .unwrap_or_else(|| panic!("{name} did not return legacy JSON text"))
+                .text;
+            let legacy: Value = serde_json::from_str(legacy_text)
+                .unwrap_or_else(|_| panic!("{name} legacy text is not valid JSON"));
+            assert_eq!(
+                &legacy, structured,
+                "{name} structured and legacy Contract V1 envelopes diverged"
+            );
             if structured["ok"] == true {
                 assert!(structured.get("data").is_some(), "{name} omitted data");
+                assert!(
+                    structured.get("error").is_none(),
+                    "{name} success unexpectedly included an error"
+                );
             } else {
                 assert!(
                     structured["error"]["code"].is_string(),
                     "{name} omitted error code"
                 );
-                assert_eq!(reply.is_error, Some(true), "{name} must mark tool error");
+                assert!(
+                    structured["error"]["category"].is_string(),
+                    "{name} omitted error category"
+                );
+                assert!(
+                    structured.get("data").is_none(),
+                    "{name} error unexpectedly included success data"
+                );
             }
             assert!(structured["meta"].is_object(), "{name} omitted metadata");
+            assert_eq!(
+                structured["meta"]["elapsed_ms_measured"], false,
+                "{name} claimed unmeasured latency as measured"
+            );
+            assert_eq!(
+                structured["meta"]["elapsed_ms"], 0,
+                "{name} omitted the explicit unmeasured-time sentinel"
+            );
             assert!(
-                !structured
-                    .to_string()
-                    .contains("synthetic-tool-invocation-only"),
+                !legacy_text.contains("synthetic-tool-invocation-only"),
                 "{name} reflected a Google bearer into the MCP response"
             );
         }
