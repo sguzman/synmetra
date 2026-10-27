@@ -2643,6 +2643,89 @@ mod tests {
     }
 
     #[test]
+    fn local_query_lookahead_reports_truncation_without_imaginary_totals() {
+        let state = ScratchState::new();
+        state.open("cursor_fixture").unwrap();
+        {
+            let mut inner = state.guard().unwrap();
+            let db = &inner.sessions.get_mut("cursor_fixture").unwrap().db;
+            db.execute_batch(
+                "CREATE TABLE samples (id INTEGER, location VARCHAR);
+                 INSERT INTO samples VALUES (1,'a'),(2,'b'),(3,'c');",
+            )
+            .unwrap();
+        }
+
+        let first = state
+            .query_bounded(
+                "cursor_fixture",
+                "SELECT id,location FROM samples ORDER BY id ASC",
+                Some(2),
+                None,
+                false,
+            )
+            .unwrap();
+        assert_eq!(first["returned_rows"], 2);
+        assert_eq!(first["rows"].as_array().unwrap().len(), 2);
+        assert_eq!(first["truncated"], true);
+        assert!(first.get("row_count_total").is_none());
+        assert!(first.get("next_cursor").is_none());
+
+        let exact = state
+            .query_bounded(
+                "cursor_fixture",
+                "SELECT id,location FROM samples ORDER BY id ASC",
+                Some(3),
+                None,
+                false,
+            )
+            .unwrap();
+        assert_eq!(exact["returned_rows"], 3);
+        assert_eq!(exact["truncated"], false);
+
+        let last = state
+            .query_bounded(
+                "cursor_fixture",
+                "SELECT id,location FROM samples ORDER BY id ASC LIMIT 2 OFFSET 2",
+                Some(2),
+                None,
+                false,
+            )
+            .unwrap();
+        assert_eq!(last["returned_rows"], 1);
+        assert_eq!(last["truncated"], false);
+        assert_eq!(last["rows"][0]["id"], "3");
+
+        let summary = state
+            .query_bounded(
+                "cursor_fixture",
+                "SELECT id,location FROM samples ORDER BY id ASC",
+                Some(2),
+                None,
+                true,
+            )
+            .unwrap();
+        assert_eq!(summary["returned_rows"], 2);
+        assert_eq!(summary["truncated"], true);
+        assert!(summary["rows"].as_array().unwrap().is_empty());
+        assert_eq!(summary["summary_only"], true);
+
+        // The query never requests a database cursor when no complete table
+        // snapshot exists, and a COUNT(*) query returns the exact count.
+        let count = state
+            .query_bounded(
+                "cursor_fixture",
+                "SELECT COUNT(*) FROM samples",
+                Some(1),
+                None,
+                false,
+            )
+            .unwrap();
+        assert_eq!(count["rows"][0]["row_count"], "3");
+        assert_eq!(count["truncated"], false);
+    }
+
+    #[test]
     fn strict_sql_identifier_and_table_inventory() {
         let state = ScratchState::new();
         state.open("session_1").unwrap();

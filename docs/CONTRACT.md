@@ -34,3 +34,5 @@ Required field names, tool presence, or mock-based HTTP tests are **implementati
 Pinned reference license: SednaLabs Apache-2.0 license in [licenses](../licenses/SEDNALABS-APACHE-2.0.txt).
 
 The current [canonical union policy and native/upstream schema-diff inventory](CANONICAL_CONTRACT_DECISION.md) covers all advertised input field names, distinct unresolved nested/default/output behavior, and versioning decisions. **A zero missing top-level field count does not establish behavioral parity.** The [legacy client adapter matrix](CLIENT_COMPATIBILITY.md) and [versioned policy fixture](../spec/compatibility/client-contract.v1.json) make response/profile expectations and known incompatibilities explicit.
+
+The [tabular totals and cursor policy](TABULAR_COUNT_POLICY.md) enumerates known-versus-unknown provider totals, independently projected batch/funnel results, local DuckDB catalog truncation and bounded SELECT look-ahead semantics. Neither a missing cursor nor a truncated=false window with unknown provider total proves upstream completion.
