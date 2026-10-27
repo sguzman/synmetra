@@ -32,6 +32,35 @@ scan_text() {
   fi
 }
 
+scan_synthetic_json() {
+  local path="$1"
+  scan_text "$path" || return 1
+  command -v jq >/dev/null || {
+    echo 'jq required to validate generated JSON before publication' >&2
+    return 1
+  }
+  if [[ "$(stat -c %s -- "$path")" -gt 1048576 ]]; then
+    echo 'Generated CI JSON exceeds the synthetic publication size limit' >&2
+    return 1
+  fi
+  # Reject private account/client/authorization field names anywhere in the
+  # document. The upstream golden fixture is strictly synthetic.
+  if ! jq -e '
+    type == "object"
+    and ([paths(scalars) as $path
+      | ($path[-1] | select(type == "string"))
+      | select(test("(^|_)(access_?token|refresh_?token|client_?secret|account_?id|property_?id|user_?email|email(_address)?|authorization)$"; "i"))
+    ] | length == 0)
+  ' "$path" >/dev/null 2>&1; then
+    echo 'Generated CI JSON is invalid or contains account/authentication fields (values suppressed)' >&2
+    return 1
+  fi
+  if grep -I -q -E -e '[[:alnum:]._%+-]+@[[:alnum:].-]+[.][[:alpha:]]{2,}' -- "$path"; then
+    echo 'Email-shaped identifier found in synthetic CI JSON (value suppressed)' >&2
+    return 1
+  fi
+}
+
 scan_package() (
   set -euo pipefail
   local archive="$1" dist="$2"
@@ -186,14 +215,28 @@ self_test() (
   fi
 
   printf '%s\n' '{"ok":"synthetic golden"}' > "$root/safe-golden.json"
-  scan_text "$root/safe-golden.json"
+  scan_synthetic_json "$root/safe-golden.json"
   printf '{"access":"%s"}\n' "$canary" > "$root/safe-golden.json"
-  if scan_text "$root/safe-golden.json" > "$root/rejected.log" 2>&1; then
+  if scan_synthetic_json "$root/safe-golden.json" > "$root/rejected.log" 2>&1; then
     echo 'Synthetic JSON artifact guard accepted a fake credential' >&2
     exit 1
   fi
   if grep -Fq "$canary" "$root/rejected.log"; then
     echo 'Synthetic JSON artifact guard disclosed fake credential' >&2
+    exit 1
+  fi
+  printf '%s\n' '{"account_id":"synthetic-but-forbidden"}' > "$root/safe-golden.json"
+  if scan_synthetic_json "$root/safe-golden.json" > "$root/rejected.log" 2>&1; then
+    echo 'Generated JSON scanner accepted a forbidden account identifier field' >&2
+    exit 1
+  fi
+  printf '%s\n' '{"visitor":"synthetic-person@example.invalid"}' > "$root/safe-golden.json"
+  if scan_synthetic_json "$root/safe-golden.json" > "$root/rejected.log" 2>&1; then
+    echo 'Generated JSON scanner accepted an email-shaped visitor identifier' >&2
+    exit 1
+  fi
+  if grep -Fq 'synthetic-person@example.invalid' "$root/rejected.log"; then
+    echo 'Generated JSON scanner exposed a synthetic visitor identifier' >&2
     exit 1
   fi
   echo 'Synthetic artifact scanner self-test passed: safe package accepted; archive, SBOM and unexpected path rejected without disclosure'
@@ -202,8 +245,8 @@ self_test() (
 if [[ "${1:-}" == "--self-test" && "$#" -eq 1 ]]; then
   self_test
 elif [[ "${1:-}" == "--text-file" && "$#" -eq 2 ]]; then
-  scan_text "$2"
-  echo 'Synthetic/generated CI JSON text asset guard passed (high-confidence signatures only)'
+  scan_synthetic_json "$2"
+  echo 'Synthetic CI JSON privacy guard passed (credentials, account fields and email checks)'
 elif [[ "$#" -eq 2 ]]; then
   scan_package "$1" "$2"
 else
