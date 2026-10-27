@@ -1,7 +1,7 @@
 {
   "schema": "synmetra_native_upstream_schema_diff",
   "version": 1,
-  "comparison": "Top-level fields and raw JSON Schema property attributes; $refs are not dereferenced, and description-only or equivalent reference renames may count as differences. Behavioral/live parity is NOT established.",
+  "comparison": "Top-level fields and raw JSON Schema property attributes; $refs are not dereferenced, and description-only or equivalent reference renames may count as differences. Behavioral/live parity is NOT established. Recursive field-path coverage for 35 pinned tools is enforced by src/main.rs::pinned_upstream_nested_input_paths_are_all_expressible_in_native_schema. It checks 294 documented input paths and no additional required nested inputs, but does not prove identical validation constraints, output shape or Google API behavior.",
   "sources": {
     "native_sha": "04c58450f5d9c21067b3f7feb27ea6fca698d91a",
     "sednalabs_sha": "646c0baa22692b73430a0ee96415b0e2fe6215a3",
@@ -23,7 +23,10 @@
       "anyOf": 18,
       "default": 0,
       "type": 0
-    }
+    },
+    "upstream_documented_nested_field_paths": 294,
+    "missing_native_nested_field_paths": 0,
+    "new_native_required_nested_inputs": 0
   },
   "required_mismatches": [],
   "missing_google_fields": [],

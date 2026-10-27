@@ -3323,6 +3323,121 @@ mod tests {
     }
 
     #[test]
+    fn pinned_upstream_nested_input_paths_are_all_expressible_in_native_schema() {
+        use std::collections::{BTreeMap, BTreeSet};
+
+        fn fields(
+            node: &Value,
+            root: &Value,
+            path: &str,
+            depth: usize,
+            result: &mut BTreeSet<String>,
+            required_fields: &mut BTreeMap<String, BTreeSet<String>>,
+        ) {
+            assert!(depth < 24, "Unexpected recursive schema depth");
+            if let Some(reference) = node.get("$ref").and_then(Value::as_str) {
+                let resolved = reference
+                    .strip_prefix("#/$defs/")
+                    .and_then(|key| root.get("$defs")?.get(key))
+                    .unwrap_or_else(|| panic!("Unresolvable pinned schema reference: {reference}"));
+                fields(resolved, root, path, depth + 1, result, required_fields);
+            }
+            if let Some(properties) = node.get("properties").and_then(Value::as_object) {
+                let required = required_fields.entry(path.to_owned()).or_default();
+                for name in node["required"].as_array().into_iter().flatten() {
+                    required.insert(name.as_str().unwrap().to_owned());
+                }
+                for (name, child) in properties {
+                    let next = if path.is_empty() {
+                        name.clone()
+                    } else {
+                        format!("{path}.{name}")
+                    };
+                    result.insert(next.clone());
+                    fields(child, root, &next, depth + 1, result, required_fields);
+                }
+            }
+            if let Some(items) = node.get("items") {
+                fields(items, root, &format!("{path}[]"), depth + 1, result, required_fields);
+            }
+            for key in ["anyOf", "oneOf"] {
+                if let Some(alternatives) = node.get(key).and_then(Value::as_array) {
+                    for alternative in alternatives {
+                        fields(alternative, root, path, depth + 1, result, required_fields);
+                    }
+                }
+            }
+        }
+
+        let upstream: Value =
+            serde_json::from_str(include_str!("../spec/upstream/sednalabs-tool-schema.v1.json"))
+                .unwrap();
+        let native: Value =
+            serde_json::from_str(include_str!("../spec/native/tool-schema.v1.json")).unwrap();
+        let native_tools = native["tools"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|tool| (tool["name"].as_str().unwrap(), &tool["inputSchema"]))
+            .collect::<BTreeMap<_, _>>();
+
+        let mut tools_compared = 0;
+        let mut audited_paths = 0;
+        for tool in upstream["tools"].as_array().unwrap() {
+            let name = tool["name"].as_str().unwrap();
+            let source = &tool["inputSchema"];
+            let target = native_tools
+                .get(name)
+                .unwrap_or_else(|| panic!("Native tool omitted upstream name {name}"));
+            let mut source_fields = BTreeSet::new();
+            let mut native_fields = BTreeSet::new();
+            let mut source_required = BTreeMap::new();
+            let mut native_required = BTreeMap::new();
+            fields(source, source, "", 0, &mut source_fields, &mut source_required);
+            fields(target, target, "", 0, &mut native_fields, &mut native_required);
+            let missing = source_fields
+                .difference(&native_fields)
+                .cloned()
+                .collect::<Vec<_>>();
+            assert!(
+                missing.is_empty(),
+                "Native tool {name} omitted documented upstream inputs: {missing:?}"
+            );
+            for (path, required) in native_required {
+                if let Some(upstream_required) = source_required.get(&path) {
+                    let added = required
+                        .difference(upstream_required)
+                        .cloned()
+                        .collect::<Vec<_>>();
+                    assert!(
+                        added.is_empty(),
+                        "Native {name} unexpectedly requires extra fields at {path}: {added:?}"
+                    );
+                }
+            }
+            tools_compared += 1;
+            audited_paths += source_fields.len();
+        }
+        assert_eq!(tools_compared, 35);
+        assert_eq!(audited_paths, 294);
+        let batch = native_tools.get("batch_run_reports").unwrap();
+        let mut batch_paths = BTreeSet::new();
+        fields(batch, batch, "", 0, &mut batch_paths, &mut BTreeMap::new());
+        for nested in [
+            "requests[].cursor",
+            "requests[].max_rows",
+            "requests[].max_cell_chars",
+            "requests[].output_mode",
+            "requests[].summary_only",
+        ] {
+            assert!(
+                batch_paths.contains(nested),
+                "Batch subreport omitted {nested}"
+            );
+        }
+    }
+
+    #[test]
     fn batch_subreports_project_only_opted_in_results_with_query_bound_cursors() {
         let baseline = json!({
             "date_ranges":[{"start_date":"7daysAgo","end_date":"today"}],
@@ -3375,8 +3490,7 @@ mod tests {
             payload["data"]["propertyQuota"]["tokensPerDay"]["remaining"],
             90
         );
-        let text: Value =
-            serde_json::from_str(&result.content[0].as_text().unwrap().text).unwrap();
+        let text: Value = serde_json::from_str(&result.content[0].as_text().unwrap().text).unwrap();
         assert_eq!(&text, payload);
 
         // Continuation tokens are scoped to the exact property and query.
@@ -3401,16 +3515,15 @@ mod tests {
             &[item],
             &[pagination],
         );
-        assert_eq!(result.structured_content.unwrap()["data"]["reports"][0], Value::Null);
+        assert_eq!(
+            result.structured_content.unwrap()["data"]["reports"][0],
+            Value::Null
+        );
 
         // The old untouched batch result remains provider-shaped.
         let item: BatchReportItemArgs = serde_json::from_value(baseline.clone()).unwrap();
         let (_, pagination) = item.to_google_request("42").unwrap();
-        let legacy = result_with_batch_projections(
-            Ok(original.clone()),
-            &[item],
-            &[pagination],
-        );
+        let legacy = result_with_batch_projections(Ok(original.clone()), &[item], &[pagination]);
         assert_eq!(legacy.structured_content.unwrap()["data"], original);
 
         for (name, control) in [
@@ -3432,11 +3545,8 @@ mod tests {
         needs_projection["max_rows"] = json!(1);
         let item: BatchReportItemArgs = serde_json::from_value(needs_projection).unwrap();
         let (_, pagination) = item.to_google_request("42").unwrap();
-        let invalid = result_with_batch_projections(
-            Ok(json!({"reports":[]})),
-            &[item],
-            &[pagination],
-        );
+        let invalid =
+            result_with_batch_projections(Ok(json!({"reports":[]})), &[item], &[pagination]);
         // A projected batch cannot silently pair missing results with
         // unrelated report controls.
         assert_eq!(invalid.is_error, Some(true));
