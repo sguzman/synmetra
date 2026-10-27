@@ -7228,6 +7228,82 @@ mod tests {
 
     #[cfg(feature = "scratchpad")]
     #[test]
+    fn scratchpad_mcp_query_and_catalog_totals_are_explicit_and_consistent() {
+        let server = Synmetra::new(GoogleClient::new(None), false).enable_scratchpad();
+        let scratch = server.scratchpad.as_ref().unwrap();
+        scratch.open("metadata_fixture").unwrap();
+        let provider = json!({
+            "dimensionHeaders":[{"name":"country"}],
+            "metricHeaders":[{"name":"activeUsers","type":"TYPE_INTEGER"}],
+            "rows":[
+                {"dimensionValues":[{"value":"MX"}],"metricValues":[{"value":"3"}]},
+                {"dimensionValues":[{"value":"US"}],"metricValues":[{"value":"2"}]},
+                {"dimensionValues":[{"value":"CA"}],"metricValues":[{"value":"1"}]}
+            ],
+            "rowCount":3
+        });
+        scratch
+            .ingest_ga_response("metadata_fixture", "countries", &provider, false)
+            .unwrap();
+
+        let arguments: ScratchQueryArgs = serde_json::from_value(json!({
+            "session_id":"metadata_fixture",
+            "sql":"SELECT country FROM countries ORDER BY country ASC",
+            "max_rows":2
+        }))
+        .unwrap();
+        let first = server.scratchpad_query(Parameters(arguments));
+        assert_eq!(first.is_error, Some(false));
+        let payload = first.structured_content.as_ref().unwrap();
+        assert_eq!(payload["data"]["returned_rows"], 2);
+        assert_eq!(payload["data"]["row_count_total_known"], false);
+        assert!(payload["data"]["row_count_total"].is_null());
+        assert_eq!(payload["data"]["row_count_lower_bound"], 2);
+        assert_eq!(payload["data"]["truncated"], true);
+        let text: Value =
+            serde_json::from_str(&first.content[0].as_text().unwrap().text).unwrap();
+        assert_eq!(&text, payload);
+
+        let complete: ScratchQueryArgs = serde_json::from_value(json!({
+            "session_id":"metadata_fixture",
+            "sql":"SELECT country FROM countries ORDER BY country ASC",
+            "max_rows":3
+        }))
+        .unwrap();
+        let final_page = server.scratchpad_query(Parameters(complete));
+        let data = &final_page.structured_content.as_ref().unwrap()["data"];
+        assert_eq!(data["row_count_total"], 3);
+        assert_eq!(data["row_count_total_known"], true);
+        assert_eq!(data["truncated"], false);
+
+        let table_args: ScratchReadTableArgs = serde_json::from_value(json!({
+            "session_id":"metadata_fixture",
+            "table_name":"countries"
+        }))
+        .unwrap();
+        let table = server.scratchpad_describe_table(Parameters(table_args));
+        let data = &table.structured_content.as_ref().unwrap()["data"];
+        assert_eq!(data["column_count_total"], 2);
+        assert_eq!(data["column_count_total_known"], true);
+
+        let table_args: ScratchReadTableArgs = serde_json::from_value(json!({
+            "session_id":"metadata_fixture",
+            "table_name":"countries",
+            "max_rows":1
+        }))
+        .unwrap();
+        let clipped = server.scratchpad_summarize_table(Parameters(table_args));
+        let data = &clipped.structured_content.as_ref().unwrap()["data"];
+        assert_eq!(data["row_count_total"], 3);
+        assert_eq!(data["row_count_total_known"], true);
+        assert_eq!(data["meta"]["column_count_total"], 2);
+        assert_eq!(data["meta"]["column_count_total_known"], true);
+        assert_eq!(data["meta"]["truncated"], true);
+        assert!(data["meta"]["next_cursor"].is_string());
+    }
+
+    #[cfg(feature = "scratchpad")]
+    #[test]
     fn scratchpad_output_modes_use_the_same_four_value_schema_as_reporting() {
         let full = Synmetra::new(GoogleClient::new(None), true).enable_scratchpad();
         let tools = full.router.list_all();

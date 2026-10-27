@@ -368,7 +368,16 @@ impl ScratchState {
             "cookie",
             "useremail",
             "emailaddress",
+            "email",
             "phonenumber",
+            "phone",
+            "clientid",
+            "userid",
+            "visitorid",
+            "ipaddress",
+            "gclid",
+            "fbclid",
+            "msclkid",
             "socialsecuritynumber",
         ]
         .iter()
@@ -394,10 +403,26 @@ impl ScratchState {
             "api_key=",
             "apikey=",
             "password=",
+            "gclid=",
+            "fbclid=",
+            "msclkid=",
+            "id_token=",
+            "access_token%3d",
+            "refresh_token%3d",
+            "email%3d",
+            "email=",
+            "client_id=",
+            "session_id=",
         ]
         .iter()
         .any(|pattern| lower.contains(pattern))
         {
+            return true;
+        }
+        // URL-encoded contact addresses may appear in landing-page query strings.
+        // Redact conservatively rather than partially decoding and re-exporting
+        // a private value under a benign-looking analytics dimension.
+        if lower.contains("%40") {
             return true;
         }
         // A single email address in a cell is contact PII regardless of the
@@ -1677,6 +1702,39 @@ mod tests {
     }
 
     #[test]
+    fn evidence_redactor_covers_embedded_click_ids_and_contact_fields() {
+        for (column, value) in [
+            ("email", "synthetic-person"),
+            ("ga_client_id", "synthetic-client"),
+            ("user_id", "synthetic-user"),
+            ("ip_address", "203.0.113.10"),
+            ("landing_page", "/home?gclid=synthetic"),
+            ("landing_page", "/home?fbclid=synthetic"),
+            ("landing_page", "/home?msclkid=synthetic"),
+            ("landing_page", "/home?email%3Dexample%40example.invalid"),
+            ("landing_page", "/home?id_token=synthetic"),
+            ("landing_page", "/home?session_id=synthetic"),
+            ("utm_campaign", "synthetic-person@example.invalid"),
+        ] {
+            assert!(
+                ScratchState::should_redact_evidence_cell(column, value),
+                "Evidence export did not redact fixture for field {column}"
+            );
+        }
+        for (column, value) in [
+            ("country", "MX"),
+            ("landing_url", "/home?utm_source=newsletter"),
+            ("campaign", "summer_2026"),
+            ("activeUsers", "42"),
+        ] {
+            assert!(
+                !ScratchState::should_redact_evidence_cell(column, value),
+                "Benign synthetic report value unexpectedly redacted: {column}"
+            );
+        }
+    }
+
+    #[test]
     fn evidence_samples_redact_obvious_credentials_and_email_without_modifying_tables() {
         let state = ScratchState::new();
         state.open("redaction_fixture").unwrap();
@@ -1697,14 +1755,23 @@ mod tests {
                      7
                  );
                  CREATE TABLE value_only (value VARCHAR);
-                 INSERT INTO value_only VALUES ('ya29.synthetic_private_override');",
+                 INSERT INTO value_only VALUES ('ya29.synthetic_private_override');
+                 CREATE TABLE tracking (landing_url VARCHAR, ga_client_id VARCHAR);
+                 INSERT INTO tracking VALUES (
+                     '/home?gclid=synthetic_click_123',
+                     'synthetic_visitor_456'
+                 );",
             )
             .unwrap();
         }
         let result = state
             .export_evidence_bundle(
                 "redaction_fixture",
-                Some(vec!["safe_example".into(), "value_only".into()]),
+                Some(vec![
+                    "safe_example".into(),
+                    "value_only".into(),
+                    "tracking".into(),
+                ]),
                 Some(1),
             )
             .unwrap();
@@ -1713,6 +1780,8 @@ mod tests {
         assert!(!serialized.contains("synthetic_private_authorization_987"));
         assert!(!serialized.contains("alice@example.test"));
         assert!(!serialized.contains("synthetic_private_override"));
+        assert!(!serialized.contains("synthetic_click_123"));
+        assert!(!serialized.contains("synthetic_visitor_456"));
         assert_eq!(
             result["tables"][0]["sample_rows"][0]["access_token"],
             "[REDACTED]"
@@ -1724,6 +1793,14 @@ mod tests {
         );
         assert_eq!(result["tables"][0]["sample_rows"][0]["safe_count"], "7");
         assert_eq!(result["tables"][1]["sample_rows"][0]["value"], "[REDACTED]");
+        assert_eq!(
+            result["tables"][2]["sample_rows"][0]["landing_url"],
+            "[REDACTED]"
+        );
+        assert_eq!(
+            result["tables"][2]["sample_rows"][0]["ga_client_id"],
+            "[REDACTED]"
+        );
         assert_eq!(
             result["sample_redaction_policy"],
             "best_effort_sensitive_fields_and_values"
