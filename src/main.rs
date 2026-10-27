@@ -3734,11 +3734,8 @@ mod tests {
         unknown_args["max_rows"] = json!(1);
         let item: BatchReportItemArgs = serde_json::from_value(unknown_args).unwrap();
         let (_, page) = item.to_google_request("42").unwrap();
-        let unknown_result = result_with_batch_projections(
-            Ok(json!({"reports":[unknown]})),
-            &[item],
-            &[page],
-        );
+        let unknown_result =
+            result_with_batch_projections(Ok(json!({"reports":[unknown]})), &[item], &[page]);
         let unknown_meta =
             &unknown_result.structured_content.as_ref().unwrap()["meta"]["reports"][0];
         assert_eq!(unknown_meta["row_count_total_known"], false);
