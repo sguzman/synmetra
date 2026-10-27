@@ -820,7 +820,7 @@ struct FunnelArgs {
     funnel_steps: Vec<Value>,
     #[serde(default)]
     #[schemars(with = "Vec<ReportDateRangeInput>")]
-    date_ranges: Option<Vec<Value>>,
+    date_ranges: Vec<Value>,
     #[serde(default)]
     #[schemars(with = "Option<FunnelBreakdownInput>")]
     funnel_breakdown: Option<Value>,
@@ -1793,7 +1793,7 @@ impl Synmetra {
         };
         let request = google::funnel_request(
             args.funnel_steps,
-            args.date_ranges,
+            Some(args.date_ranges),
             args.funnel_breakdown,
             args.funnel_next_action,
             args.segments,
@@ -3238,6 +3238,44 @@ mod tests {
             .as_deref()
             .unwrap_or_default()
             .contains("per-call human approval"));
+    }
+
+    #[test]
+    fn funnel_omitted_date_ranges_default_to_empty_upstream_array() {
+        let base = json!({
+            "property_id":42,
+            "funnel_steps":[{"event":"page_view"}]
+        });
+        let omitted: FunnelArgs = serde_json::from_value(base.clone()).unwrap();
+        assert!(omitted.date_ranges.is_empty());
+        let explicit: FunnelArgs = serde_json::from_value(json!({
+            "property_id":42,
+            "funnel_steps":[{"event":"page_view"}],
+            "date_ranges":[]
+        }))
+        .unwrap();
+        let payload = |args: FunnelArgs| {
+            google::funnel_request(
+                args.funnel_steps,
+                Some(args.date_ranges),
+                args.funnel_breakdown,
+                args.funnel_next_action,
+                args.segments,
+                args.return_property_quota,
+            )
+            .unwrap()
+        };
+        assert_eq!(payload(omitted), payload(explicit));
+        assert_eq!(
+            payload(serde_json::from_value(base).unwrap())["dateRanges"],
+            json!([])
+        );
+        let nullable: Result<FunnelArgs, _> = serde_json::from_value(json!({
+            "property_id":42,
+            "funnel_steps":[{"event":"page_view"}],
+            "date_ranges":null
+        }));
+        assert!(nullable.is_err(), "Pinned funnel schema accepts an array, not null");
     }
 
     #[cfg(feature = "scratchpad")]
