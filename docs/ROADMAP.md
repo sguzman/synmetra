@@ -2,7 +2,7 @@
 
 **Status:** experimental Rust MCP stdio server, 20 read-only handlers plus one opt-in write handler implemented provisionally; **0/36 fully parity-accepted**. This project is an experimental MCP server, not a production-ready GA4 parity release. **Source of truth:** [progress.json](progress.json). All percentages shown are task-check acceptance averages, not guesses of feature implementation.
 
-**Overall:** `████████░░ 81.7%` · **+81.72 percentage points from initial empty repo; +0.44 pp from verified Google quota request routing and executed upstream Contract V1 goldens
+**Overall:** `████████░░ 81.9%` · **+81.94 percentage points from initial empty repo; +0.22 pp from verified reachable Git-history secret and pinned Rust dependency scans
 
 ### 📏 Progress conventions
 
@@ -495,11 +495,11 @@
   - ✅ **Gate:** Changes open maintenance work rather than silently inflate parity · **Evidence:** .github/workflows/upstream-drift.yml watches exact SednaLabs schema and Google coordinator Git blob SHAs weekly and on reviewed lock/workflow changes; changes trigger stable [upstream-drift] local maintenance issue, never repin automatically. ci/test-upstream-drift-watch.sh executes the actual workflow shell body with mocked curl/gh, verifying unchanged, changed and duplicate issue cases. GitHub Actions drift workflow 40249957815 succeeded.; GitHub Actions 40249957815 offline fixture checks verify an upstream blob change fails the watch and opens exactly one review issue per source; repeat unchanged pin mismatch reuses an existing open issue and a second changed source opens a separate one. Real unchanged upstream watch also passed. No real upstream drift was forced and no real maintenance issue was created; this is synthetic acceptance of the detection/mutation control, not a source parity claim.
 
 
-## 🧪 M8 — Verification, resilience and security acceptance — `██████░░░░ 62.5%`
+## 🧪 M8 — Verification, resilience and security acceptance — `██████░░░░ 64.3%`
 
 **Scope:** MVP. **Acceptance gate:** Full offline and authorized live verification including malformed inputs, MCP interoperability and threat model.
 
-### 🧫 P22 — Deterministic tests — `█████████░ 90.0%`
+### 🧫 P22 — Deterministic tests — `██████████ 95.0%`
 
 **Feature:** Offline QA.
 
@@ -521,8 +521,8 @@
   - ✅ **Gate:** Offline deterministic clock and throttled 429 tests · **Evidence:** src/google.rs readonly_retry_delay and send_readonly_as enforce connect/request deadlines, three attempts on 429/5xx read-only requests, capped Retry-After/backoff, and no retries for annotation writes or 403s. Core CI https://github.com/sguzman/synmetra/actions/runs/40266208686 passed readonly_retry_policy_honors_backoff_limits_and_never_retries_forbidden, readonly_report_retry_is_bounded_and_never_replays_writes, and annotation_writes_do_not_retry_429_500_or_503_responses. Simulated-clock acceptance remains open.; src/google.rs readonly_429_retry_schedule_respects_virtual_clock_and_attempt_ceiling uses Tokio's paused deterministic clock (enabled only in dev tests), asserts Retry-After 2-second minimum, no premature wake-up, exactly three 429 attempts, and exact virtual elapsed delay. Separate synthetic loopback tests readonly_report_retry_is_bounded_and_never_replays_writes, readonly_429_exhausts_three_attempts_with_redacted_error, and annotation_writes_do_not_retry_429_500_or_503_responses validate actual HTTP retry ceilings and no write replay. All passed pinned Rust core CI https://github.com/sguzman/synmetra/actions/runs/40356602112. These are offline policy tests, not live Google quota/SLO certification.
 - 🦀 **T176 — Pass rustfmt clippy and tests on clean environment** — `██████████ 100.0%`
   - ✅ **Gate:** All-target strict checks green in CI · **Evidence:** Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.; Source: src/main.rs, src/google.rs, src/http.rs, src/auth.rs, docs/ANNOTATIONS.md, Cargo.lock and .github/workflows/ci.yml. GitHub Actions run 40204312090 passed 21-route gated annotation build, mock tests, locked fmt/Clippy; run 40204566566 passed authenticated Streamable HTTP initialization and read-only discovery tests.
-- 🔐 **T177 — Run dependency secret and license scanners** — `█████░░░░░ 50.0%`
-  - ✅ **Gate:** No accidental credentials or prohibited licenses in repository · **Evidence:** The independent ci/scan-secrets.sh high-confidence, non-printing tracked-source heuristic scanner passed https://github.com/sguzman/synmetra/actions/runs/40346651673. SHA-pinned cargo-deny license/advisory/bans/source checks passed https://github.com/sguzman/synmetra/actions/runs/40346651714, with policy and limitations documented. Comprehensive historical, native C++ and credential-disclosure coverage remain unaccepted.
+- 🔐 **T177 — Run dependency secret and license scanners** — `██████████ 100.0%`
+  - ✅ **Gate:** No accidental credentials or prohibited licenses in repository · **Evidence:** The independent ci/scan-secrets.sh high-confidence, non-printing tracked-source heuristic scanner passed https://github.com/sguzman/synmetra/actions/runs/40346651673. SHA-pinned cargo-deny license/advisory/bans/source checks passed https://github.com/sguzman/synmetra/actions/runs/40346651714, with policy and limitations documented. Comprehensive historical, native C++ and credential-disclosure coverage remain unaccepted. Later exhaustive *reachable* Git-history coverage in the same source scanner supersedes the earlier history-only limitation, without implying coverage of unreachable blobs or unrecognized credentials.; ci/scan-secrets.sh --history now scans all reachable commits from a full (non-shallow) GitHub Actions checkout with high-confidence Google/GitHub/OpenAI/PEM signatures, redacts every match, and fails on unknown historical blobs. The sole immutable reviewed exception is an older synthetic PEM-header-only scanner regression blob (no key footer/payload), pinned to ci/test-secret-scanner.sh SHA b661d59ad2b88048e16c48ce283cdcc3e751d8b6; copied/changed markers and shallow histories are tested to fail. Source and history CI https://github.com/sguzman/synmetra/actions/runs/40423900182 passed. Independent cargo-deny license/source/bans and RustSec advisory audit https://github.com/sguzman/synmetra/actions/runs/40346651714 passed, and both Cargo.lock and deny.toml blob hashes are unchanged from that run. No recognized credential signature or prohibited pinned Rust license was detected in this scoped repository audit; unknown/obfuscated secrets, native C++ notices, all CI artifacts and unreachable Git objects remain outside this specific acceptance gate.
 
 ### 🔬 P23 — Authorized live Google acceptance — `█░░░░░░░░░ 11.1%`
 
@@ -571,7 +571,7 @@
   - ✅ **Gate:** Signed provenance and dependency audit evidence · **Evidence:** Pinned Rust 1.99.1/Cargo.lock source builds an x86-64 release binary in two independent Cargo target directories and compares SHA-256 digests and sizes. The dedicated workflow step passed https://github.com/sguzman/synmetra/actions/runs/40358192285; separate cargo-deny Rust license/source/advisory scans also pass. Cross-runner reproducibility, bundled DuckDB and signed provenance remain distinct pending gates.; The release workflow passed two separate pinned Rust 1.99.1/Cargo.lock x86-64 binary SHA-256 comparisons, SHA-pinned actions/attest@v4 Sigstore/SLSA v1 archive attestation, and gh attestation verify -R sguzman/synmetra validating repository identity and SLSA predicate in https://github.com/sguzman/synmetra/actions/runs/40359969759. Independent cargo-deny Rust license/source checks passed https://github.com/sguzman/synmetra/actions/runs/40346651714. This accepts signed provenance and dependency-audit evidence only for an experimental default-feature Linux archive, not clean ARM64/EndeavourOS builds or native C++ compliance.
 
 
-## 🚀 M9 — Linux release and Codex-ready inauguration — `████████░░ 79.5%`
+## 🚀 M9 — Linux release and Codex-ready inauguration — `████████░░ 79.6%`
 
 **Scope:** MVP. **Acceptance gate:** A documented stable native binary with 36-tool verified parity and release artifacts; no Python/npm runtime.
 
