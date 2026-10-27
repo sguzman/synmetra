@@ -69,6 +69,26 @@ assert_clean
   echo 'Full history scanner rejected a clean synthetic repository' >&2
   exit 1
 }
+# The historical exception must never be a blanket allowance for PEM
+# headers or for other paths. Reproduce the same header under a *different*
+# blob identity in the temporary fixture repo; it must still fail closed.
+pem_canary="$(printf '%s%s%s' '-----BEGIN ' 'PRIVATE KEY' '-----')"
+printf '%s\\n' "$pem_canary" > "$repo/fixture.txt"
+git -C "$repo" add fixture.txt
+git -C "$repo" commit -q -m 'synthetic unreviewed historical PEM canary'
+printf 'synthetic clean after PEM canary\\n' > "$repo/fixture.txt"
+git -C "$repo" add fixture.txt
+git -C "$repo" commit -q -m 'redact unreviewed historical PEM canary'
+assert_clean
+if (cd -- "$repo" && bash "$scanner" --history) > "$root/scan.log" 2>&1; then
+  echo 'Historical scanner improperly allowed an unreviewed PEM blob' >&2
+  exit 1
+fi
+if grep -Fq -- "$pem_canary" "$root/scan.log"; then
+  echo 'Historical scanner disclosed an unreviewed synthetic PEM fixture' >&2
+  exit 1
+fi
+
 historic_canary="ghp_$(printf '%036d' 9)"
 printf '%s\n' "$historic_canary" > "$repo/fixture.txt"
 git -C "$repo" add fixture.txt
