@@ -3,7 +3,7 @@
   "version": 1,
   "comparison": "Top-level fields and raw JSON Schema property attributes; $refs are not dereferenced, and description-only or equivalent reference renames may count as differences. Behavioral/live parity is NOT established.",
   "sources": {
-    "native_sha": "f3349babc5e737d261c4206cd0a3eb55c3f00018",
+    "native_sha": "04c58450f5d9c21067b3f7feb27ea6fca698d91a",
     "sednalabs_sha": "646c0baa22692b73430a0ee96415b0e2fe6215a3",
     "google_sha": "ab43c97870c28b3bee18613c89bd8a484dab1a55"
   },

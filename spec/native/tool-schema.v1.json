@@ -5,7 +5,7 @@
   "source_ci_run": "https://github.com/sguzman/synmetra/actions/runs/40269115096",
   "profile": "--features scratchpad; --allow-write; --scratchpad",
   "toolchain": "Rust 1.99.1",
-  "notes": "Captured from real rmcp router, not inferred from pinned SednaLabs schema. This is a native input-schema snapshot, not live Google or complete upstream parameter parity. Extended table describe/summarize controls are source-reviewed and require feature-CI schema equality; source_commit is the original capture provenance, not an assertion that all later fields came from that historical SHA. The local diagnostic release/landing tools additionally advertise bounded max_rows/max_cell_chars; the historical source commit in this file refers to the original capture only, not later CI-updated additions. Ingestion input controls are now explicitly accepted, validated and, when unsupported or incomplete, rejected or marked partial before upstream operations. Full SednaLabs multi-page and output behavior are not yet achieved and live testing is open. Historical/realtime optional ingest limit input now uses the pinned u64 width; bounded actual ingest still rejects values exceeding 1,000 before any outbound request. Pivot keep_empty_rows now uses a nonnullable bool with default false, matching the pinned upstream tool schema; the original source_commit remains original historical capture provenance. The six scratchpad output_mode fields now reuse the same strongly typed four-option nullable enum as run_report; the historic source commit records original capture, not later reviewed schema updates. Funnel date_ranges now mirrors the upstream default empty array (rather than nullable), with a regression test confirming an omitted list and explicit [] yield the same request; historical capture provenance remains unchanged.",
+  "notes": "Captured from real rmcp router, not inferred from pinned SednaLabs schema. This is a native input-schema snapshot, not live Google or complete upstream parameter parity. Extended table describe/summarize controls are source-reviewed and require feature-CI schema equality; source_commit is the original capture provenance, not an assertion that all later fields came from that historical SHA. The local diagnostic release/landing tools additionally advertise bounded max_rows/max_cell_chars; the historical source commit in this file refers to the original capture only, not later CI-updated additions. Ingestion input controls are now explicitly accepted, validated and, when unsupported or incomplete, rejected or marked partial before upstream operations. Full SednaLabs multi-page and output behavior are not yet achieved and live testing is open. Historical/realtime optional ingest limit input now uses the pinned u64 width; bounded actual ingest still rejects values exceeding 1,000 before any outbound request. Pivot keep_empty_rows now uses a nonnullable bool with default false, matching the pinned upstream tool schema; the original source_commit remains original historical capture provenance. The six scratchpad output_mode fields now reuse the same strongly typed four-option nullable enum as run_report; the historic source commit records original capture, not later reviewed schema updates. Funnel date_ranges now mirrors the upstream default empty array (rather than nullable), with a regression test confirming an omitted list and explicit [] yield the same request; historical capture provenance remains unchanged. Batch subreport schema mirrors all five pinned optional tabular control fields. Only max_rows currently restricts the outbound request; cursor, output_mode, max_cell_chars and summary_only are explicitly rejected before networking until safe per-subreport response projection exists.",
   "tools": [
     {
       "inputSchema": {
@@ -14,6 +14,13 @@
             "additionalProperties": false,
             "properties": {
               "currency_code": {
+                "default": null,
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "cursor": {
                 "default": null,
                 "type": [
                   "string",
@@ -38,6 +45,24 @@
               "limit": {
                 "default": null,
                 "format": "uint64",
+                "minimum": 0,
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "max_cell_chars": {
+                "default": null,
+                "format": "uint",
+                "minimum": 0,
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "max_rows": {
+                "default": null,
+                "format": "uint",
                 "minimum": 0,
                 "type": [
                   "integer",
@@ -70,8 +95,22 @@
                   "null"
                 ]
               },
+              "output_mode": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/OutputMode"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
               "return_property_quota": {
                 "default": true,
+                "type": "boolean"
+              },
+              "summary_only": {
+                "default": false,
                 "type": "boolean"
               }
             },
@@ -94,6 +133,15 @@
               }
             ],
             "description": "Match the pinned Google and SednaLabs contract: identifiers may arrive as\npositive decimal numbers or as canonical resource-name strings."
+          },
+          "OutputMode": {
+            "enum": [
+              "rows",
+              "tuples",
+              "scalar",
+              "compact"
+            ],
+            "type": "string"
           },
           "ReportDateRangeInput": {
             "description": "The pinned SednaLabs JSON Schema names historical dates with snake_case.\nRuntime normalization additionally accepts Google camelCase and named ranges.",

@@ -92,3 +92,9 @@ The final two native ingest handlers now **advertise** `cursor`, `max_rows`, `ma
 ## Follow-on bounded ingest limit-width correction (feature CI pending)
 
 Both scratchpad ingestion request structs now advertise `limit: Option<u64>` rather than the previous `Option<u32>`, matching SednaLabs' `uint64` input schema. The runtime still deliberately caps actual one-page ingestion at 1,000 rows and reports a local bounded validation error for oversized inputs, before Google network traffic. This resolves two raw `format` differences without implying multi-page parity. The reviewed native/upstream raw field-shape mismatch count decreases from **204 to 202** in [the machine-readable diff](../spec/audits/native-upstream-diff.v1.json); CI verification is required before accepting it as a compiled/runtime result.
+
+## Follow-on nested-schema semantic audit (ongoing)
+
+The native schema now matches the pinned funnel `date_ranges` default of `[]`, rather than advertising `null`. The `batch_run_reports.requests[]` items now surface all five upstream per-subreport output controls (nested `cursor`, `max_rows`, `max_cell_chars`, `output_mode`, `summary_only`), but only `max_rows` is implemented as a provider row cap; others fail closed before upstream calls. The native item uses `additionalProperties:false`, while pinned SednaLabs' schema does not declare that restriction. These intentional compatibility differences are not flattened away. No per-subreport output projection, complete behavioral equivalence, or live Google result parity is claimed.
+
+Source- and schema-locked validation is in `src/main.rs::batch_subreport_output_controls_are_explicit_and_never_silently_discarded` and `funnel_omitted_date_ranges_default_to_empty_upstream_array`. The raw comparison audit in `spec/audits/native-upstream-diff.v1.json` is a top-level attribute differential and does **not** dereference nested schema types; keep the nested limitations documented independently.

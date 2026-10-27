@@ -963,14 +963,39 @@ struct BatchReportItemArgs {
     currency_code: Option<String>,
     #[serde(default = "default_return_property_quota")]
     return_property_quota: bool,
+    #[serde(default)]
+    cursor: Option<String>,
+    #[serde(default)]
+    max_rows: Option<usize>,
+    #[serde(default)]
+    max_cell_chars: Option<usize>,
+    #[serde(default)]
+    output_mode: Option<tabular::OutputMode>,
+    #[serde(default)]
+    summary_only: bool,
 }
 
 impl BatchReportItemArgs {
     fn to_google_request(&self) -> Result<Value, ApiError> {
-        if self
-            .limit
-            .is_some_and(|limit| limit == 0 || limit > 250_000)
+        // The pinned upstream exposes per-item tabular response controls.
+        // Never ignore unsupported controls and unexpectedly return unbounded
+        // provider data. max_rows is safe to honor as an outbound row cap;
+        // cursor, cell clipping, summary and rendering need batch-aware
+        // response projection before they can be accepted.
+        if self.cursor.is_some()
+            || self.max_cell_chars.is_some()
+            || self.output_mode.is_some()
+            || self.summary_only
+            || self.max_rows.is_some_and(|n| n == 0 || n > 1000)
         {
+            return Err(ApiError::InvalidRequest);
+        }
+        let limit = match (self.limit, self.max_rows) {
+            (Some(requested), Some(maximum)) => Some(requested.min(maximum as u64)),
+            (None, Some(maximum)) => Some(maximum as u64),
+            (requested, None) => requested,
+        };
+        if limit.is_some_and(|limit| limit == 0 || limit > 250_000) {
             return Err(ApiError::InvalidRequest);
         }
         report_request(
@@ -981,7 +1006,7 @@ impl BatchReportItemArgs {
                 ("dimensionFilter", self.dimension_filter.clone()),
                 ("metricFilter", self.metric_filter.clone()),
                 ("orderBys", self.order_bys.clone().map(|x| json!(x))),
-                ("limit", self.limit.map(|v| json!(v.to_string()))),
+                ("limit", limit.map(|v| json!(v.to_string()))),
                 ("offset", self.offset.map(|v| json!(v.to_string()))),
                 ("currencyCode", self.currency_code.clone().map(|x| json!(x))),
                 (
@@ -3238,6 +3263,47 @@ mod tests {
             .as_deref()
             .unwrap_or_default()
             .contains("per-call human approval"));
+    }
+
+    #[test]
+    fn batch_subreport_output_controls_are_explicit_and_never_silently_discarded() {
+        let base = json!({
+            "date_ranges":[{"start_date":"7daysAgo","end_date":"today"}],
+            "dimensions":["country"],
+            "metrics":["activeUsers"],
+            "limit":20
+        });
+        let mut bounded = base.clone();
+        bounded["max_rows"] = json!(5);
+        let request: BatchReportItemArgs = serde_json::from_value(bounded).unwrap();
+        let body = request.to_google_request().unwrap();
+        assert_eq!(body["limit"], "5");
+
+        let mut default_bounded = base.clone();
+        default_bounded.as_object_mut().unwrap().remove("limit");
+        default_bounded["max_rows"] = json!(7);
+        let request: BatchReportItemArgs = serde_json::from_value(default_bounded).unwrap();
+        assert_eq!(request.to_google_request().unwrap()["limit"], "7");
+
+        // Until batch-aware projection is implemented, do not advertise a
+        // working summary, clipping, renderer or cursor and silently omit it.
+        for (name, control) in [
+            ("cursor", json!("v1:synthetic:5")),
+            ("max_cell_chars", json!(128)),
+            ("output_mode", json!("compact")),
+            ("summary_only", json!(true)),
+            ("max_rows", json!(0)),
+            ("max_rows", json!(1001)),
+        ] {
+            let mut unsupported = base.clone();
+            unsupported[name] = control;
+            let request: BatchReportItemArgs =
+                serde_json::from_value(unsupported).unwrap();
+            assert!(
+                matches!(request.to_google_request(), Err(ApiError::InvalidRequest)),
+                "Batch subreport control {name} was silently discarded"
+            );
+        }
     }
 
     #[test]
