@@ -51,3 +51,9 @@ Opt-in `scratchpad_describe_table` and `scratchpad_summarize_table` projections 
 ## Local SELECT pagination and truncation semantics
 
 `scratchpad_query` implements a restricted SELECT grammar with optional `ORDER BY`, `LIMIT` and `OFFSET`. It fetches one bounded look-ahead row to mark `truncated=true` only when the current requested window actually omits available local rows. An exact-size window or final partial page has `truncated=false`; `COUNT(*)` reports an exact local count. Ordinary projected row queries **do not invent a global `row_count_total` or a cursor**: callers may explicitly issue a new bounded SELECT/OFFSET, with no snapshot-consistency guarantee. In `summary_only` mode the row array is withheld while `returned_rows` and `truncated` still describe the queried window. The feature-enabled local fixture tests first, exact, last-offset and summary-only windows without exposing user table contents.
+
+## Bounded result-count semantics
+
+`scratchpad_query` now exposes explicit `row_count_total_known` alongside `row_count_total` (exact count only for an untruncated query starting at offset zero), `row_count_lower_bound` (observed rows), `returned_rows` and `truncated` (from a one-row lookahead). A later SQL OFFSET page or clipped first page does not assert a total; `row_count_total` is `null`. A `SELECT COUNT(*)` result contains the exact **underlying table count** in the `row_count` cell, not in the SQL result-row cardinality marker.
+
+Schema reads are similarly honest: `column_count_total_known` is true for at most 32 columns, otherwise `column_count_total` is `null`, `column_count_lower_bound` is 32, and `columns_truncated` is true. A `summarize_table` response can report a known exact table `row_count_total` while the previewed column count remains unknown. These are additive metadata fields, not a new SQL capability or evidence of full upstream output parity.

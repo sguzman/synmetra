@@ -337,7 +337,10 @@ impl ScratchState {
         Ok(json!({
             "session_id":id, "table_name":table,
             "columns":columns,"column_count_returned":columns.len(),
-            "columns_truncated":truncated
+            "columns_truncated":truncated,
+            "column_count_total":if truncated { Value::Null } else { json!(columns.len()) },
+            "column_count_total_known":!truncated,
+            "column_count_lower_bound":columns.len()
         }))
     }
 
@@ -979,9 +982,18 @@ impl ScratchState {
         if summary_only {
             rows.clear();
         }
+        // A lookahead tells us whether more *query-result* rows exist.
+        // A complete query beginning at offset zero also proves the exact
+        // result cardinality; other pages must not invent a global total.
+        // For COUNT(*) the query result has one row; the *table* count is the
+        // value of the row_count cell, not this result-cardinality field.
+        let total_known = offset == 0 && !truncated;
         let output = json!({
             "session_id":id,"columns":columns,"rows":rows,
             "returned_rows":returned,"truncated":truncated,
+            "row_count_total":if total_known { json!(returned) } else { Value::Null },
+            "row_count_total_known":total_known,
+            "row_count_lower_bound":returned,
             "summary_only":summary_only,"source":"local_scratchpad",
             "sql_subset":"SELECT columns FROM table [ORDER BY column] [LIMIT n] [OFFSET n]"
         });
@@ -1362,9 +1374,13 @@ impl ScratchState {
             .map_err(|_| "DuckDB table summary failed")?;
         Ok(json!({
             "session_id":id,"table_name":table,"row_count":row_count,
+            "row_count_total":row_count,"row_count_total_known":true,
             "columns":schema["columns"],
             "column_count_returned":schema["column_count_returned"],
-            "columns_truncated":schema["columns_truncated"]
+            "columns_truncated":schema["columns_truncated"],
+            "column_count_total":schema["column_count_total"],
+            "column_count_total_known":schema["column_count_total_known"],
+            "column_count_lower_bound":schema["column_count_lower_bound"]
         }))
     }
 }
@@ -2668,7 +2684,9 @@ mod tests {
         assert_eq!(first["returned_rows"], 2);
         assert_eq!(first["rows"].as_array().unwrap().len(), 2);
         assert_eq!(first["truncated"], true);
-        assert!(first.get("row_count_total").is_none());
+        assert!(first["row_count_total"].is_null());
+        assert_eq!(first["row_count_total_known"], false);
+        assert_eq!(first["row_count_lower_bound"], 2);
         assert!(first.get("next_cursor").is_none());
 
         let exact = state
@@ -2682,6 +2700,8 @@ mod tests {
             .unwrap();
         assert_eq!(exact["returned_rows"], 3);
         assert_eq!(exact["truncated"], false);
+        assert_eq!(exact["row_count_total"], 3);
+        assert_eq!(exact["row_count_total_known"], true);
 
         let last = state
             .query_bounded(
@@ -2695,6 +2715,9 @@ mod tests {
         assert_eq!(last["returned_rows"], 1);
         assert_eq!(last["truncated"], false);
         assert_eq!(last["rows"][0]["id"], "3");
+        assert!(last["row_count_total"].is_null());
+        assert_eq!(last["row_count_total_known"], false);
+        assert_eq!(last["row_count_lower_bound"], 1);
 
         let summary = state
             .query_bounded(
@@ -2709,6 +2732,8 @@ mod tests {
         assert_eq!(summary["truncated"], true);
         assert!(summary["rows"].as_array().unwrap().is_empty());
         assert_eq!(summary["summary_only"], true);
+        assert!(summary["row_count_total"].is_null());
+        assert_eq!(summary["row_count_total_known"], false);
 
         // The query never requests a database cursor when no complete table
         // snapshot exists, and a COUNT(*) query returns the exact count.
@@ -2723,6 +2748,68 @@ mod tests {
             .unwrap();
         assert_eq!(count["rows"][0]["row_count"], "3");
         assert_eq!(count["truncated"], false);
+        assert_eq!(count["row_count_total"], 1);
+        assert_eq!(count["row_count_total_known"], true);
+    }
+
+    #[test]
+    fn local_catalog_and_summary_distinguish_exact_and_bounded_counts() {
+        let state = ScratchState::new();
+        state.open("total_fixture").unwrap();
+        {
+            let mut inner = state.guard().unwrap();
+            let db = &inner.sessions.get_mut("total_fixture").unwrap().db;
+            db.execute_batch(
+                "CREATE TABLE events (event_name VARCHAR, active_users BIGINT);
+                 INSERT INTO events VALUES ('page_view', 3), ('session_start', 1);",
+            )
+            .unwrap();
+        }
+        let description = state.describe_table("total_fixture", "events").unwrap();
+        assert_eq!(description["column_count_total"], 2);
+        assert_eq!(description["column_count_total_known"], true);
+        assert_eq!(description["column_count_lower_bound"], 2);
+        let summary = state.summarize_table("total_fixture", "events").unwrap();
+        assert_eq!(summary["row_count"], 2);
+        assert_eq!(summary["row_count_total"], 2);
+        assert_eq!(summary["row_count_total_known"], true);
+        assert_eq!(summary["column_count_total"], 2);
+        assert_eq!(summary["column_count_total_known"], true);
+        let page = state.query_bounded(
+            "total_fixture",
+            "SELECT event_name FROM events ORDER BY event_name ASC LIMIT 1",
+            Some(1),
+            None,
+            false,
+        ).unwrap();
+        assert_eq!(page["truncated"], true);
+        assert_eq!(page["row_count_total_known"], false);
+        assert!(page["row_count_total"].is_null());
+
+        // DuckDB's metadata catalog is intentionally limited to 32 columns.
+        // The 33rd column must not be silently recast as an exact total.
+        {
+            let mut inner = state.guard().unwrap();
+            let db = &inner.sessions.get_mut("total_fixture").unwrap().db;
+            let definitions = (0..33)
+                .map(|index| format!("column_{index} INTEGER"))
+                .collect::<Vec<_>>()
+                .join(", ");
+            db.execute_batch(&format!("CREATE TABLE wide ({definitions})"))
+                .unwrap();
+        }
+        let wide = state.describe_table("total_fixture", "wide").unwrap();
+        assert_eq!(wide["columns"].as_array().unwrap().len(), 32);
+        assert_eq!(wide["columns_truncated"], true);
+        assert!(wide["column_count_total"].is_null());
+        assert_eq!(wide["column_count_total_known"], false);
+        assert_eq!(wide["column_count_lower_bound"], 32);
+
+        let summarized = state.summarize_table("total_fixture", "wide").unwrap();
+        assert_eq!(summarized["row_count_total"], 0);
+        assert_eq!(summarized["row_count_total_known"], true);
+        assert!(summarized["column_count_total"].is_null());
+        assert_eq!(summarized["column_count_total_known"], false);
     }
 
     #[test]
