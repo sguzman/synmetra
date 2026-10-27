@@ -450,12 +450,18 @@ fn project_scratchpad_table_catalog(
         }
     };
     let original_truncated = data["columns_truncated"].as_bool().unwrap_or(false);
+    let known_total = if original_truncated {
+        Value::Null
+    } else {
+        json!(columns.len())
+    };
     data["columns"] = output;
     data["column_count_returned"] = json!(returned);
     data["meta"] = json!({
         "output_mode":mode,
         "summary_only":args.summary_only,
-        "column_count_total":columns.len(),
+        "column_count_total":known_total,
+        "column_count_lower_bound":columns.len(),
         "column_count_total_known":!original_truncated,
         "column_count_returned":returned,
         "next_cursor":next_cursor,
@@ -3521,7 +3527,14 @@ mod tests {
                 }
             }
             if let Some(items) = node.get("items") {
-                collect(items, root, &format!("{path}[]"), depth + 1, shapes, defaults);
+                collect(
+                    items,
+                    root,
+                    &format!("{path}[]"),
+                    depth + 1,
+                    shapes,
+                    defaults,
+                );
             }
             for attribute in ["anyOf", "oneOf"] {
                 if let Some(variants) = node.get(attribute).and_then(Value::as_array) {
@@ -3563,14 +3576,7 @@ mod tests {
                 &mut a,
                 &mut a_defaults,
             );
-            collect(
-                native_schema,
-                native_schema,
-                "",
-                0,
-                &mut b,
-                &mut b_defaults,
-            );
+            collect(native_schema, native_schema, "", 0, &mut b, &mut b_defaults);
             total_paths += a.len();
             for (path, shape) in &a {
                 assert_eq!(
@@ -3719,6 +3725,25 @@ mod tests {
             result.structured_content.unwrap()["data"]["reports"][0],
             Value::Null
         );
+
+        // A provider response with no rowCount must never synthesize a
+        // complete total or an ungrounded next-page cursor per subreport.
+        let mut unknown = report.clone();
+        unknown.as_object_mut().unwrap().remove("rowCount");
+        let mut unknown_args = baseline.clone();
+        unknown_args["max_rows"] = json!(1);
+        let item: BatchReportItemArgs = serde_json::from_value(unknown_args).unwrap();
+        let (_, page) = item.to_google_request("42").unwrap();
+        let unknown_result = result_with_batch_projections(
+            Ok(json!({"reports":[unknown]})),
+            &[item],
+            &[page],
+        );
+        let unknown_meta =
+            &unknown_result.structured_content.as_ref().unwrap()["meta"]["reports"][0];
+        assert_eq!(unknown_meta["row_count_total_known"], false);
+        assert!(unknown_meta["next_cursor"].is_null());
+        assert_eq!(unknown_meta["truncated"], false); // No local rows were dropped.
 
         // The old untouched batch result remains provider-shaped.
         let item: BatchReportItemArgs = serde_json::from_value(baseline.clone()).unwrap();
@@ -7582,7 +7607,18 @@ mod tests {
         let result = project_scratchpad_table_catalog(schema.clone(), &summary).unwrap();
         assert!(result["columns"].is_null());
         assert_eq!(result["meta"]["column_count_total"], 3);
+        assert_eq!(result["meta"]["column_count_lower_bound"], 3);
         assert_eq!(result["meta"]["column_count_returned"], 0);
+
+        // DuckDB exposes at most 32 visible column descriptors. When that
+        // bound is exceeded, do not present 32 as the actual total.
+        let mut incomplete_catalog = schema.clone();
+        incomplete_catalog["columns_truncated"] = json!(true);
+        let projected = project_scratchpad_table_catalog(incomplete_catalog, &base).unwrap();
+        assert_eq!(projected["meta"]["column_count_total"], Value::Null);
+        assert_eq!(projected["meta"]["column_count_total_known"], false);
+        assert_eq!(projected["meta"]["column_count_lower_bound"], 3);
+        assert_eq!(projected["meta"]["truncated"], true);
 
         let invalid: ScratchReadTableArgs = serde_json::from_value(json!({
             "session_id":"local_fixture",
